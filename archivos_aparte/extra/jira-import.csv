@@ -1,0 +1,237 @@
+"Work item ID","Parent","Work type","Summary","Description","Story Points","Labels"
+"1","","Epic","Gestión de usuarios","Registro, inicio y cierre de sesión.","",""
+"2","","Epic","Gestión de clientes","Alta, búsqueda, edición e historial de clientes.","",""
+"3","","Epic","Gestión de muestras","Recepción y alta de muestras de agua.","",""
+"4","","Epic","Gestión de estudios","Catálogo de tipos de estudio, creación y control de estudios.","",""
+"5","","Epic","Pruebas y mediciones","Carga de mediciones, cálculo automático y validación de resultados.","",""
+"6","","Epic","Informes","Generación, previsualización y exportación del informe final.","",""
+"7","","Epic","Comparación histórica","Diferencial del producto: comparar resultados con el historial del mismo origen y notificar desvíos.","",""
+"8","1","Story","1.1 Registrar usuario","Como usuario del sistema quiero registrarme ingresando mi información personal y credenciales para tener una cuenta autorizada y acceder a las funciones del laboratorio.
+
+Criterios de aceptación:
+* Se debe poder ingresar la información del usuario (nombre, apellido).
+* Se deben ingresar credenciales de acceso (usuario/email y contraseña).
+* El sistema debe validar que los campos obligatorios estén completos y que el usuario no exista previamente.
+* Se debe solicitar la confirmación del registro antes de persistir la cuenta.
+* El usuario registrado debe quedar habilitado para iniciar sesión.
+
+Responsable (cronograma): Juan Pablo","","semana-1"
+"9","1","Story","1.2 Inicio/cierre de sesión","Como usuario del sistema quiero iniciar sesión con mis credenciales y poder cerrarla al terminar para operar de forma segura en la plataforma y resguardar la información.
+
+Criterios de aceptación:
+* Se debe poder ingresar el usuario/email y la contraseña para iniciar sesión.
+* El sistema debe validar que ambos campos estén completos antes de intentar el ingreso.
+* Si las credenciales son incorrectas, el sistema debe mostrar un mensaje genérico (""Usuario o contraseña incorrectos""), sin indicar cuál de los dos datos falló.
+* Al iniciar sesión correctamente, el usuario debe acceder a la pantalla principal del sistema, identificado con su nombre y rol.
+* No se debe poder acceder a ninguna pantalla del sistema sin una sesión iniciada; si se intenta, el sistema debe redirigir al inicio de sesión.
+* Se debe poder cerrar sesión desde cualquier pantalla del sistema.
+* Al cerrar sesión, el sistema debe redirigir al inicio de sesión y no debe permitir volver a las pantallas anteriores (por ejemplo, con el botón ""atrás"" del navegador).
+
+Responsable (cronograma): Manuel
+
+Nota: Revisar: el criterio 4 menciona el ""rol"", pero se quitó el rol de la 1.1.","","semana-1"
+"10","2","Story","2.1 Registrar cliente","Como empleado del laboratorio quiero registrar un nuevo cliente con sus datos personales y de contacto para poder asociarle muestras y estudios analíticos.
+
+Criterios de aceptación:
+* Se deben poder ingresar datos personales/fiscales (Razón Social o Nombre, CUIT/DNI).
+* Se deben poder ingresar datos de contacto (teléfono, correo electrónico, domicilio).
+* El sistema no debe permitir registrar un cliente si faltan campos obligatorios.
+* No se debe permitir duplicar clientes con el mismo CUIT o identificador.
+* Se debe solicitar confirmación antes de guardar el registro.
+* El cliente debe quedar disponible de inmediato para asociarlo a nuevas muestras.
+
+Responsable (cronograma): Delfina","","semana-1"
+"11","2","Story","3.1 Buscar cliente registrado","Como empleado del laboratorio quiero buscar un cliente registrado y visualizar sus datos actuales para consultar su información y verificar sus antecedentes.
+
+Criterios de aceptación:
+* Se debe poder buscar por Razón Social, Nombre o CUIT/DNI.
+* El sistema debe listar las coincidencias encontradas.
+* Al seleccionar un cliente, se deben visualizar todos sus datos personales y de contacto vigentes.
+
+Responsable (cronograma): Federico","","semana-2"
+"12","2","Story","3.2 Editar cliente","Como empleado del laboratorio quiero modificar los datos de un cliente seleccionado y guardar los cambios para mantener su información de contacto actualizada.
+
+Criterios de aceptación:
+* Se debe poder acceder a la edición desde la ficha del cliente seleccionado.
+* Se deben poder modificar teléfono, correo electrónico, domicilio o persona de contacto.
+* El sistema debe validar que los datos modificados cumplan con los formatos esperados.
+* Se debe permitir guardar los cambios o cancelar la operación.
+* Los cambios guardados deben reflejarse inmediatamente en el sistema.
+
+Responsable (cronograma): Juan","","semana-2"
+"13","2","Story","3.3 Consultar historial del cliente","Como empleado del laboratorio quiero consultar el historial de muestras, estudios e informes de un cliente para conocer sus análisis anteriores y responder sus consultas.
+
+Criterios de aceptación:
+* Se debe poder acceder al historial desde la ficha del cliente seleccionado.
+* Se deben listar las muestras del cliente con su código (N° PI), fecha de ingreso, estudios asociados y estado de cada estudio.
+* El listado debe ordenarse del más reciente al más antiguo.
+* Se debe poder filtrar por rango de fechas y por estado del estudio.
+* Se debe poder acceder al detalle de cada estudio y, si tiene informe generado, consultarlo.
+* Si el cliente no tiene muestras registradas, el sistema debe indicarlo.
+
+Responsable (cronograma): a definir
+
+Nota: Historia nueva. Depende de muestras, estudios e informes. Es la primera a recortar si falta tiempo.","","semana-6"
+"14","3","Story","4.1 Registrar muestra","Como empleado del laboratorio quiero registrar el ingreso de una muestra física asociándola a un cliente y asignándole un código para identificarla y asegurar su trazabilidad dentro del laboratorio.
+
+Criterios de aceptación:
+* Se debe poder seleccionar el cliente remitente previamente registrado.
+* Se deben ingresar datos de la muestra (fecha de muestreo, fecha de ingreso, lugar o sitio de extracción).
+* El sistema debe identificar y asignar automáticamente un código único a la muestra (ej. N° PI).
+* No se debe permitir el registro sin completar los datos obligatorios.
+* Se debe solicitar confirmación para formalizar el ingreso de la muestra.
+
+Responsable (cronograma): Martino / Manuel
+
+Nota: Pendiente: asociar la muestra a un Origen (fuente) elegido de una lista, para que funcione la comparación histórica (8.1).","","semana-2"
+"15","4","Story","5.1 Crear estudio y asignar tipo","Como empleado del laboratorio quiero crear un estudio sobre una muestra y asignarle un tipo de estudio para precargar automáticamente el conjunto de pruebas que le corresponden.
+
+Criterios de aceptación:
+* Se debe poder seleccionar una muestra registrada.
+* Se debe poder elegir el tipo de estudio del catálogo (ej. Bacteriológico, Físico-Químico).
+* El sistema debe precargar automáticamente las pruebas predefinidas para ese tipo.
+* El estudio debe iniciar en estado ""Pendiente de análisis"".
+
+Responsable (cronograma): Juan Pablo
+
+Nota: Necesita tipos de estudio cargados (5.5) o precargados en la base.","","semana-3"
+"16","4","Story","5.2 Consultar estado del estudio","Como empleado del laboratorio quiero consultar un estudio y conocer su estado de avance para verificar qué pruebas se encuentran pendientes y cuáles realizadas.
+
+Criterios de aceptación:
+* Se debe poder buscar el estudio por identificador, muestra o cliente.
+* Se debe visualizar el estado general del estudio (ej. Pendiente, En Proceso, Finalizado).
+* Se debe mostrar la lista de pruebas asignadas con su estado individual (Pendiente / Completada).
+* Se debe poder consultar la lista de estudios asignados desde la ficha de la muestra (viene de la 4.2, eliminada).
+
+Responsable (cronograma): a definir
+
+Nota: No estaba en el cronograma. El último criterio se trajo de la 4.2: moverlo a la 5.1 si prefieren.","","semana-3"
+"17","4","Story","5.3 Agregar prueba al estudio","Como empleado del laboratorio quiero agregar una prueba adicional a un estudio existente para personalizar el análisis según los requerimientos específicos del cliente.
+
+Criterios de aceptación:
+* Sobre un estudio que permita modificaciones, se debe poder abrir el catálogo de pruebas.
+* Se debe poder seleccionar y añadir una prueba adicional.
+* No se debe permitir añadir una prueba que ya forme parte del estudio.
+* La prueba añadida debe sumarse a la lista de pruebas pendientes a realizar.
+
+Responsable (cronograma): Manuel","","semana-3"
+"18","4","Story","5.4 Eliminar prueba del estudio","Como empleado del laboratorio quiero quitar una prueba de un estudio para no realizar ensayos innecesarios si no fueron solicitados.
+
+Criterios de aceptación:
+* Se debe poder seleccionar una prueba del estudio para quitarla.
+* Solo se pueden eliminar pruebas que no tengan mediciones cargadas ni resultados guardados.
+* El sistema debe pedir confirmación antes de efectuar la eliminación.
+* La prueba eliminada no debe incluirse en la carga de mediciones ni en el informe final.
+
+Responsable (cronograma): Manuel","","semana-3"
+"19","4","Story","5.5 Gestionar catálogo de tipos de estudio","Como responsable técnico quiero crear y editar tipos de estudio y definir sus pruebas por defecto para mantener el catálogo actualizado sin depender de un desarrollador.
+
+Criterios de aceptación:
+* Se debe poder crear un tipo de estudio indicando nombre (obligatorio y único) y descripción.
+* Se deben poder seleccionar, del catálogo de pruebas, las pruebas que el tipo incluye por defecto.
+* No se debe permitir guardar un tipo de estudio sin al menos una prueba.
+* Se debe poder editar un tipo de estudio existente: modificar su nombre, agregar o quitar pruebas.
+* Los cambios deben aplicarse solo a los estudios creados después de la modificación; los estudios existentes no deben alterarse.
+* No se debe poder eliminar un tipo de estudio que ya fue usado en algún estudio; en ese caso se debe poder desactivar para que no aparezca al crear estudios nuevos.
+
+Responsable (cronograma): a definir
+
+Nota: Historia nueva. Las pruebas ya las definió el científico y se precargan: esta historia no crea pruebas nuevas.","","semana-3"
+"20","5","Story","6.1 Cargar mediciones","Como empleado del laboratorio quiero ingresar los valores de las mediciones obtenidas a partir de la muestra para registrar los datos primarios de cada prueba.
+
+Criterios de aceptación:
+* Se deben mostrar las pruebas asignadas al estudio que esperan carga de datos.
+* Se deben poder ingresar las mediciones crudas requeridas por cada prueba (ej. absorbancia, volumen gastado).
+* El sistema debe validar que los valores ingresados tengan formato numérico válido.
+* Los datos cargados deben quedar asociados a la prueba correspondiente.
+
+Responsable (cronograma): Delfina","","semana-4"
+"21","5","Story","6.2 Cálculo automático del resultado","Como empleado del laboratorio quiero que el sistema calcule automáticamente el resultado de la prueba para evitar errores de cálculo manual o transcripción.
+
+Criterios de aceptación:
+* El sistema debe aplicar la fórmula o curva de calibración correspondiente a la prueba.
+* El cálculo debe procesar los valores de las mediciones ingresadas.
+* El resultado calculado debe mostrarse con su unidad de medida correspondiente (ej. mg/L, UFC/ml).
+* El sistema debe advertir si faltan mediciones para completar el cálculo.
+
+Responsable (cronograma): Delfina
+
+Nota: Riesgo identificado: errores en el cálculo. Tests obligatorios.","","semana-4"
+"22","5","Story","6.3 Modificar los datos de una prueba","Como empleado del laboratorio quiero visualizar y modificar los datos cargados de una prueba para corregir errores de carga antes de la finalización del estudio.
+
+Criterios de aceptación:
+* Se deben mostrar los valores cargados previamente para su revisión.
+* Se deben poder editar las mediciones mientras el estudio no esté finalizado.
+* Al modificar un valor, el sistema debe recalcular el resultado automáticamente.
+* Los nuevos valores deben reemplazar a los anteriores y revalidarse.
+
+Responsable (cronograma): Juan","","semana-4"
+"23","5","Story","6.4 Validar resultados","Como empleado del laboratorio / bioquímico quiero validar los resultados obtenidos y guardarlos para asegurar que cumplen los parámetros técnicos y normativos antes del cierre.
+
+Criterios de aceptación:
+* El sistema debe contrastar el resultado contra los límites normativos o de referencia.
+* Se debe indicar visualmente si un resultado se encuentra fuera de norma.
+* El usuario debe poder confirmar y guardar el resultado validado.
+* Un resultado guardado debe marcar la prueba como completada.
+
+Responsable (cronograma): Juan","","semana-4"
+"24","6","Story","7.1 Seleccionar estudio y controlar pruebas pendientes","Como empleado del laboratorio quiero seleccionar un estudio y verificar las pruebas pendientes para asegurarme de que todos los ensayos estén terminados antes de emitir el informe.
+
+Criterios de aceptación:
+* Se debe poder seleccionar el estudio a informar.
+* El sistema debe mostrar el listado de pruebas y su estado.
+* El sistema debe bloquear la generación del informe si existen pruebas incompletas o sin validar.
+* Solo se habilita la generación cuando el 100% de las pruebas estén finalizadas.
+
+Responsable (cronograma): Delfina","","semana-5"
+"25","6","Story","7.2 Generar informe","Como empleado del laboratorio quiero generar el informe final y previsualizarlo para revisar la presentación y datos consolidados antes de entregarlo.
+
+Criterios de aceptación:
+* El informe debe consolidar automáticamente datos del cliente, de la muestra, pruebas realizadas y resultados con unidades.
+* Se debe mostrar una previsualización completa en pantalla con el formato institucional del laboratorio.
+* Al generarse el informe, el estudio debe actualizar su estado a ""Informe Generado"".
+
+Responsable (cronograma): Martino","","semana-5"
+"26","6","Story","7.3 Consultar y exportar informe","Como empleado del laboratorio quiero consultar los informes generados y seleccionar el formato de exportación para entregar los resultados al cliente de forma física o digital.
+
+Criterios de aceptación:
+* Se debe poder buscar y acceder a los informes de estudios finalizados.
+* Se debe poder seleccionar el formato de exportación deseado (ej. PDF o imprimir en hoja A4).
+* El documento exportado debe mantener fidelidad de datos, membrete y firma profesional.
+* El informe emitido debe quedar registrado inalterable para auditorías y consultas posteriores.
+
+Responsable (cronograma): Federico","","semana-5"
+"27","7","Story","8.1 Comparar resultados con el historial del origen","Como responsable técnico quiero identificar el origen de una muestra y comparar el resultado actual con el historial de ese mismo origen para detectar variaciones que requieran revisión.
+
+Criterios de aceptación:
+* La muestra debe poder asociarse a un origen identificable.
+* Se debe poder seleccionar una prueba y consultar resultados históricos comparables del mismo origen.
+* El dashboard debe mostrar el resultado actual junto con la evolución histórica.
+* Se debe indicar la variación observada sin validar ni rechazar automáticamente el resultado.
+
+Responsable (cronograma): a definir
+
+Nota: Diferencial pedido por la profesora: no recortar.","","semana-5"
+"28","7","Story","8.2 Notificar desvíos relevantes","Como responsable técnico quiero recibir una notificación cuando un resultado presente una variación relevante respecto del historial del mismo origen para revisar la medición antes de validar el estudio.
+
+Criterios de aceptación:
+* La notificación debe identificar la muestra, el origen, la prueba y el resultado observado.
+* La regla o umbral de desvío se debe definir en la spec técnica.
+* La notificación debe permitir acceder al detalle y al historial comparado.
+* La alerta debe poder marcarse como revisada y no debe validar ni rechazar automáticamente el resultado.
+
+Responsable (cronograma): a definir
+
+Nota: Diferencial pedido por la profesora: no recortar. Falta definir qué es una variación relevante.","","semana-6"
+"29","","Task","Constitution de Spec Kit","Definir las reglas del proyecto con /speckit-constitution: stack, convenciones, tests, flujo de PR y reglas de UI. Es lo primero del sprint: la IA la usa en todas las specs. La revisa todo el grupo.
+
+Responsable: Juan Pablo","","semana-1"
+"30","","Task","Setup de infraestructura","Proyecto Django vacío, Docker Compose (app + PostgreSQL), GitHub Actions (pytest + ruff) y layout base con Bootstrap (UI mínima del Sprint 1). Va antes de las US del sprint para evitar bloqueos entre ellas.
+
+Responsable: a definir","","semana-1"
+"31","","Task","Precargar las pruebas definidas por el científico","Cargar en la base las pruebas (fórmula, unidades, límites normativos) para que el catálogo (5.5) y la creación de estudios (5.1) tengan datos. Puede hacerse con el panel de administración de Django o con fixtures.
+
+Responsable: a definir","","semana-3"
+"32","","Task","Deploy en Render","Poner la app online en Render. Crear la base de Render recién esta semana: la base gratis vence a los 30 días.
+
+Responsable: a definir","","semana-5"
