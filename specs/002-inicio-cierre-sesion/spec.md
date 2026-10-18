@@ -20,18 +20,20 @@ Como usuario del sistema, quiero iniciar sesión con mis credenciales y poder ce
 
 **Acceptance Scenarios**:
 
-1. **Given** una cuenta activa y una persona sin sesión iniciada, **When** ingresa el usuario o correo y la contraseña correctos, **Then** el sistema inicia la sesión, muestra la pantalla principal e identifica a la persona por su nombre.
+1. **Given** una cuenta aprobada y una persona sin sesión iniciada, **When** ingresa el correo electrónico y la contraseña correctos, **Then** el sistema inicia la sesión, muestra la pantalla principal e identifica a la persona por su nombre.
 2. **Given** una persona que ya inició sesión, **When** intenta acceder nuevamente a la pantalla de inicio de sesión, **Then** el sistema la dirige a la pantalla principal.
-3. **Given** el formulario de inicio de sesión, **When** falta el identificador o la contraseña, **Then** el sistema solicita completar ambos campos sin intentar el ingreso.
-4. **Given** credenciales que no corresponden a una cuenta activa, **When** la persona intenta ingresar, **Then** el sistema no inicia sesión y muestra el mensaje genérico "Usuario o contraseña incorrectos".
+3. **Given** el formulario de inicio de sesión, **When** falta el correo electrónico o la contraseña, **Then** el sistema solicita completar ambos campos sin intentar el ingreso.
+4. **Given** un correo que no corresponde a ninguna cuenta o una contraseña incorrecta, **When** la persona intenta ingresar, **Then** el sistema no inicia sesión y muestra el mensaje genérico "Usuario o contraseña incorrectos".
 5. **Given** una persona sin sesión, **When** solicita cualquier pantalla protegida, **Then** el sistema la redirige al inicio de sesión sin mostrar el contenido solicitado.
 6. **Given** una persona con sesión activa en cualquier pantalla protegida, **When** elige cerrar sesión, **Then** el sistema finaliza la sesión y la redirige al inicio de sesión.
 7. **Given** una sesión cerrada, **When** la persona usa Atrás, actualiza una página anterior o intenta reutilizar su dirección, **Then** el sistema no muestra contenido protegido y vuelve a exigir el inicio de sesión.
+8. **Given** una cuenta en estado "pendiente de aprobación", **When** la persona ingresa su correo y su contraseña correctos, **Then** el sistema no inicia sesión y muestra el mensaje "Tu cuenta está pendiente de aprobación".
 
 ### Edge Cases
 
-- Un identificador con espacios laterales se evalúa sin esos espacios; la contraseña se evalúa exactamente como fue ingresada.
-- Una cuenta inexistente, una contraseña incorrecta y una cuenta no habilitada producen el mismo mensaje genérico.
+- Un correo con espacios laterales o diferencias de mayúsculas y minúsculas se evalúa normalizado; la contraseña se evalúa exactamente como fue ingresada.
+- Una cuenta inexistente y una contraseña incorrecta producen el mismo mensaje genérico.
+- El mensaje de cuenta pendiente solo se muestra cuando la contraseña es correcta, para no revelar a terceros qué correos tienen una cuenta.
 - Abrir varias pestañas no mantiene acceso en ninguna de ellas después de cerrar la misma sesión.
 - Repetir la acción de cerrar sesión no expone un error ni vuelve a habilitar la sesión anterior.
 - Solicitar directamente una dirección protegida sin sesión nunca muestra parcialmente su contenido.
@@ -42,9 +44,9 @@ Como usuario del sistema, quiero iniciar sesión con mis credenciales y poder ce
 ### Functional Requirements
 
 - **FR-001**: El sistema MUST ofrecer un formulario de inicio de sesión accesible a personas no autenticadas.
-- **FR-002**: El sistema MUST solicitar el identificador de acceso y la contraseña.
+- **FR-002**: El sistema MUST solicitar el correo electrónico y la contraseña.
 - **FR-003**: El sistema MUST validar que ambos campos estén completos antes de intentar autenticar.
-- **FR-004**: El sistema MUST permitir el ingreso únicamente cuando las credenciales correspondan a una cuenta activa.
+- **FR-004**: El sistema MUST permitir el ingreso únicamente cuando las credenciales correspondan a una cuenta aprobada.
 - **FR-005**: El sistema MUST mostrar "Usuario o contraseña incorrectos" para cualquier combinación inválida, sin identificar el dato que falló ni confirmar la existencia de una cuenta.
 - **FR-006**: El sistema MUST dirigir a la pantalla principal después de un ingreso correcto.
 - **FR-007**: La pantalla principal MUST mostrar el nombre de la persona autenticada.
@@ -55,10 +57,11 @@ Como usuario del sistema, quiero iniciar sesión con mis credenciales y poder ce
 - **FR-012**: Después del cierre, el sistema MUST impedir el acceso a pantallas protegidas mediante Atrás, actualización o acceso directo a una dirección previamente visitada.
 - **FR-013**: El cierre de una sesión MUST afectar todas las pestañas que utilicen esa misma sesión.
 - **FR-014**: Esta feature MUST limitarse al inicio, protección de acceso y cierre de sesión; recuperación de contraseña, autenticación multifactor y administración de roles quedan fuera de alcance.
+- **FR-015**: Cuando el correo y la contraseña sean correctos pero la cuenta esté pendiente de aprobación, el sistema MUST rechazar el ingreso y mostrar "Tu cuenta está pendiente de aprobación".
 
 ### Key Entities *(include if feature involves data)*
 
-- **Usuario autenticable**: Cuenta activa creada por la US 1.1, identificada por usuario o correo y asociada al nombre que se muestra después del ingreso.
+- **Usuario autenticable**: Cuenta aprobada creada por la US 1.1, identificada por su correo electrónico y asociada al nombre que se muestra después del ingreso.
 - **Sesión**: Estado temporal que representa que una persona fue autenticada y puede acceder a funciones protegidas hasta que cierre la sesión o esta deje de ser válida.
 
 ## Success Criteria *(mandatory)*
@@ -69,12 +72,12 @@ Como usuario del sistema, quiero iniciar sesión con mis credenciales y poder ce
 - **SC-002**: El 100% de los intentos con campos vacíos o credenciales inválidas son rechazados sin crear una sesión.
 - **SC-003**: El 100% de las pantallas protegidas redirigen al inicio de sesión cuando se solicitan sin una sesión activa.
 - **SC-004**: El 100% de las sesiones cerradas dejan de permitir acceso mediante Atrás, actualización o direcciones previamente visitadas.
-- **SC-005**: Al menos el 90% de usuarios representativos puede iniciar y cerrar sesión en el primer intento, sin asistencia externa.
+- **SC-005**: El 100% de los intentos de ingreso con una cuenta pendiente de aprobación son rechazados.
 
 ## Assumptions
 
-- Las cuentas y credenciales válidas provienen de la US 1.1.
-- "Usuario/email" significa el mismo identificador elegido al registrar la cuenta.
+- Las cuentas y credenciales válidas provienen de la US 1.1, y solo las cuentas aprobadas pueden ingresar.
+- Decisión del equipo: el correo electrónico es el único identificador de acceso (el criterio original decía "usuario/email").
 - El criterio de Jira que menciona mostrar el rol se corrige para mostrar únicamente el nombre: los roles fueron retirados de la US 1.1 y no están definidos para el Sprint 1.
 - Registro e inicio de sesión son las únicas pantallas públicas del alcance actual.
 - El cierre invalida la sesión utilizada por todas las pestañas del mismo navegador; cerrar otras sesiones abiertas en otros dispositivos queda fuera de alcance.
