@@ -37,7 +37,7 @@ Mensajes de error (junto al campo, con `is-invalid` de Bootstrap):
 | Caso | Mensaje |
 |---|---|
 | Campo vacío | "Este campo es obligatorio." (mensaje estándar de Django en español) |
-| Email con formato inválido | "Introduzca una dirección de correo electrónico válida." (estándar de Django) |
+| Email con formato inválido | "Introduzca una dirección de email válida." (estándar de Django con `LANGUAGE_CODE="es-ar"`) |
 | Email ya registrado (cualquier mayúscula/espacio, cuenta pendiente o aprobada) | "Este correo no está disponible." |
 | Contraseñas distintas | Mensaje estándar de `BaseUserCreationForm` |
 | Contraseña débil | Mensajes de `AUTH_PASSWORD_VALIDATORS` |
