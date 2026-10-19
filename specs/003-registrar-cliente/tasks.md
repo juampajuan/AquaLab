@@ -43,7 +43,7 @@ en su fase.
 **Purpose**: confirmar que el entorno actual funciona en esta rama antes de agregar la app
 `clientes`.
 
-- [ ] T001 Verificar el entorno en `docker-compose.yml`: correr `docker compose up -d --build`, `docker compose exec web python manage.py migrate` y `docker compose exec web pytest` para confirmar que la base y los tests existentes pasan sin errores. No modificar archivos del setup.
+- [X] T001 Verificar el entorno en `docker-compose.yml`: correr `docker compose up -d --build`, `docker compose exec web python manage.py migrate` y `docker compose exec web pytest` para confirmar que la base y los tests existentes pasan sin errores. No modificar archivos del setup.
 
 ---
 
@@ -54,8 +54,8 @@ migración inicial y las fixtures que necesitan tanto los tests como la implemen
 
 **⚠️ CRITICAL**: no empezar la fase 3 hasta terminar esta fase.
 
-- [ ] T002 Crear la estructura base de la app `clientes` (`clientes/__init__.py`, `clientes/apps.py` con `ClientesConfig` donde `name = "clientes"`, `verbose_name = "Clientes"` y `default_auto_field = "django.db.models.BigAutoField"`, `clientes/migrations/__init__.py`, `clientes/tests/__init__.py`) y agregar `"clientes"` a `INSTALLED_APPS` en `config/settings.py`.
-- [ ] T003 Implementar en `clientes/models.py` el modelo `Cliente`, la enumeración `TipoDocumento` y las funciones de normalización y validación según `data-model.md` (depende de T002):
+- [X] T002 Crear la estructura base de la app `clientes` (`clientes/__init__.py`, `clientes/apps.py` con `ClientesConfig` donde `name = "clientes"`, `verbose_name = "Clientes"` y `default_auto_field = "django.db.models.BigAutoField"`, `clientes/migrations/__init__.py`, `clientes/tests/__init__.py`) y agregar `"clientes"` a `INSTALLED_APPS` en `config/settings.py`.
+- [X] T003 Implementar en `clientes/models.py` el modelo `Cliente`, la enumeración `TipoDocumento` y las funciones de normalización y validación según `data-model.md` (depende de T002):
   - `TipoDocumento(models.TextChoices)` con `DNI = "DNI", "DNI"` y `CUIT = "CUIT", "CUIT"`.
   - `normalizar_numero_documento(valor)`: elimina espacios, puntos y guiones con `re.sub(r"[\s.\-]", "", valor or "")`.
   - `es_cuit_valido(cuit)`: comprueba que `cuit` tenga 11 dígitos numéricos y que su undécimo dígito coincida con el cálculo módulo 11 con pesos `[5, 4, 3, 2, 7, 6, 5, 4, 3, 2]` (`resto = suma % 11`; `dv = 0` si `resto == 0`, `9` si `resto == 1`, `11 - resto` en otro caso).
@@ -73,9 +73,9 @@ migración inicial y las fixtures que necesitan tanto los tests como la implemen
     - `fecha_alta = models.DateTimeField("fecha de alta", auto_now_add=True)`.
   - `Meta`: `verbose_name = "cliente"`, `verbose_name_plural = "clientes"`, `ordering = ("razon_social", "nombre", "id")`, `UniqueConstraint(fields=["tipo_documento", "numero_documento"], name="cliente_documento_unico", violation_error_message="Ya existe un cliente registrado con este tipo y número de documento.")` y `CheckConstraint(condition=~Q(nombre="", razon_social=""), name="cliente_nombre_o_razon_social_obligatorio")`.
   - Propiedad `nombre_completo`, `__str__` y `clean()` que normaliza los campos, verifica que al menos uno entre `nombre` y `razon_social` no esté vacío (`"Debés ingresar al menos el nombre o la razón social del cliente."`) y ejecuta `validar_documento` y `validar_telefono`.
-- [ ] T004 Generar la migración inicial `clientes/migrations/0001_initial.py` con `docker compose exec web python manage.py makemigrations clientes` y aplicarla con `docker compose exec web python manage.py migrate` (depende de T003).
-- [ ] T005 [P] Crear `clientes/urls.py` con `app_name = "clientes"` y `urlpatterns = []`, y registrar `path("clientes/", include("clientes.urls"))` en `config/urls.py` (depende de T002).
-- [ ] T006 [P] Crear `clientes/tests/conftest.py` con fixtures compartidas para los tests de `clientes` (depende de T003):
+- [X] T004 Generar la migración inicial `clientes/migrations/0001_initial.py` con `docker compose exec web python manage.py makemigrations clientes` y aplicarla con `docker compose exec web python manage.py migrate` (depende de T003).
+- [X] T005 [P] Crear `clientes/urls.py` con `app_name = "clientes"` y `urlpatterns = []`, y registrar `path("clientes/", include("clientes.urls"))` en `config/urls.py` (depende de T002).
+- [X] T006 [P] Crear `clientes/tests/conftest.py` con fixtures compartidas para los tests de `clientes` (depende de T003):
   - `empleado`: usuario activo creado con `django_user_model.objects.create_user(email="empleado@lab.com", password="Clave-Valida-123", first_name="Laura", last_name="Martínez", is_active=True)`.
   - `cliente_autenticado`: `Client` con `force_login(empleado)`.
   - `datos_cliente_persona`: dict válido con `nombre="Juan Pérez"`, `razon_social=""`, `tipo_documento="DNI"`, `numero_documento="30.123.456"`, `email="juan@ejemplo.com"`, `telefono="+54 11 4321-5678"`, `domicilio="Av. Corrientes 1234"`.
