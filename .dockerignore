@@ -6,4 +6,4 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
-archivos_aparte/
+docs/

@@ -10,4 +10,4 @@ select = ["E", "F", "W", "I", "B", "UP", "DJ"]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py", "tests.py"]
 testpaths = ["."]
-norecursedirs = [".git", ".specify", "specs", "archivos_aparte", "templates"]
+norecursedirs = [".git", ".specify", "specs", "docs", "templates"]
