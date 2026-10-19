@@ -59,9 +59,9 @@ NEEDS CLARIFICATION pendientes.
 | **IV. Integridad de datos** | Unicidad del correo validada en el formulario **y** garantizada por constraint en la base (R2). Sin datos numéricos ni registros con historial en esta feature. No se borran cuentas (rechazo/eliminación fuera de alcance). | ✅ |
 | **V. Seguridad** | `LoginRequiredMiddleware` global; solo las vistas de registro son públicas (`@login_not_required`). Contraseña hasheada antes de guardarla en sesión y en la base; nunca se muestra. CSRF activo. Secretos por `.env`. | ✅ |
 | **VI. Idioma y consistencia** | UI y mensajes en español; `verbose_name` en español; modelo `Usuario` y vistas/formularios en español. Los campos heredados de Django (`first_name`, `last_name`, `is_active`, `email`) quedan con su nombre ("lo propio de Django queda como es"). | ✅ |
-| **UI** | Extiende `base.html`, Bootstrap 5.3, errores junto a cada campo, mensajes con el framework de mensajes, **confirmación antes de guardar** (es justamente el paso de revisión). | ✅ |
+| **UI** | Extiende `base.html`, Bootstrap 5.3, errores junto a cada campo, mensajes con el framework de mensajes, **confirmación antes de guardar** (es justamente el paso de revisión). Excepción justificada: la acción "Aprobar cuentas seleccionadas" del admin no tiene confirmación propia (ver [Complexity Tracking](#complexity-tracking)). | ✅ con excepción |
 
-**Resultado**: sin violaciones. **Re-chequeo post-diseño (Phase 1)**: sin cambios; el diseño de
+**Resultado**: sin violaciones no justificadas. **Re-chequeo post-diseño (Phase 1)**: sin cambios; el diseño de
 [data-model.md](./data-model.md) y [contracts/](./contracts/) mantiene todos los puntos.
 
 ## Requisitos para el setup
@@ -249,4 +249,6 @@ por módulo (principio II); esta feature vive entera en `usuarios/`. Los tests v
 
 ## Complexity Tracking
 
-Sin violaciones de la constitution: no aplica.
+| Excepción | Principio / regla | Justificación |
+|---|---|---|
+| La acción del admin "Aprobar cuentas seleccionadas" se ejecuta sin una pantalla de confirmación propia | Constitution, sección Interfaz: "las acciones que guardan o eliminan datos piden confirmación antes de ejecutarse" | Es una herramienta interna del admin de Django, usada solo por administradores, no una pantalla del laboratorio. Ya requiere un paso explícito (seleccionar las cuentas, elegir la acción y ejecutarla), es idempotente (aprobar una cuenta ya aprobada no cambia nada) y es reversible (destildando "Aprobada" en la ficha). Agregar una página intermedia sumaría código y tests sin valor para el usuario (principio II). Decisión del equipo a partir del `/speckit-analyze` (hallazgo D1). |

@@ -58,16 +58,16 @@ Acciones:
 
 | Acción | Elemento | Efecto |
 |---|---|---|
-| Confirmar | `<button name="accion" value="confirmar">` en form POST | Crea la cuenta. El botón se deshabilita al enviar |
+| Confirmar | form POST con `<input type="hidden" name="accion" value="confirmar">` y botón **Confirmar** | Crea la cuenta. El botón se deshabilita al enviar; como `accion` va en el input oculto, deshabilitar el botón no la saca del POST |
 | Volver y editar | link GET a `usuarios:registro` | Vuelve al formulario con nombre, apellido y correo precargados; la contraseña se reingresa |
-| Cancelar | `<button name="accion" value="cancelar">` en form POST | Descarta los datos sin crear la cuenta |
+| Cancelar | otro form POST con `<input type="hidden" name="accion" value="cancelar">` y botón **Cancelar** | Descarta los datos sin crear la cuenta |
 
 Comportamiento del POST `confirmar`:
 
 | Situación | Respuesta |
 |---|---|
 | Datos en sesión y correo disponible | Crea `Usuario(is_active=False)`, borra la sesión de registro, 302 a `registro_recibido` + mensaje de éxito |
-| Sin datos en sesión (confirmación repetida después del éxito) | 302 a `registro_recibido`, no crea nada |
+| Sin datos en sesión (confirmación repetida después del éxito) | 302 a `registro_recibido` con el mismo mensaje de éxito (como informativo), no crea nada |
 | El correo ya existe al confirmar (tomado por otra solicitud o por una confirmación simultánea) | No crea una segunda cuenta; 302 a `registro` con error "Este correo no está disponible." |
 | Error de base de datos | 200 con la revisión y el mensaje "No se pudo completar el registro. Intentá nuevamente." |
 
