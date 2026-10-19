@@ -10,3 +10,5 @@ Cuando una feature resuelva un pendiente, borrar su línea.
 - **US 1.2:** una cuenta pendiente de aprobación es `is_active=False`. Para mostrar "Tu cuenta está
   pendiente de aprobación" solo con contraseña correcta, ver la decisión R3 en
   `specs/001-registrar-usuario/research.md`.
+- **US 1.2:** agregar un link "Iniciar sesión" en `usuarios/templates/usuarios/registro_recibido.html`
+  y, desde la pantalla de login, un link a `usuarios:registro` ("Crear cuenta").

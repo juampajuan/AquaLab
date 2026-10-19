@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Registro recibido – AquaLab{% endblock %}
+
+{% block content %}
+  {# Los mensajes del registro ya los muestra base.html. #}
+  {% if not messages %}
+    <p>No hay un registro en curso.</p>
+    <a href="{% url 'usuarios:registro' %}" class="btn btn-primary">Crear cuenta</a>
+  {% endif %}
+{% endblock %}
