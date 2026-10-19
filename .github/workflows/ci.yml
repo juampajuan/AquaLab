@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  ruff-y-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_DB: aqualab
+          POSTGRES_USER: aqualab
+          POSTGRES_PASSWORD: aqualab
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U aqualab -d aqualab"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      SECRET_KEY: clave-solo-para-ci
+      DEBUG: "False"
+      DATABASE_URL: postgres://aqualab:aqualab@localhost:5432/aqualab
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: ruff check
+        run: ruff check .
+
+      - name: ruff format --check
+        run: ruff format --check .
+
+      - name: Migraciones al día
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: pytest
+        run: pytest
