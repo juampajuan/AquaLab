@@ -44,7 +44,7 @@ en su fase.
 
 **Purpose**: confirmar que la base del setup funciona en esta rama antes de empezar.
 
-- [ ] T001 Verificar el entorno: `docker compose up -d --build`, `docker compose exec web python manage.py migrate` y `docker compose exec web pytest usuarios` deben terminar sin errores con el código actual (`usuarios/tests/test_setup.py` en verde). No modificar archivos del setup.
+- [X] T001 Verificar el entorno: `docker compose up -d --build`, `docker compose exec web python manage.py migrate` y `docker compose exec web pytest usuarios` deben terminar sin errores con el código actual (`usuarios/tests/test_setup.py` en verde). No modificar archivos del setup.
 
 ---
 
@@ -54,10 +54,10 @@ en su fase.
 
 **⚠️ CRITICAL**: no empezar la fase 3 hasta terminar esta.
 
-- [ ] T002 Redefinir en `usuarios/models.py` (clase `Usuario`) los campos heredados para que el admin muestre los conceptos del dominio, sin cambiar su comportamiento: `is_active = models.BooleanField("aprobada", default=True, help_text="Indica si un administrador aprobó la cuenta. Las cuentas pendientes de aprobación no pueden iniciar sesión.")` y `date_joined = models.DateTimeField("fecha de registro", default=timezone.now)` (importar `django.utils.timezone`). `default=True` se mantiene a propósito: `create_user` sigue creando cuentas activas y el **registro** pasa `is_active=False` explícitamente (data-model.md, `UsuarioManager`).
-- [ ] T003 Generar la migración con `docker compose exec web python manage.py makemigrations usuarios` → `usuarios/migrations/0002_...py` (solo `AlterField` de `is_active` y `date_joined`, sin cambios de esquema en la base). No editar `0001_initial.py`. Correr `migrate` (depende de T002).
-- [ ] T004 [P] Crear `usuarios/forms.py` y **mover** ahí `UsuarioChangeForm` y `UsuarioCreationForm` desde `usuarios/admin.py` sin cambiar su contenido; en `usuarios/admin.py` importarlos con `from .forms import UsuarioChangeForm, UsuarioCreationForm` (plan, "Componentes": los formularios del admin viven en `forms.py`).
-- [ ] T005 [P] Crear `usuarios/tests/conftest.py` con fixtures compartidas (todas usan `django_user_model` / `Usuario`):
+- [X] T002 Redefinir en `usuarios/models.py` (clase `Usuario`) los campos heredados para que el admin muestre los conceptos del dominio, sin cambiar su comportamiento: `is_active = models.BooleanField("aprobada", default=True, help_text="Indica si un administrador aprobó la cuenta. Las cuentas pendientes de aprobación no pueden iniciar sesión.")` y `date_joined = models.DateTimeField("fecha de registro", default=timezone.now)` (importar `django.utils.timezone`). `default=True` se mantiene a propósito: `create_user` sigue creando cuentas activas y el **registro** pasa `is_active=False` explícitamente (data-model.md, `UsuarioManager`).
+- [X] T003 Generar la migración con `docker compose exec web python manage.py makemigrations usuarios` → `usuarios/migrations/0002_...py` (solo `AlterField` de `is_active` y `date_joined`, sin cambios de esquema en la base). No editar `0001_initial.py`. Correr `migrate` (depende de T002).
+- [X] T004 [P] Crear `usuarios/forms.py` y **mover** ahí `UsuarioChangeForm` y `UsuarioCreationForm` desde `usuarios/admin.py` sin cambiar su contenido; en `usuarios/admin.py` importarlos con `from .forms import UsuarioChangeForm, UsuarioCreationForm` (plan, "Componentes": los formularios del admin viven en `forms.py`).
+- [X] T005 [P] Crear `usuarios/tests/conftest.py` con fixtures compartidas (todas usan `django_user_model` / `Usuario`):
   - `datos_registro`: dict válido para el POST del formulario: `first_name="Ana"`, `last_name="Pérez"`, `email="ana@lab.com"`, `password1` y `password2` iguales a una contraseña que pase los validadores por defecto y sea fácil de buscar en el HTML (p. ej. `"Clave-Secreta-Unica-987"`).
   - `password_registro`: la contraseña en texto plano de `datos_registro` (para buscarla en respuestas y probar `authenticate`).
   - `usuario_pendiente`: `Usuario.objects.create_user(email="pendiente@lab.com", password=..., first_name="Pedro", last_name="Gómez", is_active=False)`.

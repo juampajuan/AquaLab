@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.db.models.functions import Lower
+from django.utils import timezone
 
 
 class UsuarioManager(BaseUserManager):
@@ -32,6 +33,15 @@ class Usuario(AbstractUser):
     email = models.EmailField("correo electrónico", unique=True)
     first_name = models.CharField("nombre", max_length=150)
     last_name = models.CharField("apellido", max_length=150)
+    is_active = models.BooleanField(
+        "aprobada",
+        default=True,
+        help_text=(
+            "Indica si un administrador aprobó la cuenta. "
+            "Las cuentas pendientes de aprobación no pueden iniciar sesión."
+        ),
+    )
+    date_joined = models.DateTimeField("fecha de registro", default=timezone.now)
 
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
