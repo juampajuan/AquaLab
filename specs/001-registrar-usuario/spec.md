@@ -57,6 +57,7 @@ Como usuario del sistema, quiero registrarme ingresando mi información personal
 - **FR-013**: Un administrador del sistema MUST poder aprobar una cuenta pendiente; una vez aprobada, la cuenta queda habilitada para iniciar sesión.
 - **FR-014**: El sistema MUST evitar exponer la contraseña en la revisión, los mensajes de validación y la confirmación final.
 - **FR-015**: Esta feature MUST limitarse al alta de la cuenta y su aprobación; recuperación de contraseña, verificación de correo, asignación de roles, rechazo o eliminación de solicitudes, notificaciones de aprobación y edición posterior quedan fuera de alcance.
+- **FR-016**: El sistema MUST pedir la contraseña dos veces y rechazar el registro si no coinciden. La contraseña MUST tener al menos 8 caracteres, no ser una contraseña de uso común, no estar compuesta solo por números y no parecerse a los datos personales ingresados.
 
 ### Key Entities *(include if feature involves data)*
 
