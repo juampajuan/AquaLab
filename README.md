@@ -57,11 +57,20 @@ No hace falta instalar Python ni PostgreSQL en la máquina: todo corre dentro de
    docker compose exec web python manage.py createsuperuser
    ```
 
-6. Abrir <http://localhost:8000>. Sin sesión, redirige al login (por ahora, el del admin en
-   <http://localhost:8000/admin/>).
+6. Abrir <http://localhost:8000>. Sin sesión, redirige a
+   <http://localhost:8000/usuarios/login/>. El administrador aprueba cuentas desde
+   <http://localhost:8000/admin/>.
 
 Para ver los logs: `docker compose logs -f web`. Para apagar: `docker compose down`
 (agregar `-v` borra también la base de datos).
+
+
+## Inicio y cierre de sesión
+
+Las cuentas nuevas se registran en `/usuarios/registro/` y quedan pendientes de aprobación.
+Solo una cuenta aprobada puede ingresar con correo y contraseña. El correo usa la misma
+normalización del registro; la contraseña se evalúa exactamente como fue ingresada.
+
 
 ## Tests y formato
 

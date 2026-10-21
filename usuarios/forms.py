@@ -1,6 +1,13 @@
 from django import forms
-from django.contrib.auth.forms import AdminUserCreationForm, BaseUserCreationForm, UserChangeForm
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.forms import (
+    AdminUserCreationForm,
+    AuthenticationForm,
+    BaseUserCreationForm,
+    UserChangeForm,
+)
+from django.contrib.auth.hashers import check_password, make_password
+from django.db import DatabaseError
+from django.views.decorators.debug import sensitive_variables
 
 from .models import Usuario, UsuarioManager
 
@@ -57,3 +64,50 @@ class RegistroForm(BaseUserCreationForm):
             "email": self.cleaned_data["email"],
             "password": make_password(self.cleaned_data["password1"]),
         }
+
+
+class FormularioInicioSesion(AuthenticationForm):
+    username = forms.CharField(
+        label="Correo electrónico",
+        max_length=254,
+        widget=forms.TextInput(attrs={"autocomplete": "username", "autofocus": True}),
+    )
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "invalid_login": "Usuario o contraseña incorrectos",
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password"].label = "Contraseña"
+        for campo in self.fields.values():
+            campo.widget.attrs["class"] = "form-control"
+
+    def clean_username(self):
+        return UsuarioManager.normalizar_email(self.cleaned_data["username"])
+
+    @sensitive_variables()
+    def clean(self):
+        try:
+            return super().clean()
+        except DatabaseError:
+            self.user_cache = None
+            raise forms.ValidationError(
+                "No se pudo iniciar sesión. Intentá nuevamente.", code="operacion_fallida"
+            ) from None
+
+    @sensitive_variables()
+    def get_invalid_login_error(self):
+        # Diagnóstico, nunca una segunda vía de autenticación. Todas las ramas
+        # fallidas hacen una consulta y una comprobación real o ficticia Django.
+        try:
+            cuenta = Usuario._default_manager.get_by_natural_key(self.cleaned_data["username"])
+        except Usuario.DoesNotExist:
+            cuenta = None
+        encoded = cuenta.password if cuenta is not None else make_password(None)
+        coincide = check_password(self.cleaned_data["password"], encoded)
+        if coincide and cuenta is not None and not cuenta.is_active:
+            return forms.ValidationError(
+                "Tu cuenta está pendiente de aprobación", code="pendiente_aprobacion"
+            )
+        return super().get_invalid_login_error()

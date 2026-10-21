@@ -18,3 +18,10 @@ media/
 .vscode/
 .idea/
 .DS_Store
+
+# Artefactos de empaquetado Python
+dist/
+*.egg-info/
+Thumbs.db
+*.tmp
+*.swp
