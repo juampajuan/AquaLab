@@ -1,9 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_not_required
+from django.contrib.auth.views import LoginView, LogoutView
 from django.db import DatabaseError, IntegrityError, transaction
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.utils.crypto import constant_time_compare
+from django.views.decorators.http import require_GET
 
-from .forms import RegistroForm
+from .context_processors import huella_para
+from .forms import FormularioInicioSesion, RegistroForm
 from .models import Usuario
 
 CLAVE_SESION = "registro_pendiente"
@@ -77,3 +83,25 @@ def registro_confirmar(request):
 @login_not_required
 def registro_recibido(request):
     return render(request, "usuarios/registro_recibido.html")
+
+
+class InicioSesionView(LoginView):
+    authentication_form = FormularioInicioSesion
+    template_name = "usuarios/login.html"
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        return reverse("inicio")
+
+
+class CerrarSesionView(LogoutView):
+    def get_success_url(self):
+        return reverse("usuarios:login")
+
+
+@require_GET
+def sesion(request):
+    original = request.headers.get("X-AquaLab-Sesion", "")
+    actual = huella_para(request)
+    valida = bool(original and actual and constant_time_compare(original, actual))
+    return HttpResponse(status=204 if valida else 409)

@@ -1,0 +1,11 @@
+{% load static %}
+{% if user.is_authenticated and huella_sesion %}
+<div id="sesion-aviso" class="container my-4" role="status" aria-live="polite">
+  <p id="sesion-mensaje">Comprobando la sesión…</p>
+  <button id="sesion-reintentar" type="button" class="btn btn-primary">Reintentar</button>
+  <a href="{% url 'usuarios:login' %}">Ir al inicio de sesión</a>
+</div>
+<script src="{% static 'usuarios/sesion.js' %}" defer data-sesion-guardia
+        data-huella="{{ huella_sesion }}" data-verificar="{% url 'usuarios:sesion' %}"
+        data-login="{% url 'usuarios:login' %}"></script>
+{% endif %}

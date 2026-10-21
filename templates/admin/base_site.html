@@ -1,0 +1,12 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ title }} · Administración AquaLab{% endblock %}
+{% block branding %}<h1 id="site-name"><a href="{% url 'admin:index' %}">Administración AquaLab</a></h1>{% endblock %}
+{% block extrastyle %}{{ block.super }}{% include "includes/estilo_sesion.html" %}{% endblock %}
+{% block userlinks %}
+  <a href="{% url 'inicio' %}">AquaLab</a> /
+  {% if user.has_usable_password %}<a href="{% url 'admin:password_change' %}">Cambiar contraseña</a> /{% endif %}
+  <form id="logout-form" method="post" action="{% url 'usuarios:logout' %}">
+    {% csrf_token %}<button type="submit">Cerrar sesión</button>
+  </form>
+{% endblock %}
+{% block footer %}{{ block.super }}{% include "includes/guardia_sesion.html" %}{% endblock %}

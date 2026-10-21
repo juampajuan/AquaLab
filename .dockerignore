@@ -7,3 +7,11 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 docs/
+
+# Contexto mínimo de construcción
+node_modules/
+Dockerfile*
+.dockerignore
+*.log*
+.env*
+coverage/

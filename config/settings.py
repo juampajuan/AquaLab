@@ -33,6 +33,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "usuarios.middleware.NoAlmacenarSesionMiddleware",
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -50,6 +51,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "usuarios.context_processors.contexto_sesion",
             ],
         },
     },
@@ -63,8 +65,8 @@ DATABASES = {
 
 AUTH_USER_MODEL = "usuarios.Usuario"
 
-# Mientras no exista la US 1.2 se usa el login del admin.
-LOGIN_URL = "admin:login"
+LOGIN_URL = "usuarios:login"
+LOGOUT_REDIRECT_URL = "usuarios:login"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

@@ -66,3 +66,8 @@ def en_revision(client, datos_registro):
     """Deja el registro en revisión: los datos quedan en `session["registro_pendiente"]`."""
     client.post(reverse("usuarios:registro"), datos_registro)
     return client
+
+
+@pytest.fixture
+def cliente_csrf():
+    return Client(enforce_csrf_checks=True)
