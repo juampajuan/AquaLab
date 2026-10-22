@@ -4,9 +4,8 @@
 
 Cuando una feature resuelva un pendiente, borrar su línea.
 
-- **US 3.1 / US 3.2:** el modelo `clientes.Cliente` (con `activo=True`, `cliente.nombre_completo` y
-  búsqueda por `tipo_documento` + `numero_documento` normalizado) y la vista `clientes:detalle` ya
-  están disponibles. Antes de la US 3.2, definir si el dato "persona de contacto" se agrega como
+- **US 3.2:** el modelo `clientes.Cliente` (con `activo=True`, `cliente.nombre_completo`), la vista
+  `clientes:detalle` y la búsqueda `clientes:buscar` ya están disponibles. Antes de la US 3.2, definir si el dato "persona de contacto" se agrega como
   campo opcional en `Cliente` o se registra por muestra (Assumptions de `specs/003-registrar-cliente/spec.md`).
 - **US 4.1:** el envío de informes por correo usa `Cliente.email`.
 
