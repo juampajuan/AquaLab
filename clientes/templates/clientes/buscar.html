@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Buscar cliente · AquaLab{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <h1 class="h3 mb-4">Buscar cliente</h1>
+
+      <form method="get" action="{% url 'clientes:buscar' %}" class="mb-4" novalidate>
+        <label for="{{ form.q.id_for_label }}" class="form-label">{{ form.q.label }}</label>
+        <div class="input-group">
+          <input type="text" name="q" id="{{ form.q.id_for_label }}" value="{{ form.q.value|default:'' }}"
+                 class="form-control{% if form.q.errors %} is-invalid{% endif %}" autofocus>
+          <button type="submit" class="btn btn-primary">Buscar</button>
+          {% for error in form.q.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="form-text">Podés ingresar parte del nombre, de la razón social o del DNI/CUIT (con o sin puntos y guiones).</div>
+      </form>
+
+      {% if page_obj is not None %}
+        {% if page_obj.paginator.count %}
+          <p class="text-muted">{{ page_obj.paginator.count }} cliente{{ page_obj.paginator.count|pluralize }} encontrado{{ page_obj.paginator.count|pluralize }}</p>
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Documento</th>
+                <th>Correo electrónico</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cliente in page_obj %}
+                <tr>
+                  <td>{{ cliente.nombre_completo }}</td>
+                  <td>{{ cliente.tipo_documento }} {{ cliente.numero_documento }}</td>
+                  <td>{{ cliente.email }}</td>
+                  <td class="text-end"><a href="{% url 'clientes:detalle' cliente.pk %}" class="btn btn-outline-primary btn-sm">Ver ficha</a></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginación de resultados">
+              <ul class="pagination">
+                {% if page_obj.has_previous %}
+                  <li class="page-item"><a class="page-link" href="?q={{ q|urlencode }}&page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                  <li class="page-item"><a class="page-link" href="?q={{ q|urlencode }}&page={{ page_obj.next_page_number }}">Siguiente</a></li>
+                {% endif %}
+              </ul>
+            </nav>
+          {% endif %}
+        {% else %}
+          <div class="alert alert-info">No se encontraron clientes para «{{ q }}».</div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

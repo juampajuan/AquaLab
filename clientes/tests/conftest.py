@@ -66,3 +66,27 @@ def en_revision(cliente_autenticado, datos_cliente_empresa):
     """Deja el alta de cliente en revisión: los datos quedan en `session["cliente_pendiente"]`."""
     cliente_autenticado.post(reverse("clientes:registrar"), datos_cliente_empresa)
     return cliente_autenticado
+
+
+@pytest.fixture
+def clientes_busqueda():
+    """Clientes para las pruebas de búsqueda (US 3.1)."""
+    datos = [
+        {"nombre": "Juan Pérez", "tipo_documento": "DNI", "numero_documento": "30123456"},
+        {
+            "razon_social": "Aguas del Sur S.A.",
+            "tipo_documento": "CUIT",
+            "numero_documento": "20123456786",
+        },
+        {
+            "razon_social": "Cooperativa Río Claro",
+            "tipo_documento": "CUIT",
+            "numero_documento": "30500010911",
+        },
+        {"nombre": "Lucía Fernández", "tipo_documento": "DNI", "numero_documento": "28999111"},
+        {"nombre": "María Gómez", "tipo_documento": "DNI", "numero_documento": "20111222"},
+        {"nombre": "María Gómez", "tipo_documento": "DNI", "numero_documento": "27333444"},
+    ]
+    return [
+        Cliente.objects.create(email=f"cliente{i}@ejemplo.com", **d) for i, d in enumerate(datos)
+    ]

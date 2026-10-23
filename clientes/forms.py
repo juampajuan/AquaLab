@@ -109,3 +109,17 @@ class RegistroClienteForm(forms.ModelForm):
     def datos_para_sesion(self):
         """Datos normalizados listos para guardarse en `session['cliente_pendiente']`."""
         return {campo: self.cleaned_data[campo] for campo in CAMPOS_CLIENTE}
+
+
+class BuscarClienteForm(forms.Form):
+    """Texto de búsqueda de clientes (por GET): nombre, razón social o número de documento."""
+
+    q = forms.CharField(
+        label="Nombre, razón social o documento",
+        min_length=2,
+        strip=True,
+        error_messages={
+            "required": "Ingresá un nombre, razón social o número de documento para buscar.",
+            "min_length": "Ingresá al menos 2 caracteres para buscar.",
+        },
+    )
