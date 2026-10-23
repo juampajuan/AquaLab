@@ -4,9 +4,6 @@
 
 Cuando una feature resuelva un pendiente, borrar su línea.
 
-- **US 3.2:** el modelo `clientes.Cliente` (con `activo=True`, `cliente.nombre_completo`), la vista
-  `clientes:detalle` y la búsqueda `clientes:buscar` ya están disponibles. Decidido: no se agrega
-  campo "persona de contacto"; se permiten editar todos los datos registrados del cliente.
 - **US 4.1:** el envío de informes por correo usa `Cliente.email`.
 
 ## Autenticación integrada (US 1.2)

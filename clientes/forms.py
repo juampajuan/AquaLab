@@ -19,7 +19,7 @@ CAMPOS_CLIENTE = (
 
 
 class RegistroClienteForm(forms.ModelForm):
-    """Paso 1 del registro de cliente: valida y normaliza los datos, pero no guarda en la base."""
+    """Paso 1 del alta o edición: valida y normaliza los datos sin guardar en la base."""
 
     numero_documento = forms.CharField(
         label="Número de documento",
@@ -92,9 +92,10 @@ class RegistroClienteForm(forms.ModelForm):
                 except forms.ValidationError as exc:
                     self.add_error(None, exc)
                 else:
-                    if Cliente.objects.filter(
-                        tipo_documento=tipo, numero_documento=numero
-                    ).exists():
+                    qs = Cliente.objects.filter(tipo_documento=tipo, numero_documento=numero)
+                    if self.instance and self.instance.pk:
+                        qs = qs.exclude(pk=self.instance.pk)
+                    if qs.exists():
                         self.add_error(
                             "numero_documento",
                             "Ya existe un cliente registrado con este tipo y número de documento.",
@@ -107,8 +108,11 @@ class RegistroClienteForm(forms.ModelForm):
         pass
 
     def datos_para_sesion(self):
-        """Datos normalizados listos para guardarse en `session['cliente_pendiente']`."""
+        """Datos normalizados listos para guardarse en la sesión durante la revisión."""
         return {campo: self.cleaned_data[campo] for campo in CAMPOS_CLIENTE}
+
+
+EditarClienteForm = RegistroClienteForm
 
 
 class BuscarClienteForm(forms.Form):

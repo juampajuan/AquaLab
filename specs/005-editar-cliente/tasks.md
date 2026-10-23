@@ -40,7 +40,7 @@ registrado); todas las tareas de producto están en su fase.
 **Purpose**: confirmar que el entorno actual y la suite existente de `clientes` corren en verde en
 esta rama antes de tocar código.
 
-- [ ] T001 Verificar el entorno con `docker compose up -d`, `docker compose exec web python manage.py migrate` y `docker compose exec web pytest` sobre `docker-compose.yml` para confirmar que la base y los tests actuales pasan sin errores.
+- [X] T001 Verificar el entorno con `docker compose up -d`, `docker compose exec web python manage.py migrate` y `docker compose exec web pytest` sobre `docker-compose.yml` para confirmar que la base y los tests actuales pasan sin errores.
 
 ---
 
@@ -51,11 +51,11 @@ cliente editado (`research.md` R1) y preparar las fixtures de edición para los 
 
 **⚠️ CRITICAL**: no empezar la fase 3 hasta terminar esta fase.
 
-- [ ] T002 Actualizar `RegistroClienteForm.clean()` y definir `EditarClienteForm` en `clientes/forms.py` según `data-model.md` y `research.md` R1:
+- [X] T002 Actualizar `RegistroClienteForm.clean()` y definir `EditarClienteForm` en `clientes/forms.py` según `data-model.md` y `research.md` R1:
   - Mantener `CAMPOS_CLIENTE = ("nombre", "razon_social", "tipo_documento", "numero_documento", "email", "telefono", "domicilio")` con sus restricciones (`nombre` y `razon_social` `max_length=200`, `blank=True`, al menos uno obligatorio; `tipo_documento` obligatorio con opciones `"DNI"` y `"CUIT"`; `numero_documento` obligatorio normalizado sin espacios, puntos ni guiones, DNI de 7 u 8 dígitos y CUIT de 11 dígitos con dígito verificador módulo 11; `email` obligatorio `max_length=254` en minúsculas; `telefono` opcional `max_length=30` de 7 a 15 dígitos; `domicilio` opcional `max_length=255`).
   - Al verificar unicidad de `(tipo_documento, numero_documento)`, armar el queryset `qs = Cliente.objects.filter(tipo_documento=tipo, numero_documento=numero)` y, si `self.instance and self.instance.pk`, aplicar `qs = qs.exclude(pk=self.instance.pk)` antes de `.exists()`.
   - Definir `EditarClienteForm = RegistroClienteForm` (o subclase equivalente que herede `datos_para_sesion()`).
-- [ ] T003 [P] Agregar en `clientes/tests/conftest.py` las fixtures reutilizables para edición:
+- [X] T003 [P] Agregar en `clientes/tests/conftest.py` las fixtures reutilizables para edición:
   - `otro_cliente`: `Cliente.objects.create(nombre="Juan Pérez", tipo_documento="DNI", numero_documento="30123456", email="juan@ejemplo.com", telefono="+54 11 4321-5678", domicilio="Av. Corrientes 1234")`.
   - `datos_edicion_validos`: dict válido con datos modificados para `cliente_existente` (`nombre="Roberto Gómez"`, `razon_social="Aguas del Sur S.A."`, `tipo_documento="CUIT"`, `numero_documento="20-12345678-6"`, `email="nuevo@aguassur.com"`, `telefono="+54 11 5555-6666"`, `domicilio="Av. Paseo Colón 850"`).
 
@@ -80,7 +80,7 @@ cambios se ven de inmediato en su ficha y en las búsquedas.
 > Ambos tocan `clientes/tests/test_edicion.py` (ejecutar secuencialmente), con
 > `pytestmark = pytest.mark.django_db`.
 
-- [ ] T004 [US1] Crear en `clientes/tests/test_edicion.py` los tests de acceso, precarga y validaciones del formulario de edición (paso 1):
+- [X] T004 [US1] Crear en `clientes/tests/test_edicion.py` los tests de acceso, precarga y validaciones del formulario de edición (paso 1):
   - `test_vistas_edicion_requieren_sesion_activa` (FR-001): GET y POST sin sesión a `clientes:editar` y `clientes:editar_confirmar` responden 302 hacia `settings.LOGIN_URL`.
   - `test_editar_cliente_inexistente_devuelve_404` (FR-013): GET y POST a `clientes:editar` y `clientes:editar_confirmar` con `pk=99999` responden 404.
   - `test_editar_cliente_inactivo_redirige_con_advertencia` (FR-013, Edge case 5): con un cliente `activo=False`, GET y POST a `clientes:editar` y `clientes:editar_confirmar` responden 302 a `clientes:buscar` con el mensaje `"El cliente no está disponible."` y limpian cualquier borrador en sesión.
@@ -89,7 +89,7 @@ cambios se ven de inmediato en su ficha y en las búsquedas.
   - `test_edicion_formatos_invalidos_rechazados_y_conserva_datos` (Esc. 4, FR-006, FR-008, SC-003), parametrizado para `email` inválido (`"mal@"`), `telefono` inválido (`"123"`), DNI inválido (`"12345"`) y CUIT con dígito verificador inválido (`"20-12345678-0"`): responde 200 con el mensaje de error exacto del contrato, conserva en el HTML los demás valores ingresados y no modifica al cliente en la base.
   - `test_edicion_documento_de_otro_cliente_rechazado` (Esc. 5, FR-007, SC-003): intentando editar `cliente_existente` con el DNI de `otro_cliente` (`"30123456"`, `"30.123.456"`, `"30-123-456"`, `" 30 123 456 "`), responde 200 con el error `"Ya existe un cliente registrado con este tipo y número de documento."` una sola vez y no modifica la base.
   - `test_edicion_mismo_documento_propio_con_o_sin_separadores_permitido` (Esc. 6, Edge case 1, FR-007): enviando en `clientes:editar` el mismo CUIT de `cliente_existente` (`"20123456786"` o `"20-12345678-6"` o `"20.123.456.786"`) y cambiando otros datos, responde 302 hacia `clientes:editar_confirmar` y guarda el borrador normalizado en `session[f"cliente_edicion_{cliente_existente.pk}"]`.
-- [ ] T005 [US1] Agregar en `clientes/tests/test_edicion.py` los tests de revisión, confirmación, cancelación, idempotencia y errores de base de datos (paso 2, depende de T004):
+- [X] T005 [US1] Agregar en `clientes/tests/test_edicion.py` los tests de revisión, confirmación, cancelación, idempotencia y errores de base de datos (paso 2, depende de T004):
   - `test_confirmar_edicion_actualiza_cliente_y_refleja_en_detalle` (Esc. 2, FR-009, FR-012, SC-001, SC-002): POST válido a `clientes:editar` → 302 a `clientes:editar_confirmar`; GET de la confirmación muestra `"Revisá los datos modificados del cliente antes de confirmar los cambios."` y el resumen de datos; POST `accion=confirmar` → 302 a `clientes:detalle`, mensaje `"Datos del cliente actualizados correctamente."`, `cliente_existente.refresh_from_db()` refleja todos los datos nuevos, el borrador ya no está en la sesión y la ficha muestra los datos actualizados.
   - `test_edicion_permite_vaciar_telefono_y_domicilio` (Edge case 4, FR-005): sobre `otro_cliente` (que tiene `telefono` y `domicilio` cargados), editar dejando `telefono=""` y `domicilio=""` y confirmar actualiza ambos campos a `""` en la base.
   - `test_volver_y_editar_conserva_borrador_sin_modificar_bd` (Esc. 7, FR-010): con borrador en sesión, GET a `/clientes/<pk>/editar/?volver=1` devuelve 200 precargando los valores modificados de la sesión, mientras en la base siguen los valores originales.
@@ -100,17 +100,17 @@ cambios se ven de inmediato en su ficha y en las búsquedas.
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Implementar en `clientes/views.py` las funciones `clave_sesion_edicion(pk)`, `actualizar_cliente(cliente, datos)`, `editar(request, pk)` y `editar_confirmar(request, pk)` según `contracts/edicion-cliente-ui.md` y `research.md` R2–R4 (depende de T002):
+- [X] T006 [US1] Implementar en `clientes/views.py` las funciones `clave_sesion_edicion(pk)`, `actualizar_cliente(cliente, datos)`, `editar(request, pk)` y `editar_confirmar(request, pk)` según `contracts/edicion-cliente-ui.md` y `research.md` R2–R4 (depende de T002):
   - Constantes: `CLAVE_ULTIMO_EDITADO_ID = "ultimo_cliente_editado_id"`, `MENSAJE_EDICION_EXITO = "Datos del cliente actualizados correctamente."`, `MENSAJE_EDICION_CANCELADA = "Edición de cliente cancelada."`, `MENSAJE_ERROR_BD_EDICION = "No se pudo actualizar el cliente. Intentá nuevamente."`.
   - `clave_sesion_edicion(pk)`: devuelve `f"cliente_edicion_{pk}"`.
   - `actualizar_cliente(cliente, datos)`: dentro de `transaction.atomic()`, asigna los campos de `CAMPOS_CLIENTE` en `cliente`, ejecuta `cliente.save()` y devuelve `cliente`.
   - `editar(request, pk)`: obtiene `cliente = get_object_or_404(Cliente, pk=pk)`; si `not cliente.activo`, borra `clave_sesion_edicion(pk)` de la sesión, agrega `messages.warning(request, MENSAJE_NO_DISPONIBLE)` y redirige a `clientes:buscar`. En POST instancia `EditarClienteForm(request.POST, instance=cliente)`; si es válido, guarda `request.session[clave_sesion_edicion(pk)] = form.datos_para_sesion()`, elimina `CLAVE_ULTIMO_EDITADO_ID` y redirige a `clientes:editar_confirmar` (`pk=cliente.pk`). En GET, si `request.GET.get("volver") == "1"` y existe borrador en `request.session.get(clave_sesion_edicion(pk))`, instancia `EditarClienteForm(initial=datos, instance=cliente)`; en otro caso elimina cualquier borrador previo `request.session.pop(clave_sesion_edicion(pk), None)` e instancia `EditarClienteForm(instance=cliente)`. Renderiza `clientes/editar_form.html` con `{"form": form, "cliente": cliente}`.
   - `editar_confirmar(request, pk)`: obtiene `cliente = get_object_or_404(Cliente, pk=pk)`; si `not cliente.activo`, borra `clave_sesion_edicion(pk)`, agrega `messages.warning(request, MENSAJE_NO_DISPONIBLE)` y redirige a `clientes:buscar`. Procesa POST (`accion=cancelar`, `accion=confirmar`, `IntegrityError`, `DatabaseError`, confirmación repetida con `CLAVE_ULTIMO_EDITADO_ID`) y GET según la tabla de `contracts/edicion-cliente-ui.md`, renderizando `clientes/editar_confirmar.html` con `{"cliente": cliente, "datos": resumen}`.
-- [ ] T007 [US1] Registrar en `clientes/urls.py` las rutas `path("<int:pk>/editar/", views.editar, name="editar")` y `path("<int:pk>/editar/confirmar/", views.editar_confirmar, name="editar_confirmar")` (depende de T006).
-- [ ] T008 [P] [US1] Crear `clientes/templates/clientes/editar_form.html` extendiendo `base.html` según `contracts/edicion-cliente-ui.md`: `{% block title %}Editar cliente · AquaLab{% endblock %}`, título `"Editar cliente"`, texto de ayuda `"Modificá los datos del cliente y continuá para revisar los cambios antes de guardarlos."`, alerta `alert-danger` para `form.non_field_errors`, formulario `<form method="post" novalidate>` con `{% csrf_token %}`, los 7 campos con sus etiquetas y `<div class="invalid-feedback">`, botón primario **Continuar** y enlace **Cancelar** hacia `{% url 'clientes:detalle' cliente.pk %}`.
-- [ ] T009 [P] [US1] Crear `clientes/templates/clientes/editar_confirmar.html` extendiendo `base.html` según `contracts/edicion-cliente-ui.md`: `{% block title %}Confirmar edición · AquaLab{% endblock %}`, título `"Confirmar edición de cliente"`, alerta `alert-info` `"Revisá los datos modificados del cliente antes de confirmar los cambios."`, lista `<dl class="row">` con Nombre, Razón social, Tipo de documento, Número de documento, Correo electrónico, Teléfono y Domicilio (`default:"—"`), form POST `accion=confirmar` con botón **Confirmar** (deshabilitado en `onsubmit`), enlace **Volver y editar** hacia `{% url 'clientes:editar' cliente.pk %}?volver=1` y form POST `accion=cancelar` con botón **Cancelar**.
-- [ ] T010 [P] [US1] Agregar en `clientes/templates/clientes/detalle.html` el botón/enlace `"Editar cliente"` que apunte a `{% url 'clientes:editar' cliente.pk %}` (FR-002).
-- [ ] T011 [US1] Ejecutar `docker compose exec web pytest clientes/tests/test_edicion.py` y `docker compose exec web pytest` y confirmar que todos los tests de T004–T005 y el resto del proyecto quedan en verde (depende de T004–T010).
+- [X] T007 [US1] Registrar en `clientes/urls.py` las rutas `path("<int:pk>/editar/", views.editar, name="editar")` y `path("<int:pk>/editar/confirmar/", views.editar_confirmar, name="editar_confirmar")` (depende de T006).
+- [X] T008 [P] [US1] Crear `clientes/templates/clientes/editar_form.html` extendiendo `base.html` según `contracts/edicion-cliente-ui.md`: `{% block title %}Editar cliente · AquaLab{% endblock %}`, título `"Editar cliente"`, texto de ayuda `"Modificá los datos del cliente y continuá para revisar los cambios antes de guardarlos."`, alerta `alert-danger` para `form.non_field_errors`, formulario `<form method="post" novalidate>` con `{% csrf_token %}`, los 7 campos con sus etiquetas y `<div class="invalid-feedback">`, botón primario **Continuar** y enlace **Cancelar** hacia `{% url 'clientes:detalle' cliente.pk %}`.
+- [X] T009 [P] [US1] Crear `clientes/templates/clientes/editar_confirmar.html` extendiendo `base.html` según `contracts/edicion-cliente-ui.md`: `{% block title %}Confirmar edición · AquaLab{% endblock %}`, título `"Confirmar edición de cliente"`, alerta `alert-info` `"Revisá los datos modificados del cliente antes de confirmar los cambios."`, lista `<dl class="row">` con Nombre, Razón social, Tipo de documento, Número de documento, Correo electrónico, Teléfono y Domicilio (`default:"—"`), form POST `accion=confirmar` con botón **Confirmar** (deshabilitado en `onsubmit`), enlace **Volver y editar** hacia `{% url 'clientes:editar' cliente.pk %}?volver=1` y form POST `accion=cancelar` con botón **Cancelar**.
+- [X] T010 [P] [US1] Agregar en `clientes/templates/clientes/detalle.html` el botón/enlace `"Editar cliente"` que apunte a `{% url 'clientes:editar' cliente.pk %}` (FR-002).
+- [X] T011 [US1] Ejecutar `docker compose exec web pytest clientes/tests/test_edicion.py` y `docker compose exec web pytest` y confirmar que todos los tests de T004–T005 y el resto del proyecto quedan en verde (depende de T004–T010).
 
 **Checkpoint**: la US 3.2 funciona completa y es verificable de forma independiente (tests automatizados + quickstart).
 
@@ -120,9 +120,9 @@ cambios se ven de inmediato en su ficha y en las búsquedas.
 
 **Purpose**: lint/formato, validación manual de punta a punta y limpieza de pendientes en `CLAUDE.md`.
 
-- [ ] T012 [P] Ejecutar `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .` y corregir cualquier observación de lint o formato (Principios III y VI).
-- [ ] T013 Recorrer los pasos 1 a 10 de validación manual de `specs/005-editar-cliente/quickstart.md`.
-- [ ] T014 [P] Actualizar `CLAUDE.md`: borrar la línea de pendiente de la **US 3.2** en la sección `"Pendientes entre features"`.
+- [X] T012 [P] Ejecutar `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .` y corregir cualquier observación de lint o formato (Principios III y VI).
+- [X] T013 Recorrer los pasos 1 a 10 de validación manual de `specs/005-editar-cliente/quickstart.md`.
+- [X] T014 [P] Actualizar `CLAUDE.md`: borrar la línea de pendiente de la **US 3.2** en la sección `"Pendientes entre features"`.
 
 ---
 

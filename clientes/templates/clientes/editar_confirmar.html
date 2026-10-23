@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmar edición · AquaLab{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <h1 class="h3 mb-4">Confirmar edición de cliente</h1>
+
+      <div class="alert alert-info" role="alert">
+        Revisá los datos modificados del cliente antes de confirmar los cambios.
+      </div>
+
+      <dl class="row">
+        <dt class="col-sm-4">Nombre</dt>
+        <dd class="col-sm-8">{{ datos.nombre|default:"—" }}</dd>
+        <dt class="col-sm-4">Razón social</dt>
+        <dd class="col-sm-8">{{ datos.razon_social|default:"—" }}</dd>
+        <dt class="col-sm-4">Tipo de documento</dt>
+        <dd class="col-sm-8">{{ datos.tipo_documento }}</dd>
+        <dt class="col-sm-4">Número de documento</dt>
+        <dd class="col-sm-8">{{ datos.numero_documento }}</dd>
+        <dt class="col-sm-4">Correo electrónico</dt>
+        <dd class="col-sm-8">{{ datos.email }}</dd>
+        <dt class="col-sm-4">Teléfono</dt>
+        <dd class="col-sm-8">{{ datos.telefono|default:"—" }}</dd>
+        <dt class="col-sm-4">Domicilio</dt>
+        <dd class="col-sm-8">{{ datos.domicilio|default:"—" }}</dd>
+      </dl>
+
+      <div class="d-flex gap-2">
+        {# El botón se deshabilita al enviar; "accion" va en el input oculto, así que sigue en el POST. #}
+        <form method="post" class="m-0" onsubmit="this.querySelector('button').disabled = true;">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="confirmar">
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </form>
+        <a href="{% url 'clientes:editar' cliente.pk %}?volver=1" class="btn btn-outline-secondary">Volver y editar</a>
+        <form method="post" class="m-0">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="cancelar">
+          <button type="submit" class="btn btn-outline-danger">Cancelar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
