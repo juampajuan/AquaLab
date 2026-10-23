@@ -32,8 +32,11 @@
         </div>
       </div>
 
-      <a href="{% url 'clientes:buscar' %}" class="btn btn-outline-primary">Volver a la búsqueda</a>
-      <a href="{% url 'clientes:registrar' %}" class="btn btn-primary">Registrar otro cliente</a>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'clientes:editar' cliente.pk %}" class="btn btn-primary">Editar cliente</a>
+        <a href="{% url 'clientes:buscar' %}" class="btn btn-outline-primary">Volver a la búsqueda</a>
+        <a href="{% url 'clientes:registrar' %}" class="btn btn-outline-secondary">Registrar otro cliente</a>
+      </div>
     </div>
   </div>
 {% endblock %}

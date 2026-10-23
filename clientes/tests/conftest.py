@@ -62,6 +62,31 @@ def cliente_existente():
 
 
 @pytest.fixture
+def otro_cliente():
+    return Cliente.objects.create(
+        nombre="Juan Pérez",
+        tipo_documento="DNI",
+        numero_documento="30123456",
+        email="juan@ejemplo.com",
+        telefono="+54 11 4321-5678",
+        domicilio="Av. Corrientes 1234",
+    )
+
+
+@pytest.fixture
+def datos_edicion_validos():
+    return {
+        "nombre": "Roberto Gómez",
+        "razon_social": "Aguas del Sur S.A.",
+        "tipo_documento": "CUIT",
+        "numero_documento": "20-12345678-6",
+        "email": "nuevo@aguassur.com",
+        "telefono": "+54 11 5555-6666",
+        "domicilio": "Av. Paseo Colón 850",
+    }
+
+
+@pytest.fixture
 def en_revision(cliente_autenticado, datos_cliente_empresa):
     """Deja el alta de cliente en revisión: los datos quedan en `session["cliente_pendiente"]`."""
     cliente_autenticado.post(reverse("clientes:registrar"), datos_cliente_empresa)
