@@ -1,0 +1,10 @@
+{% autoescape off %}Hola, {{ administrador.first_name }}:
+
+{{ usuario.first_name }} {{ usuario.last_name }} ({{ usuario.email }}) solicitó una cuenta en AquaLab.
+
+Podés revisar la solicitud y aprobarla o rechazarla desde el panel de administración:
+{{ enlace_ficha }}
+
+—
+AquaLab
+{% endautoescape %}

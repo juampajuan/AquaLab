@@ -56,17 +56,17 @@ las cuatro historias.
 
 **⚠️ CRITICAL**: no empezar las fases 3 a 6 hasta terminar esta fase.
 
-- [ ] T002 Agregar la configuración de correo en `config/settings.py` según `research.md` R1 y la tabla "Configuración" de `contracts/correos.md`:
+- [X] T002 Agregar la configuración de correo en `config/settings.py` según `research.md` R1 y la tabla "Configuración" de `contracts/correos.md`:
   - `EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")`.
   - `EMAIL_HOST` (por defecto `"localhost"`), `EMAIL_PORT` (`int`, por defecto `587`), `EMAIL_HOST_USER` y `EMAIL_HOST_PASSWORD` (por defecto `""`), `EMAIL_USE_TLS` (por defecto `True`, mismo parseo que `DEBUG`: `"1"`, `"true"` o `"yes"`), `EMAIL_TIMEOUT` (`int`, por defecto `10`).
   - `DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "AquaLab <no-responder@aqualab.local>")`.
   - `LOGGING` mínimo (`version: 1`, `disable_existing_loggers: False`) con un handler `console` (`logging.StreamHandler`) y el logger `"usuarios.notificaciones"` en nivel `INFO` hacia ese handler (`research.md` R6).
-- [ ] T003 [P] Documentar las variables de correo en `.env.example`: `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend` y `DEFAULT_FROM_EMAIL=AquaLab <no-responder@aqualab.local>` activas, y un bloque comentado para SMTP con Gmail (`EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST=smtp.gmail.com`, `EMAIL_PORT=587`, `EMAIL_USE_TLS=True`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` con una contraseña de aplicación) tal como en `quickstart.md` paso 5, aclarando que las credenciales nunca se suben al repo.
-- [ ] T004 Crear `usuarios/notificaciones.py` con la base común (`research.md` R5 y R6, `contracts/correos.md` "Reglas comunes"):
+- [X] T003 [P] Documentar las variables de correo en `.env.example`: `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend` y `DEFAULT_FROM_EMAIL=AquaLab <no-responder@aqualab.local>` activas, y un bloque comentado para SMTP con Gmail (`EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST=smtp.gmail.com`, `EMAIL_PORT=587`, `EMAIL_USE_TLS=True`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` con una contraseña de aplicación) tal como en `quickstart.md` paso 5, aclarando que las credenciales nunca se suben al repo.
+- [X] T004 Crear `usuarios/notificaciones.py` con la base común (`research.md` R5 y R6, `contracts/correos.md` "Reglas comunes"):
   - `logger = logging.getLogger("usuarios.notificaciones")`.
   - `_enviar(tipo, destinatario, plantilla, contexto)`: arma el asunto con `render_to_string(f"usuarios/correos/{plantilla}_asunto.txt", contexto)` (sin saltos de línea, `strip()`) y el cuerpo con `render_to_string(f"usuarios/correos/{plantilla}_cuerpo.txt", contexto)`, y llama a `send_mail(asunto, cuerpo, settings.DEFAULT_FROM_EMAIL, [destinatario], fail_silently=False)` dentro de `try/except Exception`; ante una falla, `logger.exception("No se pudo enviar el aviso %s a %s", tipo, destinatario)` y retorna sin relanzar.
   - Cada mensaje va a un solo destinatario (FR-013).
-- [ ] T005 [P] Agregar en `usuarios/tests/conftest.py` las fixtures:
+- [X] T005 [P] Agregar en `usuarios/tests/conftest.py` las fixtures:
   - `otro_administrador`: superusuario activo `otra.admin@lab.com` (`first_name="Otra"`, `last_name="Admin"`).
   - `administrador_inactivo`: superusuario con `is_active=False` (`admin.inactivo@lab.com`).
   - `confirmar_registro(en_revision)`: función que hace `en_revision.post(reverse("usuarios:registro_confirmar"), {"accion": "confirmar"}, follow=True)` y devuelve la respuesta.
@@ -88,7 +88,7 @@ correo y enlace (`quickstart.md` paso 1).
 
 > **NOTE: escribir estos tests PRIMERO y verificar que FALLAN antes de implementar**
 
-- [ ] T006 [P] [US1] En `usuarios/tests/test_notificaciones.py`, escribir los tests de la US1 del "Mapa de tests" de `plan.md`:
+- [X] T006 [P] [US1] En `usuarios/tests/test_notificaciones.py`, escribir los tests de la US1 del "Mapa de tests" de `plan.md`:
   - `test_confirmar_registro_avisa_a_cada_administrador_activo`: con `administrador` y `otro_administrador`, confirmar el registro de `datos_registro`; hay un mensaje con asunto `"AquaLab: nueva solicitud de cuenta"` por cada administrador, cada uno con `to == [su correo]`, el cuerpo contiene `"Ana"`, `"Pérez"`, `"ana@lab.com"` y la URL absoluta de `reverse("admin:usuarios_usuario_change", args=[nuevo.pk])`.
   - `test_administrador_inactivo_no_recibe_aviso`: con `administrador` y `administrador_inactivo`, solo `admin@lab.com` recibe el aviso.
   - `test_cancelar_registro_no_envia_correos`: `accion=cancelar` en la revisión → `mailoutbox` vacío.
@@ -98,9 +98,9 @@ correo y enlace (`quickstart.md` paso 1).
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Crear `usuarios/templates/usuarios/correos/solicitud_nueva_asunto.txt` y `solicitud_nueva_cuerpo.txt` con el texto literal de `contracts/correos.md` ("Solicitud nueva"), usando `{{ administrador.first_name }}`, `{{ usuario.first_name }}`, `{{ usuario.last_name }}`, `{{ usuario.email }}` y `{{ enlace_ficha }}`. Usar `{% autoescape off %}` en ambos (texto plano).
-- [ ] T008 [US1] En `usuarios/notificaciones.py`, implementar `avisar_solicitud_nueva(request, usuario)`: armar `enlace_ficha = request.build_absolute_uri(reverse("admin:usuarios_usuario_change", args=[usuario.pk]))`; recorrer `Usuario.objects.filter(is_superuser=True, is_active=True)` y llamar a `_enviar("solicitud_nueva", administrador.email, "solicitud_nueva", {...})` por cada uno; si no hay ninguno, `logger.warning("Solicitud de alta sin administradores activos para avisar")`.
-- [ ] T009 [US1] En `usuarios/views.py`, dentro de `registro_confirmar`, en la rama `else` del `try` (cuenta creada), guardar el resultado de `crear_usuario_pendiente(datos)` en `usuario` y agendar `transaction.on_commit(lambda: notificaciones.avisar_solicitud_nueva(request, usuario))`. Sin cambios en las ramas de cancelar, confirmación repetida, `IntegrityError` ni `DatabaseError`.
+- [X] T007 [P] [US1] Crear `usuarios/templates/usuarios/correos/solicitud_nueva_asunto.txt` y `solicitud_nueva_cuerpo.txt` con el texto literal de `contracts/correos.md` ("Solicitud nueva"), usando `{{ administrador.first_name }}`, `{{ usuario.first_name }}`, `{{ usuario.last_name }}`, `{{ usuario.email }}` y `{{ enlace_ficha }}`. Usar `{% autoescape off %}` en ambos (texto plano).
+- [X] T008 [US1] En `usuarios/notificaciones.py`, implementar `avisar_solicitud_nueva(request, usuario)`: armar `enlace_ficha = request.build_absolute_uri(reverse("admin:usuarios_usuario_change", args=[usuario.pk]))`; recorrer `Usuario.objects.filter(is_superuser=True, is_active=True)` y llamar a `_enviar("solicitud_nueva", administrador.email, "solicitud_nueva", {...})` por cada uno; si no hay ninguno, `logger.warning("Solicitud de alta sin administradores activos para avisar")`.
+- [X] T009 [US1] En `usuarios/views.py`, dentro de `registro_confirmar`, en la rama `else` del `try` (cuenta creada), guardar el resultado de `crear_usuario_pendiente(datos)` en `usuario` y agendar `transaction.on_commit(lambda: notificaciones.avisar_solicitud_nueva(request, usuario))`. Sin cambios en las ramas de cancelar, confirmación repetida, `IntegrityError` ni `DatabaseError`.
 
 **Checkpoint**: los tests de la US1 pasan y `test_registro.py` sigue en verde.
 
@@ -116,15 +116,15 @@ asunto de solicitud recibida; repetir la confirmación no manda otro (`quickstar
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T010 [P] [US2] En `usuarios/tests/test_notificaciones.py`, escribir:
+- [X] T010 [P] [US2] En `usuarios/tests/test_notificaciones.py`, escribir:
   - `test_confirmar_registro_envia_solicitud_recibida`: después de confirmar, hay exactamente un mensaje con `to == ["ana@lab.com"]` y asunto `"AquaLab: recibimos tu solicitud de cuenta"`, y el cuerpo menciona `"pendiente de aprobación"`.
   - `test_confirmacion_repetida_no_reenvia_avisos`: confirmar dos veces con el mismo cliente; el total de mensajes no cambia después del segundo POST.
 
 ### Implementation for User Story 2
 
-- [ ] T011 [P] [US2] Crear `usuarios/templates/usuarios/correos/solicitud_recibida_asunto.txt` y `solicitud_recibida_cuerpo.txt` con el texto literal de `contracts/correos.md` ("Solicitud recibida"), usando `{{ usuario.first_name }}` y `{% autoescape off %}`.
-- [ ] T012 [US2] En `usuarios/notificaciones.py`, implementar `avisar_solicitud_recibida(request, usuario)` con `_enviar("solicitud_recibida", usuario.email, "solicitud_recibida", {"usuario": usuario})`.
-- [ ] T013 [US2] En `usuarios/views.py`, en la misma rama de `registro_confirmar` que T009, agendar también `transaction.on_commit(lambda: notificaciones.avisar_solicitud_recibida(request, usuario))`.
+- [X] T011 [P] [US2] Crear `usuarios/templates/usuarios/correos/solicitud_recibida_asunto.txt` y `solicitud_recibida_cuerpo.txt` con el texto literal de `contracts/correos.md` ("Solicitud recibida"), usando `{{ usuario.first_name }}` y `{% autoescape off %}`.
+- [X] T012 [US2] En `usuarios/notificaciones.py`, implementar `avisar_solicitud_recibida(request, usuario)` con `_enviar("solicitud_recibida", usuario.email, "solicitud_recibida", {"usuario": usuario})`.
+- [X] T013 [US2] En `usuarios/views.py`, en la misma rama de `registro_confirmar` que T009, agendar también `transaction.on_commit(lambda: notificaciones.avisar_solicitud_recibida(request, usuario))`.
 
 **Checkpoint**: los tests de US1 y US2 pasan; el registro completo manda exactamente los dos tipos
 de aviso.
@@ -141,7 +141,7 @@ verificar un aviso por cada una; aprobar de nuevo no manda nada (`quickstart.md`
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T014 [P] [US3] En `usuarios/tests/test_notificaciones.py`, escribir:
+- [X] T014 [P] [US3] En `usuarios/tests/test_notificaciones.py`, escribir:
   - `test_accion_aprobar_avisa_a_cada_solicitante`: dos pendientes aprobadas juntas con `cliente_admin` → dos mensajes con asunto `"AquaLab: tu cuenta fue aprobada"`, cada uno con `to` igual a un solo solicitante, y el cuerpo contiene la URL absoluta de `reverse("usuarios:login")`.
   - `test_aprobar_desde_ficha_envia_aviso`: POST al `admin:usuarios_usuario_change` de `usuario_pendiente` con todos los campos de la ficha e `is_active="on"` → un aviso de aprobación a `pendiente@lab.com`.
   - `test_accion_aprobar_no_reenvia_a_cuentas_aprobadas`: selección con `usuario_pendiente` y `usuario_aprobado` → un solo aviso, a `pendiente@lab.com`.
@@ -150,10 +150,10 @@ verificar un aviso por cada una; aprobar de nuevo no manda nada (`quickstart.md`
 
 ### Implementation for User Story 3
 
-- [ ] T015 [P] [US3] Crear `usuarios/templates/usuarios/correos/aprobacion_asunto.txt` y `aprobacion_cuerpo.txt` con el texto literal de `contracts/correos.md` ("Aprobación"), usando `{{ usuario.first_name }}`, `{{ enlace_login }}` y `{% autoescape off %}`.
-- [ ] T016 [US3] En `usuarios/notificaciones.py`, implementar `avisar_aprobacion(request, usuario)` con `enlace_login = request.build_absolute_uri(reverse("usuarios:login"))` y `_enviar("aprobacion", usuario.email, "aprobacion", {...})`.
-- [ ] T017 [US3] En `usuarios/admin.py`, reescribir `aprobar_cuentas` (`research.md` R3): dentro de `transaction.atomic()`, `pendientes = list(queryset.filter(is_active=False).select_for_update())`, `Usuario.objects.filter(pk__in=[u.pk for u in pendientes]).update(is_active=True)`, y por cada uno `transaction.on_commit(partial(notificaciones.avisar_aprobacion, request, usuario))`. Mantener el mensaje `f"Se aprobaron {len(pendientes)} cuenta(s)."` con `messages.SUCCESS`, para que `test_admin.py` siga pasando.
-- [ ] T018 [US3] En `usuarios/admin.py`, sobrescribir `save_model(self, request, obj, form, change)`: si `change`, calcular `estaba_pendiente = Usuario.objects.select_for_update().filter(pk=obj.pk, is_active=False).exists()` antes de `super().save_model(...)`; después, si `estaba_pendiente and obj.is_active`, agendar `transaction.on_commit(partial(notificaciones.avisar_aprobacion, request, obj))`. Si no es `change` (alta desde el admin), no avisar.
+- [X] T015 [P] [US3] Crear `usuarios/templates/usuarios/correos/aprobacion_asunto.txt` y `aprobacion_cuerpo.txt` con el texto literal de `contracts/correos.md` ("Aprobación"), usando `{{ usuario.first_name }}`, `{{ enlace_login }}` y `{% autoescape off %}`.
+- [X] T016 [US3] En `usuarios/notificaciones.py`, implementar `avisar_aprobacion(request, usuario)` con `enlace_login = request.build_absolute_uri(reverse("usuarios:login"))` y `_enviar("aprobacion", usuario.email, "aprobacion", {...})`.
+- [X] T017 [US3] En `usuarios/admin.py`, reescribir `aprobar_cuentas` (`research.md` R3): dentro de `transaction.atomic()`, `pendientes = list(queryset.filter(is_active=False).select_for_update())`, `Usuario.objects.filter(pk__in=[u.pk for u in pendientes]).update(is_active=True)`, y por cada uno `transaction.on_commit(partial(notificaciones.avisar_aprobacion, request, usuario))`. Mantener el mensaje `f"Se aprobaron {len(pendientes)} cuenta(s)."` con `messages.SUCCESS`, para que `test_admin.py` siga pasando.
+- [X] T018 [US3] En `usuarios/admin.py`, sobrescribir `save_model(self, request, obj, form, change)`: si `change`, calcular `estaba_pendiente = Usuario.objects.select_for_update().filter(pk=obj.pk, is_active=False).exists()` antes de `super().save_model(...)`; después, si `estaba_pendiente and obj.is_active`, agendar `transaction.on_commit(partial(notificaciones.avisar_aprobacion, request, obj))`. Si no es `change` (alta desde el admin), no avisar.
 
 **Checkpoint**: los tests de US1 a US3 pasan y `test_admin.py` sigue en verde.
 
@@ -170,7 +170,7 @@ registrarse de nuevo (`quickstart.md` paso 3).
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T019 [P] [US4] En `usuarios/tests/test_notificaciones.py`, escribir los tests de la US4 del "Mapa de tests" de `plan.md`, usando `URL_LISTADO = "admin:usuarios_usuario_changelist"`:
+- [X] T019 [P] [US4] En `usuarios/tests/test_notificaciones.py`, escribir los tests de la US4 del "Mapa de tests" de `plan.md`, usando `URL_LISTADO = "admin:usuarios_usuario_changelist"`:
   - `test_rechazar_muestra_confirmacion_sin_cambios`: POST con `action=rechazar_solicitudes` y `usuario_pendiente` → `200`, el HTML contiene `"Rechazar solicitudes"`, `"Pedro"`, `"Gómez"`, `"pendiente@lab.com"` y `"Sí, rechazar"`; la cuenta sigue existiendo y `mailoutbox` está vacío.
   - `test_volver_desde_confirmacion_no_rechaza`: el enlace `"No, volver"` apunta al listado y, sin el segundo POST, la cuenta sigue pendiente.
   - `test_confirmar_rechazo_elimina_y_avisa`: segundo POST con `confirmar=si` → la cuenta ya no existe, un mensaje a `pendiente@lab.com` con asunto `"AquaLab: tu solicitud de cuenta no fue aprobada"` y el listado muestra `"Se rechazaron 1 solicitud(es)."`.
@@ -181,10 +181,10 @@ registrarse de nuevo (`quickstart.md` paso 3).
 
 ### Implementation for User Story 4
 
-- [ ] T020 [P] [US4] Crear `usuarios/templates/usuarios/correos/rechazo_asunto.txt` y `rechazo_cuerpo.txt` con el texto literal de `contracts/correos.md` ("Rechazo"), usando `{{ nombre }}` y `{% autoescape off %}`.
-- [ ] T021 [P] [US4] Crear `usuarios/templates/admin/usuarios/usuario/rechazar_confirmacion.html` según `contracts/admin-rechazo.md` "Paso 1": extender `"admin/base_site.html"`, título `"Rechazar solicitudes"`, el texto de confirmación literal, la lista de `pendientes` (nombre, apellido y correo), el aviso de cuentas aprobadas si `hay_aprobadas`, y un formulario POST con `{% csrf_token %}`, `action=rechazar_solicitudes`, un `_selected_action` oculto por pendiente, `confirmar=si`, el botón `"Sí, rechazar"` y el enlace `"No, volver"` a `{% url "admin:usuarios_usuario_changelist" %}`.
-- [ ] T022 [US4] En `usuarios/notificaciones.py`, implementar `avisar_rechazo(nombre, email)` con `_enviar("rechazo", email, "rechazo", {"nombre": nombre})`.
-- [ ] T023 [US4] En `usuarios/admin.py`, agregar la acción `rechazar_solicitudes` con `@admin.action(description="Rechazar solicitudes seleccionadas", permissions=["delete"])` y sumarla a `actions` (`research.md` R4, `contracts/admin-rechazo.md`):
+- [X] T020 [P] [US4] Crear `usuarios/templates/usuarios/correos/rechazo_asunto.txt` y `rechazo_cuerpo.txt` con el texto literal de `contracts/correos.md` ("Rechazo"), usando `{{ nombre }}` y `{% autoescape off %}`.
+- [X] T021 [P] [US4] Crear `usuarios/templates/admin/usuarios/usuario/rechazar_confirmacion.html` según `contracts/admin-rechazo.md` "Paso 1": extender `"admin/base_site.html"`, título `"Rechazar solicitudes"`, el texto de confirmación literal, la lista de `pendientes` (nombre, apellido y correo), el aviso de cuentas aprobadas si `hay_aprobadas`, y un formulario POST con `{% csrf_token %}`, `action=rechazar_solicitudes`, un `_selected_action` oculto por pendiente, `confirmar=si`, el botón `"Sí, rechazar"` y el enlace `"No, volver"` a `{% url "admin:usuarios_usuario_changelist" %}`.
+- [X] T022 [US4] En `usuarios/notificaciones.py`, implementar `avisar_rechazo(nombre, email)` con `_enviar("rechazo", email, "rechazo", {"nombre": nombre})`.
+- [X] T023 [US4] En `usuarios/admin.py`, agregar la acción `rechazar_solicitudes` con `@admin.action(description="Rechazar solicitudes seleccionadas", permissions=["delete"])` y sumarla a `actions` (`research.md` R4, `contracts/admin-rechazo.md`):
   - Sin `confirmar=si` en `request.POST`: si `queryset.filter(is_active=False)` está vacío, `self.message_user(request, "No hay solicitudes pendientes en la selección.", messages.WARNING)` y retornar `None`; si no, retornar `TemplateResponse` con `rechazar_confirmacion.html` y el contexto `{**self.admin_site.each_context(request), "title": "Rechazar solicitudes", "pendientes": ..., "hay_aprobadas": queryset.filter(is_active=True).exists(), "opts": self.model._meta}`.
   - Con `confirmar=si`: dentro de `transaction.atomic()`, `pendientes = list(queryset.filter(is_active=False).select_for_update())`, guardar `[(u.first_name, u.email) for u in pendientes]`, `self.log_deletions(request, pendientes)`, `Usuario.objects.filter(pk__in=[...]).delete()`, agendar `transaction.on_commit(partial(notificaciones.avisar_rechazo, nombre, email))` por cada una, y `self.message_user(request, f"Se rechazaron {len(pendientes)} solicitud(es).", messages.SUCCESS)`.
 
@@ -196,11 +196,11 @@ registrarse de nuevo (`quickstart.md` paso 3).
 
 **Purpose**: fallas de envío, privacidad de los correos, documentación y verificación final.
 
-- [ ] T024 [P] En `usuarios/tests/test_notificaciones.py`, escribir los tests transversales:
+- [X] T024 [P] En `usuarios/tests/test_notificaciones.py`, escribir los tests transversales:
   - `test_falla_de_envio_no_impide_registro_y_queda_en_log`: con `monkeypatch` sobre `usuarios.notificaciones.send_mail` lanzando `SMTPException`, confirmar un registro → la respuesta muestra `"Registro recibido"`, la cuenta existe pendiente y `caplog` tiene `"No se pudo enviar el aviso"` en nivel `ERROR` para `solicitud_nueva` y `solicitud_recibida`.
   - `test_falla_de_envio_no_impide_aprobacion`: mismo `monkeypatch`, aprobar con la acción masiva → la cuenta queda aprobada y la falla queda en `caplog`.
   - `test_correos_no_incluyen_contrasena_ni_datos_de_terceros`: recorrer el circuito completo (registro, aprobación y rechazo de otra solicitud) y verificar que ningún cuerpo contiene `password_registro`, `PASSWORD_EXISTENTE` ni el prefijo del hash (`"pbkdf2_"`), que todos los asuntos empiezan con `"AquaLab"`, que el remitente es `settings.DEFAULT_FROM_EMAIL` y que cada mensaje tiene un solo destinatario en `to` y nada en `cc` ni `bcc`.
-- [ ] T025 [P] Agregar en `CLAUDE.md` una sección "Avisos por correo (US 1.3)" con: los avisos se llaman explícitamente desde `registro_confirmar`, `UsuarioAdmin.aprobar_cuentas`, `UsuarioAdmin.save_model` y `UsuarioAdmin.rechazar_solicitudes` (no hay señales, porque `update()` no las dispara); siempre con `transaction.on_commit`; rechazar elimina la cuenta pendiente; y los tests usan `django_capture_on_commit_callbacks(execute=True)` y `mailoutbox`.
+- [X] T025 [P] Agregar en `CLAUDE.md` una sección "Avisos por correo (US 1.3)" con: los avisos se llaman explícitamente desde `registro_confirmar`, `UsuarioAdmin.aprobar_cuentas`, `UsuarioAdmin.save_model` y `UsuarioAdmin.rechazar_solicitudes` (no hay señales, porque `update()` no las dispara); siempre con `transaction.on_commit`; rechazar elimina la cuenta pendiente; y los tests usan `django_capture_on_commit_callbacks(execute=True)` y `mailoutbox`.
 - [ ] T026 Correr `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .`, `docker compose exec web python manage.py makemigrations --check --dry-run` (no debe haber migraciones nuevas) y `docker compose exec web pytest`, y corregir lo que falle.
 - [ ] T027 Recorrer manualmente `quickstart.md` pasos 1 a 3 con el backend de consola y confirmar los correos y mensajes esperados en `docker compose logs -f web`.
 

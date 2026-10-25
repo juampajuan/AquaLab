@@ -1,0 +1,8 @@
+{% autoescape off %}Hola, {{ nombre }}:
+
+Tu solicitud de cuenta en AquaLab no fue aprobada. Si creés que se trata de un error,
+comunicate con el laboratorio.
+
+—
+AquaLab
+{% endautoescape %}
