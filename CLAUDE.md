@@ -6,6 +6,23 @@ Cuando una feature resuelva un pendiente, borrar su línea.
 
 - **US 4.1:** el envío de informes por correo usa `Cliente.email`.
 
+## Mensajes de commit
+
+Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descripción`.
+
+- Spec Kit: `docs(specs): spec de la US 3.2 – Editar cliente` (igual para `plan` y `tasks`).
+- Código: `feat(<app>): US 3.2 – Editar cliente`; correcciones `fix(<app>): ...`.
+- Infraestructura y configuración: `chore: ...`.
+
+## Avisos por correo (US 1.3)
+
+- Los avisos de `usuarios/notificaciones.py` se llaman explícitamente desde `registro_confirmar`,
+  `UsuarioAdmin.aprobar_cuentas`, `UsuarioAdmin.save_model` y `UsuarioAdmin.rechazar_solicitudes`.
+  No se usan señales: `queryset.update()` no las dispara.
+- Siempre se agendan con `transaction.on_commit`; una falla de envío solo queda en el log
+  `usuarios.notificaciones`. Rechazar elimina la cuenta pendiente para liberar el correo.
+- En los tests: `django_capture_on_commit_callbacks(execute=True)` y `mailoutbox`.
+
 ## Autenticación integrada (US 1.2)
 
 - Login/logout propios en usuarios; LOGIN_URL y ambos cierres llevan al login AquaLab.

@@ -1,0 +1,10 @@
+{% autoescape off %}Hola, {{ usuario.first_name }}:
+
+Recibimos tu solicitud de cuenta en AquaLab. Está pendiente de aprobación por un
+administrador del laboratorio.
+
+Te vamos a avisar por este medio cuando se resuelva.
+
+—
+AquaLab
+{% endautoescape %}

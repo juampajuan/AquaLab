@@ -1,0 +1,9 @@
+{% autoescape off %}Hola, {{ usuario.first_name }}:
+
+Un administrador aprobó tu cuenta en AquaLab. Ya podés iniciar sesión con tu correo y tu
+contraseña:
+{{ enlace_login }}
+
+—
+AquaLab
+{% endautoescape %}

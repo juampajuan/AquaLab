@@ -55,6 +55,41 @@ def administrador(django_user_model):
 
 
 @pytest.fixture
+def otro_administrador(django_user_model):
+    return django_user_model.objects.create_superuser(
+        email="otra.admin@lab.com",
+        password=PASSWORD_EXISTENTE,
+        first_name="Otra",
+        last_name="Admin",
+    )
+
+
+@pytest.fixture
+def administrador_inactivo(django_user_model):
+    administrador = django_user_model.objects.create_superuser(
+        email="admin.inactivo@lab.com",
+        password=PASSWORD_EXISTENTE,
+        first_name="Admin",
+        last_name="Inactivo",
+    )
+    administrador.is_active = False
+    administrador.save(update_fields=["is_active"])
+    return administrador
+
+
+@pytest.fixture
+def confirmar_registro(en_revision):
+    """Confirma el registro que dejó `en_revision` y devuelve la respuesta final."""
+
+    def confirmar():
+        return en_revision.post(
+            reverse("usuarios:registro_confirmar"), {"accion": "confirmar"}, follow=True
+        )
+
+    return confirmar
+
+
+@pytest.fixture
 def cliente_admin(administrador):
     cliente = Client()
     cliente.force_login(administrador)

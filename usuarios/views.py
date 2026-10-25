@@ -1,3 +1,5 @@
+from functools import partial
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.views import LoginView, LogoutView
@@ -8,6 +10,7 @@ from django.urls import reverse
 from django.utils.crypto import constant_time_compare
 from django.views.decorators.http import require_GET
 
+from . import notificaciones
 from .context_processors import huella_para
 from .forms import FormularioInicioSesion, RegistroForm
 from .models import Usuario
@@ -63,13 +66,17 @@ def registro_confirmar(request):
             messages.info(request, MENSAJE_RECIBIDO)
             return redirect("usuarios:registro_recibido")
         try:
-            crear_usuario_pendiente(datos)
+            usuario = crear_usuario_pendiente(datos)
         except IntegrityError:
             messages.error(request, "Este correo no está disponible.")
             return redirect("usuarios:registro")
         except DatabaseError:
             messages.error(request, "No se pudo completar el registro. Intentá nuevamente.")
         else:
+            transaction.on_commit(partial(notificaciones.avisar_solicitud_nueva, request, usuario))
+            transaction.on_commit(
+                partial(notificaciones.avisar_solicitud_recibida, request, usuario)
+            )
             del request.session[CLAVE_SESION]
             messages.success(request, MENSAJE_RECIBIDO)
             return redirect("usuarios:registro_recibido")
