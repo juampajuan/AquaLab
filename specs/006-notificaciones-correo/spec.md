@@ -83,7 +83,7 @@ Como administrador, quiero rechazar desde el panel de administración una solici
 ### Edge Cases
 
 - **Falla en el envío**: si el servicio de correo no está disponible o rechaza un mensaje, el registro, la aprobación o el rechazo se completan igual, el usuario ve el mismo resultado que si el correo hubiera salido y la falla queda registrada en los logs del sistema con el tipo de aviso y el destinatario, sin datos sensibles.
-- **Sin administradores activos**: si al confirmarse un registro no hay ningún administrador activo, el registro se completa igual y el sistema deja constancia en los logs de que el aviso no tuvo destinatarios.
+- **Sin administradores activos**: si al confirmarse un registro no hay ningún administrador activo, la solicitud se guarda igual como pendiente de aprobación (ni aprobada ni rechazada) y el solicitante recibe su correo de solicitud recibida. El aviso a administradores no tiene destinatarios, y el sistema deja constancia de eso en los logs. La solicitud queda a la espera de que un administrador la revise desde el panel.
 - **Administrador que también se registra**: la cuenta de un administrador no es una solicitud; crear administradores por otras vías no dispara ningún aviso de esta feature.
 - **Varios administradores aprobando a la vez**: si dos administradores aprueban la misma cuenta casi al mismo tiempo, el solicitante recibe un solo correo de aprobación.
 - **Volver a desactivar una cuenta**: desmarcar como aprobada una cuenta ya aprobada no envía ningún correo de esta feature (no es un rechazo de solicitud).
