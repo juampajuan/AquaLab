@@ -202,7 +202,7 @@ registrarse de nuevo (`quickstart.md` paso 3).
   - `test_correos_no_incluyen_contrasena_ni_datos_de_terceros`: recorrer el circuito completo (registro, aprobación y rechazo de otra solicitud) y verificar que ningún cuerpo contiene `password_registro`, `PASSWORD_EXISTENTE` ni el prefijo del hash (`"pbkdf2_"`), que todos los asuntos empiezan con `"AquaLab"`, que el remitente es `settings.DEFAULT_FROM_EMAIL` y que cada mensaje tiene un solo destinatario en `to` y nada en `cc` ni `bcc`.
 - [X] T025 [P] Agregar en `CLAUDE.md` una sección "Avisos por correo (US 1.3)" con: los avisos se llaman explícitamente desde `registro_confirmar`, `UsuarioAdmin.aprobar_cuentas`, `UsuarioAdmin.save_model` y `UsuarioAdmin.rechazar_solicitudes` (no hay señales, porque `update()` no las dispara); siempre con `transaction.on_commit`; rechazar elimina la cuenta pendiente; y los tests usan `django_capture_on_commit_callbacks(execute=True)` y `mailoutbox`.
 - [X] T026 Correr `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .`, `docker compose exec web python manage.py makemigrations --check --dry-run` (no debe haber migraciones nuevas) y `docker compose exec web pytest`, y corregir lo que falle.
-- [ ] T027 Recorrer manualmente `quickstart.md` pasos 1 a 3 con el backend de consola y confirmar los correos y mensajes esperados en `docker compose logs -f web`.
+- [X] T027 Recorrer manualmente `quickstart.md` pasos 1 a 3 con el backend de consola y confirmar los correos y mensajes esperados en `docker compose logs -f web`.
 
 ---
 
