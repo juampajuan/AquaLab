@@ -5,6 +5,9 @@ from django.db.models import F, Q
 from django.db.models.functions import Lower
 
 NUMERO_PI_INICIAL = 200001
+MENSAJE_CLIENTE_ORIGEN_CON_MUESTRAS = (
+    "No se puede cambiar el cliente de un origen que ya tiene muestras."
+)
 
 
 class TipoVertido(models.TextChoices):
@@ -52,9 +55,7 @@ class Origen(models.Model):
         if self.pk and self.muestras.exists():
             cliente_actual = Origen.objects.filter(pk=self.pk).values_list("cliente_id", flat=True)
             if self.cliente_id != cliente_actual.first():
-                raise ValidationError(
-                    {"cliente": "No se puede cambiar el cliente de un origen que ya tiene muestras."}
-                )
+                raise ValidationError({"cliente": MENSAJE_CLIENTE_ORIGEN_CON_MUESTRAS})
 
 
 class Muestra(models.Model):
