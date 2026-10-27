@@ -3,6 +3,7 @@ import datetime
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.urls import reverse
 
 from muestras.models import Muestra, Origen
 
@@ -57,3 +58,43 @@ def test_valores_por_defecto_muestra(crear_muestra):
 
     assert muestra.tipo_vertido == "agua"
     assert muestra.estado == "ingresada"
+
+
+def test_origen_con_muestras_no_cambia_de_cliente(crear_muestra, origen_a, cliente_b):
+    crear_muestra(200001)
+
+    origen_a.cliente = cliente_b
+    with pytest.raises(ValidationError) as error:
+        origen_a.full_clean()
+    assert error.value.message_dict["cliente"] == [
+        "No se puede cambiar el cliente de un origen que ya tiene muestras."
+    ]
+
+
+def test_origen_sin_muestras_puede_cambiar_de_cliente(origen_a, cliente_b):
+    origen_a.cliente = cliente_b
+    origen_a.full_clean()
+
+
+def test_admin_no_permite_reasignar_origen_con_muestras(
+    admin_client, crear_muestra, origen_a, cliente_b
+):
+    crear_muestra(200001)
+    url = reverse("admin:muestras_origen_change", args=[origen_a.pk])
+
+    assert 'name="cliente"' not in admin_client.get(url).content.decode()
+    respuesta = admin_client.post(url, {"cliente": cliente_b.pk, "nombre": origen_a.nombre})
+
+    assert respuesta.status_code == 302
+    origen_a.refresh_from_db()
+    assert origen_a.cliente_id != cliente_b.pk
+
+
+def test_admin_permite_reasignar_origen_sin_muestras(admin_client, origen_a, cliente_b):
+    url = reverse("admin:muestras_origen_change", args=[origen_a.pk])
+
+    respuesta = admin_client.post(url, {"cliente": cliente_b.pk, "nombre": origen_a.nombre})
+
+    assert respuesta.status_code == 302
+    origen_a.refresh_from_db()
+    assert origen_a.cliente_id == cliente_b.pk

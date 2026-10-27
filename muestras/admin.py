@@ -9,6 +9,12 @@ class OrigenAdmin(admin.ModelAdmin):
     search_fields = ("nombre", "cliente__razon_social", "cliente__nombre")
     readonly_fields = ("fecha_alta",)
 
+    def get_readonly_fields(self, request, obj=None):
+        campos = super().get_readonly_fields(request, obj)
+        if obj is not None and obj.muestras.exists():
+            return (*campos, "cliente")
+        return campos
+
 
 @admin.register(Muestra)
 class MuestraAdmin(admin.ModelAdmin):

@@ -53,3 +53,4 @@ App en `http://localhost:8000`.
 | 13 | Llegar al resumen y Cancelar | "Registro de muestra cancelado."; no se creó muestra ni origen; el siguiente N° PI no cambió | US1 Esc. 7, US2 Esc. 5, SC-005 |
 | 14 | En el resumen, doble clic en Confirmar | Una sola muestra registrada | Edge case |
 | 15 | En el admin (`/admin/`), abrir la muestra | Estado "Ingresada", usuario que la registró y fecha y hora del registro | FR-014, FR-015 |
+| 16 | En el admin, abrir el origen "Pozo N°2" de A (tiene muestras) | El cliente se muestra como solo lectura y no se puede reasignar | Consistencia origen–cliente |

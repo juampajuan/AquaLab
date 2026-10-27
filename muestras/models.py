@@ -48,6 +48,13 @@ class Origen(models.Model):
     def clean(self):
         super().clean()
         self.nombre = (self.nombre or "").strip()
+        # Las muestras guardan su cliente aparte: reasignar el origen las dejaría inconsistentes.
+        if self.pk and self.muestras.exists():
+            cliente_actual = Origen.objects.filter(pk=self.pk).values_list("cliente_id", flat=True)
+            if self.cliente_id != cliente_actual.first():
+                raise ValidationError(
+                    {"cliente": "No se puede cambiar el cliente de un origen que ya tiene muestras."}
+                )
 
 
 class Muestra(models.Model):

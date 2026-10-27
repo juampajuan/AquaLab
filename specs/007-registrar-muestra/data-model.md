@@ -23,6 +23,8 @@ Fuente de agua de un cliente (ej. "Pozo N°2"), reutilizable en sus próximas mu
   — el mismo nombre no se repite en un cliente sin distinguir mayúsculas (FR-006). Distintos
   clientes sí pueden tener orígenes con el mismo nombre.
 - **Orden**: `("nombre",)`. `__str__` → `nombre`.
+- **Cliente fijo con muestras**: `Origen.clean()` rechaza cambiar el `cliente` de un origen que ya
+  tiene muestras, y en el admin ese campo pasa a ser de solo lectura.
 - Se crea solo al confirmar el registro de una muestra (FR-005, FR-018). Editar o desactivar orígenes
   queda fuera de alcance.
 
