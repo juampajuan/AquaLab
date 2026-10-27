@@ -51,10 +51,17 @@ def registrar_muestra(datos, usuario):
     Toma un advisory lock de PostgreSQL para que dos registros simultáneos no calculen el mismo
     N° PI ni el mismo "Muestra N" por defecto; el lock se libera al terminar la transacción. Si
     algo falla no queda nada guardado ni se consume un N° PI.
+
+    Si el borrador ya se registró (otra confirmación simultánea leyó la misma sesión antes de que
+    se borrara), devuelve esa muestra en lugar de crear otra.
     """
     with transaction.atomic():
         with connection.cursor() as cursor:
             cursor.execute("SELECT pg_advisory_xact_lock(%s)", [CLAVE_LOCK_NUMERO_PI])
+
+        registrada = Muestra.objects.filter(clave_borrador=datos["clave_borrador"]).first()
+        if registrada is not None:
+            return registrada
 
         cliente = Cliente.objects.filter(pk=datos["cliente"], activo=True).first()
         if cliente is None:
@@ -72,4 +79,5 @@ def registrar_muestra(datos, usuario):
             tipo_vertido=datos["tipo_vertido"],
             responsable_muestreo=datos["responsable_muestreo"],
             registrada_por=usuario,
+            clave_borrador=datos["clave_borrador"],
         )

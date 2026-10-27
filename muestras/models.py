@@ -90,6 +90,11 @@ class Muestra(models.Model):
         verbose_name="registrada por",
     )
     fecha_registro = models.DateTimeField("fecha de registro", auto_now_add=True)
+    # Identifica el borrador confirmado: dos confirmaciones simultáneas del mismo borrador
+    # registran una sola muestra.
+    clave_borrador = models.UUIDField(
+        "clave del borrador", unique=True, null=True, blank=True, editable=False
+    )
 
     class Meta:
         verbose_name = "muestra"

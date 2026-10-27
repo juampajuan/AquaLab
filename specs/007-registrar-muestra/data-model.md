@@ -42,6 +42,7 @@ Fuente de agua de un cliente (ej. "Pozo N°2"), reutilizable en sus próximas mu
 | `estado` | `CharField(20, choices=EstadoMuestra)` | `default="ingresada"`, `editable=False` (FR-015) |
 | `registrada_por` | FK → `settings.AUTH_USER_MODEL` | `PROTECT`, `editable=False`, `related_name="muestras_registradas"` (FR-014) |
 | `fecha_registro` | `DateTimeField(auto_now_add)` | Automático (FR-014) |
+| `clave_borrador` | `UUIDField(unique=True, null=True)` | `editable=False`; clave del borrador confirmado (confirmación simultánea) |
 
 **Choices**
 
@@ -86,6 +87,7 @@ hasta confirmar):
     "tipo_vertido": "agua",
     "nombre": "",                  # vacío → "Muestra N" al confirmar
     "responsable_muestreo": "",
+    "clave_borrador": "6f1c…",     # UUID nuevo en cada envío válido del formulario
 }
 ```
 
@@ -97,10 +99,12 @@ repetida).
 En `transaction.atomic()`:
 
 1. `pg_advisory_xact_lock` con clave fija (serializa registros, R2).
-2. Revalida: cliente activo; si `origen`, que pertenezca al cliente. Si falla → `MuestraNoDisponible`.
-3. Si `origen_nuevo`: busca `Origen` del cliente con `nombre__iexact`; si no existe, lo crea.
-4. `numero_pi = (Max("numero_pi") or 200000) + 1`; si `nombre` está vacío,
+2. Si ya existe una muestra con `clave_borrador`, la devuelve sin crear otra: dos confirmaciones
+   simultáneas pueden leer el mismo borrador antes de que se borre de la sesión.
+3. Revalida: cliente activo; si `origen`, que pertenezca al cliente. Si falla → `MuestraNoDisponible`.
+4. Si `origen_nuevo`: busca `Origen` del cliente con `nombre__iexact`; si no existe, lo crea.
+5. `numero_pi = (Max("numero_pi") or 200000) + 1`; si `nombre` está vacío,
    `nombre = f"Muestra {cliente.muestras.count() + 1}"`.
-5. Crea la `Muestra` con `registrada_por=usuario` y `estado="ingresada"`.
+6. Crea la `Muestra` con `registrada_por=usuario` y `estado="ingresada"`.
 
 Cualquier excepción revierte todo: no queda origen nuevo ni N° PI consumido (FR-018, SC-005).

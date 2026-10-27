@@ -1,3 +1,5 @@
+import uuid
+
 from django import forms
 from django.utils import timezone
 
@@ -156,6 +158,7 @@ class RegistroMuestraForm(forms.Form):
             "tipo_vertido": datos["tipo_vertido"],
             "nombre": datos["nombre"],
             "responsable_muestreo": datos["responsable_muestreo"],
+            "clave_borrador": str(uuid.uuid4()),
         }
 
 

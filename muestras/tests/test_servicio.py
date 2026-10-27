@@ -1,4 +1,5 @@
 import threading
+import uuid
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -24,7 +25,13 @@ def datos(cliente_a, origen_a, hoy):
         "tipo_vertido": "agua",
         "nombre": "",
         "responsable_muestreo": "",
+        "clave_borrador": str(uuid.uuid4()),
     }
+
+
+def otro_borrador(datos, **cambios):
+    """Copia de `datos` como si fuera otro borrador, con su propia clave."""
+    return {**datos, "clave_borrador": str(uuid.uuid4()), **cambios}
 
 
 def test_primera_muestra_recibe_pi_200001(datos, empleado):
@@ -97,7 +104,7 @@ def test_registros_concurrentes_no_repiten_pi(datos, empleado):
         try:
             usuario = get_user_model().objects.get(pk=usuario_pk)
             barrera.wait(timeout=10)
-            muestra = registrar_muestra(dict(datos), usuario)
+            muestra = registrar_muestra(otro_borrador(datos), usuario)
             numeros.append(muestra.numero_pi)
             nombres.append(muestra.nombre)
         except Exception as exc:  # noqa: BLE001 - se informa en el assert
@@ -116,6 +123,35 @@ def test_registros_concurrentes_no_repiten_pi(datos, empleado):
     assert sorted(nombres) == [f"Muestra {n}" for n in range(1, cantidad + 1)]
 
 
+@pytest.mark.django_db(transaction=True)
+def test_confirmaciones_simultaneas_del_mismo_borrador_registran_una_muestra(datos, empleado):
+    cantidad = 2
+    barrera = threading.Barrier(cantidad)
+    numeros = []
+    errores = []
+    usuario_pk = empleado.pk
+
+    def registrar():
+        try:
+            usuario = get_user_model().objects.get(pk=usuario_pk)
+            barrera.wait(timeout=10)
+            numeros.append(registrar_muestra(dict(datos), usuario).numero_pi)
+        except Exception as exc:  # noqa: BLE001 - se informa en el assert
+            errores.append(exc)
+        finally:
+            connection.close()
+
+    hilos = [threading.Thread(target=registrar) for _ in range(cantidad)]
+    for hilo in hilos:
+        hilo.start()
+    for hilo in hilos:
+        hilo.join()
+
+    assert errores == []
+    assert numeros == [200001, 200001]
+    assert Muestra.objects.count() == 1
+
+
 def test_nombre_vacio_numera_por_cliente(datos, empleado, crear_muestra, cliente_b, origen_b):
     for numero_pi, nombre in enumerate(
         ["Muestra 1", "Muestra de Rutina", "Muestra 3", "Muestra 4", "Otra Muestra"], start=200001
@@ -123,11 +159,11 @@ def test_nombre_vacio_numera_por_cliente(datos, empleado, crear_muestra, cliente
         crear_muestra(numero_pi, nombre=nombre)
 
     assert registrar_muestra(datos, empleado).nombre == "Muestra 6"
-    assert registrar_muestra({**datos, "nombre": "Pozo profundo"}, empleado).nombre == (
+    assert registrar_muestra(otro_borrador(datos, nombre="Pozo profundo"), empleado).nombre == (
         "Pozo profundo"
     )
 
-    datos_b = {**datos, "cliente": cliente_b.pk, "origen": origen_b.pk}
+    datos_b = otro_borrador(datos, cliente=cliente_b.pk, origen=origen_b.pk)
     assert registrar_muestra(datos_b, empleado).nombre == "Muestra 1"
 
 

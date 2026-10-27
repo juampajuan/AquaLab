@@ -40,6 +40,9 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   `pg_advisory_xact_lock`. No usar secuencias ni `AutoField`: dejan huecos ante un rollback.
 - El origen nuevo se crea (o se reutiliza, sin distinguir mayúsculas) en la misma transacción que la
   muestra, después del lock; cancelar o fallar no deja orígenes huérfanos ni consume N° PI.
+- Cada borrador lleva una `clave_borrador` (UUID, `unique` en `Muestra`); bajo el lock, si ya hay una
+  muestra con esa clave se devuelve en vez de crear otra. Borrar el borrador de la sesión no alcanza:
+  las sesiones de Django no se bloquean y dos confirmaciones simultáneas leen el mismo borrador.
 - La ficha del cliente y sus orígenes se actualizan en vivo con
   `muestras/static/muestras/registro_muestra.js`; con un cliente ya elegido (errores o `?volver=1`)
   los renderiza el servidor. No hay buscador de clientes: se quitó tras la prueba manual.

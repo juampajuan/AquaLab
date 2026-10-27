@@ -1,6 +1,7 @@
 import datetime
 import json
 import re
+import uuid
 
 import pytest
 from django.conf import settings
@@ -9,6 +10,7 @@ from django.shortcuts import resolve_url
 from django.urls import reverse
 
 from muestras.models import Muestra, Origen
+from muestras.servicios import registrar_muestra
 
 pytestmark = pytest.mark.django_db
 
@@ -149,7 +151,8 @@ def test_post_valido_guarda_borrador_y_muestra_resumen(
 
     assert respuesta.status_code == 302
     assert respuesta.url == URL_CONFIRMAR
-    borrador = cliente_autenticado.session[CLAVE_SESION]
+    borrador = dict(cliente_autenticado.session[CLAVE_SESION])
+    assert uuid.UUID(borrador.pop("clave_borrador"))
     assert borrador == {
         "cliente": cliente_a.pk,
         "origen": origen_a.pk,
@@ -234,6 +237,20 @@ def test_confirmacion_repetida_registra_una_sola_muestra(en_revision):
     assert segunda.status_code == 302
     assert segunda.url == URL_REGISTRAR
     assert mensaje_exito(200001) in en_revision.get(segunda.url).content.decode()
+
+
+def test_confirmacion_de_borrador_ya_registrado_no_duplica(en_revision, empleado):
+    # Lo que ve la segunda de dos confirmaciones simultáneas: el borrador sigue en su sesión, pero
+    # la primera ya lo registró.
+    registrar_muestra(en_revision.session[CLAVE_SESION], empleado)
+
+    respuesta = en_revision.post(URL_CONFIRMAR, {"accion": "confirmar"})
+
+    assert Muestra.objects.count() == 1
+    assert respuesta.status_code == 302
+    assert respuesta.url == URL_REGISTRAR
+    assert CLAVE_SESION not in en_revision.session
+    assert mensaje_exito(200001) in en_revision.get(respuesta.url).content.decode()
 
 
 def test_cliente_desactivado_antes_de_confirmar_no_registra(en_revision, cliente_a):
