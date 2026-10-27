@@ -109,6 +109,7 @@ Detalles en [contracts/registro-muestra-ui.md](./contracts/registro-muestra-ui.m
 | US1 Esc. 1 — valores iniciales (hoy, hoy, Agua, vacíos) | `test_formulario_inicial_propone_hoy_y_agua` | `test_registro.py` |
 | US1 Esc. 2, FR-002, FR-003 — solo clientes activos; datos del cliente para la ficha | `test_formulario_lista_solo_clientes_activos_con_sus_datos` | `test_registro.py` |
 | US1 Esc. 2, Q2 — filtro por nombre, razón social o documento (tildes y separadores) | `filtra clientes por texto normalizado` | `js/registro_muestra.test.cjs` |
+| US1 Esc. 2–3, FR-003 — ficha y orígenes del cliente elegido renderizados por el servidor | `test_formulario_con_cliente_elegido_muestra_ficha_y_origenes` | `test_registro.py` |
 | US1 Esc. 3, FR-004 — orígenes del cliente elegido | `test_formulario_ofrece_solo_origenes_del_cliente` | `test_registro.py` |
 | US1 Esc. 4, FR-017 — resumen con todos los datos | `test_post_valido_guarda_borrador_y_muestra_resumen` | `test_registro.py` |
 | US1 Esc. 5, FR-012/014/015/019 — registra con PI = máx + 1, Ingresada, usuario, fecha; vuelve vacío con el PI | `test_confirmar_registra_muestra_con_pi_siguiente_y_datos_automaticos` | `test_registro.py` |
@@ -126,7 +127,7 @@ Detalles en [contracts/registro-muestra-ui.md](./contracts/registro-muestra-ui.m
 | US3 Esc. 5 — origen de otro cliente / cliente inactivo o inexistente | `test_origen_de_otro_cliente_rechazado`, `test_cliente_inactivo_o_inexistente_rechazado` | `test_registro.py` |
 | FR-010 — tipo de vertido solo Agua/Cloacal/Canal | `test_tipo_vertido_fuera_de_opciones_rechazado` | `test_registro.py` |
 | FR-013 — registros concurrentes no repiten PI | `test_registros_concurrentes_no_repiten_pi` (`transaction=True`, hilos) | `test_servicio.py` |
-| FR-018 — falla al guardar no deja origen nuevo ni consume PI | `test_error_al_guardar_revierte_origen_y_pi` | `test_servicio.py` |
+| FR-018 — falla al guardar no deja origen nuevo ni consume PI | `test_error_al_guardar_no_consume_pi` | `test_servicio.py` |
 | Edge — doble confirmación registra una sola muestra | `test_confirmacion_repetida_registra_una_sola_muestra` | `test_registro.py` |
 | Edge — cliente desactivado entre formulario y confirmación | `test_cliente_desactivado_antes_de_confirmar_no_registra` | `test_registro.py` |
 | Edge — texto solo con espacios cuenta como vacío | `test_textos_solo_espacios_son_vacios` | `test_registro.py` |

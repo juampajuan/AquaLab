@@ -48,8 +48,12 @@
   nombre, tipo y número de documento, correo) y sus orígenes van en la página con `json_script`.
 - **Rationale**: cumple la clarificación Q2 y FR-002/FR-003 sin dependencias nuevas (Principio II) y
   sin pantallas extra. Un laboratorio maneja cientos (no cientos de miles) de clientes: incluirlos en
-  la página es liviano. Sin JavaScript el `<select>` sigue funcionando (solo se pierde el filtro y la
-  ficha resumida); la validación real queda en el servidor (Principio IV).
+  la página es liviano. Cuando el formulario se renderiza con un cliente ya elegido (POST con errores o `?volver=1`), el
+  servidor muestra la ficha de ese cliente y las opciones de `origen` de ese cliente; el script solo
+  los actualiza al cambiar de cliente en vivo. Sin JavaScript se puede elegir el cliente y dar de
+  alta un origen nuevo; para elegir un origen existente hay que enviar una vez el formulario (el
+  error de origen recarga la página con los orígenes del cliente). La validación real queda en el
+  servidor (Principio IV).
 - **Alternatives**:
   - `<datalist>` — el filtrado y la presentación dependen del navegador y el valor enviado es el
     texto visible, no el `pk`.

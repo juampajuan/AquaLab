@@ -44,10 +44,10 @@ App en `http://localhost:8000`.
 | 2 | Iniciar sesión y pulsar "Registrar muestra" en la barra | Formulario con fechas de hoy, tipo de vertido "Agua", nombre y responsable vacíos | US1 Esc. 1 |
 | 3 | Escribir parte del CUIT de A con guiones, y luego parte de su razón social sin tildes | La lista queda filtrada a A; C nunca aparece | US1 Esc. 2, FR-002 |
 | 4 | Elegir A | Se ven su razón social (o nombre), documento y correo; A no tiene orígenes, así que se abre "origen nuevo" | US1 Esc. 2, edge case |
-| 5 | Pulsar "Registrar" sin completar nada más | No avanza; error junto a origen y sitio de extracción, el resto conservado | US3 Esc. 1 |
-| 6 | Origen nuevo "Pozo N°2", sitio "Canilla del tanque", nombre vacío → Registrar | Resumen con todos los datos, origen marcado "(nuevo)" y nombre "Muestra 1" | US1 Esc. 4, US2 Esc. 1 |
+| 5 | Pulsar "Continuar" sin completar nada más | No avanza; error junto a origen y sitio de extracción, el resto conservado | US3 Esc. 1 |
+| 6 | Origen nuevo "Pozo N°2", sitio "Canilla del tanque", nombre vacío → Continuar | Resumen con todos los datos, origen marcado "(nuevo)" y nombre "Muestra 1" | US1 Esc. 4, US2 Esc. 1 |
 | 7 | Pulsar "Volver y editar" | Formulario con los datos ingresados | US1 Esc. 7 |
-| 8 | Volver al resumen y Confirmar | Formulario vacío con "Muestra registrada con N° PI 200001." (si es la primera) | US1 Esc. 5–6, FR-019 |
+| 8 | Volver al resumen y Confirmar | Formulario vacío con "Muestra registrada con N° PI 200001." (si es la primera). Cronometrado desde el paso 2 con un origen existente: menos de 1 minuto (SC-001) | US1 Esc. 5–6, FR-019 |
 | 9 | Registrar otra muestra de A | "Pozo N°2" aparece entre sus orígenes; el N° PI es 200002 | US2 Esc. 2, FR-012 |
 | 10 | Elegir B | "Pozo N°2" no aparece entre los orígenes de B | US2 Esc. 3 |
 | 11 | En A, origen nuevo " pozo n°2 " → confirmar | Se reutiliza el origen existente; no se crea un duplicado (verificar en el admin) | US2 Esc. 4 |

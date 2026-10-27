@@ -17,7 +17,7 @@ POST. Los mensajes se muestran con el framework `messages` en `base.html`.
 |---|---|---|---|
 | `buscar_cliente` | texto (no se envía al servidor, solo filtra) | — | vacío |
 | `cliente` | `<select>` con clientes activos; etiqueta `nombre_completo · TIPO número` | Sí | ninguno |
-| — | ficha del cliente elegido: razón social (o nombre), tipo y número de documento, correo | — | oculta hasta elegir |
+| — | ficha del cliente elegido: razón social (o nombre), tipo y número de documento, correo | — | la renderiza el servidor si hay cliente elegido; si no, oculta hasta elegir |
 | `origen` | `<select>` con los orígenes del cliente elegido | Uno de los dos | ninguno |
 | `origen_nuevo` | texto, visible al pulsar "Dar de alta un origen nuevo" | Uno de los dos | vacío |
 | `fecha_muestreo` | `<input type="date">` | Sí | hoy |
@@ -44,7 +44,7 @@ Comportamiento del script `muestras/registro_muestra.js` (sin él, el formulario
 | Caso | Respuesta |
 |---|---|
 | Válido | Guarda el borrador normalizado en sesión y responde 302 a `muestras:registrar_confirmar` |
-| Inválido | 200 con el formulario, los valores ingresados y el error junto a cada campo (`is-invalid` / `invalid-feedback`) |
+| Inválido | 200 con el formulario, los valores ingresados y el error junto a cada campo (`is-invalid` / `invalid-feedback`), con la ficha del cliente elegido y solo sus orígenes en `origen` |
 
 ### Mensajes de validación
 
