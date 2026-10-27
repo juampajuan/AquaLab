@@ -4,7 +4,7 @@
 
 Cuando una feature resuelva un pendiente, borrar su línea.
 
-- **US 4.1:** el envío de informes por correo usa `Cliente.email`.
+- **Envío de informes (SCRUM-39):** el envío de informes por correo usa `Cliente.email`.
 
 ## Mensajes de commit
 
