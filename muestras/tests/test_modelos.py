@@ -55,6 +55,5 @@ def test_valores_por_defecto_muestra(crear_muestra):
     muestra = crear_muestra(200001)
     muestra.refresh_from_db()
 
-    assert muestra.nombre == "Muestra 1"
     assert muestra.tipo_vertido == "agua"
     assert muestra.estado == "ingresada"

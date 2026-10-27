@@ -32,4 +32,4 @@
 ## Notes
 
 - Validado en una iteración. Los 11 criterios de aceptación de SCRUM-47 quedan cubiertos por FR-002…FR-017.
-- Decisiones tomadas por defecto (no pedidas explícitamente, documentadas en Assumptions): solo clientes activos, origen único por cliente sin distinguir mayúsculas, sin fechas futuras ni muestreo posterior al ingreso, "Muestra 1" fijo (sin autonumerar). Revisarlas con `/speckit-clarify` si el equipo prefiere otra cosa.
+- Decisiones tomadas por defecto (no pedidas explícitamente, documentadas en Assumptions): solo clientes activos, origen único por cliente sin distinguir mayúsculas, sin fechas futuras ni muestreo posterior al ingreso, "Muestra N" numerado por cliente (revisado en Clarifications). Revisarlas con `/speckit-clarify` si el equipo prefiere otra cosa.

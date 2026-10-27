@@ -15,7 +15,6 @@ POST. Los mensajes se muestran con el framework `messages` en `base.html`.
 
 | Campo (`name`) | Control | Obligatorio | Valor inicial |
 |---|---|---|---|
-| `buscar_cliente` | texto (no se envía al servidor, solo filtra) | — | vacío |
 | `cliente` | `<select>` con clientes activos; etiqueta `nombre_completo · TIPO número` | Sí | ninguno |
 | — | ficha del cliente elegido: razón social (o nombre), tipo y número de documento, correo | — | la renderiza el servidor si hay cliente elegido; si no, oculta hasta elegir |
 | `origen` | `<select>` con los orígenes del cliente elegido | Uno de los dos | ninguno |
@@ -24,7 +23,7 @@ POST. Los mensajes se muestran con el framework `messages` en `base.html`.
 | `fecha_ingreso` | `<input type="date">` | Sí | hoy |
 | `sitio_extraccion` | texto | Sí | vacío |
 | `tipo_vertido` | `<select>`: Agua, Cloacal, Canal | Sí | Agua |
-| `nombre` | texto; ayuda: "Si lo dejás vacío se usa «Muestra 1»." | No | vacío |
+| `nombre` | texto; ayuda: "Si lo dejás vacío se numera según las muestras del cliente (ej. «Muestra 6»)." | No | vacío |
 | `responsable_muestreo` | texto | No | vacío |
 
 Datos para el script (con `json_script`, id `clientes-muestra`): por cada cliente activo
@@ -33,8 +32,6 @@ Datos para el script (con `json_script`, id `clientes-muestra`): por cada client
 
 Comportamiento del script `muestras/registro_muestra.js` (sin él, el formulario igual funciona):
 
-- Al escribir en `buscar_cliente`, oculta las opciones de `cliente` cuyo texto no coincide
-  (sin distinguir mayúsculas ni tildes; los dígitos se comparan sin puntos, guiones ni espacios).
 - Al cambiar `cliente`: muestra su ficha, reemplaza las opciones de `origen` por las suyas y vacía
   `origen`. Si el cliente no tiene orígenes, abre directamente `origen_nuevo`.
 - Al escribir en `origen_nuevo`, vacía `origen`; al elegir un `origen`, vacía `origen_nuevo`.
@@ -65,7 +62,8 @@ Comportamiento del script `muestras/registro_muestra.js` (sin él, el formulario
 - Con borrador → 200, template `muestras/registro_confirmar.html`, con el aviso "Revisá los datos de
   la muestra antes de confirmar el registro." y el resumen: cliente (nombre completo, documento,
   correo), origen (con la marca "(nuevo)" si corresponde), fecha de muestreo, fecha de ingreso,
-  sitio de extracción, tipo de vertido, nombre de la muestra, responsable del muestreo ("—" si está
+  sitio de extracción, tipo de vertido, nombre de la muestra (si quedó vacío: "Muestra N (el número se
+  confirma al guardar)", con N = muestras actuales del cliente + 1), responsable del muestreo ("—" si está
   vacío). Nota: "El N° PI se asigna al confirmar."
 - Botones: [Confirmar] (`accion=confirmar`, se deshabilita al enviar), [Volver y editar]
   (`/muestras/registrar/?volver=1`), [Cancelar] (`accion=cancelar`).

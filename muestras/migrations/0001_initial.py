@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('numero_pi', models.PositiveIntegerField(editable=False, unique=True, verbose_name='N° PI')),
-                ('nombre', models.CharField(default='Muestra 1', max_length=100, verbose_name='nombre')),
+                ('nombre', models.CharField(max_length=100, verbose_name='nombre')),
                 ('fecha_muestreo', models.DateField(verbose_name='fecha de muestreo')),
                 ('fecha_ingreso', models.DateField(verbose_name='fecha de ingreso')),
                 ('sitio_extraccion', models.CharField(max_length=200, verbose_name='sitio de extracción')),

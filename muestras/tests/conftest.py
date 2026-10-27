@@ -95,6 +95,7 @@ def crear_muestra(cliente_a, origen_a, empleado, hoy):
     def crear(numero_pi, **extra):
         datos = {
             "numero_pi": numero_pi,
+            "nombre": "Muestra de rutina",
             "cliente": cliente_a,
             "origen": origen_a,
             "fecha_muestreo": hoy,

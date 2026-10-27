@@ -12,8 +12,8 @@
 
 ### Session 2026-10-27
 
-- Q: Si el nombre de la muestra queda vacío, ¿se usa siempre "Muestra 1" o se numera ("Muestra 1", "Muestra 2", …)? → A: Siempre "Muestra 1" (valor fijo por defecto).
-- Q: ¿Cómo se elige el cliente en el formulario: lista desplegable o búsqueda? → A: Lista desplegable que se filtra al escribir por nombre, razón social o número de documento.
+- Q: Si el nombre de la muestra queda vacío, ¿se usa siempre "Muestra 1" o se numera ("Muestra 1", "Muestra 2", …)? → A: Se numera según las muestras del cliente: "Muestra N", con N = cantidad de muestras ya registradas del cliente + 1, cuenten o no con nombre propio (decisión revisada tras la prueba manual; reemplaza el valor fijo "Muestra 1" y se actualizó el criterio 6 de SCRUM-47).
+- Q: ¿Cómo se elige el cliente en el formulario: lista desplegable o búsqueda? → A: Lista desplegable con todos los clientes activos, sin buscador aparte (decisión revisada tras la prueba manual: el buscador resultaba redundante con la lista).
 - Q: ¿Origen y sitio de extracción son datos distintos? → A: Sí: el origen es la fuente de agua reutilizable del cliente; el sitio de extracción es texto libre propio de cada muestra.
 - Q: ¿El responsable del muestreo es texto libre o un usuario del sistema? → A: Texto libre (puede ser personal externo al laboratorio).
 - Q: Tras confirmar el registro, ¿a qué pantalla se dirige al empleado? → A: Al formulario de registro vacío, con un mensaje de éxito que muestra el N° PI asignado.
@@ -31,7 +31,7 @@ Como empleado del laboratorio, quiero registrar el ingreso de una muestra físic
 **Acceptance Scenarios**:
 
 1. **Given** un empleado con sesión activa, **When** abre el registro de muestra, **Then** el sistema muestra el formulario con la fecha de muestreo y la fecha de ingreso precargadas con la fecha de hoy, el tipo de vertido en "Agua" y los campos de nombre de la muestra y responsable del muestreo vacíos.
-2. **Given** el formulario de registro de muestra, **When** el empleado escribe parte del nombre, la razón social o el número de documento y selecciona un cliente de la lista filtrada, **Then** el sistema muestra la razón social (o el nombre, si el cliente no tiene razón social), el tipo y número de documento (CUIT/DNI) y el correo electrónico de ese cliente.
+2. **Given** el formulario de registro de muestra, **When** el empleado selecciona un cliente de la lista de clientes activos, **Then** el sistema muestra la razón social (o el nombre, si el cliente no tiene razón social), el tipo y número de documento (CUIT/DNI) y el correo electrónico de ese cliente.
 3. **Given** un cliente seleccionado que tiene orígenes usados anteriormente, **When** el empleado despliega la elección del origen, **Then** el sistema ofrece únicamente los orígenes asociados a ese cliente.
 4. **Given** el formulario con todos los datos obligatorios completos y válidos, **When** el empleado solicita guardar, **Then** el sistema muestra un resumen con todos los datos ingresados (cliente, origen, fechas, sitio de extracción, tipo de vertido, nombre de la muestra y responsable del muestreo) y pide confirmación antes de guardar.
 5. **Given** el resumen de una muestra válida, **When** el empleado confirma, **Then** el sistema registra la muestra con un N° PI igual al último N° PI registrado más 1, en estado "Ingresada", guarda automáticamente el usuario que la registró y la fecha y hora del registro, e informa el éxito mostrando el N° PI asignado, dejando al empleado en un formulario de registro vacío listo para la siguiente muestra.
@@ -69,7 +69,7 @@ Como empleado del laboratorio, quiero que el sistema no me permita guardar una m
 **Acceptance Scenarios**:
 
 1. **Given** el formulario de registro de muestra, **When** el empleado intenta guardar sin alguno de los datos obligatorios (cliente, origen, fecha de muestreo, fecha de ingreso, sitio de extracción o tipo de vertido), **Then** el sistema no avanza al resumen, indica junto a cada dato faltante que es obligatorio y conserva los datos ya ingresados.
-2. **Given** el formulario de registro de muestra, **When** el empleado deja vacío el nombre de la muestra y confirma el registro, **Then** el sistema registra la muestra con el nombre "Muestra 1".
+2. **Given** el formulario de registro de muestra, **When** el empleado deja vacío el nombre de la muestra de un cliente que ya tiene 5 muestras registradas (algunas con nombre propio) y confirma el registro, **Then** el sistema registra la muestra con el nombre "Muestra 6"; si es la primera muestra del cliente, con "Muestra 1".
 3. **Given** el formulario de registro de muestra, **When** el empleado deja vacío el responsable del muestreo y confirma el registro, **Then** el sistema registra la muestra sin responsable del muestreo.
 4. **Given** el formulario de registro de muestra, **When** el empleado ingresa una fecha de muestreo posterior a la fecha de ingreso, o alguna de las fechas posterior a hoy, **Then** el sistema indica el error en la fecha correspondiente y no avanza al resumen.
 5. **Given** el formulario de registro de muestra, **When** el empleado intenta usar un origen que pertenece a otro cliente o un cliente inactivo o inexistente, **Then** el sistema rechaza el dato y no registra la muestra.
@@ -79,10 +79,10 @@ Como empleado del laboratorio, quiero que el sistema no me permita guardar una m
 - Dos empleados confirman el registro de una muestra al mismo tiempo: cada muestra recibe un N° PI distinto y consecutivo; nunca se repite un N° PI.
 - El empleado confirma dos veces el mismo resumen (doble clic o reenvío): se registra una sola muestra.
 - El empleado cambia el cliente seleccionado después de haber elegido un origen: el origen elegido deja de ser válido y debe elegirse o darse de alta uno del nuevo cliente.
-- Si el texto escrito no coincide con ningún cliente activo, la lista no ofrece opciones y no se puede avanzar sin elegir un cliente.
 - El cliente seleccionado no tiene orígenes previos: la única opción es dar de alta un origen nuevo.
 - Los espacios laterales en los campos de texto (origen nuevo, sitio de extracción, nombre de la muestra, responsable) se eliminan; un campo obligatorio que solo contiene espacios se considera vacío.
 - El cliente seleccionado se desactiva entre que se abre el formulario y se confirma: el sistema informa que el cliente no está disponible y no registra la muestra.
+- Si mientras el empleado revisa el resumen otro empleado registra una muestra del mismo cliente, el número del nombre por defecto se recalcula al confirmar; el resumen lo anticipa con la aclaración de que se confirma al guardar.
 - Si ocurre una falla al guardar la muestra confirmada, el sistema informa que no se pudo registrar, no deja creado un origen nuevo huérfano ni presenta la muestra como registrada.
 - Un usuario sin sesión activa no puede acceder al registro de muestras ni enviar datos.
 
@@ -91,7 +91,7 @@ Como empleado del laboratorio, quiero que el sistema no me permita guardar una m
 ### Functional Requirements
 
 - **FR-001**: El sistema MUST permitir registrar muestras únicamente a empleados con una sesión activa.
-- **FR-002**: El sistema MUST permitir seleccionar el cliente de la muestra solo entre los clientes registrados y activos, mediante una lista desplegable que se filtra a medida que el empleado escribe parte del nombre, la razón social o el número de documento.
+- **FR-002**: El sistema MUST permitir seleccionar el cliente de la muestra solo entre los clientes registrados y activos, mediante una lista desplegable con todos los clientes activos.
 - **FR-003**: Al seleccionar un cliente, el sistema MUST mostrar su razón social (o su nombre, si no tiene razón social), su tipo y número de documento (CUIT/DNI) y su correo electrónico.
 - **FR-004**: El sistema MUST ofrecer como orígenes elegibles únicamente los orígenes asociados al cliente seleccionado.
 - **FR-005**: El sistema MUST permitir dar de alta un origen nuevo desde el mismo formulario de registro de muestra; el origen nuevo MUST quedar asociado al cliente de la muestra y disponible para sus próximas muestras.
@@ -101,7 +101,7 @@ Como empleado del laboratorio, quiero que el sistema no me permita guardar una m
 - **FR-008**: El sistema MUST proponer la fecha de hoy como fecha de muestreo y como fecha de ingreso, permitiendo corregirlas.
 - **FR-009**: El sistema MUST validar que la fecha de muestreo no sea posterior a la fecha de ingreso y que ninguna de las dos sea posterior a la fecha actual.
 - **FR-010**: El sistema MUST permitir elegir el tipo de vertido solo entre "Agua", "Cloacal" y "Canal", proponiendo "Agua" por defecto.
-- **FR-011**: El sistema MUST tratar como opcionales el nombre de la muestra y el responsable del muestreo; si el nombre de la muestra queda vacío, MUST registrarse siempre con el valor fijo "Muestra 1" (sin numeración automática). El responsable del muestreo es un texto libre (nombre de quien tomó la muestra, sea o no empleado del laboratorio) y no se vincula con un usuario del sistema.
+- **FR-011**: El sistema MUST tratar como opcionales el nombre de la muestra y el responsable del muestreo; si el nombre de la muestra queda vacío, MUST registrarse como "Muestra N", donde N es la cantidad de muestras del cliente registradas antes de confirmar más 1 (se cuentan todas, tengan o no nombre propio). N se calcula al confirmar, de modo que dos registros simultáneos del mismo cliente no repiten número. El responsable del muestreo es un texto libre (nombre de quien tomó la muestra, sea o no empleado del laboratorio) y no se vincula con un usuario del sistema.
 - **FR-012**: El sistema MUST asignar automáticamente a cada muestra un N° PI entero y único, igual al mayor N° PI registrado más 1, comenzando en 200001 cuando no hay muestras; el N° PI no es editable por el empleado.
 - **FR-013**: El sistema MUST garantizar que el N° PI no se repita aun cuando varias muestras se registren simultáneamente.
 - **FR-014**: El sistema MUST registrar automáticamente el usuario que registró la muestra y la fecha y hora del registro, sin que el empleado pueda modificarlos.
@@ -133,7 +133,7 @@ Como empleado del laboratorio, quiero que el sistema no me permita guardar una m
 
 - Lo que se muestra al elegir el cliente sale de los datos ya registrados del Cliente (US 2.1); si el cliente es una persona sin razón social, se muestra su nombre. El correo mostrado es el correo del cliente, que es también el que se usará para el envío de informes.
 - Solo se pueden elegir clientes activos; los inactivos no aparecen en la selección.
-- El nombre "Muestra 1" por defecto es un valor fijo indicado por el criterio de aceptación; no se numera automáticamente por cliente ni por origen. La identificación unívoca de la muestra la da el N° PI.
+- El nombre por defecto "Muestra N" se numera por cliente (no por origen) y cuenta todas sus muestras, incluidas las que en el futuro se desactiven, para que el número no se repita ni retroceda. Es solo un nombre de referencia: la identificación unívoca de la muestra la da el N° PI.
 - (Confirmado en Clarifications) "Origen" y "sitio de extracción" son datos distintos: el origen es la fuente de agua reutilizable del cliente (ej. "Pozo N°2"); el sitio de extracción es un texto libre propio de cada muestra que describe dónde se tomó (ej. "Canilla de salida del tanque").
 - Las fechas de muestreo e ingreso son solo fechas (sin hora); la hora queda registrada únicamente en la fecha y hora del registro.
 - No se admiten fechas futuras ni una fecha de muestreo posterior a la de ingreso: una muestra no puede ingresar antes de tomarse ni registrarse antes de existir. Se permiten fechas pasadas sin límite para cargar ingresos atrasados.

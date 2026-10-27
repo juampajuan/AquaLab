@@ -38,14 +38,14 @@
   - `LOCK TABLE` — bloquea también lecturas de otras pantallas futuras; el advisory lock solo
     serializa a quienes registran.
 
-## R3 — Selección del cliente con lista filtrable (Clarificación Q2)
+## R3 — Selección del cliente con lista desplegable (Clarificación Q2)
 
 - **Decision**: el campo `cliente` es un `<select>` con todos los clientes activos (ordenados como
-  `Cliente.Meta.ordering`), precedido por un campo de texto "Buscar cliente". Un script propio y
-  chico (`muestras/static/muestras/registro_muestra.js`, sin librerías) oculta las opciones que no
-  coinciden con lo escrito. La coincidencia ignora mayúsculas, tildes y separadores del documento,
-  igual que `clientes.views.buscar_clientes` (US 3.1). Los datos a mostrar del cliente (razón social o
-  nombre, tipo y número de documento, correo) y sus orígenes van en la página con `json_script`.
+  `Cliente.Meta.ordering`), sin buscador aparte: tras la prueba manual el campo "Buscar cliente"
+  resultó redundante con la lista y se quitó. Un script propio y chico
+  (`muestras/static/muestras/registro_muestra.js`, sin librerías) actualiza la ficha y los orígenes al
+  cambiar de cliente. Los datos a mostrar del cliente (razón social o nombre, tipo y número de
+  documento, correo) y sus orígenes van en la página con `json_script`.
 - **Rationale**: cumple la clarificación Q2 y FR-002/FR-003 sin dependencias nuevas (Principio II) y
   sin pantallas extra. Un laboratorio maneja cientos (no cientos de miles) de clientes: incluirlos en
   la página es liviano. Cuando el formulario se renderiza con un cliente ya elegido (POST con errores o `?volver=1`), el
@@ -55,6 +55,8 @@
   error de origen recarga la página con los orígenes del cliente). La validación real queda en el
   servidor (Principio IV).
 - **Alternatives**:
+  - Campo "Buscar cliente" que filtra la lista (versión inicial) — redundante con la lista en la
+    prueba manual; se quitó.
   - `<datalist>` — el filtrado y la presentación dependen del navegador y el valor enviado es el
     texto visible, no el `pk`.
   - Endpoint JSON de búsqueda por cada tecla — más vistas, más tests y latencia, sin beneficio a
@@ -104,9 +106,12 @@
 - **Decision**: `fecha_muestreo` y `fecha_ingreso` usan `initial=timezone.localdate` (fecha del
   laboratorio, `America/Argentina/Buenos_Aires`); `tipo_vertido` usa `initial="agua"`. En
   `clean()`: ninguna fecha posterior a `timezone.localdate()`, y `fecha_muestreo <= fecha_ingreso`
-  (además, `CheckConstraint` en el modelo). El nombre vacío se normaliza a `"Muestra 1"`
-  (Clarificación Q1) en el formulario, así el resumen ya muestra el valor que se guardará; el
-  modelo también lo usa como `default`.
+  (además, `CheckConstraint` en el modelo). El nombre vacío queda vacío en el borrador y
+  `registrar_muestra` lo completa al confirmar con `"Muestra N"` (N = muestras del cliente + 1,
+  Clarificación Q1), dentro de la transacción y después del advisory lock que ya serializa el
+  N° PI: así dos registros simultáneos del mismo cliente no repiten número. El resumen muestra el
+  número previsto con la aclaración de que se confirma al guardar. El modelo no tiene `default`
+  para `nombre`.
 - **Rationale**: FR-008, FR-009, FR-010 y FR-011. La comparación "posterior a hoy" depende del día,
   por eso vive en el formulario y no en la base. Usar la fecha local evita que después de las 21 h
   (UTC-3) "hoy" sea el día siguiente.

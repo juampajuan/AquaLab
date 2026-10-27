@@ -31,7 +31,7 @@ Fuente de agua de un cliente (ej. "Pozo N°2"), reutilizable en sus próximas mu
 | Campo | Tipo | Reglas |
 |---|---|---|
 | `numero_pi` | `PositiveIntegerField` | Único, `editable=False`. Último + 1; la primera es 200001 (FR-012, FR-013) |
-| `nombre` | `CharField(100)` | Opcional en el formulario; vacío → `"Muestra 1"` (`default`, FR-011) |
+| `nombre` | `CharField(100)` | Opcional en el formulario; vacío → `"Muestra N"` al confirmar, N = muestras del cliente + 1 (FR-011) |
 | `cliente` | FK → `clientes.Cliente` | Obligatorio, activo al registrar. `PROTECT`, `related_name="muestras"` |
 | `origen` | FK → `Origen` | Obligatorio; debe pertenecer a `cliente`. `PROTECT`, `related_name="muestras"` |
 | `fecha_muestreo` | `DateField` | Obligatorio; por defecto hoy; ≤ hoy; ≤ `fecha_ingreso` (FR-008, FR-009) |
@@ -84,7 +84,7 @@ hasta confirmar):
     "fecha_ingreso": "2026-10-27",
     "sitio_extraccion": "Canilla de salida del tanque",
     "tipo_vertido": "agua",
-    "nombre": "Muestra 1",
+    "nombre": "",                  # vacío → "Muestra N" al confirmar
     "responsable_muestreo": "",
 }
 ```
@@ -99,7 +99,8 @@ En `transaction.atomic()`:
 1. `pg_advisory_xact_lock` con clave fija (serializa registros, R2).
 2. Revalida: cliente activo; si `origen`, que pertenezca al cliente. Si falla → `MuestraNoDisponible`.
 3. Si `origen_nuevo`: busca `Origen` del cliente con `nombre__iexact`; si no existe, lo crea.
-4. `numero_pi = (Max("numero_pi") or 200000) + 1`.
+4. `numero_pi = (Max("numero_pi") or 200000) + 1`; si `nombre` está vacío,
+   `nombre = f"Muestra {cliente.muestras.count() + 1}"`.
 5. Crea la `Muestra` con `registrada_por=usuario` y `estado="ingresada"`.
 
 Cualquier excepción revierte todo: no queda origen nuevo ni N° PI consumido (FR-018, SC-005).

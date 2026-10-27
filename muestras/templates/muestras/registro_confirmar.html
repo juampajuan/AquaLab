@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmar muestra · AquaLab{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <h1 class="h3 mb-4">Confirmar registro de muestra</h1>
+
+      <div class="alert alert-info" role="alert">
+        Revisá los datos de la muestra antes de confirmar el registro.
+      </div>
+
+      <dl class="row">
+        <dt class="col-sm-5">Cliente</dt>
+        <dd class="col-sm-7">{{ datos.cliente.nombre_completo }}</dd>
+        <dt class="col-sm-5">Documento</dt>
+        <dd class="col-sm-7">{{ datos.cliente.tipo_documento }} {{ datos.cliente.numero_documento }}</dd>
+        <dt class="col-sm-5">Correo electrónico</dt>
+        <dd class="col-sm-7">{{ datos.cliente.email }}</dd>
+        <dt class="col-sm-5">Origen</dt>
+        <dd class="col-sm-7">{{ datos.origen }}{% if datos.origen_es_nuevo %} (nuevo){% endif %}</dd>
+        <dt class="col-sm-5">Fecha de muestreo</dt>
+        <dd class="col-sm-7">{{ datos.fecha_muestreo|date:"d/m/Y" }}</dd>
+        <dt class="col-sm-5">Fecha de ingreso</dt>
+        <dd class="col-sm-7">{{ datos.fecha_ingreso|date:"d/m/Y" }}</dd>
+        <dt class="col-sm-5">Sitio de extracción</dt>
+        <dd class="col-sm-7">{{ datos.sitio_extraccion }}</dd>
+        <dt class="col-sm-5">Tipo de vertido</dt>
+        <dd class="col-sm-7">{{ datos.tipo_vertido }}</dd>
+        <dt class="col-sm-5">Nombre de la muestra</dt>
+        <dd class="col-sm-7">{{ datos.nombre }}{% if datos.nombre_es_por_defecto %} (el número se confirma al guardar){% endif %}</dd>
+        <dt class="col-sm-5">Responsable del muestreo</dt>
+        <dd class="col-sm-7">{{ datos.responsable_muestreo|default:"—" }}</dd>
+      </dl>
+
+      <p class="text-muted">El N° PI se asigna al confirmar.</p>
+
+      <div class="d-flex gap-2">
+        {# El botón se deshabilita al enviar; "accion" va en el input oculto, así que sigue en el POST. #}
+        <form method="post" class="m-0" onsubmit="this.querySelector('button').disabled = true;">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="confirmar">
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </form>
+        <a href="{% url 'muestras:registrar' %}?volver=1" class="btn btn-outline-secondary">Volver y editar</a>
+        <form method="post" class="m-0">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="cancelar">
+          <button type="submit" class="btn btn-outline-danger">Cancelar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -57,9 +57,9 @@ origen nuevo desde el formulario) y US3 (P3, impedir datos incompletos o inconsi
 - [X] T004 Crear `muestras/models.py` según `data-model.md`:
   - `TipoVertido(models.TextChoices)`: `AGUA = "agua", "Agua"`, `CLOACAL = "cloacal", "Cloacal"`, `CANAL = "canal", "Canal"`.
   - `EstadoMuestra(models.TextChoices)`: `INGRESADA = "ingresada", "Ingresada"`.
-  - Constantes `NUMERO_PI_INICIAL = 200001` y `NOMBRE_MUESTRA_POR_DEFECTO = "Muestra 1"`.
+  - Constante `NUMERO_PI_INICIAL = 200001`.
   - `Origen`: `cliente` FK a `"clientes.Cliente"` (`on_delete=models.PROTECT`, `related_name="origenes"`, `verbose_name="cliente"`); `nombre = CharField("nombre", max_length=150)`; `fecha_alta = DateTimeField("fecha de alta", auto_now_add=True)`. `Meta`: `verbose_name="origen"`, `verbose_name_plural="orígenes"`, `ordering=("nombre",)`, `constraints=[UniqueConstraint(Lower("nombre"), F("cliente"), name="origen_nombre_unico_por_cliente", violation_error_message="El cliente ya tiene un origen con ese nombre.")]`. `__str__` → `self.nombre`. `clean()` aplica `strip()` a `nombre`.
-  - `Muestra`: `numero_pi = PositiveIntegerField("N° PI", unique=True, editable=False)`; `nombre = CharField("nombre", max_length=100, default=NOMBRE_MUESTRA_POR_DEFECTO)`; `cliente` FK a `"clientes.Cliente"` (`PROTECT`, `related_name="muestras"`); `origen` FK a `Origen` (`PROTECT`, `related_name="muestras"`); `fecha_muestreo = DateField("fecha de muestreo")`; `fecha_ingreso = DateField("fecha de ingreso")`; `sitio_extraccion = CharField("sitio de extracción", max_length=200)`; `tipo_vertido = CharField("tipo de vertido", max_length=10, choices=TipoVertido.choices, default=TipoVertido.AGUA)`; `responsable_muestreo = CharField("responsable del muestreo", max_length=150, blank=True)`; `estado = CharField("estado", max_length=20, choices=EstadoMuestra.choices, default=EstadoMuestra.INGRESADA, editable=False)`; `registrada_por` FK a `settings.AUTH_USER_MODEL` (`PROTECT`, `editable=False`, `related_name="muestras_registradas"`, `verbose_name="registrada por"`); `fecha_registro = DateTimeField("fecha de registro", auto_now_add=True)`.
+  - `Muestra`: `numero_pi = PositiveIntegerField("N° PI", unique=True, editable=False)`; `nombre = CharField("nombre", max_length=100)`; `cliente` FK a `"clientes.Cliente"` (`PROTECT`, `related_name="muestras"`); `origen` FK a `Origen` (`PROTECT`, `related_name="muestras"`); `fecha_muestreo = DateField("fecha de muestreo")`; `fecha_ingreso = DateField("fecha de ingreso")`; `sitio_extraccion = CharField("sitio de extracción", max_length=200)`; `tipo_vertido = CharField("tipo de vertido", max_length=10, choices=TipoVertido.choices, default=TipoVertido.AGUA)`; `responsable_muestreo = CharField("responsable del muestreo", max_length=150, blank=True)`; `estado = CharField("estado", max_length=20, choices=EstadoMuestra.choices, default=EstadoMuestra.INGRESADA, editable=False)`; `registrada_por` FK a `settings.AUTH_USER_MODEL` (`PROTECT`, `editable=False`, `related_name="muestras_registradas"`, `verbose_name="registrada por"`); `fecha_registro = DateTimeField("fecha de registro", auto_now_add=True)`.
   - `Muestra.Meta`: `verbose_name="muestra"`, `verbose_name_plural="muestras"`, `ordering=("-numero_pi",)`, `constraints=[CheckConstraint(condition=Q(numero_pi__gte=NUMERO_PI_INICIAL), name="muestra_numero_pi_desde_200001"), CheckConstraint(condition=Q(fecha_muestreo__lte=F("fecha_ingreso")), name="muestra_muestreo_no_posterior_a_ingreso")]`.
   - `Muestra.__str__` → `f"N° PI {self.numero_pi} – {self.nombre}"`. `Muestra.clean()`: si `origen` y `cliente` están cargados y `origen.cliente_id != cliente_id` → `ValidationError({"origen": "El origen no pertenece al cliente seleccionado."})`; si `fecha_muestreo > fecha_ingreso` → `ValidationError({"fecha_muestreo": "La fecha de muestreo no puede ser posterior a la fecha de ingreso."})`.
 - [X] T005 Generar `muestras/migrations/0001_initial.py` con `docker compose exec web python manage.py makemigrations muestras` y aplicarla con `migrate`; verificar `makemigrations --check --dry-run` sin cambios pendientes (depende de T003, T004).
@@ -76,7 +76,7 @@ origen nuevo desde el formulario) y US3 (P3, impedir datos incompletos o inconsi
   - `test_constraint_fechas_muestra` (FR-009): crear una `Muestra` con `fecha_muestreo > fecha_ingreso` levanta `IntegrityError`; `full_clean()` informa el error en `fecha_muestreo`.
   - `test_constraint_numero_pi_minimo_y_unico` (FR-012): `numero_pi=200000` levanta `IntegrityError`; dos muestras con el mismo `numero_pi` también.
   - `test_muestra_clean_rechaza_origen_de_otro_cliente` (FR-004): `full_clean()` con `origen_b` y `cliente_a` informa `"El origen no pertenece al cliente seleccionado."`.
-  - `test_valores_por_defecto_muestra`: sin indicar `nombre`, `tipo_vertido` ni `estado` quedan `"Muestra 1"`, `"agua"` e `"ingresada"`.
+  - `test_valores_por_defecto_muestra`: sin indicar `tipo_vertido` ni `estado` quedan `"agua"` e `"ingresada"`.
   (depende de T004, T007).
 
 **Checkpoint**: `pytest muestras/tests/test_modelos.py` en verde; las tablas y el admin existen.
@@ -85,7 +85,7 @@ origen nuevo desde el formulario) y US3 (P3, impedir datos incompletos o inconsi
 
 ## Phase 3: User Story 1 - Registrar el ingreso de una muestra con un origen ya conocido (Priority: P1) 🎯 MVP
 
-**Goal**: un empleado elige un cliente activo (lista filtrable con su ficha), uno de sus orígenes,
+**Goal**: un empleado elige un cliente activo (lista desplegable con su ficha), uno de sus orígenes,
 completa fechas, sitio y tipo de vertido, revisa el resumen y confirma; la muestra queda registrada
 con N° PI = máximo + 1 (200001 la primera), estado "Ingresada", usuario y fecha de registro, y
 vuelve al formulario vacío mostrando el N° PI.
@@ -96,20 +96,20 @@ pasos 1–3 y 7–9 de `quickstart.md`.
 
 ### Tests for User Story 1 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T009 [P] [US1] Crear `muestras/tests/test_servicio.py` (`pytestmark = pytest.mark.django_db`) con tests de `muestras.servicios`:
+- [X] T009 [P] [US1] Crear `muestras/tests/test_servicio.py` (`pytestmark = pytest.mark.django_db`) con tests de `muestras.servicios`:
   - `test_primera_muestra_recibe_pi_200001` (US1 Esc. 6): sin muestras, `registrar_muestra(datos, empleado)` devuelve una muestra con `numero_pi == 200001`.
   - `test_pi_es_maximo_mas_uno` (FR-012): con `crear_muestra(200001)` y `crear_muestra(200007)`, la siguiente recibe `200008`.
   - `test_registrar_guarda_estado_usuario_y_fecha` (FR-014, FR-015): `estado == "ingresada"`, `registrada_por == empleado` y `fecha_registro` no nulo y cercano a `timezone.now()`.
   - `test_registrar_rechaza_cliente_inactivo_u_origen_ajeno` (Edge case): con el cliente desactivado o un `origen` de otro cliente, `registrar_muestra` levanta `MuestraNoDisponible` y no crea nada.
   - `test_error_al_guardar_no_consume_pi` (FR-018, SC-005): con `monkeypatch` sobre `Muestra.objects.create` levantando `DatabaseError`, no queda `Muestra` creada y, al reintentar sin el parche, el N° PI asignado es el mismo que hubiera correspondido.
-  - `test_registros_concurrentes_no_repiten_pi` (FR-013): marcado `@pytest.mark.django_db(transaction=True)`; 5 `threading.Thread` esperan en una `threading.Barrier(5)` compartida y luego llaman a `registrar_muestra(datos, empleado)` (al hilo se le pasan solo pks y dicts, sin objetos del ORM); cada hilo guarda el `numero_pi` en una lista y cierra su conexión con `connection.close()` en un `finally`; tras los `join`, los 5 números son distintos y coinciden con `range(200001, 200006)`.
-- [ ] T010 [P] [US1] Crear `muestras/tests/test_registro.py` (`pytestmark = pytest.mark.django_db`) con los tests de vistas de la US1:
+  - `test_registros_concurrentes_no_repiten_pi` (FR-013): marcado `@pytest.mark.django_db(transaction=True)`; 5 `threading.Thread` esperan en una `threading.Barrier(5)` compartida y luego llaman a `registrar_muestra(datos, empleado)` (al hilo se le pasan solo pks y dicts, sin objetos del ORM); cada hilo guarda el `numero_pi` en una lista y cierra su conexión con `connection.close()` en un `finally`; tras los `join`, los 5 números son distintos y coinciden con `range(200001, 200006)`, y con `nombre=""` los nombres son `"Muestra 1"` a `"Muestra 5"` sin repetir.
+- [X] T010 [P] [US1] Crear `muestras/tests/test_registro.py` (`pytestmark = pytest.mark.django_db`) con los tests de vistas de la US1:
   - `test_vistas_registro_muestra_requieren_sesion` (FR-001): GET y POST sin sesión a `muestras:registrar` y `muestras:registrar_confirmar` responden 302 hacia `settings.LOGIN_URL`.
   - `test_formulario_inicial_propone_hoy_y_agua` (US1 Esc. 1, FR-008, FR-010): GET a `muestras:registrar` responde 200; los inputs `fecha_muestreo` y `fecha_ingreso` tienen `value="<hoy ISO>"`, la opción `agua` de `tipo_vertido` está `selected` y `nombre`/`responsable_muestreo` vacíos.
   - `test_formulario_lista_solo_clientes_activos_con_sus_datos` (US1 Esc. 2, FR-002, FR-003): el `<select name="cliente">` incluye `cliente_a` y `cliente_b` y no `cliente_inactivo`; el `json_script` `clientes-muestra` (leído con `json.loads` del contenido del `<script id="clientes-muestra">`) trae por cada cliente activo `razon_social_o_nombre`, `tipo_documento`, `numero_documento`, `email` y `origenes`.
   - `test_formulario_ofrece_solo_origenes_del_cliente` (US1 Esc. 3, FR-004): en el `json_script`, `cliente_a` tiene solo `origen_a` y `cliente_b` solo `origen_b`; tras un POST inválido con `cliente=cliente_a.pk`, el `<select name="origen">` renderizado contiene `origen_a` y no `origen_b`.
   - `test_formulario_con_cliente_elegido_muestra_ficha_y_origenes` (US1 Esc. 2–3, FR-003): POST inválido (sin `sitio_extraccion`) con `cliente=cliente_a.pk` → el HTML dentro de `id="ficha-cliente"` contiene `"Aguas del Sur S.A."`, `"CUIT"`, `"20123456786"` y `"contacto@aguassur.com"`, y el `<select name="origen">` tiene `origen_a` y no `origen_b`; lo mismo con GET `?volver=1` y el borrador en sesión.
-  - `test_post_valido_guarda_borrador_y_muestra_resumen` (US1 Esc. 4, FR-017): POST con `datos_muestra_validos` → 302 a `muestras:registrar_confirmar`; `session["muestra_pendiente"]` tiene los datos normalizados (`nombre == "Muestra 1"`); GET de la confirmación muestra `"Revisá los datos de la muestra antes de confirmar el registro."`, la razón social, el CUIT, el correo, `"Pozo N°2"`, ambas fechas, el sitio, `"Agua"`, `"Muestra 1"` y `"El N° PI se asigna al confirmar."`; no hay ninguna `Muestra` creada.
+  - `test_post_valido_guarda_borrador_y_muestra_resumen` (US1 Esc. 4, FR-017): POST con `datos_muestra_validos` → 302 a `muestras:registrar_confirmar`; `session["muestra_pendiente"]` tiene los datos normalizados (`nombre == ""`); GET de la confirmación muestra `"Revisá los datos de la muestra antes de confirmar el registro."`, la razón social, el CUIT, el correo, `"Pozo N°2"`, ambas fechas, el sitio, `"Agua"`, `"Muestra 1 (el número se confirma al guardar)"` y `"El N° PI se asigna al confirmar."`; no hay ninguna `Muestra` creada.
   - `test_confirmar_registra_muestra_con_pi_siguiente_y_datos_automaticos` (US1 Esc. 5, FR-012, FR-014, FR-015, FR-019, Q5): con `crear_muestra(200001)`, confirmar → 302 a `muestras:registrar`; existe la muestra `200002` con `cliente_a`, `origen_a`, estado `"ingresada"`, `registrada_por == empleado`; mensaje `"Muestra registrada con N° PI 200002."`; el borrador ya no está en sesión y el GET siguiente muestra el formulario vacío.
   - `test_volver_y_editar_conserva_borrador` (US1 Esc. 7): con borrador, GET `/muestras/registrar/?volver=1` precarga los valores de la sesión; GET sin `volver` muestra el formulario vacío y descarta el borrador.
   - `test_cancelar_no_registra_ni_consume_pi` (US1 Esc. 7, SC-005): con borrador, POST `accion=cancelar` → 302 a `muestras:registrar` con `"Registro de muestra cancelado."`, sin muestras creadas y sin borrador; la siguiente muestra confirmada recibe `200001`.
@@ -117,16 +117,16 @@ pasos 1–3 y 7–9 de `quickstart.md`.
   - `test_cliente_desactivado_antes_de_confirmar_no_registra` (Edge case): con borrador, desactivar `cliente_a` y confirmar → 302 a `/muestras/registrar/?volver=1` con `"El cliente no está disponible."`, sin muestras, borrador conservado.
   - `test_error_de_base_al_confirmar_informa_sin_registrar` (Edge case): `monkeypatch` de `muestras.views.registrar_muestra` levantando `DatabaseError` → 200 en la confirmación con `"No se pudo registrar la muestra. Intentá nuevamente."`, borrador conservado.
   - `test_navbar_tiene_enlace_registrar_muestra` (R8): GET a `inicio` contiene un enlace a `reverse("muestras:registrar")` con el texto `"Registrar muestra"`.
-- [ ] T011 [P] [US1] Crear `muestras/tests/js/registro_muestra.test.cjs` con `node:test` siguiendo el esquema de `usuarios/tests/js/sesion.test.cjs` (carga el script con `vm.runInNewContext`), probando la función pura `coincide(texto, cliente)` que expone el script: `"aguas del sur"` y `"AGUAS"` coinciden con `"Aguas del Sur S.A."`; `"perez"` coincide con `"Juan Pérez"`; `"20-12345678"` y `"2012345"` coinciden con el CUIT `20123456786`; `"xyz"` no coincide; texto vacío coincide con todos.
+- [X] T011 [P] [US1] (Eliminada tras la prueba manual: se quitó el buscador de clientes y el script ya no tiene lógica pura para probar con Node; se borró el archivo.) Crear `muestras/tests/js/registro_muestra.test.cjs` con `node:test` siguiendo el esquema de `usuarios/tests/js/sesion.test.cjs` (carga el script con `vm.runInNewContext`), probando la función pura `coincide(texto, cliente)` que expone el script: `"aguas del sur"` y `"AGUAS"` coinciden con `"Aguas del Sur S.A."`; `"perez"` coincide con `"Juan Pérez"`; `"20-12345678"` y `"2012345"` coinciden con el CUIT `20123456786`; `"xyz"` no coincide; texto vacío coincide con todos.
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Crear `muestras/servicios.py` (depende de T004):
+- [X] T012 [US1] Crear `muestras/servicios.py` (depende de T004):
   - `class MuestraNoDisponible(Exception)` con atributo `mensaje` (`"El cliente no está disponible."` o `"El origen no pertenece al cliente seleccionado."`).
   - `CLAVE_LOCK_NUMERO_PI`: entero fijo (p. ej. `4_100_001`, documentado como "US 4.1 – N° PI").
   - `siguiente_numero_pi()`: `(Muestra.objects.aggregate(m=Max("numero_pi"))["m"] or NUMERO_PI_INICIAL - 1) + 1`.
   - `registrar_muestra(datos, usuario)`: dentro de `transaction.atomic()`: ejecutar `SELECT pg_advisory_xact_lock(%s)` con `CLAVE_LOCK_NUMERO_PI` vía `connection.cursor()`; obtener el cliente con `Cliente.objects.filter(pk=datos["cliente"], activo=True).first()` (si no hay → `MuestraNoDisponible`); si `datos["origen"]`, obtener `Origen.objects.filter(pk=datos["origen"], cliente=cliente).first()` (si no hay → `MuestraNoDisponible`); dejar un punto de extensión para `origen_nuevo` (se completa en T024); crear la `Muestra` con `numero_pi=siguiente_numero_pi()`, los campos del borrador (fechas con `date.fromisoformat`) y `registrada_por=usuario`; devolverla.
-- [ ] T013 [US1] Crear `muestras/forms.py` con `RegistroMuestraForm(forms.Form)` según `plan.md` ("Formulario") y `contracts/registro-muestra-ui.md` (depende de T004):
+- [X] T013 [US1] Crear `muestras/forms.py` con `RegistroMuestraForm(forms.Form)` según `plan.md` ("Formulario") y `contracts/registro-muestra-ui.md` (depende de T004):
   - `CAMPOS_MUESTRA = ("cliente", "origen", "origen_nuevo", "fecha_muestreo", "fecha_ingreso", "sitio_extraccion", "tipo_vertido", "nombre", "responsable_muestreo")`.
   - `cliente = ModelChoiceField(queryset=Cliente.objects.filter(activo=True), label="Cliente", empty_label="Elegí un cliente")` con `label_from_instance` → `f"{c.nombre_completo} · {c.tipo_documento} {c.numero_documento}"`.
   - `origen = ModelChoiceField(queryset=Origen.objects.none(), required=False, label="Origen", empty_label="Elegí un origen")`; en `__init__` limitar el queryset a `Origen.objects.filter(cliente_id=<cliente de data o initial>)` si el valor es un entero válido.
@@ -135,22 +135,22 @@ pasos 1–3 y 7–9 de `quickstart.md`.
   - `fecha_muestreo` y `fecha_ingreso = DateField(widget=DateInput(attrs={"type": "date"}, format="%Y-%m-%d"), initial=timezone.localdate)` con etiquetas "Fecha de muestreo" y "Fecha de ingreso".
   - `sitio_extraccion = CharField(label="Sitio de extracción", max_length=200, strip=True)`.
   - `tipo_vertido = ChoiceField(label="Tipo de vertido", choices=TipoVertido.choices, initial=TipoVertido.AGUA)`.
-  - `nombre = CharField(label="Nombre de la muestra", max_length=100, required=False, strip=True, help_text="Si lo dejás vacío se usa «Muestra 1».")`; `clean_nombre` → `NOMBRE_MUESTRA_POR_DEFECTO` si queda vacío.
+  - `nombre = CharField(label="Nombre de la muestra", max_length=100, required=False, strip=True, help_text="Si lo dejás vacío se numera según las muestras del cliente (ej. «Muestra 6»).")`; el vacío se conserva en el borrador y lo completa `registrar_muestra`.
   - `responsable_muestreo = CharField(label="Responsable del muestreo", max_length=150, required=False, strip=True)`.
   - `clean()` de esta tarea: si no hay `origen` → error en `origen` `"Elegí un origen del cliente o ingresá uno nuevo."` (la variante con `origen_nuevo` se completa en T023).
   - Clases `form-select`/`form-control` e `is-invalid` como en `RegistroClienteForm`.
   - `datos_para_sesion()`: `{"cliente": pk, "origen": pk o None, "origen_nuevo": str, "fecha_muestreo": iso, "fecha_ingreso": iso, ...}` (formato del borrador en `data-model.md`).
   - `datos_clientes()` (función de módulo): lista para el `json_script` con `id`, `nombre_completo`, `razon_social_o_nombre` (`razon_social or nombre`), `tipo_documento`, `numero_documento`, `email` y `origenes` (`[{"id", "nombre"}]`) de cada cliente activo, usando `prefetch_related("origenes")`.
-- [ ] T014 [US1] Crear `muestras/views.py` con `registrar` y `registrar_confirmar` según la tabla de `contracts/registro-muestra-ui.md` (depende de T012, T013):
+- [X] T014 [US1] Crear `muestras/views.py` con `registrar` y `registrar_confirmar` según la tabla de `contracts/registro-muestra-ui.md` (depende de T012, T013):
   - Constantes: `CLAVE_SESION = "muestra_pendiente"`, `CLAVE_ULTIMO_PI = "ultima_muestra_pi"`, `MENSAJE_EXITO = "Muestra registrada con N° PI {numero_pi}."`, `MENSAJE_CANCELADO = "Registro de muestra cancelado."`, `MENSAJE_ERROR_BD = "No se pudo registrar la muestra. Intentá nuevamente."`.
   - `registrar`: POST válido → guarda `form.datos_para_sesion()` en sesión, borra `CLAVE_ULTIMO_PI` y redirige a `muestras:registrar_confirmar`; GET con `volver=1` y borrador → form con `initial` del borrador; GET sin `volver` → `pop` del borrador y form vacío. Contexto: `form`, `cliente_elegido = form.cliente_elegido` y `clientes_datos = datos_clientes()`. Template `muestras/registro_form.html`.
   - `registrar_confirmar`: `cancelar` → `pop` del borrador, `messages.info`, redirige a `muestras:registrar`; `confirmar` sin borrador → si hay `CLAVE_ULTIMO_PI`, `messages.info(MENSAJE_EXITO)` y redirige; si no, redirige a `muestras:registrar`; `confirmar` con borrador → `registrar_muestra(datos, request.user)`; `MuestraNoDisponible` → `messages.warning(exc.mensaje)` y redirige a `/muestras/registrar/?volver=1`; `DatabaseError` → `messages.error(MENSAJE_ERROR_BD)` y renderiza la confirmación (200); éxito → borra borrador, guarda `CLAVE_ULTIMO_PI`, `messages.success(MENSAJE_EXITO.format(...))` y redirige a `muestras:registrar`; otra acción → redirige a la confirmación. GET sin borrador → redirige a `muestras:registrar`; con borrador → arma el resumen (objetos `Cliente`/`Origen`, etiqueta de `tipo_vertido`, fechas como `date`) y renderiza `muestras/registro_confirmar.html`.
-- [ ] T015 [US1] Registrar en `muestras/urls.py` `path("registrar/", views.registrar, name="registrar")` y `path("registrar/confirmar/", views.registrar_confirmar, name="registrar_confirmar")` (depende de T014).
-- [ ] T016 [P] [US1] Crear `muestras/templates/muestras/registro_form.html` extendiendo `base.html` (como `clientes/templates/clientes/registro_form.html`): título `"Registrar muestra"`; `<form method="post" novalidate>` con `{% csrf_token %}`; input de texto `buscar_cliente` (sin `name`, `id="buscar-cliente"`, etiqueta "Buscar cliente", placeholder "Nombre, razón social o documento") arriba del `<select>` de `cliente`; bloque `id="ficha-cliente"` con Razón social/Nombre, Documento y Correo electrónico, renderizado con los datos de `cliente_elegido` y visible si existe (si no, con `hidden`); `<select>` de `origen`, enlace "Dar de alta un origen nuevo" (`id="mostrar-origen-nuevo"`) y contenedor del campo `origen_nuevo` (`id="bloque-origen-nuevo"`, visible si tiene valor o error); resto de campos en el orden del contrato con `invalid-feedback` y `form-text`; botón primario **Continuar**; `{{ clientes_datos|json_script:"clientes-muestra" }}`; `<script src="{% static 'muestras/registro_muestra.js' %}" defer></script>` en `{% block content %}` (agregar `{% load static %}`).
-- [ ] T017 [P] [US1] Crear `muestras/templates/muestras/registro_confirmar.html` como `clientes/templates/clientes/registro_confirmar.html`: título `"Confirmar registro de muestra"`, alerta `alert-info` `"Revisá los datos de la muestra antes de confirmar el registro."`, `<dl class="row">` con Cliente (nombre completo), Documento, Correo electrónico, Origen (con `"(nuevo)"` si corresponde), Fecha de muestreo, Fecha de ingreso (formato `d/m/Y`), Sitio de extracción, Tipo de vertido, Nombre de la muestra y Responsable del muestreo (`default:"—"`); texto `"El N° PI se asigna al confirmar."`; botones **Confirmar** (`accion=confirmar`, deshabilitado en `onsubmit`), **Volver y editar** (`{% url 'muestras:registrar' %}?volver=1`) y **Cancelar** (`accion=cancelar`).
-- [ ] T018 [P] [US1] Crear `muestras/static/muestras/registro_muestra.js` (IIFE, sin librerías, comentarios en español como `usuarios/static/usuarios/sesion.js`): `normalizar(texto)` (minúsculas, `normalize("NFD")` sin diacríticos); `coincide(texto, cliente)` (vacío → `true`; coincide si el texto normalizado está en `nombre_completo` normalizado, o si los dígitos del texto sin `.`, `-` ni espacios están en `numero_documento`); al escribir en `#buscar-cliente`, ocultar (`hidden`) las `<option>` de `cliente` que no coinciden; al cambiar `cliente`, completar `#ficha-cliente` desde `clientes-muestra`, reemplazar las opciones de `origen` por las del cliente y vaciar `origen`; si el cliente no tiene orígenes, mostrar `#bloque-origen-nuevo`; exponer `coincide` para el test de Node (p. ej. `globalThis.registroMuestra = { coincide }`) sin romper si faltan elementos del DOM.
-- [ ] T019 [P] [US1] Agregar el enlace `"Registrar muestra"` (`{% url 'muestras:registrar' %}`) en la barra de `templates/base.html` (después de "Registrar cliente") y el botón `"Registrar muestra"` en `templates/inicio.html` (depende de T015).
-- [ ] T020 [US1] Ejecutar `docker compose exec web pytest muestras` y `node --test muestras/tests/js/` y dejar en verde los tests de T009–T011 (depende de T012–T019).
+- [X] T015 [US1] Registrar en `muestras/urls.py` `path("registrar/", views.registrar, name="registrar")` y `path("registrar/confirmar/", views.registrar_confirmar, name="registrar_confirmar")` (depende de T014).
+- [X] T016 [P] [US1] Crear `muestras/templates/muestras/registro_form.html` extendiendo `base.html` (como `clientes/templates/clientes/registro_form.html`): título `"Registrar muestra"`; `<form method="post" novalidate>` con `{% csrf_token %}`; `<select>` de `cliente` (sin buscador aparte, ver Clarifications de la spec); bloque `id="ficha-cliente"` con Razón social/Nombre, Documento y Correo electrónico, renderizado con los datos de `cliente_elegido` y visible si existe (si no, con `hidden`); `<select>` de `origen`, enlace "Dar de alta un origen nuevo" (`id="mostrar-origen-nuevo"`) y contenedor del campo `origen_nuevo` (`id="bloque-origen-nuevo"`, visible si tiene valor o error); resto de campos en el orden del contrato con `invalid-feedback` y `form-text`; botón primario **Continuar**; `{{ clientes_datos|json_script:"clientes-muestra" }}`; `<script src="{% static 'muestras/registro_muestra.js' %}" defer></script>` en `{% block content %}` (agregar `{% load static %}`).
+- [X] T017 [P] [US1] Crear `muestras/templates/muestras/registro_confirmar.html` como `clientes/templates/clientes/registro_confirmar.html`: título `"Confirmar registro de muestra"`, alerta `alert-info` `"Revisá los datos de la muestra antes de confirmar el registro."`, `<dl class="row">` con Cliente (nombre completo), Documento, Correo electrónico, Origen (con `"(nuevo)"` si corresponde), Fecha de muestreo, Fecha de ingreso (formato `d/m/Y`), Sitio de extracción, Tipo de vertido, Nombre de la muestra y Responsable del muestreo (`default:"—"`); texto `"El N° PI se asigna al confirmar."`; botones **Confirmar** (`accion=confirmar`, deshabilitado en `onsubmit`), **Volver y editar** (`{% url 'muestras:registrar' %}?volver=1`) y **Cancelar** (`accion=cancelar`).
+- [X] T018 [P] [US1] Crear `muestras/static/muestras/registro_muestra.js` (IIFE, sin librerías, comentarios en español como `usuarios/static/usuarios/sesion.js`): al cambiar `cliente`, completar `#ficha-cliente` desde `clientes-muestra`, reemplazar las opciones de `origen` por las del cliente y vaciar `origen`; si el cliente no tiene orígenes, mostrar `#bloque-origen-nuevo`; sin romper si faltan elementos del DOM.
+- [X] T019 [P] [US1] Agregar el enlace `"Registrar muestra"` (`{% url 'muestras:registrar' %}`) en la barra de `templates/base.html` (después de "Registrar cliente") y el botón `"Registrar muestra"` en `templates/inicio.html` (depende de T015).
+- [X] T020 [US1] Ejecutar `docker compose exec web pytest muestras` y dejar en verde los tests de T009–T010 (depende de T012–T019).
 
 **Checkpoint**: la US1 funciona sola: se registran muestras con orígenes existentes y el N° PI correcto (MVP demostrable).
 
@@ -167,11 +167,11 @@ solo para ese cliente.
 
 ### Tests for User Story 2 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T021 [P] [US2] Agregar en `muestras/tests/test_servicio.py`:
+- [X] T021 [P] [US2] Agregar en `muestras/tests/test_servicio.py`:
   - `test_registrar_con_origen_nuevo_crea_origen` (US2 Esc. 1, FR-005): `datos` con `origen=None` y `origen_nuevo="Pozo N°3"` crea un `Origen` de `cliente_a` y la muestra queda asociada a él.
   - `test_origen_nuevo_repetido_reutiliza_existente` (US2 Esc. 4, FR-006): con `origen_a` (`"Pozo N°2"`), `origen_nuevo="  pozo n°2 "` no crea otro origen y la muestra usa `origen_a`.
   - `test_error_al_guardar_no_deja_origen_nuevo` (FR-018): con `Muestra.objects.create` parcheado para levantar `DatabaseError` y `origen_nuevo="Pozo N°3"`, no queda ningún `Origen` nuevo.
-- [ ] T022 [P] [US2] Agregar en `muestras/tests/test_registro.py`:
+- [X] T022 [P] [US2] Agregar en `muestras/tests/test_registro.py`:
   - `test_confirmar_con_origen_nuevo_crea_origen_del_cliente` (US2 Esc. 1): POST con `origen=""` y `origen_nuevo="Pozo N°3"` → resumen con `"Pozo N°3 (nuevo)"`; confirmar crea el origen y la muestra.
   - `test_origen_nuevo_disponible_solo_para_su_cliente` (US2 Esc. 2–3, SC-004): tras registrar con origen nuevo para `cliente_a`, el `json_script` del siguiente GET lo lista en `cliente_a` y no en `cliente_b`.
   - `test_cancelar_con_origen_nuevo_no_crea_origen` (US2 Esc. 5): con borrador con `origen_nuevo`, `accion=cancelar` no crea el `Origen`.
@@ -179,11 +179,11 @@ solo para ese cliente.
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Completar `RegistroMuestraForm.clean()` en `muestras/forms.py`: ni `origen` ni `origen_nuevo` → error en `origen` `"Elegí un origen del cliente o ingresá uno nuevo."`; ambos → error en `origen_nuevo` `"Elegí un origen existente o ingresá uno nuevo, no ambos."`; `datos_para_sesion()` guarda `origen=None` cuando se usa `origen_nuevo` (depende de T013).
-- [ ] T024 [US2] Completar `registrar_muestra` en `muestras/servicios.py`: si `datos["origen_nuevo"]`, buscar `Origen.objects.filter(cliente=cliente, nombre__iexact=nombre).first()` y, si no existe, `Origen.objects.create(cliente=cliente, nombre=nombre)`, todo dentro de la misma transacción y después del advisory lock (depende de T012).
-- [ ] T025 [US2] En `muestras/views.py`, incluir en el resumen de `registrar_confirmar` el origen nuevo (nombre del borrador con la marca `es_nuevo=True`) y en `muestras/templates/muestras/registro_confirmar.html` mostrar `"(nuevo)"` junto al origen cuando corresponda (depende de T014, T017).
-- [ ] T026 [US2] En `muestras/static/muestras/registro_muestra.js`: el enlace `#mostrar-origen-nuevo` muestra `#bloque-origen-nuevo` y vacía `origen`; escribir en `origen_nuevo` vacía `origen` y elegir un `origen` vacía `origen_nuevo` (depende de T018).
-- [ ] T027 [US2] Ejecutar `docker compose exec web pytest muestras` y dejar en verde T021–T022 sin romper la US1 (depende de T023–T026).
+- [X] T023 [US2] Completar `RegistroMuestraForm.clean()` en `muestras/forms.py`: ni `origen` ni `origen_nuevo` → error en `origen` `"Elegí un origen del cliente o ingresá uno nuevo."`; ambos → error en `origen_nuevo` `"Elegí un origen existente o ingresá uno nuevo, no ambos."`; `datos_para_sesion()` guarda `origen=None` cuando se usa `origen_nuevo` (depende de T013).
+- [X] T024 [US2] Completar `registrar_muestra` en `muestras/servicios.py`: si `datos["origen_nuevo"]`, buscar `Origen.objects.filter(cliente=cliente, nombre__iexact=nombre).first()` y, si no existe, `Origen.objects.create(cliente=cliente, nombre=nombre)`, todo dentro de la misma transacción y después del advisory lock (depende de T012).
+- [X] T025 [US2] En `muestras/views.py`, incluir en el resumen de `registrar_confirmar` el origen nuevo (nombre del borrador con la marca `es_nuevo=True`) y en `muestras/templates/muestras/registro_confirmar.html` mostrar `"(nuevo)"` junto al origen cuando corresponda (depende de T014, T017).
+- [X] T026 [US2] En `muestras/static/muestras/registro_muestra.js`: el enlace `#mostrar-origen-nuevo` muestra `#bloque-origen-nuevo` y vacía `origen`; escribir en `origen_nuevo` vacía `origen` y elegir un `origen` vacía `origen_nuevo` (depende de T018).
+- [X] T027 [US2] Ejecutar `docker compose exec web pytest muestras` y dejar en verde T021–T022 sin romper la US1 (depende de T023–T026).
 
 **Checkpoint**: US1 y US2 funcionan; la primera muestra de un cliente nuevo se puede registrar.
 
@@ -201,10 +201,10 @@ responsable"` en verde + pasos 5 y 12 de `quickstart.md`.
 
 ### Tests for User Story 3 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T028 [US3] Agregar en `muestras/tests/test_registro.py`:
+- [X] T028 [US3] Agregar en `muestras/tests/test_registro.py`:
   - `test_campos_obligatorios_faltantes_indican_cada_campo` (US3 Esc. 1, FR-007, FR-016, SC-003), parametrizado por `cliente`, `fecha_muestreo`, `fecha_ingreso`, `sitio_extraccion` y `tipo_vertido` vacíos: 200, `"Este campo es obligatorio."` junto al campo (`is-invalid`), los demás valores conservados en el HTML, sin borrador ni muestras.
   - `test_textos_solo_espacios_son_vacios` (Edge case): `sitio_extraccion="   "` → `"Este campo es obligatorio."`; `origen_nuevo="   "` sin `origen` → `"Elegí un origen del cliente o ingresá uno nuevo."`.
-  - `test_nombre_vacio_se_registra_como_muestra_1` (US3 Esc. 2, Q1): `nombre=""` → la muestra confirmada tiene `nombre == "Muestra 1"`; con `nombre="Muestra cisterna"` se guarda ese valor.
+  - `test_nombre_vacio_se_numera_segun_muestras_del_cliente` (US3 Esc. 2, Q1): primera muestra de `cliente_a` con `nombre=""` → `"Muestra 1"`; segunda con `nombre="Muestra cisterna"` → se guarda ese valor; tercera con `nombre=""` → `"Muestra 3"`; la primera de `cliente_b` con `nombre=""` → `"Muestra 1"`.
   - `test_responsable_opcional_texto_libre` (US3 Esc. 3, Q4): vacío → `responsable_muestreo == ""`; `"Carlos Ruiz (externo)"` se guarda tal cual.
   - `test_fechas_invalidas_rechazadas` (US3 Esc. 4, FR-009), parametrizado: `fecha_muestreo` mañana → `"La fecha no puede ser posterior a hoy."` en `fecha_muestreo`; `fecha_ingreso` mañana → mismo mensaje en `fecha_ingreso`; muestreo `hoy` e ingreso `ayer` → `"La fecha de muestreo no puede ser posterior a la fecha de ingreso."` en `fecha_muestreo`; muestreo hace 30 días e ingreso ayer → válido (302).
   - `test_origen_de_otro_cliente_rechazado` (US3 Esc. 5): `cliente=cliente_a`, `origen=origen_b` → 200 con error en `origen`, sin borrador.
@@ -213,9 +213,9 @@ responsable"` en verde + pasos 5 y 12 de `quickstart.md`.
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] Completar `RegistroMuestraForm` en `muestras/forms.py`: `clean_fecha_muestreo` y `clean_fecha_ingreso` rechazan fechas `> timezone.localdate()` con `"La fecha no puede ser posterior a hoy."`; en `clean()`, si ambas fechas son válidas y `fecha_muestreo > fecha_ingreso` → `add_error("fecha_muestreo", "La fecha de muestreo no puede ser posterior a la fecha de ingreso.")`; verificar que los textos solo con espacios queden vacíos (`strip=True`) y que el queryset de `origen` limitado al cliente rechace el origen ajeno (depende de T023).
-- [ ] T030 [US3] Revisar `muestras/templates/muestras/registro_form.html` para que todos los campos con error muestren `is-invalid` + `invalid-feedback` y que `#bloque-origen-nuevo` quede visible cuando `origen_nuevo` tiene valor o error (depende de T016).
-- [ ] T031 [US3] Ejecutar `docker compose exec web pytest muestras` y dejar en verde T028 junto con US1 y US2 (depende de T029–T030).
+- [X] T029 [US3] Completar `RegistroMuestraForm` en `muestras/forms.py`: `clean_fecha_muestreo` y `clean_fecha_ingreso` rechazan fechas `> timezone.localdate()` con `"La fecha no puede ser posterior a hoy."`; en `clean()`, si ambas fechas son válidas y `fecha_muestreo > fecha_ingreso` → `add_error("fecha_muestreo", "La fecha de muestreo no puede ser posterior a la fecha de ingreso.")`; verificar que los textos solo con espacios queden vacíos (`strip=True`) y que el queryset de `origen` limitado al cliente rechace el origen ajeno (depende de T023).
+- [X] T030 [US3] Revisar `muestras/templates/muestras/registro_form.html` para que todos los campos con error muestren `is-invalid` + `invalid-feedback` y que `#bloque-origen-nuevo` quede visible cuando `origen_nuevo` tiene valor o error (depende de T016).
+- [X] T031 [US3] Ejecutar `docker compose exec web pytest muestras` y dejar en verde T028 junto con US1 y US2 (depende de T029–T030).
 
 **Checkpoint**: las tres historias funcionan y se prueban de forma independiente.
 
@@ -223,10 +223,10 @@ responsable"` en verde + pasos 5 y 12 de `quickstart.md`.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T032 [P] Ejecutar `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`, y corregir lo que aparezca (Principios III y VI).
-- [ ] T033 Ejecutar la suite completa `docker compose exec web pytest` y `node --test usuarios/tests/js/ muestras/tests/js/` y confirmar todo en verde.
-- [ ] T034 Recorrer los pasos 1 a 15 de validación manual de `specs/007-registrar-muestra/quickstart.md` (incluye revisar en el admin estado, usuario y fecha de registro) y cronometrar un registro con origen existente, desde abrir el formulario hasta ver el N° PI: menos de 1 minuto (SC-001).
-- [ ] T035 [P] Agregar en `CLAUDE.md` una sección breve "Registro de muestras (US 4.1)" con lo no obvio: el N° PI se calcula en `muestras/servicios.py` bajo `pg_advisory_xact_lock` (no usar secuencias ni `AutoField`, dejan huecos); el origen nuevo se crea en la misma transacción que la muestra; el filtro de clientes es `muestras/static/muestras/registro_muestra.js` y su test de Node no corre en CI. No tocar el pendiente del envío de informes por correo (pertenece a otra US de SCRUM-39, no a esta).
+- [X] T032 [P] Ejecutar `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`, y corregir lo que aparezca (Principios III y VI).
+- [X] T033 Ejecutar la suite completa `docker compose exec web pytest` y `node --test usuarios/tests/js/` y confirmar todo en verde.
+- [X] T034 Recorrer los pasos 1 a 15 de validación manual de `specs/007-registrar-muestra/quickstart.md` (incluye revisar en el admin estado, usuario y fecha de registro) y cronometrar un registro con origen existente, desde abrir el formulario hasta ver el N° PI: menos de 1 minuto (SC-001).
+- [X] T035 [P] Agregar en `CLAUDE.md` una sección breve "Registro de muestras (US 4.1)" con lo no obvio: el N° PI se calcula en `muestras/servicios.py` bajo `pg_advisory_xact_lock` (no usar secuencias ni `AutoField`, dejan huecos); el origen nuevo se crea en la misma transacción que la muestra; la ficha en vivo es `muestras/static/muestras/registro_muestra.js` y con cliente elegido la renderiza el servidor. No tocar el pendiente del envío de informes por correo (pertenece a otra US de SCRUM-39, no a esta).
 
 ---
 
@@ -256,8 +256,8 @@ T001 → T002 → T003 → T004 ─┬─→ T005
           ┌────────────────────────────┘
           ▼
 US1: T009 ─┐
-     T010 ─┼─→ T012 ─┐
-     T011 ─┘   T013 ─┴─→ T014 → T015 ─┬─→ T019 ─┐
+     T010 ─┴─→ T012 ─┐
+               T013 ─┴─→ T014 → T015 ─┬─→ T019 ─┐
                          T016 ─────────┤         │
                          T017 ─────────┤         ├─→ T020
                          T018 ─────────┘─────────┘
@@ -274,7 +274,6 @@ Polish: T032, T033, T034, T035
 # Tests de US1 en paralelo (archivos distintos):
 Task T009: "Tests del servicio en muestras/tests/test_servicio.py"
 Task T010: "Tests de vistas en muestras/tests/test_registro.py"
-Task T011: "Test del filtro en muestras/tests/js/registro_muestra.test.cjs"
 
 # Interfaz de US1 en paralelo, después de T014:
 Task T016: "Template muestras/templates/muestras/registro_form.html"

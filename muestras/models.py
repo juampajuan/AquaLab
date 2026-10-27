@@ -5,7 +5,6 @@ from django.db.models import F, Q
 from django.db.models.functions import Lower
 
 NUMERO_PI_INICIAL = 200001
-NOMBRE_MUESTRA_POR_DEFECTO = "Muestra 1"
 
 
 class TipoVertido(models.TextChoices):
@@ -53,7 +52,7 @@ class Origen(models.Model):
 
 class Muestra(models.Model):
     numero_pi = models.PositiveIntegerField("N° PI", unique=True, editable=False)
-    nombre = models.CharField("nombre", max_length=100, default=NOMBRE_MUESTRA_POR_DEFECTO)
+    nombre = models.CharField("nombre", max_length=100)
     cliente = models.ForeignKey(
         "clientes.Cliente",
         on_delete=models.PROTECT,
