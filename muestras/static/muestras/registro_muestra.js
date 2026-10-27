@@ -41,6 +41,8 @@
     const cliente = clientes.get(selectCliente.value);
     mostrarFicha(cliente);
     cargarOrigenes(cliente);
+    // Un origen nuevo escrito para otro cliente no debe quedar como origen del elegido.
+    if (origenNuevo) origenNuevo.value = "";
     if (cliente && cliente.origenes.length === 0) bloqueOrigenNuevo.hidden = false;
   });
 
