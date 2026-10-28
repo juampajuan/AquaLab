@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Conflicto de versión · AquaLab{% endblock %}
+{% block content %}
+  <h1 class="h3">La configuración cambió</h1>
+  <p class="alert alert-warning">No se guardó tu propuesta. Revisá la configuración vigente y prepará una nueva confirmación explícita.</p>
+  <div class="row">
+    <section class="col">
+      <h2 class="h5">Propuesta anterior</h2>
+      <p>{{ propuesta.nombre }}</p>
+      <p>{{ propuesta.descripcion|linebreaksbr }}</p>
+      <ul>{% for p in propuesta.pruebas %}<li>{{ p.codigo }} · {{ p.nombre }}</li>{% endfor %}</ul>
+    </section>
+    <section class="col">
+      <h2 class="h5">Configuración vigente · versión {{ actual.version }}</h2>
+      <p>{{ actual.nombre }}</p>
+      <p>{{ actual.descripcion|linebreaksbr }}</p>
+      <p>{{ actual.activo|yesno:"Activo,Inactivo" }}</p>
+      <ul>{% for p in actual.pruebas %}<li>{{ p.codigo }} · {{ p.nombre }}</li>{% endfor %}</ul>
+    </section>
+  </div>
+  <a class="btn btn-primary" href="{% url 'estudios:tipos_editar' actual.id %}">Revisar nueva base</a>
+  <a class="btn btn-secondary" href="{% url 'estudios:tipos_listar' %}">Volver al listado</a>
+{% endblock %}

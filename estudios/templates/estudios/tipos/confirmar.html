@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Confirmar tipo · AquaLab{% endblock %}
+{% block content %}
+  <h1 class="h3">Confirmar: {{ borrador.operacion }}</h1>
+  {% for campo, error in errores.items %}
+    <p class="alert alert-danger">{{ campo }}: {{ error }}</p>
+  {% endfor %}
+  <h2 class="h5">{{ borrador.resumen.nombre }}</h2>
+  <p>{{ borrador.resumen.descripcion|default:"Sin descripción"|linebreaksbr }}</p>
+  {% if borrador.version %}<p>Versión revisada: {{ borrador.version }}</p>{% endif %}
+  <p>Disponibilidad revisada: {{ borrador.resumen.activo|yesno:"Activo,Inactivo" }}</p>
+  <ul>
+    {% for prueba in borrador.resumen.pruebas %}
+      <li>{{ prueba.codigo }} · {{ prueba.nombre }}</li>
+    {% empty %}<li>Sin pruebas.</li>{% endfor %}
+  </ul>
+  {% if borrador.operacion == 'eliminar' %}
+    <p class="alert alert-warning">La eliminación es definitiva y solo se permite si el tipo nunca se utilizó. No elimina las pruebas del catálogo.</p>
+    <p>Estudios asociados al revisar: {{ borrador.resumen.uso }}. El uso se comprobará nuevamente al confirmar.</p>
+    {% if borrador.resumen.uso or tipo_utilizado %}
+      <p class="alert alert-danger">Este tipo tiene historial y no puede eliminarse. Podés <a href="{% url 'estudios:tipos_desactivar' borrador.tipo_id %}">desactivarlo</a>.</p>
+    {% endif %}
+  {% elif borrador.operacion == 'desactivar' %}
+    <p>Dejará de estar disponible para estudios nuevos. El historial se conserva.</p>
+  {% elif borrador.operacion == 'reactivar' %}
+    <p>Volverá a estar disponible para estudios nuevos si tiene pruebas válidas. El historial se conserva.</p>
+  {% endif %}
+  <form method="post" action="{% url 'estudios:tipos_confirmar' %}">
+    {% csrf_token %}
+    <input type="hidden" name="token" value="{{ borrador.token }}">
+    <button type="submit" name="accion" value="confirmar" class="btn btn-primary">Confirmar</button>
+    {% if volver_url %}<a class="btn btn-outline-primary" href="{{ volver_url }}">Volver a editar</a>{% endif %}
+    <button type="submit" name="accion" value="cancelar" class="btn btn-secondary">Cancelar</button>
+  </form>
+{% endblock %}

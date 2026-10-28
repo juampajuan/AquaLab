@@ -19,6 +19,9 @@
           <a class="nav-link text-white" href="{% url 'muestras:registrar' %}">Registrar muestra</a>
           <a class="nav-link text-white" href="{% url 'estudios:crear' %}">Crear estudio</a>
           <a class="nav-link text-white" href="{% url 'estudios:buscar' %}">Buscar estudio</a>
+          {% if perms.estudios.gestionar_catalogo %}
+            <a href="{% url 'estudios:tipos_listar' %}" class="nav-link text-white">Gestionar tipos</a>
+          {% endif %}
           <span class="navbar-text">{{ user.get_full_name|default:user.email }}</span>
           <form method="post" action="{% url 'usuarios:logout' %}" class="m-0">
             {% csrf_token %}

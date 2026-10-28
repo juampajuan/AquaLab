@@ -15,3 +15,6 @@ Dockerfile*
 *.log*
 .env*
 coverage/
+
+# Respaldos locales, nunca publicar
+.local-backups/

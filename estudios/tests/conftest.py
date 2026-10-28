@@ -105,3 +105,36 @@ def cambiar_tipo():
             return actual
 
     return cambiar
+
+
+@pytest.fixture
+def gestor(empleado):
+    from django.contrib.auth.models import Permission
+
+    empleado.user_permissions.add(Permission.objects.get(codename="gestionar_catalogo"))
+    return empleado
+
+
+@pytest.fixture
+def staff_sin_permiso(django_user_model):
+    return django_user_model.objects.create_user(
+        email="staff-us55@ejemplo.com", password="Clave-Valida-123", is_active=True, is_staff=True
+    )
+
+
+@pytest.fixture
+def tipo_inactivo(tipo):
+    tipo.activo = False
+    tipo.save()
+    return tipo
+
+
+@pytest.fixture
+def otro_gestor(django_user_model):
+    from django.contrib.auth.models import Permission
+
+    usuario = django_user_model.objects.create_user(
+        email="otro-gestor-us55@ejemplo.com", password="Clave-Valida-123", is_active=True
+    )
+    usuario.user_permissions.add(Permission.objects.get(codename="gestionar_catalogo"))
+    return usuario
