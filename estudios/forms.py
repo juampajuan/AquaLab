@@ -4,6 +4,9 @@ from muestras.models import Muestra
 
 from .models import TipoEstudio
 
+MAX_LONGITUD_BUSQUEDA = 100
+MAX_ENTERO_BUSQUEDA = 9_223_372_036_854_775_807
+
 
 class MuestraChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
@@ -34,7 +37,11 @@ class BuscarEstudioForm(forms.Form):
     q = forms.CharField(
         label="Identificador, muestra (N° PI / nombre) o cliente",
         required=False,
+        max_length=MAX_LONGITUD_BUSQUEDA,
         strip=True,
+        error_messages={
+            "max_length": "Ingresá como máximo 100 caracteres para buscar.",
+        },
     )
 
     def clean_q(self):
@@ -43,6 +50,16 @@ class BuscarEstudioForm(forms.Form):
             raise forms.ValidationError(
                 "Ingresá un identificador de estudio, N° PI, muestra o cliente para buscar."
             )
-        if len(valor) < 2 and not valor.isdigit():
+        if valor.isdigit():
+            try:
+                if not valor.isascii():
+                    raise ValueError
+                numero = int(valor)
+            except ValueError as exc:
+                raise forms.ValidationError("Ingresá un número válido para buscar.") from exc
+            if numero < 1 or numero > MAX_ENTERO_BUSQUEDA:
+                raise forms.ValidationError("Ingresá un número válido para buscar.")
+            return valor
+        if len(valor) < 2:
             raise forms.ValidationError("Ingresá al menos 2 caracteres para buscar.")
         return valor

@@ -35,13 +35,13 @@ def escenario_consulta(empleado):
         email="contacto@aguasdelsur.com",
     )
 
-    origen_pozo = Origen.objects.create(cliente=cliente_persona, nombre="Pozo N°2")
+    origen_pozo = Origen.objects.create(cliente=cliente_persona, nombre="Pozo Sur")
     origen_cisterna = Origen.objects.create(cliente=cliente_empresa, nombre="Cisterna Norte")
 
     hoy = timezone.localdate()
     muestra_pozo = Muestra.objects.create(
         numero_pi=200101,
-        nombre="Pozo N°2 Octubre",
+        nombre="Pozo Sur Octubre",
         cliente=cliente_persona,
         origen=origen_pozo,
         fecha_muestreo=hoy,
@@ -166,7 +166,7 @@ def test_buscar_por_numero_pi_de_muestra(cliente_http, escenario_consulta):
     ]
 
 
-@pytest.mark.parametrize("texto", ["Pozo", "pozo", "OCTUBRE", "pozo n°2"])
+@pytest.mark.parametrize("texto", ["Pozo", "pozo", "OCTUBRE", "pozo sur"])
 def test_buscar_por_nombre_de_muestra(cliente_http, escenario_consulta, texto):
     resp = cliente_http.get(reverse("estudios:buscar"), {"q": texto})
     assert resp.status_code == 200
@@ -175,6 +175,64 @@ def test_buscar_por_nombre_de_muestra(cliente_http, escenario_consulta, texto):
         escenario_consulta["estudio_en_proceso"],
         escenario_consulta["estudio_pendiente"],
     ]
+
+
+def test_buscar_numero_incluye_nombres_de_muestra_y_cliente(
+    cliente_http, escenario_consulta, empleado
+):
+    hoy = timezone.localdate()
+    cliente_2026 = Cliente.objects.create(
+        razon_social="Logística 2026 S.A.",
+        tipo_documento="CUIT",
+        numero_documento="30712345620",
+        email="logistica@ejemplo.com",
+    )
+    origen_2026 = Origen.objects.create(cliente=cliente_2026, nombre=" Cisterna")
+    muestra_tanque = Muestra.objects.create(
+        numero_pi=200201,
+        nombre="Tanque 2026",
+        cliente=escenario_consulta["cliente_persona"],
+        origen=escenario_consulta["muestra_pozo"].origen,
+        fecha_muestreo=hoy,
+        fecha_ingreso=hoy,
+        sitio_extraccion="Toma auxiliar",
+        registrada_por=empleado,
+    )
+    muestra_cliente_num = Muestra.objects.create(
+        numero_pi=200202,
+        nombre="Muestra General",
+        cliente=cliente_2026,
+        origen=origen_2026,
+        fecha_muestreo=hoy,
+        fecha_ingreso=hoy,
+        sitio_extraccion="Toma central",
+        registrada_por=empleado,
+    )
+    tipo = escenario_consulta["tipo_basico"]
+    estudio_tanque = crear_estudio(
+        {
+            "clave": str(uuid.uuid4()),
+            "muestra": muestra_tanque.pk,
+            "tipo": tipo.pk,
+            "version": tipo.version,
+        },
+        empleado,
+    )
+    estudio_cliente_num = crear_estudio(
+        {
+            "clave": str(uuid.uuid4()),
+            "muestra": muestra_cliente_num.pk,
+            "tipo": tipo.pk,
+            "version": tipo.version,
+        },
+        empleado,
+    )
+
+    resp = cliente_http.get(reverse("estudios:buscar"), {"q": "2026"})
+    assert resp.status_code == 200
+    ids = {e.pk for e in resp.context["page_obj"].object_list}
+    assert estudio_tanque.pk in ids
+    assert estudio_cliente_num.pk in ids
 
 
 @pytest.mark.parametrize("texto", ["Pérez", "perez", "PEREZ", "PÉREZ", "juan"])
@@ -234,7 +292,7 @@ def test_columnas_en_resultados_de_busqueda(cliente_http, escenario_consulta):
     assert f"#{estudio_ep.pk}" in html
     assert f"#{estudio_pe.pk}" in html
     assert "200101" in html
-    assert "Pozo N°2 Octubre" in html
+    assert "Pozo Sur Octubre" in html
     assert "Juan Pérez" in html
     assert "DNI 30123456" in html
     assert "Físico-Químico" in html
@@ -257,8 +315,8 @@ def test_detalle_estudio_cabecera_avance_y_pruebas_ordenadas(
     assert "Físico-Químico" in html
     assert "Análisis físico-químico general de agua" in html
     assert "200101" in html
-    assert "Pozo N°2 Octubre" in html
-    assert "Pozo N°2" in html
+    assert "Pozo Sur Octubre" in html
+    assert "Pozo Sur" in html
     assert "Juan Pérez" in html
     assert "DNI 30123456" in html
     assert empleado.get_full_name() or empleado.email in html
@@ -328,6 +386,27 @@ def test_busqueda_un_caracter_no_numerico_rechazada(cliente_http, escenario_cons
     assert resp.status_code == 200
     assert resp.context["page_obj"] is None
     assert "Ingresá al menos 2 caracteres para buscar." in resp.content.decode()
+
+
+@pytest.mark.parametrize(
+    "texto",
+    ["²", "³", "²²", "0", "9999999999999999999999999"],
+)
+def test_busqueda_numero_invalido_o_fuera_de_rango_muestra_error(
+    cliente_http, escenario_consulta, texto
+):
+    resp = cliente_http.get(reverse("estudios:buscar"), {"q": texto})
+    assert resp.status_code == 200
+    assert resp.context["page_obj"] is None
+    assert "Ingresá un número válido para buscar." in resp.content.decode()
+
+
+@pytest.mark.parametrize("texto", ["a" * 101, "1" * 101])
+def test_busqueda_supera_longitud_maxima_muestra_error(cliente_http, escenario_consulta, texto):
+    resp = cliente_http.get(reverse("estudios:buscar"), {"q": texto})
+    assert resp.status_code == 200
+    assert resp.context["page_obj"] is None
+    assert "Ingresá como máximo 100 caracteres para buscar." in resp.content.decode()
 
 
 def test_busqueda_un_digito_numerico_es_valida(cliente_http, escenario_consulta):

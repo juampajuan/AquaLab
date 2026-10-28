@@ -21,6 +21,7 @@ from .servicios import (
 )
 
 RESULTADOS_POR_PAGINA = 20
+MAX_NUMERO_PI_SQL = 2_147_483_647
 
 
 def exito(request, estudio):
@@ -126,20 +127,19 @@ def buscar(request):
         form = BuscarEstudioForm(request.GET)
         if form.is_valid():
             q = form.cleaned_data["q"]
-            if q.isdigit():
+            filtro = (
+                Q(muestra__nombre__unaccent__icontains=q)
+                | Q(muestra__cliente__nombre__unaccent__icontains=q)
+                | Q(muestra__cliente__razon_social__unaccent__icontains=q)
+            )
+            if q.isascii() and q.isdigit():
                 numero = int(q)
-                filtro = Q(pk=numero) | Q(muestra__numero_pi=numero)
-                if len(q) >= 4:
-                    filtro |= Q(muestra__cliente__numero_documento__contains=q)
-            else:
-                filtro = (
-                    Q(muestra__nombre__unaccent__icontains=q)
-                    | Q(muestra__cliente__nombre__unaccent__icontains=q)
-                    | Q(muestra__cliente__razon_social__unaccent__icontains=q)
-                )
-                q_doc = normalizar_numero_documento(q)
-                if len(q_doc) >= 4 and q_doc.isdigit():
-                    filtro |= Q(muestra__cliente__numero_documento__contains=q_doc)
+                filtro |= Q(pk=numero)
+                if numero <= MAX_NUMERO_PI_SQL:
+                    filtro |= Q(muestra__numero_pi=numero)
+            q_doc = normalizar_numero_documento(q)
+            if len(q_doc) >= 4 and q_doc.isascii() and q_doc.isdigit():
+                filtro |= Q(muestra__cliente__numero_documento__contains=q_doc)
             qs = (
                 Estudio.objects.select_related("muestra", "muestra__cliente", "muestra__origen")
                 .filter(filtro)
