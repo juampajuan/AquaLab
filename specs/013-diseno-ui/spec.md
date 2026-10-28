@@ -76,17 +76,25 @@ y abriendo fichas de clientes activos e inactivos.
 
 ### User Story 4 - Empezar el trabajo desde un panel de inicio (Priority: P3)
 
-Como empleado del laboratorio, quiero que el inicio me muestre accesos rápidos a las tareas principales, para
-arrancar el trabajo diario en un clic.
+Como empleado del laboratorio, quiero que el inicio me muestre accesos rápidos a las tareas principales y un
+resumen de la actividad del laboratorio, para arrancar el trabajo diario en un clic y saber de un vistazo
+cuánto trabajo hay.
 
 **Why this priority**: Mejora la primera impresión y la demo, pero las mismas acciones ya están en el menú.
 
-**Independent Test**: Se puede probar iniciando sesión y usando cada acceso rápido del inicio.
+**Independent Test**: Se puede probar con datos cargados (muestras con y sin estudios, con distintas
+fechas de ingreso, y estudios), verificando que los indicadores y la tabla coinciden con esos
+datos, y con una base sin muestras, verificando el estado vacío.
 
 **Acceptance Scenarios**:
 
 1. **Given** un empleado que inicia sesión, **When** llega al inicio, **Then** ve un saludo y accesos rápidos a Buscar cliente, Registrar cliente, Registrar muestra y Crear estudio, cada uno con un ícono y una breve descripción.
 2. **Given** el panel de inicio, **When** el empleado elige un acceso rápido, **Then** llega a la pantalla correspondiente.
+3. **Given** muestras con al menos un estudio y muestras sin ningún estudio, **When** el empleado abre el inicio, **Then** el indicador "Muestras sin estudio" muestra solo la cantidad de muestras que todavía no tienen ningún estudio creado.
+4. **Given** muestras con fecha de ingreso hoy y en otros días, **When** el empleado abre el inicio, **Then** el indicador "Muestras ingresadas hoy" muestra solo las que tienen fecha de ingreso igual a la fecha actual.
+5. **Given** estudios registrados, **When** el empleado abre el inicio, **Then** el indicador "Estudios pendientes de análisis" muestra la cantidad de estudios en ese estado.
+6. **Given** más de 5 muestras registradas, **When** el empleado abre el inicio, **Then** la tabla "Últimas muestras registradas" muestra las 5 más recientes, de la más nueva a la más vieja, con N° PI, cliente, origen, fecha de ingreso y estado.
+7. **Given** que todavía no hay muestras registradas, **When** el empleado abre el inicio, **Then** los indicadores muestran 0 y la tabla muestra un estado vacío con un acceso a "Registrar muestra".
 
 ---
 
@@ -118,7 +126,10 @@ arrancar el trabajo diario en un clic.
 - **FR-009**: Los estados del dominio (cliente Activo/Inactivo, muestra Ingresada, estudio Pendiente de análisis) MUST mostrarse como etiquetas con un color fijo por estado en todo el sistema.
 - **FR-010**: Los mensajes de éxito, error e información MUST distinguirse visualmente entre sí y poder cerrarse.
 - **FR-011**: El inicio MUST ser un panel con saludo y accesos rápidos a Buscar cliente, Registrar cliente, Registrar muestra y Crear estudio.
-- **FR-012**: El rediseño MUST NOT cambiar el comportamiento del sistema: mismos campos, validaciones, textos de mensajes, flujos de confirmación, permisos y direcciones de las pantallas.
+- **FR-019**: El inicio MUST mostrar tres indicadores calculados con los datos actuales al abrir la pantalla: "Muestras sin estudio" (muestras que todavía no tienen ningún estudio creado), "Muestras ingresadas hoy" (muestras cuya fecha de ingreso es la fecha actual) y "Estudios pendientes de análisis" (estudios en ese estado).
+- **FR-020**: El inicio MUST mostrar la tabla "Últimas muestras registradas" con las 5 muestras registradas más recientemente, ordenadas de la más nueva a la más vieja, con N° PI, cliente, origen, fecha de ingreso y estado; sin muestras, MUST mostrar un estado vacío con acceso a "Registrar muestra".
+- **FR-021**: El panel de inicio MUST ser solo de consulta: no permite modificar datos ni filtrar, y no agrega pantallas nuevas.
+- **FR-012**: Salvo el panel de inicio (FR-019 a FR-021), el rediseño MUST NOT cambiar el comportamiento del sistema: mismos campos, validaciones, textos de mensajes, flujos de confirmación, permisos y direcciones de las pantallas.
 - **FR-013**: Los elementos visuales repetidos (campos, botones, tablas, fichas, resúmenes, etiquetas de estado y mensajes) MUST definirse una sola vez y reutilizarse, para que las pantallas futuras (US 5.2 a 5.5) puedan adoptarlos sin rediseño.
 - **FR-014**: Los colores, tipografías y espaciados MUST seguir un único sistema visual, definido con Stitch y aprobado por el equipo.
 - **FR-015**: Todos los textos de la interfaz MUST estar en español.
@@ -128,8 +139,9 @@ arrancar el trabajo diario en un clic.
 
 ### Key Entities
 
-No se agregan ni modifican datos. Los estados visibles (cliente Activo/Inactivo, muestra Ingresada,
-estudio Pendiente de análisis) son los ya existentes.
+No se agregan ni modifican datos. El panel de inicio solo lee Muestra (N° PI, cliente, origen, fecha de
+ingreso, estado, orden de registro y si tiene estudios) y Estudio (estado). Los estados visibles
+(cliente Activo/Inactivo, muestra Ingresada, estudio Pendiente de análisis) son los ya existentes.
 
 ## Success Criteria *(mandatory)*
 
@@ -142,12 +154,15 @@ estudio Pendiente de análisis) son los ya existentes.
 - **SC-005**: Ninguna pantalla del alcance presenta desplazamiento horizontal de la página en ventanas de 375 px de ancho o más.
 - **SC-006**: El texto principal de todas las pantallas cumple una relación de contraste de al menos 4.5:1 con su fondo.
 - **SC-007**: El equipo aprueba el resultado como "listo para mostrar en la demo" en la revisión del sprint.
+- **SC-008**: El 100% de los valores del panel de inicio (tres indicadores y tabla) coinciden con los datos cargados en las pruebas.
 
 ## Assumptions
 
 - Alcance: las pantallas existentes hasta la US 5.1 en `main`. Las pantallas de las US 5.2 a 5.5 se desarrollan en paralelo con el diseño anterior y se adaptan a los componentes de esta feature cuando se integren.
 - El diseño visual se genera con Google Stitch y el equipo lo aprueba antes de implementarlo. La forma de implementar los estilos la define la constitution vigente (v1.1.0).
-- El panel de inicio solo muestra accesos rápidos; indicadores con datos (cantidad de muestras, estudios pendientes, etc.) requieren una US propia.
+- Decisión del equipo: el panel de inicio incluye tres indicadores y la tabla de últimas muestras, porque se calculan con datos que ya existen y mejoran la demo. Un dashboard completo (gráficos, alertas, filtros, métricas históricas) queda para una US propia.
+- "Hoy" es la fecha actual del laboratorio (zona horaria de Argentina).
+- La tabla muestra la fecha de ingreso (solo día), no la hora de registro.
 - No se agregan pantallas nuevas (por ejemplo, listado de muestras o aprobación de cuentas fuera del admin); quedan como posibles US futuras.
 - El admin de Django mantiene su diseño propio y sigue usándose para aprobar o rechazar cuentas.
 - Los correos de la US 1.3 siguen en texto plano.
