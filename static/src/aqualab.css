@@ -1,0 +1,83 @@
+/*
+ * Entrada de Tailwind. Se compila a static/css/aqualab.css (versionado):
+ *   docker compose exec web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify
+ * Tokens tomados de specs/013-diseno-ui/stitch/DESIGN.md.
+ */
+
+/* source(none): no escanear specs/ (las maquetas de Stitch traen clases que no se usan). */
+@import "tailwindcss" source(none);
+
+@source "../../templates";
+@source "../../*/templates";
+@source "../../*/forms.py";
+@source "../../*/static";
+@source "../js";
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../fuentes/InterVariable.woff2") format("woff2");
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Marca: azul marino */
+  --color-marino: #0f2744;
+  --color-marino-oscuro: #001229;
+  --color-marino-claro: #1e3a5f;
+
+  /* Acentos de agua. Las variantes "-texto" cumplen contraste 4.5:1 sobre blanco. */
+  --color-cian: #0ea5e9;
+  --color-cian-texto: #006591;
+  --color-cian-suave: #e0f2fe;
+  --color-turquesa: #14b8a6;
+  --color-turquesa-texto: #0f766e;
+  --color-turquesa-suave: #ccfbf1;
+
+  /* Superficies, bordes y texto */
+  --color-fondo: #f8f9ff;
+  --color-fondo-hundido: #eff4ff;
+  --color-superficie: #ffffff;
+  --color-borde: #e2e8f0;
+  --color-borde-fuerte: #cbd5e1;
+  --color-tinta: #0b1c30;
+  --color-tinta-suave: #475569;
+
+  /* Estados */
+  --color-exito: #047857;
+  --color-exito-suave: #ecfdf5;
+  --color-exito-borde: #a7f3d0;
+  --color-advertencia: #b45309;
+  --color-advertencia-suave: #fffbeb;
+  --color-advertencia-borde: #fde68a;
+  --color-peligro: #ba1a1a;
+  --color-peligro-suave: #fff1f2;
+  --color-peligro-borde: #fecdd3;
+  --color-info: #075985;
+  --color-info-suave: #f0f9ff;
+  --color-info-borde: #bae6fd;
+
+  /* Elevación (DESIGN.md: niveles 1 a 3) */
+  --shadow-nivel1: 0 1px 2px 0 rgb(15 39 68 / 0.04);
+  --shadow-nivel2: 0 4px 12px -2px rgb(15 39 68 / 0.06), 0 2px 4px -1px rgb(15 39 68 / 0.03);
+  --shadow-nivel3: 0 16px 32px -6px rgb(15 39 68 / 0.12), 0 4px 8px -2px rgb(15 39 68 / 0.04);
+}
+
+@layer base {
+  html {
+    @apply bg-fondo text-tinta antialiased;
+  }
+
+  /* Números alineados en tablas e indicadores. */
+  table,
+  .numeros {
+    font-feature-settings: "tnum" 1;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-cian;
+  }
+}

@@ -26,13 +26,13 @@ suite existente debe seguir pasando sin cambios salvo la aserción indicada en T
 
 **Purpose**: compilar Tailwind sin Node y servir recursos propios.
 
-- [ ] T001 Agregar al `Dockerfile` la descarga del CLI standalone de Tailwind 4 a `/usr/local/bin/tailwindcss`, con `ARG TAILWIND_VERSION` (última 4.x estable) y selección del binario por arquitectura (`linux-x64` / `linux-arm64`) (research R1)
-- [ ] T002 Agregar `STATICFILES_DIRS = [BASE_DIR / "static"]` en `config/settings.py` (research R2)
-- [ ] T003 [P] Copiar `InterVariable.woff2` (OFL) a `static/fuentes/` (research R5)
-- [ ] T004 [P] Convertir las 4 imágenes de `specs/013-diseno-ui/stitch/imagenes/` a WebP optimizado (ancho máx. 1600 px, ≈ 150–200 KB) en `static/img/acceso/`, con Pillow en un contenedor temporal (`docker run --rm -v "$PWD":/w python:3.12-slim ...`), sin agregar Pillow a `requirements.txt`; solo se commitean los `.webp` con nombres `laboratorio.webp`, `mesada-muestras.webp`, `toma-de-muestra.webp`, `tubos-pipeta.webp` (research R6, R6b)
-- [ ] T005 [P] Copiar los íconos SVG de Lucide (ISC) que usan las maquetas a `templates/ui/iconos/` (inicio, usuarios, buscar, agregar usuario, matraz, microscopio, cerrar sesión, flecha, reloj, alerta, info, check, lápiz, x, sobre, calendario, gota, documento, menú, ojo) (research R5)
-- [ ] T006 Crear `static/src/aqualab.css`: `@import "tailwindcss" source(none)`, `@source` de `templates/`, `*/templates/`, `*/forms.py` y `*/static/**/*.js`, `@font-face` de Inter y `@theme` con los tokens de `stitch/DESIGN.md` (colores, tipografía, radios, sombras, colores de estado) (research R3, R4)
-- [ ] T007 Agregar al job `ruff-y-tests` de `.github/workflows/ci.yml` un paso que descarga el mismo binario (misma `TAILWIND_VERSION`), recompila `static/css/aqualab.css` y falla con `git diff --exit-code` si difiere (research R2)
+- [X] T001 Agregar al `Dockerfile` la descarga del CLI standalone de Tailwind 4 a `/usr/local/bin/tailwindcss`, con `ARG TAILWIND_VERSION` (última 4.x estable) y selección del binario por arquitectura (`linux-x64` / `linux-arm64`) (research R1)
+- [X] T002 Agregar `STATICFILES_DIRS = [BASE_DIR / "static"]` en `config/settings.py` (research R2)
+- [X] T003 [P] Copiar `InterVariable.woff2` (OFL) a `static/fuentes/` (research R5)
+- [X] T004 [P] Convertir las 4 imágenes de `specs/013-diseno-ui/stitch/imagenes/` a WebP optimizado (ancho máx. 1600 px, ≈ 150–200 KB) en `static/img/acceso/`, con Pillow en un contenedor temporal (`docker run --rm -v "$PWD":/w python:3.12-slim ...`), sin agregar Pillow a `requirements.txt`; solo se commitean los `.webp` con nombres `laboratorio.webp`, `mesada-muestras.webp`, `toma-de-muestra.webp`, `tubos-pipeta.webp` (research R6, R6b)
+- [X] T005 [P] Copiar los íconos SVG de Lucide (ISC) que usan las maquetas a `templates/ui/iconos/` (inicio, usuarios, buscar, agregar usuario, matraz, microscopio, cerrar sesión, flecha, reloj, alerta, info, check, lápiz, x, sobre, calendario, gota, documento, menú, ojo) (research R5)
+- [X] T006 Crear `static/src/aqualab.css`: `@import "tailwindcss" source(none)`, `@source` de `templates/`, `*/templates/`, `*/forms.py` y `*/static/**/*.js`, `@font-face` de Inter y `@theme` con los tokens de `stitch/DESIGN.md` (colores, tipografía, radios, sombras, colores de estado) (research R3, R4)
+- [X] T007 Agregar al job `ruff-y-tests` de `.github/workflows/ci.yml` un paso que descarga el mismo binario (misma `TAILWIND_VERSION`), recompila `static/css/aqualab.css` y falla con `git diff --exit-code` si difiere (research R2)
 
 ---
 
