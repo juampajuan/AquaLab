@@ -29,6 +29,8 @@ cerrar sesión funciona desde cualquier pantalla.
 2. **Given** un empleado en una pantalla de un módulo, **When** mira el menú, **Then** la opción correspondiente a esa pantalla aparece destacada.
 3. **Given** un empleado con sesión iniciada, **When** elige cerrar sesión desde el menú, **Then** la sesión se cierra igual que antes del rediseño.
 4. **Given** una persona sin sesión, **When** abre el inicio de sesión o el registro de usuario, **Then** ve un diseño de acceso con la identidad de AquaLab y sin el menú interno.
+5. **Given** una pantalla de acceso abierta, **When** pasan unos segundos, **Then** la imagen del laboratorio cambia a la siguiente con una transición suave, en ciclo; si la persona tiene activada la preferencia de reducir movimiento, se muestra una sola imagen fija.
+6. **Given** una cuenta pendiente de aprobación, **When** la persona intenta iniciar sesión, **Then** el aviso "Tu cuenta está pendiente de aprobación" se muestra como advertencia, distinto de un error de credenciales.
 
 ---
 
@@ -129,6 +131,8 @@ datos, y con una base sin muestras, verificando el estado vacío.
 - **FR-019**: El inicio MUST mostrar tres indicadores calculados con los datos actuales al abrir la pantalla: "Muestras sin estudio" (muestras que todavía no tienen ningún estudio creado), "Muestras ingresadas hoy" (muestras cuya fecha de ingreso es la fecha actual) y "Estudios pendientes de análisis" (estudios en ese estado).
 - **FR-020**: El inicio MUST mostrar la tabla "Últimas muestras registradas" con las 5 muestras registradas más recientemente, ordenadas de la más nueva a la más vieja, con N° PI, cliente, origen, fecha de ingreso y estado; sin muestras, MUST mostrar un estado vacío con acceso a "Registrar muestra".
 - **FR-021**: El panel de inicio MUST ser solo de consulta: no permite modificar datos ni filtrar, y no agrega pantallas nuevas.
+- **FR-022**: Las pantallas de acceso MUST mostrar un panel con imágenes del laboratorio que alternan en ciclo con una transición suave (4 imágenes, una cada pocos segundos), con el texto siempre legible; con la preferencia de reducir movimiento activada, MUST mostrar una sola imagen fija.
+- **FR-023**: En el inicio de sesión, el aviso de cuenta pendiente de aprobación MUST mostrarse como advertencia, visualmente distinto de los errores de credenciales, sin cambiar su texto.
 - **FR-012**: Salvo el panel de inicio (FR-019 a FR-021), el rediseño MUST NOT cambiar el comportamiento del sistema: mismos campos, validaciones, textos de mensajes, flujos de confirmación, permisos y direcciones de las pantallas.
 - **FR-013**: Los elementos visuales repetidos (campos, botones, tablas, fichas, resúmenes, etiquetas de estado y mensajes) MUST definirse una sola vez y reutilizarse, para que las pantallas futuras (US 5.2 a 5.5) puedan adoptarlos sin rediseño.
 - **FR-014**: Los colores, tipografías y espaciados MUST seguir un único sistema visual, definido con Stitch y aprobado por el equipo.
