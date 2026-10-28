@@ -5,16 +5,20 @@ from django.db import DatabaseError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.html import format_html
 
 from clientes.models import normalizar_numero_documento
 from muestras.models import Muestra
 
+from . import servicios
 from .catalogo import CatalogoNoDisponible
 from .confirmaciones import cargar_token, descartar, pendientes, preparar
-from .forms import BuscarEstudioForm, CrearEstudioForm
+from .forms import AgregarPruebaForm, BuscarEstudioForm, CrearEstudioForm
 from .models import EstadoPruebaEstudio, Estudio
 from .servicios import (
     CrearEstudioError,
+    GestionPruebasError,
+    PruebaYaAsignada,
     VersionDesactualizada,
     comprobar_identidad,
     crear_estudio,
@@ -27,7 +31,13 @@ MAX_NUMERO_PI_SQL = 2_147_483_647
 def exito(request, estudio):
     descartar(request, estudio.clave_idempotencia)
     messages.success(
-        request, f"Estudio {estudio.pk} creado para la muestra PI {estudio.muestra.numero_pi}."
+        request,
+        format_html(
+            '<a href="{}">Estudio {}</a> creado para la muestra PI {}.',
+            reverse("estudios:detalle", args=[estudio.pk]),
+            estudio.pk,
+            estudio.muestra.numero_pi,
+        ),
     )
     return redirect("estudios:crear")
 
@@ -185,3 +195,41 @@ def detalle(request, pk):
             "pruebas_pendientes": pruebas_pendientes,
         },
     )
+
+
+def agregar_prueba(request, pk):
+    estudio = get_object_or_404(Estudio.objects.select_related("muestra"), pk=pk)
+    contexto = {"estudio": estudio}
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    if accion != "confirmar" and not estudio.admite_modificaciones:
+        # Al confirmar, la regla la revalida el servicio con el estudio bloqueado.
+        messages.error(request, "Este estudio ya no admite cambios en sus pruebas.")
+        return redirect("estudios:detalle", pk=estudio.pk)
+    if request.method != "POST":
+        form = AgregarPruebaForm(estudio=estudio)
+        return render(request, "estudios/agregar_prueba.html", {**contexto, "form": form})
+    if accion not in ("revisar", "confirmar"):
+        messages.error(request, "La acción no es válida.")
+        return redirect("estudios:detalle", pk=estudio.pk)
+    form = AgregarPruebaForm(request.POST, estudio=estudio)
+    if form.is_valid():
+        prueba = form.cleaned_data["prueba"]
+    elif accion == "confirmar" and (prueba := form.prueba_ya_asignada()):
+        pass  # Reenvío: el servicio informa que ya forma parte del estudio.
+    else:
+        return render(request, "estudios/agregar_prueba.html", {**contexto, "form": form})
+    if accion == "revisar":
+        return render(
+            request, "estudios/agregar_prueba_confirmar.html", {**contexto, "prueba": prueba}
+        )
+    try:
+        servicios.agregar_prueba(estudio.pk, prueba.pk, request.user)
+    except PruebaYaAsignada as exc:
+        messages.info(request, str(exc))
+    except GestionPruebasError as exc:
+        messages.error(request, str(exc))
+    except DatabaseError:
+        messages.error(request, "No se pudo agregar la prueba. Intentá nuevamente.")
+    else:
+        messages.success(request, f"Prueba {prueba} agregada al estudio {estudio.pk}.")
+    return redirect("estudios:detalle", pk=estudio.pk)

@@ -1,6 +1,7 @@
 from django import forms
 
 from muestras.models import Muestra
+from pruebas.models import Prueba
 
 from .models import TipoEstudio
 
@@ -29,6 +30,31 @@ class CrearEstudioForm(forms.Form):
         super().__init__(*args, **kwargs)
         for campo in self.fields.values():
             campo.widget.attrs["class"] = "form-select"
+
+
+class AgregarPruebaForm(forms.Form):
+    def __init__(self, *args, estudio, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.estudio = estudio
+        self.fields["prueba"] = forms.ModelChoiceField(
+            queryset=Prueba.objects.exclude(pk__in=estudio.pruebas_asignadas.values("prueba")),
+            label="Prueba",
+            empty_label="Elegí una prueba",
+        )
+        self.fields["prueba"].widget.attrs["class"] = "form-select"
+
+    def full_clean(self):
+        super().full_clean()
+        if "prueba" in self.errors:
+            self.fields["prueba"].widget.attrs["class"] += " is-invalid"
+
+    def prueba_ya_asignada(self):
+        """Prueba enviada que ya forma parte del estudio (reenvío), o `None`."""
+        asignadas = Prueba.objects.filter(pk__in=self.estudio.pruebas_asignadas.values("prueba"))
+        try:
+            return forms.ModelChoiceField(queryset=asignadas).clean(self.data.get("prueba"))
+        except forms.ValidationError:
+            return None
 
 
 class BuscarEstudioForm(forms.Form):

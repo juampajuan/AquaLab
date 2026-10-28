@@ -1,8 +1,9 @@
 import uuid
 
-from django.db import connection, transaction
+from django.db import IntegrityError, connection, transaction
 
 from muestras.models import Muestra
+from pruebas.models import Prueba
 
 from .catalogo import CatalogoNoDisponible, configuracion_bloqueada
 from .models import Estudio, PruebaEstudio, TipoEstudio
@@ -80,3 +81,33 @@ def crear_estudio(datos, usuario, *, pendiente=True):
             [PruebaEstudio(estudio=estudio, prueba_id=p["id"]) for p in config["pruebas"]]
         )
         return estudio
+
+
+class GestionPruebasError(Exception):
+    pass
+
+
+class PruebaYaAsignada(GestionPruebasError):
+    pass
+
+
+def agregar_prueba(estudio_pk, prueba_pk, usuario):
+    if not usuario.is_authenticated or not usuario.is_active:
+        raise GestionPruebasError("Se requiere una sesión activa.")
+    with transaction.atomic():
+        estudio = Estudio.objects.select_for_update().filter(pk=estudio_pk).first()
+        if estudio is None:
+            raise GestionPruebasError("El estudio no está disponible.")
+        if not estudio.admite_modificaciones:
+            raise GestionPruebasError("Este estudio ya no admite cambios en sus pruebas.")
+        prueba = Prueba.objects.filter(pk=prueba_pk).first()
+        if prueba is None:
+            raise GestionPruebasError("La prueba no está disponible.")
+        ya_asignada = PruebaYaAsignada(f"La prueba {prueba.codigo} ya forma parte del estudio.")
+        if estudio.pruebas_asignadas.filter(prueba_id=prueba.pk).exists():
+            raise ya_asignada
+        try:
+            with transaction.atomic():
+                return PruebaEstudio.objects.create(estudio=estudio, prueba=prueba)
+        except IntegrityError as exc:
+            raise ya_asignada from exc

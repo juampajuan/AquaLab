@@ -94,6 +94,10 @@ class Estudio(models.Model):
     def __str__(self):
         return f"Estudio {self.pk} · {self.tipo_nombre_snapshot}"
 
+    @property
+    def admite_modificaciones(self):
+        return self.estado == EstadoEstudio.PENDIENTE_ANALISIS
+
 
 class PruebaEstudio(models.Model):
     estudio = models.ForeignKey(Estudio, on_delete=models.PROTECT, related_name="pruebas_asignadas")

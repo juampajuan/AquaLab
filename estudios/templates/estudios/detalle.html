@@ -70,10 +70,23 @@
         <h2 class="flex items-center gap-2.5 text-sm font-semibold text-marino">
           {% include "ui/icono.html" with nombre="flask-conical" clase="size-4 text-cian-texto" %} Pruebas asignadas
         </h2>
-        <p class="numeros text-xs text-tinta-suave">
-          Total: {{ total_pruebas }} · Completadas: {{ pruebas_completadas }} · Cargadas: {{ pruebas_cargadas }} · Pendientes: {{ pruebas_pendientes }}
-        </p>
+        <div class="flex flex-wrap items-center gap-4">
+          <p class="numeros text-xs text-tinta-suave">
+            Total: {{ total_pruebas }} · Completadas: {{ pruebas_completadas }} · Cargadas: {{ pruebas_cargadas }} · Pendientes: {{ pruebas_pendientes }}
+          </p>
+          {% if estudio.admite_modificaciones %}
+            <a href="{% url 'estudios:agregar_prueba' estudio.pk %}" class="btn btn-primario">
+              {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Agregar prueba
+            </a>
+          {% endif %}
+        </div>
       </div>
+      {% if not estudio.admite_modificaciones %}
+        <div class="aviso aviso-info mx-6 mt-4" role="status">
+          {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+          <div>Este estudio ya no admite cambios en sus pruebas.</div>
+        </div>
+      {% endif %}
       <div class="overflow-x-auto">
         <table class="tabla">
           <thead>
@@ -81,6 +94,7 @@
               <th>Código</th>
               <th>Prueba</th>
               <th class="text-right">Estado</th>
+              <th class="text-right">Acción</th>
             </tr>
           </thead>
           <tbody>
@@ -89,6 +103,7 @@
                 <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
                 <td>{{ asignacion.prueba.nombre }}</td>
                 <td class="text-right">{% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}</td>
+                <td class="text-right"></td>
               </tr>
             {% endfor %}
           </tbody>

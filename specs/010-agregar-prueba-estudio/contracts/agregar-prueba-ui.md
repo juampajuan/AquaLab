@@ -1,24 +1,25 @@
 # Contrato de interfaz: Agregar prueba al estudio
 
-**Feature**: `010-agregar-prueba-estudio` | **Plan**: [plan.md](../plan.md)
+**Feature**: `010-agregar-prueba-estudio` (rama `010-agregar-prueba-v2`) | **Plan**: [plan.md](../plan.md)
 
 Todas las rutas requieren sesión iniciada (sin sesión → 302 al login, FR-001) y llevan CSRF en los
 POST. Las pantallas extienden `base.html` y los mensajes se muestran con el framework `messages`.
 `<pk>` es el identificador del estudio; si no existe, todas las rutas responden **404**.
 
-## `GET /estudios/<pk>/` — `estudios:detalle`
+Las pantallas usan el layout y los componentes de SCRUM-67 (`templates/ui/`): `ui/encabezado.html`,
+`ui/campo.html`, `ui/errores_form.html`, `<dl class="resumen" data-componente="resumen">` y
+`ui/acciones_confirmacion.html` o su equivalente con `data-componente="acciones-confirmacion"`.
 
-- **Respuesta**: 200, template `estudios/detalle.html`.
-- **Cabecera** (`<dl>`): Estudio N° `pk`, Muestra `PI numero_pi`, Cliente, Origen, Tipo
-  (`tipo_nombre_snapshot`), Estado, Creado por (nombre completo o, si está vacío, correo), Fecha de
-  creación (zona del laboratorio).
-- **Pruebas asignadas**: tabla ordenada por código con columnas Código, Nombre, Estado
-  ("Pendiente") y Acción. En esta historia la columna Acción queda vacía; US 5.4 agrega el botón
-  **Quitar**.
-- **Agregar prueba**: botón-enlace a `estudios:agregar_prueba` solo si
-  `estudio.admite_modificaciones`.
-- Si el estudio no admite modificaciones: alerta "Este estudio ya no admite cambios en sus
-  pruebas." y ninguna acción.
+## `GET /estudios/<pk>/` — `estudios:detalle` (existente, US 5.2)
+
+La vista y su cabecera ya existen. Esta historia solo cambia la sección **Pruebas asignadas**:
+
+- **Agregar prueba**: botón-enlace a `estudios:agregar_prueba` en el encabezado de la sección, solo
+  si `estudio.admite_modificaciones`.
+- Si el estudio no admite modificaciones: aviso «Este estudio ya no admite cambios en sus
+  pruebas.» en la sección y ninguna acción.
+- La tabla suma una columna **Acción** a la derecha, vacía en esta historia; US 5.4 agrega ahí el
+  botón **Quitar**.
 
 ## Mensaje de éxito de US 5.1 (cambio)
 

@@ -8,6 +8,10 @@ No quedan `NEEDS CLARIFICATION`: la duda de la spec se resolvió en su sección 
 
 ## R1 — Detalle mínimo del estudio como punto de entrada
 
+> **Actualización 2026-10-28**: la vista `estudios:detalle` ya la creó US 5.2 (con más datos y
+> el estado de cada prueba). Esta historia no la crea: solo suma el botón «Agregar prueba» y la
+> columna Acción a la sección de pruebas. Se mantiene el enlace desde el mensaje de éxito de US 5.1.
+
 - **Decision**: vista `estudios:detalle` en `GET /estudios/<pk>/` (template
   `estudios/detalle.html`) con identificador, N° PI, cliente y origen de la muestra, nombre histórico
   del tipo (`tipo_nombre_snapshot`), estado, autor, fecha de creación y la tabla de pruebas asignadas
@@ -35,7 +39,7 @@ No quedan `NEEDS CLARIFICATION`: la duda de la spec se resolvió en su sección 
   `estudios/confirmaciones.py`.
 - **Alternatives**: reutilizar `confirmaciones.preparar` — está atado a la creación de estudios
   (muestra, tipo, versión) y agrega vencimiento y recuperación que esta historia no necesita; un
-  modal de Bootstrap — depende de JavaScript para confirmar y complica los tests.
+  modal con JavaScript — depende de JavaScript para confirmar y complica los tests.
 
 ## R3 — Servicio con bloqueo de fila del estudio
 

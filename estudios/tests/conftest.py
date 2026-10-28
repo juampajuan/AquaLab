@@ -138,3 +138,17 @@ def otro_gestor(django_user_model):
     )
     usuario.user_permissions.add(Permission.objects.get(codename="gestionar_catalogo"))
     return usuario
+
+
+@pytest.fixture
+def estudio(datos, empleado):
+    from estudios.servicios import crear_estudio
+
+    return crear_estudio(datos, empleado)
+
+
+@pytest.fixture
+def prueba_extra():
+    from pruebas.models import Prueba
+
+    return Prueba.objects.create(codigo="TEST-C", nombre="Prueba de test C")
