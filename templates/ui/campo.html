@@ -1,5 +1,6 @@
 {% comment %}
   Campo de formulario. Uso: {% include "ui/campo.html" with field=form.email %}
+  sin_obligatorio=True oculta el asterisco (por ejemplo, en el login, donde todo es obligatorio).
   Ganchos que usan JS y tests (no cambiar): el bloque de errores con id "<auto_id>_error" y un
   <div> por error, la ayuda con id "<auto_id>_helptext" y la clase is-invalid en el control.
 {% endcomment %}
@@ -7,7 +8,7 @@
   {% if field.widget_type == "radioselect" %}
     <fieldset>
       <legend class="campo-etiqueta">
-        {{ field.label }}{% if field.field.required %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
+        {{ field.label }}{% if field.field.required and not sin_obligatorio %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
       </legend>
       <div class="segmentado" id="{{ field.auto_id }}">
         {% for opcion in field %}
@@ -17,7 +18,7 @@
     </fieldset>
   {% else %}
     <label for="{{ field.id_for_label }}" class="campo-etiqueta">
-      {{ field.label }}{% if field.field.required %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
+      {{ field.label }}{% if field.field.required and not sin_obligatorio %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
     </label>
     {{ field }}
   {% endif %}

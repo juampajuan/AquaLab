@@ -6,6 +6,7 @@ from django.contrib.auth.forms import (
     UserChangeForm,
 )
 from django.contrib.auth.hashers import check_password, make_password
+from django.core.exceptions import NON_FIELD_ERRORS
 from django.db import DatabaseError
 from django.views.decorators.debug import sensitive_variables
 
@@ -82,6 +83,11 @@ class FormularioInicioSesion(AuthenticationForm):
         self.fields["password"].label = "Contraseña"
         for campo in self.fields.values():
             campo.widget.attrs["class"] = "form-control"
+
+    @property
+    def cuenta_pendiente(self):
+        """El template muestra este error como advertencia, no como error de credenciales."""
+        return self.has_error(NON_FIELD_ERRORS, "pendiente_aprobacion")
 
     def clean_username(self):
         return UsuarioManager.normalizar_email(self.cleaned_data["username"])

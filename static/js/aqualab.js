@@ -12,6 +12,8 @@ document.addEventListener("click", (evento) => {
   if (boton) {
     const menu = document.querySelector("[data-menu]");
     const abierto = menu.classList.toggle("max-lg:hidden") === false;
-    boton.setAttribute("aria-expanded", String(abierto));
+    for (const b of document.querySelectorAll("[data-menu-boton][aria-expanded]")) {
+      b.setAttribute("aria-expanded", String(abierto));
+    }
   }
 });

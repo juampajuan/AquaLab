@@ -63,19 +63,19 @@ registro sin sesión.
 
 ### Tests for User Story 1
 
-- [ ] T015 [P] [US1] Crear `config/tests/__init__.py` y `config/tests/test_layout.py`: pantalla interna muestra menú con Inicio, Buscar cliente, Registrar cliente, Registrar muestra y Crear estudio, nombre del usuario y "Cerrar sesión"; el subítem de la URL actual tiene `aria-current="page"` (probar con buscar cliente y registrar muestra); login y registro no muestran el menú; ninguna página carga recursos de `cdn.jsdelivr.net`, `cdn.tailwindcss.com` ni `fonts.googleapis.com`; todas enlazan `css/aqualab.css`
-- [ ] T016 [P] [US1] En `config/tests/test_layout.py`: el login renderiza las 4 imágenes de `img/acceso/` y el CSS compilado contiene la regla `prefers-reduced-motion` (FR-022)
-- [ ] T017 [P] [US1] En `usuarios/tests/`: con cuenta pendiente, el login marca el aviso como advertencia (clase/atributo de advertencia) y con credenciales inválidas como error; el texto de ambos no cambia (FR-023, research R14)
+- [X] T015 [P] [US1] Crear `config/tests/__init__.py` y `config/tests/test_layout.py`: pantalla interna muestra menú con Inicio, Buscar cliente, Registrar cliente, Registrar muestra y Crear estudio, nombre del usuario y "Cerrar sesión"; el subítem de la URL actual tiene `aria-current="page"` (probar con buscar cliente y registrar muestra); login y registro no muestran el menú; ninguna página carga recursos de `cdn.jsdelivr.net`, `cdn.tailwindcss.com` ni `fonts.googleapis.com`; todas enlazan `css/aqualab.css`
+- [X] T016 [P] [US1] En `config/tests/test_layout.py`: el login renderiza las 4 imágenes de `img/acceso/` y el CSS compilado contiene la regla `prefers-reduced-motion` (FR-022)
+- [X] T017 [P] [US1] En `usuarios/tests/`: con cuenta pendiente, el login marca el aviso como advertencia (clase/atributo de advertencia) y con credenciales inválidas como error; el texto de ambos no cambia (FR-023, research R14)
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] Crear `templates/ui/menu.html` con `request.resolver_match` y `aria-current="page"` en el subítem activo (research R9)
-- [ ] T019 [P] [US1] Crear `templates/ui/encabezado.html` (migas, título, subtítulo)
-- [ ] T020 [US1] Reescribir `templates/base.html`: menú lateral fijo desde `lg`, barra superior con `ui/iniciales.html` + nombre + "Cerrar sesión" (form POST con CSRF), botón de menú en pantallas angostas, `ui/mensajes.html`, bloques `title`/`encabezado`/`content`; conservar `data-contenido-sensible` y los includes de la guardia de sesión; quitar Bootstrap (research R11, R12)
-- [ ] T021 [US1] Crear `templates/base_acceso.html`: panel izquierdo con las 4 imágenes apiladas y animación CSS de 28 s (7 s c/u, fundido ~1 s), `prefers-reduced-motion` con imagen fija, degradado, textura de puntos, logo y frase; contenido a la derecha; guardia de sesión (research R6b)
-- [ ] T022 [US1] Ajustar las clases del botón "Reintentar" en `templates/includes/guardia_sesion.html` a `btn btn-primario`
-- [ ] T023 [US1] Agregar a `FormularioInicioSesion` en `usuarios/forms.py` la propiedad `cuenta_pendiente` (research R14)
-- [ ] T024 [US1] Migrar `usuarios/templates/usuarios/login.html` a `base_acceso.html` (maquetas `stitch/login/` y `stitch/login-pendiente/`): aviso ámbar si `form.cuenta_pendiente`, rojo en otro caso; link "¿No tenés cuenta? Crear cuenta"
+- [X] T018 [P] [US1] Crear `templates/ui/menu.html` con `request.resolver_match` y `aria-current="page"` en el subítem activo (research R9)
+- [X] T019 [P] [US1] Crear `templates/ui/encabezado.html` (migas, título, subtítulo)
+- [X] T020 [US1] Reescribir `templates/base.html`: menú lateral fijo desde `lg`, barra superior con `ui/iniciales.html` + nombre + "Cerrar sesión" (form POST con CSRF), botón de menú en pantallas angostas, `ui/mensajes.html`, bloques `title`/`encabezado`/`content`; conservar `data-contenido-sensible` y los includes de la guardia de sesión; quitar Bootstrap (research R11, R12)
+- [X] T021 [US1] Crear `templates/base_acceso.html`: panel izquierdo con las 4 imágenes apiladas y animación CSS de 28 s (7 s c/u, fundido ~1 s), `prefers-reduced-motion` con imagen fija, degradado, textura de puntos, logo y frase; contenido a la derecha; guardia de sesión (research R6b)
+- [X] T022 [US1] Ajustar las clases del botón "Reintentar" en `templates/includes/guardia_sesion.html` a `btn btn-primario`
+- [X] T023 [US1] Agregar a `FormularioInicioSesion` en `usuarios/forms.py` la propiedad `cuenta_pendiente` (research R14)
+- [X] T024 [US1] Migrar `usuarios/templates/usuarios/login.html` a `base_acceso.html` (maquetas `stitch/login/` y `stitch/login-pendiente/`): aviso ámbar si `form.cuenta_pendiente`, rojo en otro caso; link "¿No tenés cuenta? Crear cuenta"
 
 **Checkpoint**: navegación y acceso con el nuevo diseño; T015–T017 en verde.
 

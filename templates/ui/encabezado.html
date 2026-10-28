@@ -1,0 +1,19 @@
+{% comment %}
+  Encabezado de página. Parámetros: titulo, subtitulo (opc.), seccion (opc., módulo del menú),
+  anterior_texto y anterior_url (opc., paso previo con link). Migas: seccion > anterior > titulo.
+{% endcomment %}
+<header class="mb-6">
+  {% if seccion %}
+    <nav aria-label="Ubicación" class="mb-2 flex flex-wrap items-center gap-1.5 text-xs font-semibold tracking-wide text-tinta-suave uppercase">
+      <span>{{ seccion }}</span>
+      {% if anterior_url %}
+        {% include "ui/icono.html" with nombre="chevron-right" clase="size-3.5" %}
+        <a href="{{ anterior_url }}" class="text-cian-texto hover:underline">{{ anterior_texto }}</a>
+      {% endif %}
+      {% include "ui/icono.html" with nombre="chevron-right" clase="size-3.5" %}
+      <span class="text-tinta" aria-current="page">{{ titulo }}</span>
+    </nav>
+  {% endif %}
+  <h1 class="text-2xl font-semibold tracking-tight text-marino">{{ titulo }}</h1>
+  {% if subtitulo %}<p class="mt-1 text-sm text-tinta-suave">{{ subtitulo }}</p>{% endif %}
+</header>

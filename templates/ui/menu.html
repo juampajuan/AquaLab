@@ -1,0 +1,41 @@
+{% comment %}
+  Menú lateral. Destaca la pantalla actual con aria-current según request.resolver_match.
+  Al sumar pantallas (US 5.2 en adelante), agregarlas acá.
+{% endcomment %}
+{% with vista=request.resolver_match.view_name %}
+<nav class="space-y-6 px-3 py-4 text-sm" aria-label="Menú principal" data-menu-navegacion>
+  <a href="{% url 'inicio' %}" class="flex items-center gap-3 rounded-md px-3 py-2 font-medium {% if vista == 'inicio' %}bg-marino text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'inicio' %} aria-current="page"{% endif %}>
+    Inicio
+  </a>
+
+  <div>
+    <p class="mb-1 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-tinta-suave uppercase">
+      {% include "ui/icono.html" with nombre="users" clase="size-4" %} Clientes
+    </p>
+    <a href="{% url 'clientes:buscar' %}" class="block rounded-md px-3 py-2 pl-9 {% if vista == 'clientes:buscar' or vista == 'clientes:detalle' or vista == 'clientes:editar' or vista == 'clientes:editar_confirmar' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'clientes:buscar' or vista == 'clientes:detalle' or vista == 'clientes:editar' or vista == 'clientes:editar_confirmar' %} aria-current="page"{% endif %}>
+      Buscar cliente
+    </a>
+    <a href="{% url 'clientes:registrar' %}" class="block rounded-md px-3 py-2 pl-9 {% if vista == 'clientes:registrar' or vista == 'clientes:registrar_confirmar' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'clientes:registrar' or vista == 'clientes:registrar_confirmar' %} aria-current="page"{% endif %}>
+      Registrar cliente
+    </a>
+  </div>
+
+  <div>
+    <p class="mb-1 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-tinta-suave uppercase">
+      {% include "ui/icono.html" with nombre="flask-conical" clase="size-4" %} Muestras
+    </p>
+    <a href="{% url 'muestras:registrar' %}" class="block rounded-md px-3 py-2 pl-9 {% if vista == 'muestras:registrar' or vista == 'muestras:registrar_confirmar' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'muestras:registrar' or vista == 'muestras:registrar_confirmar' %} aria-current="page"{% endif %}>
+      Registrar muestra
+    </a>
+  </div>
+
+  <div>
+    <p class="mb-1 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-tinta-suave uppercase">
+      {% include "ui/icono.html" with nombre="microscope" clase="size-4" %} Estudios
+    </p>
+    <a href="{% url 'estudios:crear' %}" class="block rounded-md px-3 py-2 pl-9 {% if vista == 'estudios:crear' or vista == 'estudios:confirmar' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'estudios:crear' or vista == 'estudios:confirmar' %} aria-current="page"{% endif %}>
+      Crear estudio
+    </a>
+  </div>
+</nav>
+{% endwith %}

@@ -1,19 +1,26 @@
-{% extends "base.html" %}
+{% extends "base_acceso.html" %}
 {% block title %}Iniciar sesión · AquaLab{% endblock %}
 {% block content %}
-<div class="row justify-content-center"><div class="col-lg-5">
-  <h1 class="h3">Iniciar sesión</h1>
-  <form method="post" novalidate>
+  {% if form.cuenta_pendiente %}
+    {% include "ui/errores_form.html" with nivel="advertencia" %}
+  {% else %}
+    {% include "ui/errores_form.html" %}
+  {% endif %}
+
+  <h1 class="text-3xl font-bold tracking-tight text-marino">Iniciar sesión</h1>
+  <p class="mt-2 text-sm text-tinta-suave">Ingresá con tu correo y contraseña.</p>
+
+  <form method="post" novalidate class="mt-8 space-y-5">
     {% csrf_token %}
-    {% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
     {% for campo in form %}
-      <div class="mb-3">
-        {{ campo.label_tag }}{{ campo }}
-        {% for error in campo.errors %}<div class="text-danger" role="alert">{{ error }}</div>{% endfor %}
-      </div>
+      {% include "ui/campo.html" with field=campo sin_obligatorio=True %}
     {% endfor %}
-    <button class="btn btn-primary" type="submit">Iniciar sesión</button>
-    <a href="{% url 'usuarios:registro' %}" class="btn btn-link">Crear cuenta</a>
+    <button class="btn btn-primario w-full py-3" type="submit">
+      Iniciar sesión {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}
+    </button>
   </form>
-</div></div>
+
+  <p class="mt-8 border-t border-borde pt-6 text-center text-sm text-tinta-suave">
+    ¿No tenés cuenta? <a href="{% url 'usuarios:registro' %}" class="font-semibold text-cian-texto hover:underline">Crear cuenta</a>
+  </p>
 {% endblock %}

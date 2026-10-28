@@ -7,11 +7,11 @@
 /* source(none): no escanear specs/ (las maquetas de Stitch traen clases que no se usan). */
 @import "tailwindcss" source(none);
 
-@source "../../templates";
-@source "../../*/templates";
+@source "../../templates/**/*.{html,svg}";
+@source "../../*/templates/**/*.html";
 @source "../../*/forms.py";
-@source "../../*/static";
-@source "../js";
+@source "../../*/static/**/*.js";
+@source "../js/*.js";
 
 @font-face {
   font-family: "Inter";
@@ -64,6 +64,21 @@
   --shadow-nivel1: 0 1px 2px 0 rgb(15 39 68 / 0.04);
   --shadow-nivel2: 0 4px 12px -2px rgb(15 39 68 / 0.06), 0 2px 4px -1px rgb(15 39 68 / 0.03);
   --shadow-nivel3: 0 16px 32px -6px rgb(15 39 68 / 0.12), 0 4px 8px -2px rgb(15 39 68 / 0.04);
+}
+
+/* Cada imagen del acceso se ve 7 s de un ciclo de 28 s, con fundido de ~1 s. */
+@keyframes acceso-fundido {
+  0% {
+    opacity: 0;
+  }
+  4%,
+  25% {
+    opacity: 1;
+  }
+  29%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @layer base {
@@ -206,6 +221,30 @@
   }
   .aviso-info {
     @apply border-info-borde bg-info-suave text-info;
+  }
+
+  /* Panel de acceso: textura de puntos e imágenes que alternan (research R6b). */
+  .textura-puntos {
+    background-image: radial-gradient(rgb(255 255 255 / 0.16) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+  .acceso-foto {
+    opacity: 0;
+    animation: acceso-fundido 28s infinite;
+  }
+  .acceso-foto:nth-of-type(2) {
+    animation-delay: 7s;
+  }
+  .acceso-foto:nth-of-type(3) {
+    animation-delay: 14s;
+  }
+  .acceso-foto:nth-of-type(4) {
+    animation-delay: 21s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .acceso-foto {
+      animation: none;
+    }
   }
 
   /* Círculo con iniciales */
