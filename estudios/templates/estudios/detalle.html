@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Estudio {{ estudio.pk }} · AquaLab{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-10 col-lg-8">
+  <h1 class="h3">Estudio {{ estudio.pk }}</h1>
+  <dl class="row">
+    <dt class="col-sm-4">Estudio N°</dt><dd class="col-sm-8">{{ estudio.pk }}</dd>
+    <dt class="col-sm-4">Muestra</dt><dd class="col-sm-8">PI {{ estudio.muestra.numero_pi }}</dd>
+    <dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">{{ estudio.muestra.cliente.nombre_completo }}</dd>
+    <dt class="col-sm-4">Origen</dt><dd class="col-sm-8">{{ estudio.muestra.origen.nombre }}</dd>
+    <dt class="col-sm-4">Tipo</dt><dd class="col-sm-8">{{ estudio.tipo_nombre_snapshot }}</dd>
+    <dt class="col-sm-4">Estado</dt><dd class="col-sm-8">{{ estudio.get_estado_display }}</dd>
+    <dt class="col-sm-4">Creado por</dt><dd class="col-sm-8">{{ estudio.creado_por.get_full_name|default:estudio.creado_por.email }}</dd>
+    <dt class="col-sm-4">Fecha de creación</dt><dd class="col-sm-8">{{ estudio.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+  </dl>
+  {% if not estudio.admite_modificaciones %}<div class="alert alert-warning">Este estudio ya no admite cambios en sus pruebas.</div>{% endif %}
+  <h2 class="h5">Pruebas asignadas</h2>
+  <table class="table">
+    <thead><tr><th>Código</th><th>Nombre</th><th>Estado</th><th>Acción</th></tr></thead>
+    <tbody>
+      {% for asignacion in asignaciones %}
+      <tr><td>{{ asignacion.prueba.codigo }}</td><td>{{ asignacion.prueba.nombre }}</td><td>Pendiente</td><td></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

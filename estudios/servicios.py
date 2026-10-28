@@ -80,3 +80,11 @@ def crear_estudio(datos, usuario, *, pendiente=True):
             [PruebaEstudio(estudio=estudio, prueba_id=p["id"]) for p in config["pruebas"]]
         )
         return estudio
+
+
+class GestionPruebasError(Exception):
+    pass
+
+
+class PruebaYaAsignada(GestionPruebasError):
+    pass

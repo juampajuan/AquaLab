@@ -105,3 +105,17 @@ def cambiar_tipo():
             return actual
 
     return cambiar
+
+
+@pytest.fixture
+def estudio(datos, empleado):
+    from estudios.servicios import crear_estudio
+
+    return crear_estudio(datos, empleado)
+
+
+@pytest.fixture
+def prueba_extra():
+    from pruebas.models import Prueba
+
+    return Prueba.objects.create(codigo="TEST-C", nombre="Prueba de test C")

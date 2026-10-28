@@ -101,3 +101,9 @@ def test_uuid_obligatorio_y_identificador_propio(muestra, tipo, empleado):
     assert not campo.editable
     assert list(campo.choices) == [("pendiente_analisis", "Pendiente de análisis")]
     assert not Estudio._meta.get_field("clave_idempotencia").null
+
+
+def test_admite_modificaciones_solo_pendiente_analisis(estudio):
+    assert estudio.admite_modificaciones
+    estudio.estado = "en_proceso"
+    assert not estudio.admite_modificaciones

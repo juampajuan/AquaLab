@@ -1,8 +1,9 @@
 from django.contrib import messages
 from django.core import signing
 from django.db import DatabaseError
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.html import format_html
 
 from muestras.models import Muestra
 
@@ -21,9 +22,25 @@ from .servicios import (
 def exito(request, estudio):
     descartar(request, estudio.clave_idempotencia)
     messages.success(
-        request, f"Estudio {estudio.pk} creado para la muestra PI {estudio.muestra.numero_pi}."
+        request,
+        format_html(
+            '<a href="{}">Estudio {}</a> creado para la muestra PI {}.',
+            reverse("estudios:detalle", args=[estudio.pk]),
+            estudio.pk,
+            estudio.muestra.numero_pi,
+        ),
     )
     return redirect("estudios:crear")
+
+
+def detalle(request, pk):
+    estudio = get_object_or_404(
+        Estudio.objects.select_related("muestra__cliente", "muestra__origen", "creado_por"), pk=pk
+    )
+    asignaciones = estudio.pruebas_asignadas.select_related("prueba").order_by("prueba__codigo")
+    return render(
+        request, "estudios/detalle.html", {"estudio": estudio, "asignaciones": asignaciones}
+    )
 
 
 def resumen(request, borrador, *, recuperar=False):
