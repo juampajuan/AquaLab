@@ -1,21 +1,26 @@
 from django.contrib import messages
 from django.core import signing
+from django.core.paginator import Paginator
 from django.db import DatabaseError
-from django.shortcuts import redirect, render
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from clientes.models import normalizar_numero_documento
 from muestras.models import Muestra
 
 from .catalogo import CatalogoNoDisponible
 from .confirmaciones import cargar_token, descartar, pendientes, preparar
-from .forms import CrearEstudioForm
-from .models import Estudio
+from .forms import BuscarEstudioForm, CrearEstudioForm
+from .models import EstadoPruebaEstudio, Estudio
 from .servicios import (
     CrearEstudioError,
     VersionDesactualizada,
     comprobar_identidad,
     crear_estudio,
 )
+
+RESULTADOS_POR_PAGINA = 20
 
 
 def exito(request, estudio):
@@ -112,3 +117,71 @@ def confirmar(request):
         messages.error(request, "No se pudo crear el estudio. Intentá nuevamente.")
         return resumen(request, b) if b else redirect("estudios:crear")
     return exito(request, estudio)
+
+
+def buscar(request):
+    page_obj = None
+    q = ""
+    if "q" in request.GET:
+        form = BuscarEstudioForm(request.GET)
+        if form.is_valid():
+            q = form.cleaned_data["q"]
+            if q.isdigit():
+                numero = int(q)
+                filtro = Q(pk=numero) | Q(muestra__numero_pi=numero)
+                if len(q) >= 4:
+                    filtro |= Q(muestra__cliente__numero_documento__contains=q)
+            else:
+                filtro = (
+                    Q(muestra__nombre__unaccent__icontains=q)
+                    | Q(muestra__cliente__nombre__unaccent__icontains=q)
+                    | Q(muestra__cliente__razon_social__unaccent__icontains=q)
+                )
+                q_doc = normalizar_numero_documento(q)
+                if len(q_doc) >= 4 and q_doc.isdigit():
+                    filtro |= Q(muestra__cliente__numero_documento__contains=q_doc)
+            qs = (
+                Estudio.objects.select_related("muestra", "muestra__cliente", "muestra__origen")
+                .filter(filtro)
+                .order_by(*Estudio._meta.ordering)
+            )
+            page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
+    else:
+        form = BuscarEstudioForm()
+    return render(
+        request,
+        "estudios/buscar.html",
+        {"form": form, "page_obj": page_obj, "q": q},
+    )
+
+
+def detalle(request, pk):
+    estudio = get_object_or_404(
+        Estudio.objects.select_related(
+            "muestra", "muestra__cliente", "muestra__origen", "creado_por"
+        ),
+        pk=pk,
+    )
+    pruebas_asignadas = list(
+        estudio.pruebas_asignadas.select_related("prueba").order_by("prueba__codigo", "pk")
+    )
+    total_pruebas = len(pruebas_asignadas)
+    pruebas_completadas = sum(
+        1 for a in pruebas_asignadas if a.estado == EstadoPruebaEstudio.COMPLETADA
+    )
+    pruebas_cargadas = sum(1 for a in pruebas_asignadas if a.estado == EstadoPruebaEstudio.CARGADA)
+    pruebas_pendientes = sum(
+        1 for a in pruebas_asignadas if a.estado == EstadoPruebaEstudio.PENDIENTE
+    )
+    return render(
+        request,
+        "estudios/detalle.html",
+        {
+            "estudio": estudio,
+            "pruebas_asignadas": pruebas_asignadas,
+            "total_pruebas": total_pruebas,
+            "pruebas_completadas": pruebas_completadas,
+            "pruebas_cargadas": pruebas_cargadas,
+            "pruebas_pendientes": pruebas_pendientes,
+        },
+    )

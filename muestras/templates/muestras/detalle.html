@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Muestra N° PI {{ muestra.numero_pi }} · AquaLab{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Muestra N° PI {{ muestra.numero_pi }}</h1>
+        <span class="badge fs-6 text-bg-secondary">{{ muestra.get_estado_display }}</span>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">Datos de la muestra</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">N° PI</dt>
+            <dd class="col-sm-8">{{ muestra.numero_pi }}</dd>
+
+            <dt class="col-sm-4">Nombre</dt>
+            <dd class="col-sm-8">{{ muestra.nombre }}</dd>
+
+            <dt class="col-sm-4">Estado</dt>
+            <dd class="col-sm-8">{{ muestra.get_estado_display }}</dd>
+
+            <dt class="col-sm-4">Cliente</dt>
+            <dd class="col-sm-8">
+              <div>
+                {% if muestra.cliente.activo %}
+                  <a href="{% url 'clientes:detalle' muestra.cliente.pk %}">{{ muestra.cliente.nombre_completo }}</a>
+                {% else %}
+                  {{ muestra.cliente.nombre_completo }}
+                {% endif %}
+                ({{ muestra.cliente.tipo_documento }} {{ muestra.cliente.numero_documento }})
+              </div>
+              <div class="text-muted small">{{ muestra.cliente.email }}</div>
+            </dd>
+
+            <dt class="col-sm-4">Origen</dt>
+            <dd class="col-sm-8">{{ muestra.origen.nombre }}</dd>
+
+            <dt class="col-sm-4">Sitio de extracción</dt>
+            <dd class="col-sm-8">{{ muestra.sitio_extraccion }}</dd>
+
+            <dt class="col-sm-4">Tipo de vertido</dt>
+            <dd class="col-sm-8">{{ muestra.get_tipo_vertido_display }}</dd>
+
+            <dt class="col-sm-4">Fecha de muestreo</dt>
+            <dd class="col-sm-8">{{ muestra.fecha_muestreo|date:"d/m/Y" }}</dd>
+
+            <dt class="col-sm-4">Fecha de ingreso</dt>
+            <dd class="col-sm-8">{{ muestra.fecha_ingreso|date:"d/m/Y" }}</dd>
+
+            <dt class="col-sm-4">Responsable del muestreo</dt>
+            <dd class="col-sm-8">{{ muestra.responsable_muestreo|default:"No especificado" }}</dd>
+
+            <dt class="col-sm-4">Registrada por</dt>
+            <dd class="col-sm-8">{{ muestra.registrada_por.get_full_name|default:muestra.registrada_por.email }}</dd>
+
+            <dt class="col-sm-4">Fecha de registro</dt>
+            <dd class="col-sm-8 mb-0">{{ muestra.fecha_registro|date:"d/m/Y H:i" }}</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">Estudios asignados</span>
+          <a href="{% url 'estudios:crear' %}" class="btn btn-primary btn-sm">Crear estudio</a>
+        </div>
+        <div class="card-body {% if estudios %}p-0{% endif %}">
+          {% if estudios %}
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-3">Estudio</th>
+                  <th>Tipo de estudio</th>
+                  <th>Fecha de creación</th>
+                  <th>Estado</th>
+                  <th>Pruebas completadas</th>
+                  <th class="pe-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for estudio in estudios %}
+                  <tr>
+                    <td class="ps-3 fw-semibold">#{{ estudio.pk }}</td>
+                    <td>{{ estudio.tipo_nombre_snapshot }}</td>
+                    <td>{{ estudio.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                    <td>
+                      <span class="badge {% if estudio.estado == 'finalizado' or estudio.estado == 'informe_generado' %}text-bg-success{% elif estudio.estado == 'en_proceso' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">
+                        {{ estudio.get_estado_display }}
+                      </span>
+                    </td>
+                    <td>{{ estudio.pruebas_completadas }} / {{ estudio.total_pruebas }}</td>
+                    <td class="pe-3 text-end">
+                      <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-outline-primary btn-sm">Ver estudio</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="alert alert-info mb-0">Esta muestra aún no tiene estudios asignados.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <a href="{% url 'estudios:buscar' %}" class="btn btn-outline-secondary">Buscar estudios</a>
+        <a href="{% url 'muestras:registrar' %}" class="btn btn-outline-secondary">Registrar muestra</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

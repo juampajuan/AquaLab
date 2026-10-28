@@ -26,3 +26,23 @@ class CrearEstudioForm(forms.Form):
         super().__init__(*args, **kwargs)
         for campo in self.fields.values():
             campo.widget.attrs["class"] = "form-select"
+
+
+class BuscarEstudioForm(forms.Form):
+    """Texto de búsqueda de estudios (por GET): identificador, muestra o cliente."""
+
+    q = forms.CharField(
+        label="Identificador, muestra (N° PI / nombre) o cliente",
+        required=False,
+        strip=True,
+    )
+
+    def clean_q(self):
+        valor = (self.cleaned_data.get("q") or "").strip()
+        if not valor:
+            raise forms.ValidationError(
+                "Ingresá un identificador de estudio, N° PI, muestra o cliente para buscar."
+            )
+        if len(valor) < 2 and not valor.isdigit():
+            raise forms.ValidationError("Ingresá al menos 2 caracteres para buscar.")
+        return valor

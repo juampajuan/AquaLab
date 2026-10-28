@@ -49,6 +49,15 @@ class TipoEstudioPrueba(models.Model):
 
 class EstadoEstudio(models.TextChoices):
     PENDIENTE_ANALISIS = "pendiente_analisis", "Pendiente de análisis"
+    EN_PROCESO = "en_proceso", "En proceso"
+    FINALIZADO = "finalizado", "Finalizado"
+    INFORME_GENERADO = "informe_generado", "Informe generado"
+
+
+class EstadoPruebaEstudio(models.TextChoices):
+    PENDIENTE = "pendiente", "Pendiente"
+    CARGADA = "cargada", "Cargada"
+    COMPLETADA = "completada", "Completada"
 
 
 class Estudio(models.Model):
@@ -89,6 +98,13 @@ class Estudio(models.Model):
 class PruebaEstudio(models.Model):
     estudio = models.ForeignKey(Estudio, on_delete=models.PROTECT, related_name="pruebas_asignadas")
     prueba = models.ForeignKey("pruebas.Prueba", on_delete=models.PROTECT)
+    estado = models.CharField(
+        "estado",
+        max_length=20,
+        choices=EstadoPruebaEstudio.choices,
+        default=EstadoPruebaEstudio.PENDIENTE,
+        editable=False,
+    )
 
     class Meta:
         constraints = [
