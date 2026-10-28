@@ -1,11 +1,11 @@
 # Quickstart: Quitar prueba del estudio
 
-**Feature**: `011-quitar-prueba-estudio` | **Plan**: [plan.md](./plan.md)
+**Feature**: `011-quitar-prueba-estudio` (rama `011-quitar-prueba-v2`) | **Plan**: [plan.md](./plan.md)
 
 ## Requisitos previos
 
-- Rama `011-quitar-prueba-estudio`, con US 5.3 implementada (la rama sale de
-  `010-agregar-prueba-estudio`), y Docker Compose levantado.
+- Rama `011-quitar-prueba-v2`, con US 5.3 implementada (la rama sale de `010-agregar-prueba-v2`),
+  y Docker Compose levantado.
 - Un empleado aprobado, catálogo DEMO de US 5.1 cargado y al menos una muestra registrada (ver
   [quickstart de US 5.3](../010-agregar-prueba-estudio/quickstart.md)).
 
@@ -26,7 +26,7 @@ Resultado esperado: todos los tests en verde, `ruff` sin errores y **sin migraci
 Rutas y mensajes exactos en [contracts/quitar-prueba-ui.md](./contracts/quitar-prueba-ui.md).
 
 1. **Llegar al estudio**: crear un estudio con un tipo de dos o más pruebas y abrir el enlace
-   «Estudio N» del mensaje de éxito. Cada prueba ofrece «Quitar».
+   «Estudio N» del mensaje de éxito. Cada prueba (todas en estado Pendiente) ofrece «Quitar».
 2. **Quitar (US 1)**: «Quitar» en una prueba → confirmación con la prueba y el estudio → «Quitar
    prueba». La prueba desaparece del detalle y vuelve a ofrecerse en «Agregar prueba».
 3. **Cancelar**: «Quitar» en otra prueba y elegir «Cancelar». El estudio no cambia.
@@ -35,3 +35,6 @@ Rutas y mensajes exactos en [contracts/quitar-prueba-ui.md](./contracts/quitar-p
 5. **Última prueba (FR-011)**: quitar pruebas hasta dejar una. Su fila ya no ofrece «Quitar» e
    indica que el estudio debe conservar al menos una prueba.
 6. **Sin sesión (FR-001)**: cerrar sesión y abrir la URL de quitar. Redirige al login.
+
+Las pruebas `Cargada` o `Completada` todavía no se pueden generar desde la interfaz (Epic 6): esa
+regla (FR-004) la cubren los tests automáticos.

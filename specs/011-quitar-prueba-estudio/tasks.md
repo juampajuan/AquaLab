@@ -31,7 +31,14 @@ quitas no permitidas).
 
 - Textos de UI, mensajes y nombres de dominio en **español** (Principio VI).
 - Mensajes al usuario copiados **literalmente** de `contracts/quitar-prueba-ui.md`.
-- Mismo estilo que las vistas y templates de US 5.3 (`agregar_prueba`, `agregar_prueba_confirmar.html`).
+- Mismo estilo que las vistas y templates de US 5.3 (`agregar_prueba`, `agregar_prueba_confirmar.html`):
+  diseño de SCRUM-67 con `ui/encabezado.html`, `<dl class="resumen" data-componente="resumen">` y
+  botones con `data-componente="acciones-confirmacion"`.
+- **Actualización 2026-10-28**: la rama es `011-quitar-prueba-v2`, que sale de `010-agregar-prueba-v2`
+  (US 5.3 implementada sobre US 5.2 y SCRUM-67). Jira: SCRUM-51. «Mediciones o resultados» se lee del
+  estado individual de la prueba de US 5.2 (`Cargada` / `Completada`); solo `Pendiente` se quita.
+- La vista `quitar_prueba` tapa el nombre del servicio, como en US 5.3: llama a
+  `servicios.quitar_prueba` y los tests parchean `estudios.servicios.quitar_prueba`.
 - **Sin migraciones**: ninguna tarea cambia campos ni constraints (ver `data-model.md`).
 - Comandos dentro de Docker: `docker compose exec web pytest estudios`,
   `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .`.
@@ -40,7 +47,7 @@ quitas no permitidas).
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 **Gate de la constitution (Principio I)**: confirmar que el equipo aprobó `specs/011-quitar-prueba-estudio/spec.md` y actualizar su `**Status**` a «Aprobada por el equipo» con la fecha, y que US 5.3 está implementada y en verde en esta rama (mergear o rebasear `010-agregar-prueba-estudio` si avanzó); sin ambas condiciones no se ejecuta ninguna otra tarea. Después, ejecutar `docker compose exec web pytest` y `docker compose exec web python manage.py makemigrations --check --dry-run` y confirmar suite en verde y sin cambios.
+- [ ] T001 **Gate de la constitution (Principio I)**: confirmar que el equipo aprobó `specs/011-quitar-prueba-estudio/spec.md` y actualizar su `**Status**` a «Aprobada por el equipo» con la fecha, y que US 5.3 está implementada y en verde en esta rama (sale de `010-agregar-prueba-v2`); sin ambas condiciones no se ejecuta ninguna otra tarea. Después, ejecutar `docker compose exec web pytest` y `docker compose exec web python manage.py makemigrations --check --dry-run` y confirmar suite en verde y sin cambios.
 
 ---
 
@@ -49,8 +56,8 @@ quitas no permitidas).
 **⚠️ CRITICAL**: ninguna historia empieza antes de terminar esta fase.
 
 - [ ] T002 [P] Agregar en `estudios/tests/conftest.py` la fixture `asignacion(estudio)`: la `PruebaEstudio` de `TEST-A` del estudio.
-- [ ] T003 [P] Agregar en `estudios/tests/test_modelos.py` `test_puede_quitarse_sin_mediciones`: una asignación recién creada devuelve `True` (depende de T002).
-- [ ] T004 Agregar en `estudios/models.py`, en `PruebaEstudio`, el método `puede_quitarse(self)` que devuelve `True`, con un docstring breve que indique que US 6.1 y siguientes deben devolver `False` cuando la asignación tenga mediciones o resultados, y que esas tablas deben referenciar a `PruebaEstudio` con `on_delete=PROTECT` (FR-004, research R4). Sin cambiar campos ni `Meta`.
+- [ ] T003 [P] Agregar en `estudios/tests/test_modelos.py` `test_puede_quitarse_solo_pendiente`: una asignación recién creada (`Pendiente`) devuelve `True`; con `estado` forzado en memoria a `Cargada` o `Completada`, `False` (depende de T002).
+- [ ] T004 Agregar en `estudios/models.py`, en `PruebaEstudio`, el método `puede_quitarse(self)` que devuelve `self.estado == EstadoPruebaEstudio.PENDIENTE`, con un docstring breve: `Cargada` y `Completada` indican mediciones o resultados; las historias del Epic 6 cambian ese estado y sus tablas deben referenciar a `PruebaEstudio` con `on_delete=PROTECT` (FR-004, research R4). Sin cambiar campos ni `Meta`.
 - [ ] T005 [P] Agregar en `estudios/servicios.py` las subclases `PruebaYaQuitada` y `UltimaPrueba` de `GestionPruebasError`.
 - [ ] T006 Ejecutar `docker compose exec web pytest estudios` y dejar en verde T003 junto con los tests de US 5.1 y US 5.3 (depende de T002–T005).
 
@@ -73,14 +80,14 @@ verificar que ya no figura en el detalle y que vuelve a ofrecerse en «Agregar p
   - `test_detalle_ofrece_quitar_en_pruebas_quitables`: con TEST-A y TEST-B, cada fila tiene el enlace a `estudios:quitar_prueba` de su asignación.
   - `test_quitar_get_muestra_confirmacion_sin_borrar`: GET `estudios:quitar_prueba` → 200 con «Se quitará la prueba TEST-A · Prueba de test A del estudio N», el enlace **Cancelar** al `href` de `estudios:detalle`, y la asignación sigue existiendo (SC-004).
   - `test_confirmar_quita_prueba`: POST → 302 a `detalle`, mensaje «Prueba TEST-A · Prueba de test A quitada del estudio N.», la asignación no existe y TEST-A aparece en `estudios:agregar_prueba`.
-  - `test_error_de_base_al_quitar_no_cambia_estudio`: con `quitar_prueba` parcheado para lanzar `DatabaseError`, POST → 302 a `detalle` con «No se pudo quitar la prueba. Intentá nuevamente.» y la asignación sigue.
+  - `test_error_de_base_al_quitar_no_cambia_estudio`: con `estudios.servicios.quitar_prueba` parcheado para lanzar `DatabaseError`, POST → 302 a `detalle` con «No se pudo quitar la prueba. Intentá nuevamente.» y la asignación sigue.
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implementar `quitar_prueba(estudio_pk, asignacion_pk, usuario)` en `estudios/servicios.py`: misma comprobación de sesión que `agregar_prueba`; dentro de `transaction.atomic()`: `Estudio.objects.select_for_update().filter(pk=estudio_pk).first()` (None → `GestionPruebasError("El estudio no está disponible.")`), `estudio.pruebas_asignadas.select_related("prueba").filter(pk=asignacion_pk).first()` (None → `PruebaYaQuitada("La prueba ya no forma parte del estudio.")`), `asignacion.delete()` y devolver `asignacion.prueba` (research R1, R5) (depende de T005).
-- [ ] T010 [US1] Crear la vista `quitar_prueba(request, pk, asignacion_pk)` en `estudios/views.py` según `contracts/quitar-prueba-ui.md`: `get_object_or_404` del estudio; GET → asignación inexistente o de otro estudio → 302 a `detalle` + `messages.info("La prueba ya no forma parte del estudio.")`; si no, `estudios/quitar_prueba_confirmar.html`. POST → `quitar_prueba(...)`, éxito y 302 a `detalle`; `PruebaYaQuitada` → `messages.info`; otro `GestionPruebasError` → `messages.error`; `DatabaseError` → «No se pudo quitar la prueba. Intentá nuevamente.». Registrar `path("<int:pk>/pruebas/<int:asignacion_pk>/quitar/", views.quitar_prueba, name="quitar_prueba")` en `estudios/urls.py` (depende de T009).
-- [ ] T011 [P] [US1] Crear `estudios/templates/estudios/quitar_prueba_confirmar.html`: título «Quitar prueba del estudio», «Se quitará la prueba `código · nombre` del estudio N (muestra PI X). No se realizará ni se incluirá en el informe.», `<form method="post">` con `{% csrf_token %}` y botón **Quitar prueba** (`btn btn-danger`), y enlace **Cancelar** a `detalle` (depende de T010).
-- [ ] T012 [US1] En `estudios/templates/estudios/detalle.html`, completar la columna Acción con el botón-enlace **Quitar** (`btn btn-sm btn-outline-danger`) a `estudios:quitar_prueba` de cada asignación, visible si `estudio.admite_modificaciones` (depende de T010).
+- [ ] T009 [US1] Implementar `quitar_prueba(estudio_pk, asignacion_pk, usuario)` en `estudios/servicios.py`: misma comprobación de sesión que `agregar_prueba`; dentro de `transaction.atomic()`: `Estudio.objects.select_for_update().filter(pk=estudio_pk).first()` (None → `GestionPruebasError("El estudio no está disponible.")`), `estudio.pruebas_asignadas.select_for_update().select_related("prueba").filter(pk=asignacion_pk).first()` (None → `PruebaYaQuitada("La prueba ya no forma parte del estudio.")`), `asignacion.delete()` y devolver `asignacion.prueba` (research R1, R5) (depende de T005).
+- [ ] T010 [US1] Crear la vista `quitar_prueba(request, pk, asignacion_pk)` en `estudios/views.py` según `contracts/quitar-prueba-ui.md`: `get_object_or_404` del estudio; GET → asignación inexistente o de otro estudio → 302 a `detalle` + `messages.info("La prueba ya no forma parte del estudio.")`; si no, `estudios/quitar_prueba_confirmar.html`. POST → `servicios.quitar_prueba(...)`, éxito y 302 a `detalle`; `PruebaYaQuitada` → `messages.info`; otro `GestionPruebasError` → `messages.error`; `DatabaseError` → «No se pudo quitar la prueba. Intentá nuevamente.». Registrar `path("<int:pk>/pruebas/<int:asignacion_pk>/quitar/", views.quitar_prueba, name="quitar_prueba")` en `estudios/urls.py` (depende de T009).
+- [ ] T011 [P] [US1] Crear `estudios/templates/estudios/quitar_prueba_confirmar.html` como `agregar_prueba_confirmar.html` (SCRUM-67): `ui/encabezado.html` (migas Estudios › Estudio N › Quitar prueba, título «Quitar prueba del estudio»), aviso de advertencia «Se quitará la prueba `código · nombre` del estudio N (muestra PI X). No se realizará ni se incluirá en el informe.», resumen con `data-componente="resumen"` (estudio, muestra, prueba) y acciones con `data-componente="acciones-confirmacion"`: `<form method="post">` con `{% csrf_token %}` y botón **Quitar prueba** (`btn btn-peligro`), y enlace **Cancelar** (`btn btn-secundario`) a `detalle` (depende de T010).
+- [ ] T012 [US1] Agregar en `static/src/aqualab.css`, dentro de `@layer components` junto a los `.btn`, el componente `.btn-chico { @apply px-3 py-1.5 text-xs; }` y recompilar con `docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify` (README). En `estudios/templates/estudios/detalle.html`, completar la columna Acción con el botón-enlace **Quitar** (`btn btn-peligro btn-chico`) a `estudios:quitar_prueba` de cada asignación, visible si `estudio.admite_modificaciones` (depende de T010).
 - [ ] T013 [US1] Ejecutar `docker compose exec web pytest estudios` y dejar en verde T007–T008 sin romper US 5.3 (depende de T009–T012).
 
 **Checkpoint**: se puede quitar una prueba con confirmación; falta blindar las reglas de US2.
@@ -100,13 +107,14 @@ estudio no cambia indebidamente.
 
 - [ ] T014 [P] [US2] Agregar en `estudios/tests/test_servicio_pruebas.py`:
   - `test_ultima_prueba_no_se_puede_quitar`: quitar TEST-B y luego TEST-A → `UltimaPrueba` con «El estudio debe conservar al menos una prueba.»; TEST-A sigue asignada (FR-011).
-  - `test_quitar_rechaza_prueba_con_mediciones`: con `monkeypatch.setattr(PruebaEstudio, "puede_quitarse", lambda self: False)` → `GestionPruebasError` con «La prueba tiene mediciones o resultados cargados y no se puede quitar.» y la asignación sigue (FR-004).
-  - `test_estudio_no_modificable_rechaza_quitar`: con `monkeypatch.setattr(Estudio, "admite_modificaciones", property(lambda self: False))`, `quitar_prueba` lanza `GestionPruebasError` con «Este estudio ya no admite cambios en sus pruebas.» y las asignaciones no cambian (FR-003).
+  - `test_quitar_rechaza_prueba_con_mediciones` (parametrizado con `cargada` y `completada`, guardados en la base con `PruebaEstudio.objects.filter(...).update(estado=...)`): `GestionPruebasError` con «La prueba tiene mediciones o resultados cargados y no se puede quitar.» y la asignación sigue con su estado (FR-004).
+  - `test_estudio_no_modificable_rechaza_quitar` (parametrizado con `en_proceso`, `finalizado` e `informe_generado`, guardados en la base): `quitar_prueba` lanza `GestionPruebasError` con «Este estudio ya no admite cambios en sus pruebas.» y las asignaciones no cambian (FR-003).
 - [ ] T015 [P] [US2] Agregar en `estudios/tests/test_quitar_prueba.py`:
   - `test_vistas_quitar_prueba_requieren_sesion` (GET y POST): sin sesión → 302 al login y sin cambios (FR-001).
-  - `test_reenvio_confirmar_quitar_informa_ya_quitada`: dos POST a `quitar_prueba` de la misma asignación → el segundo redirige con «La prueba ya no forma parte del estudio.» (nivel info) (FR-010).
+  - `test_reenvio_confirmar_quitar_informa_ya_quitada`: dos POST a `quitar_prueba` de la misma asignación (el primero con `follow=True`, para consumir su mensaje) → el segundo redirige con «La prueba ya no forma parte del estudio.» (nivel info) (FR-010).
   - `test_detalle_no_ofrece_quitar_ultima_prueba`: con una sola asignación, el detalle no tiene enlace a `quitar_prueba` y muestra «El estudio debe conservar al menos una prueba.».
-  - `test_vistas_estudio_no_modificable_no_ofrecen_quitar`: con el `monkeypatch` de `admite_modificaciones`, GET de `quitar_prueba` → 302 a `detalle` con «Este estudio ya no admite cambios en sus pruebas.» y el detalle no ofrece **Quitar**.
+  - `test_detalle_no_ofrece_quitar_prueba_con_mediciones`: con TEST-A guardada en `cargada`, el detalle no tiene el enlace a `quitar_prueba` de TEST-A y sí el de TEST-B; GET de `quitar_prueba` de TEST-A → 302 a `detalle` con «La prueba tiene mediciones o resultados cargados y no se puede quitar.».
+  - `test_vistas_estudio_no_modificable_no_ofrecen_quitar`: con el estudio guardado en `en_proceso`, GET de `quitar_prueba` → 302 a `detalle` con «Este estudio ya no admite cambios en sus pruebas.» y el detalle no ofrece **Quitar**.
   - `test_quitar_estudio_inexistente_responde_404`: GET y POST de `quitar_prueba` con un `pk` de estudio inexistente → 404.
   - `test_quitar_asignacion_de_otro_estudio_rechazada`: GET y POST de `quitar_prueba` con el `pk` del estudio A y una asignación del estudio B → 302 al detalle de A con «La prueba ya no forma parte del estudio.» y la asignación de B sigue.
 - [ ] T016 [P] [US2] Agregar en `estudios/tests/test_concurrencia_pruebas.py` (mismo esquema de hilos que `test_agregados_concurrentes_no_duplican`):
@@ -115,9 +123,9 @@ estudio no cambia indebidamente.
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Completar `quitar_prueba` en `estudios/servicios.py`: después de bloquear el estudio, `if not estudio.admite_modificaciones: raise GestionPruebasError("Este estudio ya no admite cambios en sus pruebas.")`; antes de borrar, si `estudio.pruebas_asignadas.count() <= 1` → `UltimaPrueba("El estudio debe conservar al menos una prueba.")`; si `not asignacion.puede_quitarse()` → `GestionPruebasError("La prueba tiene mediciones o resultados cargados y no se puede quitar.")`; traducir `ProtectedError` del `delete()` en ese mismo error (research R3) (depende de T009).
-- [ ] T018 [US2] En `estudios/views.py`, `quitar_prueba` (GET) redirige a `detalle` con el mensaje de error correspondiente si el estudio no es modificable, si es la última prueba o si `puede_quitarse()` es falso; `detalle` pasa al template `puede_quitar_alguna = len(asignaciones) > 1` (depende de T010, T017).
-- [ ] T019 [US2] En `estudios/templates/estudios/detalle.html`, mostrar **Quitar** solo si además `asignacion.puede_quitarse` y `puede_quitar_alguna`; con una sola asignación, mostrar «El estudio debe conservar al menos una prueba.» en su lugar (depende de T012, T018).
+- [ ] T017 [US2] Completar `quitar_prueba` en `estudios/servicios.py`: después de bloquear el estudio (y antes de buscar la asignación), `if not estudio.admite_modificaciones: raise GestionPruebasError("Este estudio ya no admite cambios en sus pruebas.")`; antes de borrar, si `estudio.pruebas_asignadas.count() <= 1` → `UltimaPrueba("El estudio debe conservar al menos una prueba.")`; si `not asignacion.puede_quitarse()` → `GestionPruebasError("La prueba tiene mediciones o resultados cargados y no se puede quitar.")`; traducir `ProtectedError` del `delete()` en ese mismo error (research R3) (depende de T009).
+- [ ] T018 [US2] En `estudios/views.py`, `quitar_prueba` (GET) redirige a `detalle` con el mensaje de error correspondiente si el estudio no es modificable, si es la última prueba o si `puede_quitarse()` es falso. La vista `detalle` no cambia: ya pasa `total_pruebas` (US 5.2) (depende de T010, T017).
+- [ ] T019 [US2] En `estudios/templates/estudios/detalle.html`, mostrar **Quitar** solo si además `asignacion.puede_quitarse` y `total_pruebas > 1`; con una sola asignación en un estudio modificable, mostrar «El estudio debe conservar al menos una prueba.» en su lugar; una prueba `Cargada` o `Completada` deja la celda vacía (depende de T012, T018).
 - [ ] T020 [US2] Ejecutar `docker compose exec web pytest estudios` y dejar en verde T014–T016 junto con US1 y US 5.3 (depende de T017–T019).
 
 **Checkpoint**: US 5.4 completa; las reglas resisten reenvíos y concurrencia.
@@ -129,7 +137,7 @@ estudio no cambia indebidamente.
 - [ ] T021 [P] Ejecutar `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`, y corregir lo que aparezca (Principios III y VI).
 - [ ] T022 Ejecutar la suite completa `docker compose exec web pytest` y confirmar todo en verde.
 - [ ] T023 Recorrer los pasos 1 a 6 de validación manual de `specs/011-quitar-prueba-estudio/quickstart.md` y cronometrar una quita desde el detalle: menos de 1 minuto (SC-005).
-- [ ] T024 [P] Ampliar en `CLAUDE.md` la sección de pruebas de un estudio (creada en US 5.3) con lo no obvio de US 5.4: `quitar_prueba` cuenta las asignaciones bajo el bloqueo del estudio para sostener la regla de al menos una prueba; quitar borra la asignación (sin historial); **US 6.1** debe hacer que `PruebaEstudio.puede_quitarse()` devuelva `False` con mediciones o resultados y referenciar `PruebaEstudio` con `PROTECT`. No tocar el pendiente del envío de informes por correo.
+- [ ] T024 [P] Ampliar en `CLAUDE.md` la sección de pruebas de un estudio (creada en US 5.3) con lo no obvio de US 5.4: `quitar_prueba` cuenta las asignaciones bajo el bloqueo del estudio para sostener la regla de al menos una prueba y bloquea también la asignación para leer su estado; quitar borra la asignación (sin historial); `PruebaEstudio.puede_quitarse()` es «estado `Pendiente`», así que el **Epic 6** debe pasar la prueba a `Cargada`/`Completada` al registrar mediciones o resultados (bloqueando la asignación) y referenciar `PruebaEstudio` con `PROTECT`; `.btn-chico` es el botón para tablas. Actualizar la línea de US 5.3 que dice que US 5.4 completa la columna Acción. No tocar el pendiente del envío de informes por correo.
 
 ---
 
