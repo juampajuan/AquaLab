@@ -1,6 +1,6 @@
 # Feature Specification: Gestionar tipos de estudio
 
-**Feature Branch**: `codex/012-gestionar-tipos-estudio`
+**Feature Branch**: `012-Gestionar-Catalogo-Estudios`
 
 **Created**: 2026-10-27
 
@@ -201,7 +201,7 @@ Para preservar el historial, cada estudio conserva sus propias referencias de pr
 
 ### Separación de ramas y artefactos
 
-- US 5.5: codex/012-gestionar-tipos-estudio, specs/012-gestionar-tipos-estudio/, worktree E:/Codex/worktrees/us55-tipos-estudio/AquaLab.
+- US 5.5: 012-Gestionar-Catalogo-Estudios, specs/012-gestionar-tipos-estudio/, worktree E:/Codex/worktrees/us55-tipos-estudio/AquaLab.
 - La rama avanzó de 2541b857 a a95efb46 de manera segura tras verificar respaldo y relación de descendencia; no se hizo merge, rebase ni commit nuevo y se preservaron los borradores locales.
 - Los otros worktrees no se modifican. La actualización incorpora los archivos ya versionados en main a este checkout; las únicas ediciones propias de esta tarea son documentación US 5.5.
 

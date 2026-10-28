@@ -4,7 +4,7 @@ Fecha: 28/10/2026. Se registran hechos comprobados del repositorio y decisiones 
 
 ## Git y preservación
 
-- Worktree conservado: E:/Codex/worktrees/us55-tipos-estudio/AquaLab. Rama codex/012-gestionar-tipos-estudio.
+- Worktree conservado: E:/Codex/worktrees/us55-tipos-estudio/AquaLab. Rama 012-Gestionar-Catalogo-Estudios.
 - Base anterior 2541b85760583250f99f5bf660ebaf2f655be6b5; origin/main descargado y base actual a95efb46db9b94a8913d44f8dbff8fd4c8482d81. Se comprobó relación de ancestro: 0 commits propios divergentes y 28 commits entrantes. Actualización con git reset --keep exclusivamente al descendiente comprobado, sin merge, rebase ni nuevos commits.
 - US 5.1: commit 0616c755121dbb10c24c95a4bc79c250c1a837e0 integrado por PR #12 (07b89bc). US 5.2 también está integrada por PR #16. US 5.3/5.4 presentes como documentación; no se confunde con código de agregar/quitar pruebas ya implementado.
 - Borradores y contexto respaldados con hashes verificados en .local-backups/us55-antes-main-20261028-124711/. Se preserva además el respaldo anterior de renumeración us55-009-a-012-20261028-124010/. Nunca deben añadirse al commit.

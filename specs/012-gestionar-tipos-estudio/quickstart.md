@@ -75,7 +75,7 @@ Solo setup-plan original y verificación documental. Ningún comando anterior se
 
 ## Ejecución de implementación — 28/10/2026
 
-T001: aprobación completa del equipo comunicada por el usuario (incluye FR-018/019) y autorización de implementar registradas en tasks.md. Rama codex/012-gestionar-tipos-estudio, HEAD a95efb46; base integrada US 5.1/5.2. Se reutilizan modelos y constraints existentes sin modificaciones. Respaldos preservados y excluidos por .gitignore/.dockerignore.
+T001: aprobación completa del equipo comunicada por el usuario (incluye FR-018/019) y autorización de implementar registradas en tasks.md. Rama 012-Gestionar-Catalogo-Estudios, HEAD a95efb46; base integrada US 5.1/5.2. Se reutilizan modelos y constraints existentes sin modificaciones. Respaldos preservados y excluidos por .gitignore/.dockerignore.
 
 QA: proyecto aqualab-us55; volumen aqualab-us55_postgres_data; base aqualab_us55, host db; runner aqualab-us55-qa. .env propio ignorado, generado localmente sin copiar secretos de otros worktrees. Docker build y up -d db ejecutados; migraciones existentes aplicadas con migrate --noinput. Ningún contenedor ajeno modificado.
 
@@ -129,7 +129,7 @@ La preparación anterior se conserva como historial. El usuario autorizó ahora 
 
 ### Aislamiento comprobado
 
-- Rama: codex/012-gestionar-tipos-estudio; worktree E:/Codex/worktrees/us55-tipos-estudio/AquaLab.
+- Rama: 012-Gestionar-Catalogo-Estudios; worktree E:/Codex/worktrees/us55-tipos-estudio/AquaLab.
 - Compose: aqualab-us55; red exclusiva aqualab-us55_default; PostgreSQL aqualab_us55, host db; volumen aqualab-us55_postgres_data.
 - Volumen del otro proyecto: aqualab_postgres_data, diferente. No se conectó a esa base ni se modificaron sus contenedores.
 - Servidor: http://127.0.0.1:8012/estudios/tipos/; contenedor aqualab-us55-web-qa. Runner de comandos: aqualab-us55-qa.

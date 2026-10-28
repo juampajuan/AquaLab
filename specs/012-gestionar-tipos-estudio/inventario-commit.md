@@ -1,6 +1,6 @@
 # Inventario de futuro commit — US 5.5 (012)
 
-Fecha: 28/10/2026. Rama codex/012-gestionar-tipos-estudio, base a95efb46. Inventario propuesto, sin staging ni commit. Incluye este inventario y cierre-tecnico.md. Cualquier cambio posterior requiere contrastar nuevamente esta lista.
+Fecha: 28/10/2026. Rama 012-Gestionar-Catalogo-Estudios, base a95efb46. Inventario propuesto, sin staging ni commit. Incluye este inventario y cierre-tecnico.md. Cualquier cambio posterior requiere contrastar nuevamente esta lista.
 
 **Total exacto: 30 archivos.**
 
@@ -44,3 +44,10 @@ Fecha: 28/10/2026. Rama codex/012-gestionar-tipos-estudio, base a95efb46. Invent
 Los únicos seis archivos versionados modificados son .gitignore, .dockerignore, estudios/tests/conftest.py, estudios/urls.py, templates/base.html y templates/inicio.html. Son cambios deliberados de US 5.5. Los otros archivos de esta lista son nuevos/sin seguimiento. No hay modificaciones ajenas que deban descartarse ni archivos existentes que eliminar.
 
 Verificados modelos/migraciones, muestras, servicios/catalogo/views existentes, specs de otras historias, Constitution e instalación Spec Kit sin diff. No se modifican otros worktrees. Staging vacío. Antes de un futuro commit usar solo esta lista y volver a revisar diff/secretos; este documento no ejecuta git add.
+
+
+## Publicación con nombre definitivo
+
+La implementación de los 30 archivos ya fue registrada en el commit local 4f6281b1093895f00b828da5da6d9e97583ab8e0 antes de la interrupción del turno anterior. Se conserva ese commit, sin amend ni rebase. La rama se renombró a 012-Gestionar-Catalogo-Estudios manteniendo HEAD e historial; specs/012-gestionar-tipos-estudio/ permanece en su ubicación.
+
+El commit adicional de actualización de referencias incluye únicamente seis documentos ya presentes en este inventario: cierre-tecnico.md, diagnostico-previo-plan.md, inventario-commit.md, plan.md, quickstart.md y spec.md, todos bajo specs/012-gestionar-tipos-estudio/. La entrega acumulada continúa siendo exactamente 30 archivos respecto de la base a95efb46. No hay cambios funcionales ni archivos adicionales.

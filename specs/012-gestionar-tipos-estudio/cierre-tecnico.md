@@ -1,6 +1,6 @@
 # Cierre técnico — US 5.5 (012)
 
-Fecha: 28/10/2026. Rama codex/012-gestionar-tipos-estudio, HEAD/base a95efb46db9b94a8913d44f8dbff8fd4c8482d81. Este cierre no realiza staging, commit ni publicación. La verificación general final concluyó correctamente; resultados y estado definitivo al final.
+Fecha: 28/10/2026. Rama 012-Gestionar-Catalogo-Estudios, HEAD/base a95efb46db9b94a8913d44f8dbff8fd4c8482d81. Este cierre no realiza staging, commit ni publicación. La verificación general final concluyó correctamente; resultados y estado definitivo al final.
 
 ## Alcance y revisión técnica
 

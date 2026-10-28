@@ -1,6 +1,6 @@
 # Implementation Plan: US 5.5 — Gestionar tipos de estudio
 
-**Branch**: codex/012-gestionar-tipos-estudio | **Date**: 2026-10-28 | **Spec**: [spec.md](spec.md)
+**Branch**: 012-Gestionar-Catalogo-Estudios | **Date**: 2026-10-28 | **Spec**: [spec.md](spec.md)
 
 **Input**: specs/012-gestionar-tipos-estudio/spec.md. Base a95efb46 (main con US 5.1/5.2). Al generar el plan, el usuario había autorizado el diseño, pero no tasks ni implementación. Posteriormente autorizó $speckit-tasks, ya ejecutado con 50 tareas verificadas y pendientes. La implementación sigue sin autorización; la aprobación formal del equipo continúa pendiente (T001). Spec funcional confirmada, checklist documental 16/16, aprobación formal global del equipo no acreditada.
 
