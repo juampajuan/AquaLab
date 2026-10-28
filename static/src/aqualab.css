@@ -81,3 +81,135 @@
     @apply outline-2 outline-offset-2 outline-cian;
   }
 }
+
+/*
+ * Componentes compartidos (contracts/componentes-ui.md).
+ * form-control, form-select e is-invalid son nombres heredados: los asignan los forms.py.
+ */
+@layer components {
+  /* Botones */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primario {
+    @apply bg-marino text-white shadow-nivel1 hover:bg-marino-claro;
+  }
+  .btn-secundario {
+    @apply border border-borde-fuerte bg-superficie text-tinta hover:bg-fondo-hundido;
+  }
+  .btn-peligro {
+    @apply border border-peligro-borde bg-peligro-suave text-peligro hover:bg-red-100;
+  }
+  .btn-link {
+    @apply inline-flex items-center gap-1.5 text-sm font-semibold text-cian-texto hover:underline;
+  }
+
+  /* Superficies */
+  .tarjeta {
+    @apply rounded-xl border border-borde bg-superficie shadow-nivel1;
+  }
+
+  /* Campos */
+  .form-control,
+  .form-select {
+    @apply block w-full rounded-md border border-borde-fuerte bg-superficie px-3 py-2.5 text-sm text-tinta shadow-nivel1 transition-colors placeholder:text-slate-400 focus:border-cian focus:ring-2 focus:ring-cian/25 focus:outline-none;
+  }
+  .form-select {
+    @apply appearance-none bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+  }
+  .is-invalid {
+    @apply border-peligro bg-peligro-suave/40 focus:border-peligro focus:ring-peligro/20;
+  }
+  .campo-etiqueta {
+    @apply mb-1.5 block text-sm font-medium text-tinta;
+  }
+  .campo-error {
+    @apply mt-1.5 text-sm font-medium text-peligro;
+  }
+  .campo-ayuda {
+    @apply mt-1.5 text-xs text-tinta-suave;
+  }
+
+  /* Radios dibujados como botones segmentados (tipo de documento, tipo de vertido). */
+  .segmentado {
+    @apply inline-flex flex-wrap gap-1 rounded-lg border border-borde bg-fondo-hundido p-1;
+  }
+  .segmentado label {
+    @apply relative flex cursor-pointer items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-tinta-suave transition-colors hover:text-tinta;
+  }
+  .segmentado label:has(input:checked) {
+    @apply bg-superficie text-marino shadow-nivel1 ring-1 ring-cian/40;
+  }
+  .segmentado label:has(input:focus-visible) {
+    @apply outline-2 outline-offset-2 outline-cian;
+  }
+  .segmentado input[type="radio"] {
+    @apply sr-only;
+  }
+  .segmentado.is-invalid,
+  .segmentado:has(.is-invalid) {
+    @apply border-peligro;
+  }
+
+  /* Tablas */
+  .tabla {
+    @apply w-full text-left text-sm;
+  }
+  .tabla th {
+    @apply bg-fondo-hundido px-4 py-3 text-xs font-semibold tracking-wide whitespace-nowrap text-tinta-suave uppercase;
+  }
+  .tabla td {
+    @apply border-t border-borde px-4 py-3 align-middle;
+  }
+  .tabla tbody tr {
+    @apply transition-colors hover:bg-fondo;
+  }
+
+  /* Etiquetas de estado (ui/estado.html) */
+  .etiqueta {
+    @apply inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap;
+  }
+  .etiqueta::before {
+    @apply size-1.5 rounded-full bg-current content-[''];
+  }
+  .etiqueta-success {
+    @apply bg-exito-suave text-exito;
+  }
+  .etiqueta-neutral {
+    @apply bg-slate-100 text-tinta-suave;
+  }
+  .etiqueta-info {
+    @apply bg-cian-suave text-info;
+  }
+  .etiqueta-warning {
+    @apply bg-advertencia-suave text-advertencia;
+  }
+  .etiqueta-danger {
+    @apply bg-peligro-suave text-peligro;
+  }
+
+  /* Avisos (ui/mensajes.html, ui/errores_form.html) */
+  .aviso {
+    @apply flex items-start gap-3 rounded-lg border px-4 py-3 text-sm;
+  }
+  .aviso-exito {
+    @apply border-exito-borde bg-exito-suave text-exito;
+  }
+  .aviso-error {
+    @apply border-peligro-borde bg-peligro-suave text-peligro;
+  }
+  .aviso-advertencia {
+    @apply border-advertencia-borde bg-advertencia-suave text-advertencia;
+  }
+  .aviso-info {
+    @apply border-info-borde bg-info-suave text-info;
+  }
+
+  /* Círculo con iniciales */
+  .iniciales {
+    @apply inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-cian-suave text-xs font-bold text-marino;
+  }
+}

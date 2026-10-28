@@ -1,0 +1,32 @@
+{% comment %}
+  Campo de formulario. Uso: {% include "ui/campo.html" with field=form.email %}
+  Ganchos que usan JS y tests (no cambiar): el bloque de errores con id "<auto_id>_error" y un
+  <div> por error, la ayuda con id "<auto_id>_helptext" y la clase is-invalid en el control.
+{% endcomment %}
+<div class="{{ clase|default:'' }}">
+  {% if field.widget_type == "radioselect" %}
+    <fieldset>
+      <legend class="campo-etiqueta">
+        {{ field.label }}{% if field.field.required %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
+      </legend>
+      <div class="segmentado" id="{{ field.auto_id }}">
+        {% for opcion in field %}
+          <label for="{{ opcion.id_for_label }}">{{ opcion.tag }} {{ opcion.choice_label }}</label>
+        {% endfor %}
+      </div>
+    </fieldset>
+  {% else %}
+    <label for="{{ field.id_for_label }}" class="campo-etiqueta">
+      {{ field.label }}{% if field.field.required %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
+    </label>
+    {{ field }}
+  {% endif %}
+  {% if field.errors %}
+    <div class="campo-error" id="{{ field.auto_id }}_error">
+      {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
+    </div>
+  {% endif %}
+  {% if field.help_text %}
+    <div class="campo-ayuda" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</div>
+  {% endif %}
+</div>

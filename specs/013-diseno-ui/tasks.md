@@ -42,13 +42,13 @@ suite existente debe seguir pasando sin cambios salvo la aserción indicada en T
 
 **⚠️ CRITICAL**: ninguna pantalla se migra antes de terminar esta fase.
 
-- [ ] T008 Definir en `@layer components` de `static/src/aqualab.css`: `btn`, `btn-primario`, `btn-secundario`, `btn-peligro`, `btn-link`, `tarjeta`, `tabla`, `segmentado` y los nombres heredados `form-control`, `form-select`, `is-invalid` (campos con borde visible, foco visible en cian, error en rojo) (contracts/componentes-ui.md, research R7)
-- [ ] T009 [P] Crear `templates/ui/icono.html` (incluye `ui/iconos/<nombre>.svg` con clase opcional) y `templates/ui/iniciales.html`
-- [ ] T010 [P] Crear `templates/ui/estado.html` (etiqueta con `tipo` success/neutral/info/warning/danger) (data-model: estados y colores)
-- [ ] T011 [P] Crear `templates/ui/campo.html` conservando `id="{{ field.auto_id }}_error"` con un `<div>` por error y `{{ field.auto_id }}_helptext`; asterisco si `field.field.required`; soporte de `RadioSelect` como `segmentado`
-- [ ] T012 [P] Crear `templates/ui/errores_form.html` (`non_field_errors`) y `templates/ui/mensajes.html` (éxito, error, advertencia, info; botón cerrar)
-- [ ] T013 [P] Crear `static/js/aqualab.js`: cerrar mensajes y abrir/cerrar el menú en pantallas angostas (research R11)
-- [ ] T014 Compilar por primera vez `static/css/aqualab.css` y commitearlo
+- [X] T008 Definir en `@layer components` de `static/src/aqualab.css`: `btn`, `btn-primario`, `btn-secundario`, `btn-peligro`, `btn-link`, `tarjeta`, `tabla`, `segmentado` y los nombres heredados `form-control`, `form-select`, `is-invalid` (campos con borde visible, foco visible en cian, error en rojo) (contracts/componentes-ui.md, research R7)
+- [X] T009 [P] Crear `templates/ui/icono.html` (incluye `ui/iconos/<nombre>.svg` con clase opcional) y `templates/ui/iniciales.html`
+- [X] T010 [P] Crear `templates/ui/estado.html` (etiqueta con `tipo` success/neutral/info/warning/danger) (data-model: estados y colores)
+- [X] T011 [P] Crear `templates/ui/campo.html` conservando `id="{{ field.auto_id }}_error"` con un `<div>` por error y `{{ field.auto_id }}_helptext`; asterisco si `field.field.required`; soporte de `RadioSelect` como `segmentado`
+- [X] T012 [P] Crear `templates/ui/errores_form.html` (`non_field_errors`) y `templates/ui/mensajes.html` (éxito, error, advertencia, info; botón cerrar)
+- [X] T013 [P] Crear `static/js/aqualab.js`: cerrar mensajes y abrir/cerrar el menú en pantallas angostas (research R11)
+- [X] T014 Compilar por primera vez `static/css/aqualab.css` y commitearlo
 
 **Checkpoint**: tema, componentes y parciales base listos.
 

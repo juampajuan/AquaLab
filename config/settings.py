@@ -62,6 +62,8 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "usuarios.context_processors.contexto_sesion",
             ],
+            # Filtros compartidos de la interfaz: {% load ui %}.
+            "libraries": {"ui": "config.ui"},
         },
     },
 ]

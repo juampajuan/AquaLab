@@ -1,0 +1,14 @@
+{# Errores generales del formulario. nivel: "error" (por defecto) o "advertencia". #}
+{% for error in form.non_field_errors %}
+  {% if nivel == "advertencia" %}
+    <div class="aviso aviso-advertencia mb-5" role="alert" data-nivel="advertencia">
+      {% include "ui/icono.html" with nombre="clock" clase="size-5 shrink-0" %}
+      <div>{{ error }}</div>
+    </div>
+  {% else %}
+    <div class="aviso aviso-error mb-5" role="alert" data-nivel="error">
+      {% include "ui/icono.html" with nombre="circle-alert" clase="size-5 shrink-0" %}
+      <div>{{ error }}</div>
+    </div>
+  {% endif %}
+{% endfor %}
