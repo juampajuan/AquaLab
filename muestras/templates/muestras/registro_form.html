@@ -23,7 +23,7 @@
 
           <div id="ficha-cliente" class="flex items-center gap-3 rounded-lg bg-fondo-hundido p-4"{% if not cliente_elegido %} hidden{% endif %}>
             {% include "ui/icono.html" with nombre="building-2" clase="size-5 shrink-0 text-cian-texto" %}
-            <dl class="grid flex-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-3">
+            <dl class="flex min-w-0 flex-1 flex-wrap gap-x-6 gap-y-1 text-sm">
               <div>
                 <dt class="sr-only">Razón social / Nombre</dt>
                 <dd class="font-semibold text-tinta" data-ficha="razon_social_o_nombre">{% if cliente_elegido %}{{ cliente_elegido.razon_social|default:cliente_elegido.nombre }}{% endif %}</dd>
@@ -34,12 +34,14 @@
               </div>
               <div>
                 <dt class="sr-only">Correo electrónico</dt>
-                <dd class="break-all text-tinta-suave" data-ficha="email">{{ cliente_elegido.email }}</dd>
+                <dd class="text-tinta-suave [overflow-wrap:anywhere]" data-ficha="email">{{ cliente_elegido.email }}</dd>
               </div>
             </dl>
           </div>
 
-          {% include "ui/campo.html" with field=form.origen %}
+          <div id="bloque-origen">
+            {% include "ui/campo.html" with field=form.origen %}
+          </div>
           <button type="button" id="mostrar-origen-nuevo" class="btn-link -mt-2" hidden>
             {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Dar de alta un origen nuevo
           </button>
