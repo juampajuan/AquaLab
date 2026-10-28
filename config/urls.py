@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import TemplateView
 
 from usuarios.views import CerrarSesionView
+
+from . import views
 
 urlpatterns = [
     path("admin/logout/", CerrarSesionView.as_view()),
@@ -11,5 +12,5 @@ urlpatterns = [
     path("clientes/", include("clientes.urls")),
     path("muestras/", include("muestras.urls")),
     path("estudios/", include("estudios.urls")),
-    path("", TemplateView.as_view(template_name="inicio.html"), name="inicio"),
+    path("", views.inicio, name="inicio"),
 ]

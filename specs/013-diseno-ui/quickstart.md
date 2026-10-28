@@ -5,10 +5,10 @@
 ```bash
 docker compose up -d --build        # reconstruye la imagen con el binario de Tailwind
 docker compose exec web python manage.py migrate
-docker compose exec web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify
+docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify
 ```
 
-Mientras se editan templates: `docker compose exec web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --watch`.
+Mientras se editan templates: `docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --watch`.
 
 ## Controles automáticos
 

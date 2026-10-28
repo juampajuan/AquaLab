@@ -143,12 +143,12 @@ registro sin sesión.
 
 ### Tests for User Story 4 (escribir primero, deben fallar)
 
-- [ ] T043 [P] [US4] `config/tests/test_inicio.py`: los 4 accesos rápidos enlazan a sus URLs; "Muestras sin estudio" cuenta solo muestras sin estudios; "Muestras ingresadas hoy" usa `timezone.localdate()` y excluye otras fechas; "Estudios pendientes de análisis" cuenta ese estado; la tabla muestra las 5 más recientes por N° PI descendente con PI, cliente, origen, fecha `d/m/Y` y estado; sin muestras: indicadores en 0 y estado vacío con link a "Registrar muestra"; el inicio sigue exponiendo `huella_sesion` en el contexto; sin sesión redirige al login; la cantidad de consultas del inicio es la misma con 1 y con 6 muestras (sin N+1; `django_assert_num_queries` comparando ambos casos)
+- [X] T043 [P] [US4] `config/tests/test_inicio.py`: los 4 accesos rápidos enlazan a sus URLs; "Muestras sin estudio" cuenta solo muestras sin estudios; "Muestras ingresadas hoy" usa `timezone.localdate()` y excluye otras fechas; "Estudios pendientes de análisis" cuenta ese estado; la tabla muestra las 5 más recientes por N° PI descendente con PI, cliente, origen, fecha `d/m/Y` y estado; sin muestras: indicadores en 0 y estado vacío con link a "Registrar muestra"; el inicio sigue exponiendo `huella_sesion` en el contexto; sin sesión redirige al login; la cantidad de consultas del inicio es la misma con 1 y con 6 muestras (sin N+1; `django_assert_num_queries` comparando ambos casos)
 
 ### Implementation for User Story 4
 
-- [ ] T044 [US4] Crear `config/views.py` con la vista `inicio` (consultas de data-model.md) y cambiar en `config/urls.py` la ruta `""` a `views.inicio` con `name="inicio"` (research R10)
-- [ ] T045 [US4] Reescribir `templates/inicio.html` (maqueta `stitch/inicio/`): banner con `img/acceso/laboratorio.webp` y degradado, 4 tarjetas con bloque de color e ícono, 3 indicadores, tabla de últimas muestras con `ui/estado.html` y `ui/estado_vacio.html`
+- [X] T044 [US4] Crear `config/views.py` con la vista `inicio` (consultas de data-model.md) y cambiar en `config/urls.py` la ruta `""` a `views.inicio` con `name="inicio"` (research R10)
+- [X] T045 [US4] Reescribir `templates/inicio.html` (maqueta `stitch/inicio/`): banner con `img/acceso/laboratorio.webp` y degradado, 4 tarjetas con bloque de color e ícono, 3 indicadores, tabla de últimas muestras con `ui/estado.html` y `ui/estado_vacio.html`
 
 **Checkpoint**: las cuatro historias funcionan; suite completa en verde.
 
@@ -156,10 +156,10 @@ registro sin sesión.
 
 ## Phase 7: Polish & cierre
 
-- [ ] T046 Recompilar `static/css/aqualab.css`, verificar que `git diff --exit-code` no reporte cambios tras recompilar y que pese menos de 60 KB
-- [ ] T047 [P] `README.md`: stack con Tailwind CSS 4, sección "Estilos (Tailwind)" (compilar, `--watch`, recompilar antes de commitear, componentes de `templates/ui/` y clases heredadas `form-control`/`form-select`/`is-invalid`), estructura con todas las apps y corrección de "una app por módulo"
+- [X] T046 Recompilar `static/css/aqualab.css`, verificar que `git diff --exit-code` no reporte cambios tras recompilar y que pese menos de 60 KB
+- [X] T047 [P] `README.md`: stack con Tailwind CSS 4, sección "Estilos (Tailwind)" (compilar, `--watch`, recompilar antes de commitear, componentes de `templates/ui/` y clases heredadas `form-control`/`form-select`/`is-invalid`), estructura con todas las apps y corrección de "una app por módulo"
 - [ ] T048 ~~`CLAUDE.md`~~ Eliminada: por decisión del equipo `CLAUDE.md` solo lista pendientes de US; la guía de estilos va en el README (T047)
-- [ ] T049 Correr `pytest`, `ruff check .` y `ruff format --check .` en Docker
+- [X] T049 Correr `pytest`, `ruff check .` y `ruff format --check .` en Docker
 - [ ] T050 Recorrer [quickstart.md](quickstart.md) en el navegador (pasos 1–14), incluidas ventana de 375 px, modo sin red, navegación con teclado, imágenes que alternan y contraste con Lighthouse (SC-006)
 - [ ] T051 Traer `main` a la rama y, solo para las US 5.2–5.5 ya mergeadas en ese momento, adaptar con los componentes de `templates/ui/` las pantallas de las US 5.2–5.5 que ya estén integradas; resolver el conflicto de `templates/base.html` agregando sus links a `templates/ui/menu.html` (research R16)
 - [ ] T052 Abrir el PR "SCRUM-67 – Diseño de la interfaz" referenciando `specs/013-diseno-ui/` y la enmienda v1.1.0 de la constitution (requiere aprobación de la mayoría del equipo)

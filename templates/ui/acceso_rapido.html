@@ -1,0 +1,11 @@
+{# Tarjeta de acceso rápido del inicio. Parámetros: url, titulo, descripcion, icono, color, borde, enlace. #}
+<a href="{{ url }}" class="tarjeta group flex flex-col border-t-4 p-5 transition-shadow hover:shadow-nivel2 {{ borde }}">
+  <span class="flex size-11 items-center justify-center rounded-lg text-white {{ color }}">
+    {% include "ui/icono.html" with nombre=icono clase="size-5" %}
+  </span>
+  <span class="mt-4 text-lg font-semibold text-marino">{{ titulo }}</span>
+  <span class="mt-1 flex-1 text-sm text-tinta-suave">{{ descripcion }}</span>
+  <span class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-cian-texto group-hover:underline">
+    {{ enlace }} {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}
+  </span>
+</a>

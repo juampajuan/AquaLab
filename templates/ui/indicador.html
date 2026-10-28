@@ -1,0 +1,10 @@
+{# Indicador numérico. Parámetros: nombre (identificador), titulo, valor, icono. #}
+<div class="tarjeta flex items-center gap-4 p-5" data-indicador="{{ nombre }}">
+  <span class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-cian-suave text-cian-texto">
+    {% include "ui/icono.html" with nombre=icono clase="size-6" %}
+  </span>
+  <span>
+    <span class="block text-[11px] font-semibold tracking-wide text-tinta-suave uppercase">{{ titulo }}</span>
+    <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ valor }}</span>
+  </span>
+</div>

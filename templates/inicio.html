@@ -1,14 +1,78 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Inicio · AquaLab{% endblock %}
 
 {% block content %}
-  <h1 class="h3">Bienvenido/a a AquaLab</h1>
-  <p class="text-muted">Gestión de muestras y análisis de agua.</p>
-  <p class="mt-3">
-    <a href="{% url 'clientes:buscar' %}" class="btn btn-primary">Buscar cliente</a>
-    <a href="{% url 'clientes:registrar' %}" class="btn btn-outline-primary">Registrar cliente</a>
-    <a href="{% url 'muestras:registrar' %}" class="btn btn-outline-primary">Registrar muestra</a>
-    <a href="{% url 'estudios:crear' %}" class="btn btn-outline-primary">Crear estudio</a>
-  </p>
+  {# Banner de bienvenida (stitch/inicio/) #}
+  <section class="relative overflow-hidden rounded-2xl bg-marino-oscuro px-6 py-10 text-white shadow-nivel3 sm:px-10">
+    <img src="{% static 'img/acceso/laboratorio.webp' %}" alt="" aria-hidden="true" class="absolute inset-0 size-full object-cover opacity-60">
+    <div class="absolute inset-0 bg-linear-to-r from-marino-oscuro via-marino/85 to-marino/30" aria-hidden="true"></div>
+    <div class="textura-puntos absolute inset-0" aria-hidden="true"></div>
+    <div class="relative">
+      <h1 class="text-3xl font-bold tracking-tight">Bienvenido/a a AquaLab</h1>
+      <p class="mt-2 text-white/80">Gestión de muestras y análisis de agua.</p>
+    </div>
+  </section>
+
+  {# Accesos rápidos #}
+  <section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-componente="accesos" aria-label="Accesos rápidos">
+    {% url 'clientes:buscar' as url %}
+    {% include "ui/acceso_rapido.html" with url=url titulo="Buscar cliente" descripcion="Encontrá un cliente por nombre, razón social o DNI/CUIT y consultá su ficha." icono="search" color="bg-turquesa-texto" borde="border-t-turquesa" enlace="Buscar" %}
+    {% url 'clientes:registrar' as url %}
+    {% include "ui/acceso_rapido.html" with url=url titulo="Registrar cliente" descripcion="Dá de alta una persona o empresa con sus datos de contacto." icono="user-plus" color="bg-cian-texto" borde="border-t-cian" enlace="Registrar" %}
+    {% url 'muestras:registrar' as url %}
+    {% include "ui/acceso_rapido.html" with url=url titulo="Registrar muestra" descripcion="Registrá el ingreso de una muestra, su cliente y su origen." icono="flask-conical" color="bg-blue-600" borde="border-t-blue-600" enlace="Registrar" %}
+    {% url 'estudios:crear' as url %}
+    {% include "ui/acceso_rapido.html" with url=url titulo="Crear estudio" descripcion="Asigná un tipo de estudio a una muestra y precargá sus pruebas." icono="microscope" color="bg-marino" borde="border-t-marino" enlace="Crear" %}
+  </section>
+
+  {# Indicadores #}
+  <section class="mt-6 grid gap-4 md:grid-cols-3" aria-label="Indicadores">
+    {% include "ui/indicador.html" with nombre="muestras-sin-estudio" titulo="Muestras sin estudio" valor=muestras_sin_estudio icono="clipboard-list" %}
+    {% include "ui/indicador.html" with nombre="muestras-hoy" titulo="Muestras ingresadas hoy" valor=muestras_hoy icono="flask-conical" %}
+    {% include "ui/indicador.html" with nombre="estudios-pendientes" titulo="Estudios pendientes de análisis" valor=estudios_pendientes icono="microscope" %}
+  </section>
+
+  {# Últimas muestras #}
+  <section class="tarjeta mt-6 overflow-hidden" data-componente="ultimas-muestras">
+    <div class="px-5 py-4">
+      <h2 class="text-base font-semibold text-marino">Últimas muestras registradas</h2>
+    </div>
+    {% if ultimas_muestras %}
+      <div class="overflow-x-auto">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>N° PI</th>
+              <th>Cliente</th>
+              <th>Origen</th>
+              <th>Fecha de ingreso</th>
+              <th class="text-right">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for muestra in ultimas_muestras %}
+              <tr data-pi="{{ muestra.numero_pi }}">
+                <td class="font-semibold text-marino">{{ muestra.numero_pi }}</td>
+                <td class="font-medium">{{ muestra.cliente.nombre_completo }}</td>
+                <td class="text-tinta-suave">{{ muestra.origen.nombre }}</td>
+                <td class="whitespace-nowrap text-tinta-suave">{{ muestra.fecha_ingreso|date:"d/m/Y" }}</td>
+                <td class="text-right">
+                  {% if muestra.estado == "ingresada" %}
+                    {% include "ui/estado.html" with estado=muestra.get_estado_display tipo="info" %}
+                  {% else %}
+                    {% include "ui/estado.html" with estado=muestra.get_estado_display tipo="neutral" %}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      {% url 'muestras:registrar' as url_registrar %}
+      {% include "ui/estado_vacio.html" with icono="flask-conical" mensaje="Todavía no hay muestras registradas." accion_texto="Registrar muestra" accion_url=url_registrar %}
+    {% endif %}
+  </section>
 {% endblock %}
