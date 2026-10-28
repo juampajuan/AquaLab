@@ -12,7 +12,8 @@
 <body class="min-h-screen bg-superficie">
 <div data-contenido-sensible class="min-h-screen lg:grid lg:grid-cols-[3fr_2fr]">
   {# Panel de imágenes: una sola definición para las 4 pantallas de acceso (research R6b). #}
-  <aside class="relative hidden overflow-hidden bg-marino-oscuro lg:flex lg:flex-col lg:justify-between lg:p-12">
+  {# sticky + h-screen: con formularios largos (crear cuenta) el panel queda fijo mientras se scrollea. #}
+  <aside class="relative hidden overflow-hidden bg-marino-oscuro lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:justify-between lg:p-12">
     <div class="absolute inset-0" aria-hidden="true">
       <img src="{% static 'img/acceso/laboratorio.webp' %}" alt="" class="absolute inset-0 size-full object-cover">
       <img src="{% static 'img/acceso/mesada-muestras.webp' %}" alt="" loading="lazy" decoding="async" class="acceso-foto absolute inset-0 size-full object-cover">
@@ -22,9 +23,9 @@
       <div class="textura-puntos absolute inset-0"></div>
     </div>
     <div class="relative">{% include "ui/logo.html" with claro=True %}</div>
-    <div class="relative max-w-lg">
-      <p class="text-3xl leading-tight font-bold text-white">Gestión de muestras y análisis de agua</p>
-      <p class="mt-3 text-base text-white/80">Clientes, muestras y estudios del laboratorio en un solo lugar.</p>
+    <div class="relative max-w-xl">
+      <p class="text-3xl leading-tight font-bold text-balance text-white xl:text-4xl">Gestión de muestras y análisis de agua</p>
+      <p class="mt-3 text-base text-pretty text-white/80 xl:text-lg">Clientes, muestras y estudios del laboratorio en un solo lugar.</p>
     </div>
   </aside>
 
