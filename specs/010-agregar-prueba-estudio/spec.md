@@ -1,6 +1,6 @@
 # Feature Specification: Agregar prueba al estudio
 
-**Feature Branch**: `010-agregar-prueba-estudio`
+**Feature Branch**: `010-agregar-prueba-v2` (la rama original `010-agregar-prueba-estudio` quedó desactualizada respecto de `main`; ver Clarifications 2026-10-28)
 
 **Created**: 2026-10-27
 
@@ -14,6 +14,11 @@
 
 - Q: ¿La vista mínima del estudio forma parte de esta spec o se espera a US 5.2? → A: Forma parte de esta spec (cabecera + pruebas + acción de agregar), con acceso desde el mensaje de éxito de US 5.1. US 5.4 le suma la acción de quitar y US 5.2 la amplía en lugar de crear otra.
 - Q: ¿US 5.3 y US 5.4 van en una sola spec? → A: No. Por decisión del equipo, cada US tiene su propia spec y su propia rama; esta spec cubre solo US 5.3. La quita de pruebas es [US 5.4](../011-quitar-prueba-estudio/spec.md).
+
+### Session 2026-10-28
+
+- Q: La primera implementación (rama `010-agregar-prueba-estudio`) choca con `main` después de US 5.2 (las dos crearon la ficha del estudio). ¿Se actualiza o se rehace? → A: Se rehace a partir de esta spec en la rama `010-agregar-prueba-v2`, que parte del rediseño de la interfaz (SCRUM-67). Responsable: Juan Pablo.
+- Q: ¿Sigue haciendo falta crear la vista del estudio? → A: No. US 5.2 ya la creó (`estudios:detalle`, con cabecera, estado y pruebas con su estado). Esta historia solo le suma la acción de agregar.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -64,11 +69,11 @@ Como empleado, quiero que el sistema rechace agregados duplicados o sobre estudi
 ### Functional Requirements
 
 - **FR-001**: El sistema MUST permitir abrir el estudio y agregarle pruebas únicamente a empleados con sesión activa.
-- **FR-002**: El sistema MUST ofrecer una vista del estudio que muestre su identificador, la muestra (N° PI), el tipo, el estado y la lista de pruebas asignadas, y que sirva de punto de entrada para agregar pruebas. Se accede a ella desde el mensaje de éxito de la creación del estudio (US 5.1). La búsqueda de estudios y la consulta general del avance siguen siendo de US 5.2, que deberá ampliar esta vista en lugar de crear otra.
+- **FR-002**: La ficha del estudio de US 5.2 (identificador, muestra con N° PI, tipo, estado y pruebas asignadas) MUST ser el punto de entrada para agregar pruebas. También MUST poder llegarse a ella desde el mensaje de éxito de la creación del estudio (US 5.1). Esta historia no crea otra vista del estudio.
 - **FR-003**: El sistema MUST permitir agregar pruebas solo en estudios que admiten modificaciones. En esta historia admite modificaciones un estudio en estado "Pendiente de análisis"; cualquier otro estado futuro lo bloquea salvo que su historia indique lo contrario. La misma regla vale para quitar pruebas (US 5.4).
 - **FR-004**: El sistema MUST ofrecer para agregar todas las pruebas del catálogo compartido que no formen parte del estudio, identificadas por código y nombre, sin crear un catálogo paralelo ni pruebas nuevas.
 - **FR-005**: El sistema MUST impedir que una misma prueba figure más de una vez en un estudio, incluso ante agregados simultáneos.
-- **FR-006**: El sistema MUST incorporar la prueba agregada al estudio como pendiente de realizar, igual que las pruebas precargadas por el tipo.
+- **FR-006**: El sistema MUST incorporar la prueba agregada al estudio en estado "Pendiente" (estado de prueba de US 5.2), igual que las pruebas precargadas por el tipo.
 - **FR-007**: El sistema MUST pedir confirmación explícita, mostrando la prueba y el estudio afectados, antes de agregar una prueba, y permitir cancelar sin cambios.
 - **FR-008**: El sistema MUST validar nuevamente al confirmar que el estudio admite modificaciones y que la prueba sigue sin estar asignada, y rechazar la operación informando el motivo en caso contrario.
 - **FR-009**: Agregar pruebas MUST NOT modificar la muestra, el tipo, el estado, el autor, la fecha de creación ni el nombre y la descripción históricos del tipo guardados en el estudio, ni la composición del tipo en el catálogo, ni otros estudios.
@@ -93,10 +98,11 @@ Como empleado, quiero que el sistema rechace agregados duplicados o sobre estudi
 
 ## Assumptions
 
-- **Trazabilidad**: US 5.3 – Agregar prueba al estudio. Responsable del cronograma: Manuel. Clave de Jira: pendiente de completar cuando el usuario la facilite.
+- **Trazabilidad**: US 5.3 – Agregar prueba al estudio. Jira: SCRUM-50. Responsable original del cronograma: Manuel; reimplementación: Juan Pablo (ver Clarifications 2026-10-28).
 - **Spec separada de US 5.4**: El equipo no aprobó la spec conjunta de US 5.3 y US 5.4 (rama `009-gestionar-pruebas-estudio`) y pidió una spec y una rama por US. US 5.4 está en `specs/011-quitar-prueba-estudio/` y depende de esta historia (usa el detalle del estudio y la regla de estudio modificable).
 - **Dependencia US 5.1 integrada**: PR #12 mergeado en `main` (07b89bc). Estudio, Prueba, Tipo de estudio y Prueba asignada al estudio ya existen; esta historia los consume y no duplica el catálogo.
-- **Estado modificable**: Hoy el único estado de un estudio es "Pendiente de análisis", y es el que admite cambios. Las historias que introduzcan "En proceso", "Finalizado" e "Informe generado" deberán respetar el bloqueo de FR-003.
+- **Estado modificable**: US 5.2 incorporó los estados "En proceso", "Finalizado" e "Informe generado". Solo "Pendiente de análisis" admite cambios en las pruebas; los otros tres los bloquean (FR-003).
+- **Interfaz**: las pantallas nuevas siguen el diseño de SCRUM-67 (constitution v1.1.0) y se arman con los componentes de `templates/ui/`.
 - **Mismo resultado al reenviar (FR-011)**: Como la asignación no admite duplicados, reenviar una confirmación ya aplicada se informa como "la prueba ya está en el estudio", sin efectos adicionales.
 - **Catálogo**: Se ofrecen todas las pruebas del catálogo compartido. Si en el futuro (US 5.5) las pruebas pueden desactivarse, las desactivadas no deberán ofrecerse para agregar.
 - **Datos académicos**: AquaLab es un proyecto FIUBA; las pruebas de desarrollo y demostración son ficticias (DEMO) y no tienen validez científica.

@@ -1,6 +1,11 @@
 # Implementation Plan: Agregar prueba al estudio
 
-**Branch**: `010-agregar-prueba-estudio` | **Date**: 2026-10-27 | **Spec**: [spec.md](./spec.md)
+**Branch**: `010-agregar-prueba-v2` | **Date**: 2026-10-27 (actualizado 2026-10-28) | **Spec**: [spec.md](./spec.md)
+
+> **Actualización 2026-10-28**: se reimplementa sobre `main` con US 5.2 y sobre el rediseño de
+> SCRUM-67. La ficha del estudio (`estudios:detalle`) ya existe (US 5.2): no se crea, solo se le suma
+> la acción de agregar. Las pantallas nuevas usan Tailwind y los componentes de `templates/ui/`.
+> La prueba agregada se crea en estado `EstadoPruebaEstudio.PENDIENTE` (US 5.2).
 
 **Input**: Feature specification from `specs/010-agregar-prueba-estudio/spec.md` (US 5.3)
 
@@ -19,8 +24,8 @@ solo crea una fila de `PruebaEstudio`. La regla de estudio modificable vive en e
 
 **Language/Version**: Python 3.12
 
-**Primary Dependencies**: Django 5.2 LTS (ORM, forms, messages, `format_html`), Bootstrap 5.3 (CDN,
-en `base.html`). Sin JavaScript ni dependencias nuevas.
+**Primary Dependencies**: Django 5.2 LTS (ORM, forms, messages, `format_html`), Tailwind CSS 4 y
+componentes de `templates/ui/` (SCRUM-67). Sin JavaScript ni dependencias nuevas.
 
 **Storage**: PostgreSQL 16 en Docker. Tablas existentes `estudios_estudio` y
 `estudios_pruebaestudio`; sin migraciones.
@@ -41,9 +46,9 @@ bloqueo de la fila del estudio (FR-005, FR-008); reenvío idempotente (FR-011); 
 snapshots y el catálogo no cambian (FR-009); sesión obligatoria (FR-001); textos en español
 (Principio VI).
 
-**Scale/Scope**: 1 servicio + 2 excepciones, 1 propiedad de modelo, 1 formulario, 2 vistas,
-3 templates, 2 URLs, cambio de texto en `exito` de US 5.1, nota en `CLAUDE.md` y tests en
-`estudios/tests/`.
+**Scale/Scope**: 1 servicio + 2 excepciones, 1 propiedad de modelo, 1 formulario, 1 vista,
+2 templates nuevos, 1 URL, sección de pruebas de `detalle.html` ampliada, cambio de texto en
+`exito` de US 5.1, nota en `CLAUDE.md` y tests en `estudios/tests/`.
 
 Decisiones documentadas en [research.md](./research.md) (R1–R6). No hay `NEEDS CLARIFICATION`
 pendientes.
@@ -60,7 +65,7 @@ pendientes.
 | **IV. Integridad de datos** | `UniqueConstraint(estudio, prueba)` ya existente más comprobación bajo bloqueo de fila. Regla de estudio modificable en el modelo y el servicio, no solo en el template. Snapshots y catálogo intactos. No se borra nada. | ✅ |
 | **V. Seguridad** | Vistas protegidas por `LoginRequiredMiddleware`; CSRF en todos los POST. El enlace del mensaje se arma con `format_html`, que escapa los datos. | ✅ |
 | **VI. Idioma y consistencia** | Términos del dominio: `Estudio`, `Prueba`, `PruebaEstudio`, `agregar_prueba`, `admite_modificaciones`. Interfaz y mensajes en español. ruff. | ✅ |
-| **Interfaz (UI)** | Extiende `base.html`, Bootstrap 5.3, error junto al campo, confirmación antes de agregar, mensajes con `messages`. | ✅ |
+| **Interfaz (UI)** | Extiende `base.html` con los componentes de `templates/ui/` (constitution v1.1.0), error junto al campo, confirmación antes de agregar, mensajes con `messages`. | ✅ |
 
 **Post-diseño (Phase 1)**: cumple todos los principios sin excepciones en *Complexity Tracking*.
 
@@ -147,10 +152,10 @@ estudios/
 ├── models.py                               # + Estudio.admite_modificaciones
 ├── servicios.py                            # + GestionPruebasError, PruebaYaAsignada, agregar_prueba
 ├── forms.py                                # + AgregarPruebaForm
-├── views.py                                # + detalle, agregar_prueba; exito con enlace
-├── urls.py                                 # + <int:pk>/, <int:pk>/pruebas/agregar/
+├── views.py                                # + agregar_prueba; exito con enlace (detalle ya existe, US 5.2)
+├── urls.py                                 # + <int:pk>/pruebas/agregar/
 ├── templates/estudios/
-│   ├── detalle.html                        # nuevo
+│   ├── detalle.html                        # existente (US 5.2): + Agregar prueba y columna Acción
 │   ├── agregar_prueba.html                 # nuevo
 │   └── agregar_prueba_confirmar.html       # nuevo
 └── tests/
