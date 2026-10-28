@@ -11,6 +11,8 @@ from config.ui import iniciales
         ("Juan Pérez", "JP"),
         ("Cooperativa de Aguas Rurales", "CA"),
         ("ñandú sur", "ÑS"),
+        ("Juan pablo dominguez lucia", "JP"),
+        ("juan jose", "JJ"),
         ("Elena", "E"),
         ("", ""),
         (None, ""),

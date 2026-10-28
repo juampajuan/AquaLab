@@ -1,6 +1,9 @@
-"""Estructura de la interfaz de clientes (SCRUM-67, US2)."""
+"""Estructura de la interfaz de clientes (SCRUM-67, US2 y US3)."""
+
+import re
 
 import pytest
+from django.template.loader import render_to_string
 from django.urls import reverse
 
 from clientes.models import Cliente
@@ -55,3 +58,58 @@ def test_confirmacion_de_edicion_usa_los_componentes_comunes(
     html = cliente_autenticado.get(respuesta.url).content.decode()
 
     assert tiene_componentes_de_confirmacion(html)
+
+
+# Consulta de clientes (US3)
+
+
+def test_busqueda_con_resultados_muestra_cantidad_y_ver_ficha(
+    cliente_autenticado, clientes_busqueda
+):
+    html = cliente_autenticado.get(reverse("clientes:buscar"), {"q": "María"}).content.decode()
+
+    assert "2 clientes encontrados" in html
+    for cliente in Cliente.objects.filter(nombre="María Gómez"):
+        url = reverse("clientes:detalle", args=[cliente.pk])
+        assert re.search(rf'href="{url}"[^>]*>.*?Ver ficha', html, re.S)
+
+
+def test_busqueda_sin_resultados_muestra_el_estado_vacio(cliente_autenticado, clientes_busqueda):
+    html = cliente_autenticado.get(reverse("clientes:buscar"), {"q": "zzzz"}).content.decode()
+
+    vacio = re.search(r'data-componente="estado-vacio".*?</div>\s*</div>', html, re.S)
+    assert vacio
+    assert "No se encontraron clientes para «zzzz»." in vacio.group(0)
+
+
+def test_ficha_tiene_encabezado_con_nombre_y_estado(cliente_autenticado, cliente_existente):
+    html = cliente_autenticado.get(
+        reverse("clientes:detalle", args=[cliente_existente.pk])
+    ).content.decode()
+
+    encabezado = re.search(r"<h1[^>]*>(.*?)</h1>(.*?)</header>", html, re.S)
+    assert "Aguas del Sur S.A." in encabezado.group(1)
+    assert 'data-estado="success">Activo' in encabezado.group(2)
+
+
+def test_ficha_de_cliente_inactivo_muestra_la_etiqueta_neutral(cliente_existente):
+    # La vista no abre la ficha de un cliente inactivo (redirige a la búsqueda), pero el
+    # template debe mostrar el estado correcto si se usa con uno (FR-009).
+    cliente_existente.activo = False
+
+    html = render_to_string("clientes/detalle.html", {"cliente": cliente_existente})
+
+    assert 'data-estado="neutral">Inactivo' in html
+
+
+def test_ficha_muestra_raya_en_los_datos_vacios_y_sus_acciones(
+    cliente_autenticado, cliente_existente
+):
+    html = cliente_autenticado.get(
+        reverse("clientes:detalle", args=[cliente_existente.pk])
+    ).content.decode()
+
+    assert re.search(r"<dt>Nombre</dt>\s*<dd>—</dd>", html)
+    assert re.search(r"<dt>Teléfono</dt>\s*<dd>—</dd>", html)
+    assert "Editar cliente" in html
+    assert "Volver a la búsqueda" in html

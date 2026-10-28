@@ -122,14 +122,14 @@ registro sin sesión.
 
 ### Tests for User Story 3
 
-- [ ] T039 [P] [US3] En `clientes/tests/`: la ficha de un cliente inactivo muestra la etiqueta "Inactivo" con el tipo `neutral` y la de uno activo "Activo" con `success`; la búsqueda sin resultados muestra el estado vacío (`data-componente="estado-vacio"`) con el texto actual; la búsqueda con resultados muestra la cantidad y un link "Ver ficha" por fila (US3 escenarios 1, 2 y 4)
-- [ ] T056 [P] [US3] En `clientes/tests/`: la ficha tiene un encabezado `<h1>` con el nombre o razón social del cliente y, junto a él, su etiqueta de estado; los datos vacíos se muestran como "—"; están los botones "Editar cliente" y "Volver a la búsqueda" (US3 escenario 3)
+- [X] T039 [P] [US3] En `clientes/tests/`: la ficha de un cliente inactivo muestra la etiqueta "Inactivo" con el tipo `neutral` y la de uno activo "Activo" con `success`; la búsqueda sin resultados muestra el estado vacío (`data-componente="estado-vacio"`) con el texto actual; la búsqueda con resultados muestra la cantidad y un link "Ver ficha" por fila (US3 escenarios 1, 2 y 4)
+- [X] T056 [P] [US3] En `clientes/tests/`: la ficha tiene un encabezado `<h1>` con el nombre o razón social del cliente y, junto a él, su etiqueta de estado; los datos vacíos se muestran como "—"; están los botones "Editar cliente" y "Volver a la búsqueda" (US3 escenario 3)
 
 ### Implementation for User Story 3
 
-- [ ] T040 [P] [US3] Crear `templates/ui/estado_vacio.html` y `templates/ui/paginacion.html`
-- [ ] T041 [US3] Migrar `clientes/templates/clientes/buscar.html` (maqueta `stitch/buscar-cliente/`): tabla en tarjeta con `overflow-x-auto`, iniciales, "Ver ficha" sin cortes de línea, paginación y estado vacío
-- [ ] T042 [US3] Migrar `clientes/templates/clientes/detalle.html` (maqueta `stitch/ficha-cliente/`): encabezado con nombre y estado, migas "Clientes > Buscar cliente > Ficha del cliente", grilla de datos con "—" en vacíos, botones
+- [X] T040 [P] [US3] Crear `templates/ui/estado_vacio.html` y `templates/ui/paginacion.html`
+- [X] T041 [US3] Migrar `clientes/templates/clientes/buscar.html` (maqueta `stitch/buscar-cliente/`): tabla en tarjeta con `overflow-x-auto`, iniciales, "Ver ficha" sin cortes de línea, paginación y estado vacío
+- [X] T042 [US3] Migrar `clientes/templates/clientes/detalle.html` (maqueta `stitch/ficha-cliente/`): encabezado con nombre y estado, migas "Clientes > Buscar cliente > Ficha del cliente", grilla de datos con "—" en vacíos, botones
 
 **Checkpoint**: consulta de clientes con el nuevo diseño.
 

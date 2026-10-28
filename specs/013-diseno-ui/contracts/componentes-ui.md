@@ -20,7 +20,7 @@ guardia de sesión (`includes/estilo_sesion.html`, `includes/guardia_sesion.html
 |---|---|---|
 | `menu.html` | — (usa `request.resolver_match`) | Menú lateral agrupado: Inicio; Clientes (Buscar cliente, Registrar cliente); Muestras (Registrar muestra); Estudios (Crear estudio). Destaca el subítem actual |
 | `mensajes.html` | — (usa `messages`) | Avisos de éxito, error, advertencia e información, con botón para cerrar. Cada aviso lleva `data-nivel="exito|error|advertencia|info"` |
-| `encabezado.html` | `titulo`, `subtitulo` (opc.), `migas` (opc., lista de `(texto, url)`) | Migas de pan, título y subtítulo de la página |
+| `encabezado.html` | `titulo`, `subtitulo`, `seccion`, `anterior_texto`/`anterior_url`, `miga`, `estado`/`estado_tipo` (todos opc. salvo `titulo`) | Migas (sección > paso anterior > miga), título con etiqueta de estado opcional y subtítulo |
 | `campo.html` | `field`, `ancho` (opc.) | Etiqueta (con marcador `<span data-obligatorio>*</span>` si es obligatorio), control, errores en `<div id="{{ field.auto_id }}_error">` con un `<div>` por error, y ayuda en `{{ field.auto_id }}_helptext` |
 | `errores_form.html` | `form` | Errores generales (`non_field_errors`) arriba del formulario |
 | `seccion_titulo.html` | `titulo`, `icono` | Título de una sección de formulario. La sección es `<section class="tarjeta seccion-form">` (un `{% include %}` no puede envolver contenido) |
