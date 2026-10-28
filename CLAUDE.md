@@ -46,3 +46,12 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - La ficha del cliente y sus orígenes se actualizan en vivo con
   `muestras/static/muestras/registro_muestra.js`; con un cliente ya elegido (errores o `?volver=1`)
   los renderiza el servidor. No hay buscador de clientes: se quitó tras la prueba manual.
+
+## Consulta de estado del estudio y ficha de la muestra (US 5.2)
+
+- `EstadoEstudio` (`pendiente_analisis`, `en_proceso`, `finalizado`, `informe_generado`) y
+  `EstadoPruebaEstudio` (`pendiente`, `cargada`, `completada`) en `estudios/models.py`. Toda
+  `PruebaEstudio` inicia en `pendiente`.
+- Las vistas de consulta (`estudios:buscar`, `estudios:detalle` y `muestras:detalle`) muestran siempre
+  `tipo_nombre_snapshot` y `tipo_descripcion_snapshot` para preservar la historia del estudio frente a
+  ediciones posteriores del catálogo.

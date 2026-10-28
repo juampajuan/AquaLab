@@ -2,13 +2,15 @@ import datetime
 
 from django.contrib import messages
 from django.db import DatabaseError
-from django.shortcuts import redirect, render
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from clientes.models import Cliente
+from estudios.models import EstadoPruebaEstudio
 
 from .forms import CAMPOS_MUESTRA, RegistroMuestraForm, datos_clientes
-from .models import Origen, TipoVertido
+from .models import Muestra, Origen, TipoVertido
 from .servicios import (
     MENSAJE_CLIENTE_NO_DISPONIBLE,
     MuestraNoDisponible,
@@ -110,3 +112,24 @@ def registrar_confirmar(request):
         messages.warning(request, MENSAJE_CLIENTE_NO_DISPONIBLE)
         return redirect(url_volver())
     return render(request, "muestras/registro_confirmar.html", {"datos": resumen})
+
+
+def detalle(request, pk):
+    muestra = get_object_or_404(
+        Muestra.objects.select_related("cliente", "origen", "registrada_por"),
+        pk=pk,
+    )
+    estudios = list(
+        muestra.estudios.annotate(
+            total_pruebas=Count("pruebas_asignadas"),
+            pruebas_completadas=Count(
+                "pruebas_asignadas",
+                filter=Q(pruebas_asignadas__estado=EstadoPruebaEstudio.COMPLETADA),
+            ),
+        ).order_by("-pk")
+    )
+    return render(
+        request,
+        "muestras/detalle.html",
+        {"muestra": muestra, "estudios": estudios},
+    )

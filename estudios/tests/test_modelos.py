@@ -78,7 +78,7 @@ def test_validaciones_estudio(datos, empleado, campo, valor):
 
 
 def test_uuid_obligatorio_y_identificador_propio(muestra, tipo, empleado):
-    from estudios.models import Estudio
+    from estudios.models import Estudio, PruebaEstudio
     from estudios.servicios import crear_estudio
 
     with pytest.raises(IntegrityError), transaction.atomic():
@@ -99,5 +99,19 @@ def test_uuid_obligatorio_y_identificador_propio(muestra, tipo, empleado):
     assert e.pk != muestra.numero_pi
     campo = Estudio._meta.get_field("estado")
     assert not campo.editable
-    assert list(campo.choices) == [("pendiente_analisis", "Pendiente de análisis")]
+    assert list(campo.choices) == [
+        ("pendiente_analisis", "Pendiente de análisis"),
+        ("en_proceso", "En proceso"),
+        ("finalizado", "Finalizado"),
+        ("informe_generado", "Informe generado"),
+    ]
     assert not Estudio._meta.get_field("clave_idempotencia").null
+    campo_prueba = PruebaEstudio._meta.get_field("estado")
+    assert not campo_prueba.editable
+    assert campo_prueba.default == "pendiente"
+    assert list(campo_prueba.choices) == [
+        ("pendiente", "Pendiente"),
+        ("cargada", "Cargada"),
+        ("completada", "Completada"),
+    ]
+    assert list(e.pruebas_asignadas.values_list("estado", flat=True)) == ["pendiente", "pendiente"]

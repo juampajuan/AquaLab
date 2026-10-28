@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Buscar estudio · AquaLab{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-11">
+      <h1 class="h3 mb-4">Buscar estudio</h1>
+
+      <form method="get" action="{% url 'estudios:buscar' %}" class="mb-4" novalidate>
+        <label for="{{ form.q.id_for_label }}" class="form-label">{{ form.q.label }}</label>
+        <div class="input-group">
+          <input type="text" name="q" id="{{ form.q.id_for_label }}" value="{{ form.q.value|default:'' }}"
+                 class="form-control{% if form.q.errors %} is-invalid{% endif %}" autofocus>
+          <button type="submit" class="btn btn-primary">Buscar</button>
+          {% for error in form.q.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="form-text">Podés buscar por N° de estudio, N° PI o nombre de la muestra, o por nombre, razón social o DNI/CUIT del cliente.</div>
+      </form>
+
+      {% if page_obj is not None %}
+        {% if page_obj.paginator.count %}
+          <p class="text-muted">{{ page_obj.paginator.count }} estudio{{ page_obj.paginator.count|pluralize }} encontrado{{ page_obj.paginator.count|pluralize }}</p>
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Estudio</th>
+                <th>Muestra</th>
+                <th>Cliente</th>
+                <th>Tipo de estudio</th>
+                <th>Fecha de creación</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for estudio in page_obj %}
+                <tr>
+                  <td class="fw-semibold">#{{ estudio.pk }}</td>
+                  <td>
+                    <div><a href="{% url 'muestras:detalle' estudio.muestra.pk %}">N° PI {{ estudio.muestra.numero_pi }}</a></div>
+                    <div class="text-muted small">{{ estudio.muestra.nombre }}</div>
+                  </td>
+                  <td>
+                    <div>{{ estudio.muestra.cliente.nombre_completo }}</div>
+                    <div class="text-muted small">{{ estudio.muestra.cliente.tipo_documento }} {{ estudio.muestra.cliente.numero_documento }}</div>
+                  </td>
+                  <td>{{ estudio.tipo_nombre_snapshot }}</td>
+                  <td>{{ estudio.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                  <td>
+                    <span class="badge {% if estudio.estado == 'finalizado' or estudio.estado == 'informe_generado' %}text-bg-success{% elif estudio.estado == 'en_proceso' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">
+                      {{ estudio.get_estado_display }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-outline-primary btn-sm">Ver estudio</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginación de resultados">
+              <ul class="pagination">
+                {% if page_obj.has_previous %}
+                  <li class="page-item"><a class="page-link" href="?q={{ q|urlencode }}&page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                  <li class="page-item"><a class="page-link" href="?q={{ q|urlencode }}&page={{ page_obj.next_page_number }}">Siguiente</a></li>
+                {% endif %}
+              </ul>
+            </nav>
+          {% endif %}
+        {% else %}
+          <div class="alert alert-info">No se encontraron estudios para «{{ q }}».</div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
