@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Muestra N° PI {{ muestra.numero_pi }} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  <header class="mb-6">
+    <nav aria-label="Ubicación" class="mb-2 flex flex-wrap items-center gap-1.5 text-xs font-semibold tracking-wide text-tinta-suave uppercase">
+      <span>Muestras</span>
+      {% include "ui/icono.html" with nombre="chevron-right" clase="size-3.5" %}
+      <span class="text-tinta" aria-current="page">Ficha de la muestra</span>
+    </nav>
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="text-2xl font-semibold tracking-tight text-marino">Muestra N° PI {{ muestra.numero_pi }}</h1>
+      {% include "ui/estado.html" with estado=muestra.get_estado_display tipo=muestra.estado|tipo_estado %}
+    </div>
+  </header>
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-5xl space-y-6">
+    <section class="tarjeta overflow-hidden">
+      <h2 class="flex items-center gap-2.5 border-b border-borde bg-fondo-hundido px-6 py-4 text-sm font-semibold text-marino">
+        {% include "ui/icono.html" with nombre="flask-conical" clase="size-4 text-cian-texto" %} Datos de la muestra
+      </h2>
+      <dl class="resumen p-6 lg:grid-cols-3">
+        {% include "ui/dato.html" with etiqueta="N° PI" valor=muestra.numero_pi %}
+        {% include "ui/dato.html" with etiqueta="Nombre" valor=muestra.nombre %}
+        {% include "ui/dato.html" with etiqueta="Estado" valor=muestra.get_estado_display %}
+        <div class="lg:col-span-2">
+          <dt>Cliente</dt>
+          <dd>
+            {% if muestra.cliente.activo %}
+              <a href="{% url 'clientes:detalle' muestra.cliente.pk %}" class="text-cian-texto hover:underline">{{ muestra.cliente.nombre_completo }}</a>
+            {% else %}
+              {{ muestra.cliente.nombre_completo }}
+            {% endif %}
+            ({{ muestra.cliente.tipo_documento }} {{ muestra.cliente.numero_documento }})
+            <span class="block text-xs font-normal text-tinta-suave">{{ muestra.cliente.email }}</span>
+          </dd>
+        </div>
+        {% include "ui/dato.html" with etiqueta="Origen" valor=muestra.origen.nombre %}
+        {% include "ui/dato.html" with etiqueta="Sitio de extracción" valor=muestra.sitio_extraccion %}
+        {% include "ui/dato.html" with etiqueta="Tipo de vertido" valor=muestra.get_tipo_vertido_display %}
+        {% include "ui/dato.html" with etiqueta="Fecha de muestreo" valor=muestra.fecha_muestreo|date:"d/m/Y" %}
+        {% include "ui/dato.html" with etiqueta="Fecha de ingreso" valor=muestra.fecha_ingreso|date:"d/m/Y" %}
+        {% include "ui/dato.html" with etiqueta="Responsable del muestreo" valor=muestra.responsable_muestreo|default:"No especificado" %}
+        {% include "ui/dato.html" with etiqueta="Registrada por" valor=muestra.registrada_por.get_full_name|default:muestra.registrada_por.email %}
+        {% include "ui/dato.html" with etiqueta="Fecha de registro" valor=muestra.fecha_registro|date:"d/m/Y H:i" %}
+      </dl>
+    </section>
+
+    <section class="tarjeta overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-borde bg-fondo-hundido px-6 py-4">
+        <h2 class="flex items-center gap-2.5 text-sm font-semibold text-marino">
+          {% include "ui/icono.html" with nombre="microscope" clase="size-4 text-cian-texto" %} Estudios asignados
+        </h2>
+        <a href="{% url 'estudios:crear' %}" class="btn btn-primario px-3 py-1.5">
+          {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Crear estudio
+        </a>
+      </div>
+      {% if estudios %}
+        <div class="overflow-x-auto">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Estudio</th>
+                <th>Tipo de estudio</th>
+                <th>Fecha de creación</th>
+                <th>Estado</th>
+                <th>Pruebas completadas</th>
+                <th><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for estudio in estudios %}
+                <tr>
+                  <td class="font-semibold text-marino">#{{ estudio.pk }}</td>
+                  <td>{{ estudio.tipo_nombre_snapshot }}</td>
+                  <td class="whitespace-nowrap text-tinta-suave">{{ estudio.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                  <td>{% include "ui/estado.html" with estado=estudio.get_estado_display tipo=estudio.estado|tipo_estado %}</td>
+                  <td class="numeros">{{ estudio.pruebas_completadas }} / {{ estudio.total_pruebas }}</td>
+                  <td class="text-right">
+                    <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-secundario px-3 py-1.5">
+                      Ver estudio {% include "ui/icono.html" with nombre="chevron-right" clase="size-4" %}
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        {% include "ui/estado_vacio.html" with icono="microscope" mensaje="Esta muestra aún no tiene estudios asignados." %}
+      {% endif %}
+    </section>
+
+    <div class="flex flex-wrap gap-3">
+      <a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar estudios
+      </a>
+      <a href="{% url 'muestras:registrar' %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Registrar muestra
+      </a>
+    </div>
+  </div>
+{% endblock %}

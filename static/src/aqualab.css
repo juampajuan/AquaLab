@@ -135,6 +135,13 @@
     background-position: right 0.75rem center;
     background-size: 1rem;
   }
+  /* Selección múltiple (pruebas de un tipo de estudio): sin flecha y con altura para ver opciones. */
+  .form-select[multiple] {
+    @apply min-h-48 bg-none py-2 pr-3;
+  }
+  .form-select[multiple] option {
+    @apply rounded px-2 py-1;
+  }
   .is-invalid {
     @apply border-peligro bg-peligro-suave/40 focus:border-peligro focus:ring-peligro/20;
   }

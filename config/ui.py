@@ -2,6 +2,28 @@ from django import template
 
 register = template.Library()
 
+# Color de la etiqueta de cada estado del dominio (FR-009 de la spec 013): un único lugar para
+# que el mismo estado se vea igual en todas las pantallas. Valores de ui/estado.html.
+TIPOS_DE_ESTADO = {
+    # Muestra
+    "ingresada": "info",
+    # Estudio
+    "pendiente_analisis": "warning",
+    "en_proceso": "info",
+    "finalizado": "success",
+    "informe_generado": "success",
+    # Prueba de un estudio
+    "pendiente": "neutral",
+    "cargada": "info",
+    "completada": "success",
+}
+
+
+@register.filter
+def tipo_estado(valor):
+    """Tipo de etiqueta de un estado. Uso: tipo=objeto.estado|tipo_estado en ui/estado.html."""
+    return TIPOS_DE_ESTADO.get(valor, "neutral")
+
 
 @register.filter
 def iniciales(texto):

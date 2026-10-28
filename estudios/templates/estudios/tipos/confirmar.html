@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Confirmar tipo · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:tipos_listar' as url_lista %}
+  {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Gestionar tipos" anterior_url=url_lista miga="Confirmar" titulo="Confirmar: "|add:borrador.operacion %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-3xl space-y-4">
+    {% for campo, error in errores.items %}
+      <div class="aviso aviso-error" role="alert" data-nivel="error">
+        {% include "ui/icono.html" with nombre="circle-alert" clase="size-5 shrink-0" %}
+        <div>{{ campo }}: {{ error }}</div>
+      </div>
+    {% endfor %}
+
+    <section class="tarjeta p-6 sm:p-7">
+      <h2 class="text-lg font-semibold text-marino">{{ borrador.resumen.nombre }}</h2>
+      <p class="mt-1 text-sm text-tinta-suave">{{ borrador.resumen.descripcion|default:"Sin descripción"|linebreaksbr }}</p>
+
+      <dl class="resumen mt-6" data-componente="resumen">
+        {% if borrador.version %}
+          <div>
+            <dt>Versión revisada</dt>
+            <dd>{{ borrador.version }}</dd>
+          </div>
+        {% endif %}
+        <div>
+          <dt>Disponibilidad revisada</dt>
+          <dd>{{ borrador.resumen.activo|yesno:"Activo,Inactivo" }}</dd>
+        </div>
+      </dl>
+
+      <div class="mt-6 border-t border-borde pt-5">
+        <h3 class="mb-3 text-sm font-semibold text-marino">Pruebas</h3>
+        <ul class="space-y-2">
+          {% for prueba in borrador.resumen.pruebas %}
+            <li class="flex items-center gap-3 rounded-lg bg-fondo-hundido px-4 py-2.5 text-sm">
+              {% include "ui/icono.html" with nombre="flask-conical" clase="size-4 shrink-0 text-cian-texto" %}
+              <span><span class="font-semibold">{{ prueba.codigo }}</span> · {{ prueba.nombre }}</span>
+            </li>
+          {% empty %}
+            <li class="text-sm text-tinta-suave">Sin pruebas.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+
+    {% if borrador.operacion == 'eliminar' %}
+      <div class="aviso aviso-advertencia" role="status">
+        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+        <div>La eliminación es definitiva y solo se permite si el tipo nunca se utilizó. No elimina las pruebas del catálogo.</div>
+      </div>
+      <p class="text-sm text-tinta-suave">Estudios asociados al revisar: {{ borrador.resumen.uso }}. El uso se comprobará nuevamente al confirmar.</p>
+      {% if borrador.resumen.uso or tipo_utilizado %}
+        <div class="aviso aviso-error" role="alert">
+          {% include "ui/icono.html" with nombre="circle-alert" clase="size-5 shrink-0" %}
+          <div>Este tipo tiene historial y no puede eliminarse. Podés <a href="{% url 'estudios:tipos_desactivar' borrador.tipo_id %}" class="font-semibold underline">desactivarlo</a>.</div>
+        </div>
+      {% endif %}
+    {% elif borrador.operacion == 'desactivar' %}
+      <p class="text-sm text-tinta-suave">Dejará de estar disponible para estudios nuevos. El historial se conserva.</p>
+    {% elif borrador.operacion == 'reactivar' %}
+      <p class="text-sm text-tinta-suave">Volverá a estar disponible para estudios nuevos si tiene pruebas válidas. El historial se conserva.</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'estudios:tipos_confirmar' %}" class="flex flex-wrap items-center gap-3 pt-2" data-componente="acciones-confirmacion">
+      {% csrf_token %}
+      <input type="hidden" name="token" value="{{ borrador.token }}">
+      <button type="submit" name="accion" value="confirmar" class="btn btn-primario">
+        {% include "ui/icono.html" with nombre="check" clase="size-4" %} Confirmar
+      </button>
+      {% if volver_url %}
+        <a class="btn btn-secundario" href="{{ volver_url }}">
+          {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Volver a editar
+        </a>
+      {% endif %}
+      <button type="submit" name="accion" value="cancelar" class="btn btn-peligro sm:ml-auto">
+        {% include "ui/icono.html" with nombre="x" clase="size-4" %} Cancelar
+      </button>
+    </form>
+  </div>
+{% endblock %}

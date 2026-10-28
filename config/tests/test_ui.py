@@ -1,7 +1,7 @@
 import pytest
 from django.template.loader import render_to_string
 
-from config.ui import iniciales
+from config.ui import iniciales, tipo_estado
 
 
 @pytest.mark.parametrize(
@@ -32,3 +32,21 @@ def test_estado_marca_el_tipo():
     html = render_to_string("ui/estado.html", {"estado": "Activo", "tipo": "success"})
     assert 'data-estado="success"' in html
     assert "Activo" in html
+
+
+@pytest.mark.parametrize(
+    ("estado", "esperado"),
+    [
+        ("ingresada", "info"),
+        ("pendiente_analisis", "warning"),
+        ("en_proceso", "info"),
+        ("finalizado", "success"),
+        ("informe_generado", "success"),
+        ("pendiente", "neutral"),
+        ("cargada", "info"),
+        ("completada", "success"),
+        ("desconocido", "neutral"),
+    ],
+)
+def test_tipo_estado(estado, esperado):
+    assert tipo_estado(estado) == esperado

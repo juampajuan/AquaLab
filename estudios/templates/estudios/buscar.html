@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Buscar estudio · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% include "ui/encabezado.html" with seccion="Estudios" titulo="Buscar estudio" subtitulo="Consultá el estado de un estudio y sus pruebas." %}
+{% endblock %}
+
+{% block content %}
+  <form method="get" action="{% url 'estudios:buscar' %}" class="tarjeta mb-6 p-5 sm:p-6" novalidate>
+    <label for="{{ form.q.id_for_label }}" class="campo-etiqueta">{{ form.q.label }}</label>
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <div class="relative flex-1">
+        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-tinta-suave">
+          {% include "ui/icono.html" with nombre="search" clase="size-4" %}
+        </span>
+        <input type="text" name="q" id="{{ form.q.id_for_label }}" value="{{ form.q.value|default:'' }}"
+               class="form-control pl-9{% if form.q.errors %} is-invalid{% endif %}" autofocus>
+      </div>
+      <button type="submit" class="btn btn-primario">
+        {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar
+      </button>
+    </div>
+    {% if form.q.errors %}
+      <div class="campo-error">
+        {% for error in form.q.errors %}<div>{{ error }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    <p class="campo-ayuda flex items-center gap-1.5">
+      {% include "ui/icono.html" with nombre="info" clase="size-3.5 shrink-0" %}
+      Podés buscar por N° de estudio, N° PI o nombre de la muestra, o por nombre, razón social o DNI/CUIT del cliente.
+    </p>
+  </form>
+
+  {% if page_obj is not None %}
+    <section class="tarjeta overflow-hidden">
+      {% if page_obj.paginator.count %}
+        <h2 class="px-4 py-4 text-sm font-semibold text-marino sm:px-5">
+          {{ page_obj.paginator.count }} estudio{{ page_obj.paginator.count|pluralize }} encontrado{{ page_obj.paginator.count|pluralize }}
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Estudio</th>
+                <th>Muestra</th>
+                <th>Cliente</th>
+                <th>Tipo de estudio</th>
+                <th>Fecha de creación</th>
+                <th>Estado</th>
+                <th><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for estudio in page_obj %}
+                <tr>
+                  <td class="font-semibold text-marino">#{{ estudio.pk }}</td>
+                  <td>
+                    <a href="{% url 'muestras:detalle' estudio.muestra.pk %}" class="font-semibold text-cian-texto hover:underline">N° PI {{ estudio.muestra.numero_pi }}</a>
+                    <div class="text-xs text-tinta-suave">{{ estudio.muestra.nombre }}</div>
+                  </td>
+                  <td>
+                    <div class="font-medium">{{ estudio.muestra.cliente.nombre_completo }}</div>
+                    <div class="text-xs text-tinta-suave">{{ estudio.muestra.cliente.tipo_documento }} {{ estudio.muestra.cliente.numero_documento }}</div>
+                  </td>
+                  <td>{{ estudio.tipo_nombre_snapshot }}</td>
+                  <td class="whitespace-nowrap text-tinta-suave">{{ estudio.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                  <td>{% include "ui/estado.html" with estado=estudio.get_estado_display tipo=estudio.estado|tipo_estado %}</td>
+                  <td class="text-right">
+                    <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-secundario px-3 py-1.5">
+                      Ver estudio {% include "ui/icono.html" with nombre="chevron-right" clase="size-4" %}
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% with qq=q|urlencode %}
+          {% include "ui/paginacion.html" with parametros="q="|add:qq %}
+        {% endwith %}
+      {% else %}
+        {% include "ui/estado_vacio.html" with icono="search" mensaje="No se encontraron estudios para «"|add:q|add:"»." %}
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}

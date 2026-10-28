@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Estudio #{{ estudio.pk }} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:buscar' as url_buscar %}
+  <header class="mb-6">
+    <nav aria-label="Ubicación" class="mb-2 flex flex-wrap items-center gap-1.5 text-xs font-semibold tracking-wide text-tinta-suave uppercase">
+      <span>Estudios</span>
+      {% include "ui/icono.html" with nombre="chevron-right" clase="size-3.5" %}
+      <a href="{{ url_buscar }}" class="text-cian-texto hover:underline">Buscar estudio</a>
+      {% include "ui/icono.html" with nombre="chevron-right" clase="size-3.5" %}
+      <span class="text-tinta" aria-current="page">Ficha del estudio</span>
+    </nav>
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="text-2xl font-semibold tracking-tight text-marino">Estudio #{{ estudio.pk }}</h1>
+      {% include "ui/estado.html" with estado=estudio.get_estado_display tipo=estudio.estado|tipo_estado %}
+    </div>
+  </header>
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-5xl space-y-6">
+    <section class="tarjeta overflow-hidden">
+      <h2 class="flex items-center gap-2.5 border-b border-borde bg-fondo-hundido px-6 py-4 text-sm font-semibold text-marino">
+        {% include "ui/icono.html" with nombre="microscope" clase="size-4 text-cian-texto" %} Datos del estudio
+      </h2>
+      <dl class="resumen p-6 lg:grid-cols-3">
+        <div>
+          <dt>Identificador</dt>
+          <dd>#{{ estudio.pk }}</dd>
+        </div>
+        <div>
+          <dt>Estado general</dt>
+          <dd>{{ estudio.get_estado_display }}</dd>
+        </div>
+        <div>
+          <dt>Tipo de estudio</dt>
+          <dd>
+            {{ estudio.tipo_nombre_snapshot }}
+            {% if estudio.tipo_descripcion_snapshot %}
+              <span class="mt-0.5 block text-xs font-normal text-tinta-suave">{{ estudio.tipo_descripcion_snapshot }}</span>
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>Muestra</dt>
+          <dd><a href="{% url 'muestras:detalle' estudio.muestra.pk %}" class="text-cian-texto hover:underline">N° PI {{ estudio.muestra.numero_pi }} – {{ estudio.muestra.nombre }}</a></dd>
+        </div>
+        {% include "ui/dato.html" with etiqueta="Origen" valor=estudio.muestra.origen.nombre %}
+        <div>
+          <dt>Cliente</dt>
+          <dd>
+            {% if estudio.muestra.cliente.activo %}
+              <a href="{% url 'clientes:detalle' estudio.muestra.cliente.pk %}" class="text-cian-texto hover:underline">{{ estudio.muestra.cliente.nombre_completo }}</a>
+            {% else %}
+              {{ estudio.muestra.cliente.nombre_completo }}
+            {% endif %}
+            <span class="block text-xs font-normal text-tinta-suave">({{ estudio.muestra.cliente.tipo_documento }} {{ estudio.muestra.cliente.numero_documento }})</span>
+          </dd>
+        </div>
+        {% include "ui/dato.html" with etiqueta="Creado por" valor=estudio.creado_por.get_full_name|default:estudio.creado_por.email %}
+        {% include "ui/dato.html" with etiqueta="Fecha de creación" valor=estudio.fecha_creacion|date:"d/m/Y H:i" %}
+      </dl>
+    </section>
+
+    <section class="tarjeta overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-borde bg-fondo-hundido px-6 py-4">
+        <h2 class="flex items-center gap-2.5 text-sm font-semibold text-marino">
+          {% include "ui/icono.html" with nombre="flask-conical" clase="size-4 text-cian-texto" %} Pruebas asignadas
+        </h2>
+        <p class="numeros text-xs text-tinta-suave">
+          Total: {{ total_pruebas }} · Completadas: {{ pruebas_completadas }} · Cargadas: {{ pruebas_cargadas }} · Pendientes: {{ pruebas_pendientes }}
+        </p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Prueba</th>
+              <th class="text-right">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for asignacion in pruebas_asignadas %}
+              <tr>
+                <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
+                <td>{{ asignacion.prueba.nombre }}</td>
+                <td class="text-right">{% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="flex flex-wrap gap-3">
+      <a href="{% url 'muestras:detalle' estudio.muestra.pk %}" class="btn btn-primario">
+        {% include "ui/icono.html" with nombre="flask-conical" clase="size-4" %} Ver ficha de la muestra
+      </a>
+      <a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar estudios
+      </a>
+    </div>
+  </div>
+{% endblock %}

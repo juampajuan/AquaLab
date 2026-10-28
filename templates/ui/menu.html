@@ -33,9 +33,17 @@
     <p class="mb-1 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-tinta-suave uppercase">
       {% include "ui/icono.html" with nombre="microscope" clase="size-4" %} Estudios
     </p>
+    <a href="{% url 'estudios:buscar' %}" class="block rounded-md px-3 py-2 pl-9 {% if vista == 'estudios:buscar' or vista == 'estudios:detalle' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'estudios:buscar' or vista == 'estudios:detalle' %} aria-current="page"{% endif %}>
+      Buscar estudio
+    </a>
     <a href="{% url 'estudios:crear' %}" class="block rounded-md px-3 py-2 pl-9 {% if vista == 'estudios:crear' or vista == 'estudios:confirmar' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'estudios:crear' or vista == 'estudios:confirmar' %} aria-current="page"{% endif %}>
       Crear estudio
     </a>
+    {% if perms.estudios.gestionar_catalogo %}
+      <a href="{% url 'estudios:tipos_listar' %}" class="block rounded-md px-3 py-2 pl-9 {% if 'estudios:tipos_' in vista %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if 'estudios:tipos_' in vista %} aria-current="page"{% endif %}>
+        Gestionar tipos
+      </a>
+    {% endif %}
   </div>
 </nav>
 {% endwith %}

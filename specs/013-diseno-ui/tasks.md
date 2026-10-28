@@ -161,7 +161,7 @@ registro sin sesión.
 - [ ] T048 ~~`CLAUDE.md`~~ Eliminada: por decisión del equipo `CLAUDE.md` solo lista pendientes de US; la guía de estilos va en el README (T047)
 - [X] T049 Correr `pytest`, `ruff check .` y `ruff format --check .` en Docker
 - [ ] T050 Recorrer [quickstart.md](quickstart.md) en el navegador (pasos 1–14), incluidas ventana de 375 px, modo sin red, navegación con teclado, imágenes que alternan y contraste con Lighthouse (SC-006)
-- [ ] T051 Traer `main` a la rama y, solo para las US 5.2–5.5 ya mergeadas en ese momento, adaptar con los componentes de `templates/ui/` las pantallas de las US 5.2–5.5 que ya estén integradas; resolver el conflicto de `templates/base.html` agregando sus links a `templates/ui/menu.html` (research R16)
+- [X] T051 Traer `main` a la rama y, solo para las US 5.2–5.5 ya mergeadas en ese momento, adaptar con los componentes de `templates/ui/` las pantallas de las US 5.2–5.5 que ya estén integradas; resolver el conflicto de `templates/base.html` agregando sus links a `templates/ui/menu.html` (research R16)
 - [ ] T052 Abrir el PR "SCRUM-67 – Diseño de la interfaz" referenciando `specs/013-diseno-ui/` y la enmienda v1.1.0 de la constitution (requiere aprobación de la mayoría del equipo)
 
 ---

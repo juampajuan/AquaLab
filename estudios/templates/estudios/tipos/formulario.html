@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Tipo de estudio · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:tipos_listar' as url_lista %}
+  {% if operacion == 'editar' %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Gestionar tipos" anterior_url=url_lista titulo="Editar tipo de estudio" %}
+  {% else %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Gestionar tipos" anterior_url=url_lista titulo="Crear tipo de estudio" %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-3xl space-y-4">
+    {% if sin_pruebas %}
+      <div class="aviso aviso-advertencia" role="status">
+        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+        <div>No hay pruebas precargadas. Es necesario disponer del catálogo de pruebas para crear tipos.</div>
+      </div>
+    {% endif %}
+    {% if actual %}
+      <div class="aviso aviso-info" role="status">
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>Disponibilidad: {{ actual.activo|yesno:"Activo,Inactivo" }}. La edición no cambia la disponibilidad.</div>
+      </div>
+    {% endif %}
+    {% include "ui/errores_form.html" %}
+
+    <form method="post" novalidate class="space-y-6">
+      {% csrf_token %}
+      <input type="hidden" name="contexto" value="{{ contexto }}">
+      <input type="hidden" name="anterior" value="{{ anterior }}">
+      <section class="tarjeta seccion-form">
+        {% include "ui/seccion_titulo.html" with titulo="Datos del tipo" icono="file-text" %}
+        <div class="space-y-5">
+          {% include "ui/campo.html" with field=form.nombre %}
+          {% include "ui/campo.html" with field=form.descripcion %}
+          {% include "ui/campo.html" with field=form.pruebas %}
+          <p class="campo-ayuda -mt-3">Para elegir varias pruebas, mantené apretado Ctrl (o Cmd en Mac) mientras hacés clic.</p>
+        </div>
+      </section>
+      <div class="flex flex-wrap justify-end gap-3">
+        <button class="btn btn-secundario" type="submit" name="cancelar" value="1" formnovalidate>Cancelar</button>
+        <button class="btn btn-primario" type="submit" {% if sin_pruebas %}disabled{% endif %}>
+          Revisar resumen {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

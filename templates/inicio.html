@@ -16,7 +16,7 @@
   </section>
 
   {# Accesos rápidos #}
-  <section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-componente="accesos" aria-label="Accesos rápidos">
+  <section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-componente="accesos" aria-label="Accesos rápidos">
     {% url 'clientes:buscar' as url %}
     {% include "ui/acceso_rapido.html" with url=url titulo="Buscar cliente" descripcion="Encontrá un cliente por nombre, razón social o DNI/CUIT y consultá su ficha." icono="search" color="bg-turquesa-texto" borde="border-t-turquesa" enlace="Buscar" %}
     {% url 'clientes:registrar' as url %}
@@ -25,6 +25,12 @@
     {% include "ui/acceso_rapido.html" with url=url titulo="Registrar muestra" descripcion="Registrá el ingreso de una muestra, su cliente y su origen." icono="flask-conical" color="bg-blue-600" borde="border-t-blue-600" enlace="Registrar" %}
     {% url 'estudios:crear' as url %}
     {% include "ui/acceso_rapido.html" with url=url titulo="Crear estudio" descripcion="Asigná un tipo de estudio a una muestra y precargá sus pruebas." icono="microscope" color="bg-marino" borde="border-t-marino" enlace="Crear" %}
+    {% url 'estudios:buscar' as url %}
+    {% include "ui/acceso_rapido.html" with url=url titulo="Buscar estudio" descripcion="Consultá el estado de un estudio y sus pruebas por muestra o cliente." icono="clipboard-list" color="bg-turquesa" borde="border-t-turquesa" enlace="Buscar" %}
+    {% if perms.estudios.gestionar_catalogo %}
+      {% url 'estudios:tipos_listar' as url %}
+      {% include "ui/acceso_rapido.html" with url=url titulo="Gestionar tipos" descripcion="Administrá los tipos de estudio y las pruebas que incluye cada uno." icono="file-text" color="bg-marino-claro" borde="border-t-marino-claro" enlace="Gestionar" %}
+    {% endif %}
   </section>
 
   {# Indicadores #}

@@ -185,7 +185,7 @@ Contrato aceptado: Prueba con identidad estable, código único y nombre; TipoEs
 
 Escenarios complementarios: descripción histórica vacía se conserva tras editarla; textos cambiados entre revisión y confirmación exigen un nuevo resumen y confirmación; fixtures genéricas aisladas permiten comprobar selección, snapshots e idempotencia sin acreditar composiciones científicas oficiales. Las fixtures se destruyen/revierten con la base de test.
 
-Fuente de contrato revisada: spec local de US 5.5 en E:/Codex/worktrees/us55-tipos-estudio/AquaLab/specs/009-gestionar-tipos-estudio/spec.md. No está integrada en esta rama ni se modifica. La responsabilidad lógica de US 5.5 sobre el catálogo se mantiene aunque el esquema mínimo se entregue como prerrequisito acotado de US 5.1.
+Fuente de contrato revisada: spec local de US 5.5 en E:/Codex/worktrees/us55-tipos-estudio/AquaLab/specs/012-gestionar-tipos-estudio/spec.md. No está integrada en esta rama ni se modifica. La responsabilidad lógica de US 5.5 sobre el catálogo se mantiene aunque el esquema mínimo se entregue como prerrequisito acotado de US 5.1.
 
 ### Autorización documental posterior — revisión y tareas
 
