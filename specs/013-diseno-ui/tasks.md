@@ -29,7 +29,7 @@ suite existente debe seguir pasando sin cambios salvo la aserción indicada en T
 - [ ] T001 Agregar al `Dockerfile` la descarga del CLI standalone de Tailwind 4 a `/usr/local/bin/tailwindcss`, con `ARG TAILWIND_VERSION` (última 4.x estable) y selección del binario por arquitectura (`linux-x64` / `linux-arm64`) (research R1)
 - [ ] T002 Agregar `STATICFILES_DIRS = [BASE_DIR / "static"]` en `config/settings.py` (research R2)
 - [ ] T003 [P] Copiar `InterVariable.woff2` (OFL) a `static/fuentes/` (research R5)
-- [ ] T004 [P] Convertir las 4 imágenes de `specs/013-diseno-ui/stitch/imagenes/` a WebP optimizado (ancho máx. 1600 px, ≈ 150–200 KB) en `static/img/acceso/` con nombres `laboratorio.webp`, `mesada-muestras.webp`, `toma-de-muestra.webp`, `tubos-pipeta.webp` (research R6, R6b)
+- [ ] T004 [P] Convertir las 4 imágenes de `specs/013-diseno-ui/stitch/imagenes/` a WebP optimizado (ancho máx. 1600 px, ≈ 150–200 KB) en `static/img/acceso/`, con Pillow en un contenedor temporal (`docker run --rm -v "$PWD":/w python:3.12-slim ...`), sin agregar Pillow a `requirements.txt`; solo se commitean los `.webp` con nombres `laboratorio.webp`, `mesada-muestras.webp`, `toma-de-muestra.webp`, `tubos-pipeta.webp` (research R6, R6b)
 - [ ] T005 [P] Copiar los íconos SVG de Lucide (ISC) que usan las maquetas a `templates/ui/iconos/` (inicio, usuarios, buscar, agregar usuario, matraz, microscopio, cerrar sesión, flecha, reloj, alerta, info, check, lápiz, x, sobre, calendario, gota, documento, menú, ojo) (research R5)
 - [ ] T006 Crear `static/src/aqualab.css`: `@import "tailwindcss" source(none)`, `@source` de `templates/`, `*/templates/`, `*/forms.py` y `*/static/**/*.js`, `@font-face` de Inter y `@theme` con los tokens de `stitch/DESIGN.md` (colores, tipografía, radios, sombras, colores de estado) (research R3, R4)
 - [ ] T007 Agregar al job `ruff-y-tests` de `.github/workflows/ci.yml` un paso que descarga el mismo binario (misma `TAILWIND_VERSION`), recompila `static/css/aqualab.css` y falla con `git diff --exit-code` si difiere (research R2)
@@ -91,6 +91,9 @@ registro sin sesión.
 
 - [ ] T025 [P] [US2] En `clientes/tests/`: registrar y editar cliente dibujan `tipo_documento` como radios DNI / CUIT sin opción vacía, y un alta con CUIT sigue funcionando (research R8)
 - [ ] T026 [P] [US2] En `muestras/tests/`: `tipo_vertido` se dibuja como radios con Agua `checked` por defecto
+- [ ] T053 [P] [US2] En `config/tests/test_componentes.py`: los campos obligatorios llevan el marcador de obligatorio y los opcionales no (registrar cliente: Tipo de documento, Número de documento y Correo electrónico sí, Teléfono y Domicilio no; registrar muestra: Sitio de extracción sí, Nombre de la muestra no; crear cuenta: todos sí) (US2 escenario 1)
+- [ ] T054 [P] [US2] En `config/tests/test_componentes.py`: las 5 confirmaciones (registro de usuario, alta y edición de cliente, muestra y estudio) contienen `data-componente="resumen"` y `data-componente="acciones-confirmacion"`; la contraseña no aparece en el resumen del registro (US2 escenario 3)
+- [ ] T055 [P] [US2] En `config/tests/test_componentes.py`: un mensaje de éxito, uno de error y uno de información se dibujan con `data-nivel="exito"`, `"error"` e `"info"` respectivamente, cada uno con botón de cerrar (US2 escenario 5, FR-010)
 
 ### Implementation for User Story 2
 
@@ -119,7 +122,8 @@ registro sin sesión.
 
 ### Tests for User Story 3
 
-- [ ] T039 [P] [US3] En `clientes/tests/`: la ficha de un cliente inactivo muestra la etiqueta "Inactivo" con el tipo `neutral` y la de uno activo "Activo" con `success`; la búsqueda sin resultados muestra el estado vacío con el texto actual
+- [ ] T039 [P] [US3] En `clientes/tests/`: la ficha de un cliente inactivo muestra la etiqueta "Inactivo" con el tipo `neutral` y la de uno activo "Activo" con `success`; la búsqueda sin resultados muestra el estado vacío (`data-componente="estado-vacio"`) con el texto actual; la búsqueda con resultados muestra la cantidad y un link "Ver ficha" por fila (US3 escenarios 1, 2 y 4)
+- [ ] T056 [P] [US3] En `clientes/tests/`: la ficha tiene un encabezado `<h1>` con el nombre o razón social del cliente y, junto a él, su etiqueta de estado; los datos vacíos se muestran como "—"; están los botones "Editar cliente" y "Volver a la búsqueda" (US3 escenario 3)
 
 ### Implementation for User Story 3
 
@@ -139,7 +143,7 @@ registro sin sesión.
 
 ### Tests for User Story 4 (escribir primero, deben fallar)
 
-- [ ] T043 [P] [US4] `config/tests/test_inicio.py`: los 4 accesos rápidos enlazan a sus URLs; "Muestras sin estudio" cuenta solo muestras sin estudios; "Muestras ingresadas hoy" usa `timezone.localdate()` y excluye otras fechas; "Estudios pendientes de análisis" cuenta ese estado; la tabla muestra las 5 más recientes por N° PI descendente con PI, cliente, origen, fecha `d/m/Y` y estado; sin muestras: indicadores en 0 y estado vacío con link a "Registrar muestra"; el inicio sigue exponiendo `huella_sesion` en el contexto; sin sesión redirige al login; máximo 4 consultas (`django_assert_max_num_queries`)
+- [ ] T043 [P] [US4] `config/tests/test_inicio.py`: los 4 accesos rápidos enlazan a sus URLs; "Muestras sin estudio" cuenta solo muestras sin estudios; "Muestras ingresadas hoy" usa `timezone.localdate()` y excluye otras fechas; "Estudios pendientes de análisis" cuenta ese estado; la tabla muestra las 5 más recientes por N° PI descendente con PI, cliente, origen, fecha `d/m/Y` y estado; sin muestras: indicadores en 0 y estado vacío con link a "Registrar muestra"; el inicio sigue exponiendo `huella_sesion` en el contexto; sin sesión redirige al login; la cantidad de consultas del inicio es la misma con 1 y con 6 muestras (sin N+1; `django_assert_num_queries` comparando ambos casos)
 
 ### Implementation for User Story 4
 
@@ -152,12 +156,12 @@ registro sin sesión.
 
 ## Phase 7: Polish & cierre
 
-- [ ] T046 Recompilar `static/css/aqualab.css` y verificar que `git diff --exit-code` no reporte cambios tras recompilar
-- [ ] T047 [P] `README.md`: stack con Tailwind CSS 4, sección "Estilos (Tailwind)" (compilar, `--watch`, recompilar antes de commitear), estructura con todas las apps y corrección de "una app por módulo"
-- [ ] T048 [P] `CLAUDE.md`: nota breve sobre `templates/ui/`, clases heredadas `form-control`/`form-select`/`is-invalid` y recompilar el CSS
+- [ ] T046 Recompilar `static/css/aqualab.css`, verificar que `git diff --exit-code` no reporte cambios tras recompilar y que pese menos de 60 KB
+- [ ] T047 [P] `README.md`: stack con Tailwind CSS 4, sección "Estilos (Tailwind)" (compilar, `--watch`, recompilar antes de commitear, componentes de `templates/ui/` y clases heredadas `form-control`/`form-select`/`is-invalid`), estructura con todas las apps y corrección de "una app por módulo"
+- [ ] T048 ~~`CLAUDE.md`~~ Eliminada: por decisión del equipo `CLAUDE.md` solo lista pendientes de US; la guía de estilos va en el README (T047)
 - [ ] T049 Correr `pytest`, `ruff check .` y `ruff format --check .` en Docker
-- [ ] T050 Recorrer [quickstart.md](quickstart.md) en el navegador (pasos 1–12), incluidas ventana de 375 px, modo sin red y navegación con teclado
-- [ ] T051 Traer `main` a la rama y adaptar con los componentes de `templates/ui/` las pantallas de las US 5.2–5.5 que ya estén integradas; resolver el conflicto de `templates/base.html` agregando sus links a `templates/ui/menu.html` (research R16)
+- [ ] T050 Recorrer [quickstart.md](quickstart.md) en el navegador (pasos 1–14), incluidas ventana de 375 px, modo sin red, navegación con teclado, imágenes que alternan y contraste con Lighthouse (SC-006)
+- [ ] T051 Traer `main` a la rama y, solo para las US 5.2–5.5 ya mergeadas en ese momento, adaptar con los componentes de `templates/ui/` las pantallas de las US 5.2–5.5 que ya estén integradas; resolver el conflicto de `templates/base.html` agregando sus links a `templates/ui/menu.html` (research R16)
 - [ ] T052 Abrir el PR "SCRUM-67 – Diseño de la interfaz" referenciando `specs/013-diseno-ui/` y la enmienda v1.1.0 de la constitution (requiere aprobación de la mayoría del equipo)
 
 ---
@@ -182,6 +186,7 @@ T007 (CI) en paralelo con Phase 2
 ```text
 Phase 2: T009, T010, T011, T012, T013 a la vez.
 US2:     T030, T031, T032, T033, T034, T035, T037, T038 a la vez (un template cada uno).
+Tests:   T053, T054, T055 (US2) y T039, T056 (US3) se escriben juntos antes de migrar las pantallas.
 ```
 
 ## Implementation Strategy

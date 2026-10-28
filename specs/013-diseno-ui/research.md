@@ -66,8 +66,8 @@ Decisiones técnicas para implementar el diseño de Stitch (`stitch/`) sobre las
 ## R6. Imágenes
 
 - **Decision**: la imagen generada por Stitch (`stitch/imagenes/laboratorio.png`, 1,3 MB) se
-  convierte a WebP optimizado (≈ 200 KB, ancho máximo 1600 px) en `static/img/laboratorio.webp` y se
-  usa en el layout de acceso y en el banner del inicio con un degradado azul encima. Los enlaces a
+  convierte a WebP optimizado (≈ 200 KB, ancho máximo 1600 px) en `static/img/acceso/laboratorio.webp`
+  y se usa en el layout de acceso y en el banner del inicio con un degradado azul encima. Los enlaces a
   `lh3.googleusercontent.com` de las maquetas no se usan.
 - **Rationale**: los enlaces de Stitch pueden dejar de funcionar y violan FR-018; la imagen es
   generada por IA para el proyecto (sin derechos de terceros).

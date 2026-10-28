@@ -108,7 +108,6 @@ muestras/templates/muestras/  # 2 templates; _campo.html se reemplaza por ui/cam
 muestras/tests/test_registro.py   # aserción del valor por defecto: <select> → radio checked
 estudios/templates/estudios/  # 2 templates
 README.md                     # stack, "Estilos (Tailwind)", estructura y "una app por módulo"
-CLAUDE.md                     # nota: componentes de UI y recompilar el CSS
 ```
 
 **Structure Decision**: proyecto Django único existente. Lo nuevo de la UI vive en `static/` y
@@ -123,7 +122,7 @@ CLAUDE.md                     # nota: componentes de UI y recompilar el CSS
    `acciones_confirmacion`; migrar las 11 pantallas de formularios y confirmaciones.
 4. **Consulta** (US 3): buscar cliente, ficha, `estado`, `estado_vacio`, `paginacion`.
 5. **Panel de inicio** (US 4): tests primero, vista y template.
-6. **Cierre**: README, CLAUDE.md, recorrido del quickstart, merge de `main` y adaptación de las
+6. **Cierre**: README, recorrido del quickstart, merge de `main` y adaptación de las
    pantallas de 5.2–5.5 que ya estén integradas.
 
 ## Complexity Tracking

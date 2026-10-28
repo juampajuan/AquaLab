@@ -162,7 +162,7 @@ ingreso, estado, orden de registro y si tiene estudios) y Estudio (estado). Los 
 
 ## Assumptions
 
-- Alcance: las pantallas existentes hasta la US 5.1 en `main`. Las pantallas de las US 5.2 a 5.5 se desarrollan en paralelo con el diseño anterior y se adaptan a los componentes de esta feature cuando se integren.
+- Alcance: las pantallas existentes hasta la US 5.1 en `main`. Las pantallas de las US 5.2 a 5.5 se desarrollan en paralelo con el diseño anterior: las que ya estén mergeadas en `main` al abrir el PR de esta feature se adaptan como cierre de esta feature; las que se mergeen después las adapta quien las implemente, usando los componentes de esta feature.
 - El diseño visual se genera con Google Stitch y el equipo lo aprueba antes de implementarlo. La forma de implementar los estilos la define la constitution vigente (v1.1.0).
 - Decisión del equipo: el panel de inicio incluye tres indicadores y la tabla de últimas muestras, porque se calculan con datos que ya existen y mejoran la demo. Un dashboard completo (gráficos, alertas, filtros, métricas históricas) queda para una US propia.
 - "Hoy" es la fecha actual del laboratorio (zona horaria de Argentina).

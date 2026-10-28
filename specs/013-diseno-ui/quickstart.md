@@ -44,3 +44,8 @@ Esperado: todos los tests pasan (SC-002), incluidos los nuevos del panel y de la
     fuente e íconos se ven igual (FR-018).
 11. **Guardia de sesión**: cerrar sesión en otra pestaña → la pantalla abierta se oculta como antes.
 12. **Teclado**: recorrer un formulario con Tab; el foco es visible en cada campo y botón (FR-017).
+13. **Imágenes del acceso**: en el login, las 4 imágenes alternan cada ~7 s con fundido. Con
+    "reducir movimiento" activado (DevTools → Rendering → `prefers-reduced-motion: reduce`) queda una
+    sola imagen fija (FR-022).
+14. **Contraste**: correr Lighthouse (DevTools → Lighthouse → Accesibilidad) en login, inicio, buscar
+    cliente y registrar muestra; sin errores de contraste (SC-006).
