@@ -26,6 +26,8 @@ jobs:
       SECRET_KEY: clave-solo-para-ci
       DEBUG: "False"
       DATABASE_URL: postgres://aqualab:aqualab@localhost:5432/aqualab
+      # Misma versión que el Dockerfile.
+      TAILWIND_VERSION: v4.3.3
 
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +48,19 @@ jobs:
 
       - name: Migraciones al día
         run: python manage.py makemigrations --check --dry-run
+
+      - name: CSS compilado al día
+        run: |
+          curl -sSfL -o tailwindcss \
+            "https://github.com/tailwindlabs/tailwindcss/releases/download/${TAILWIND_VERSION}/tailwindcss-linux-x64"
+          chmod +x tailwindcss
+          ./tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify
+          rm tailwindcss
+          # git status detecta también el archivo sin commitear (git diff no lo vería).
+          if [ -n "$(git status --porcelain static/css/aqualab.css)" ]; then
+            echo "static/css/aqualab.css no está al día: recompilá el CSS y commitealo."
+            exit 1
+          fi
 
       - name: pytest
         run: pytest

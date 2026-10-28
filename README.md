@@ -8,7 +8,7 @@ proyecto están en la [constitution](.specify/memory/constitution.md).
 
 ## Stack
 
-Python 3.12 · Django 5.2 LTS · PostgreSQL 16 · Docker Compose · Bootstrap 5.3 · pytest-django · ruff
+Python 3.12 · Django 5.2 LTS · PostgreSQL 16 · Docker Compose · Tailwind CSS 4 · pytest-django · ruff
 
 ## Requisitos
 
@@ -64,6 +64,9 @@ No hace falta instalar Python ni PostgreSQL en la máquina: todo corre dentro de
 Para ver los logs: `docker compose logs -f web`. Para apagar: `docker compose down`
 (agregar `-v` borra también la base de datos).
 
+Después de traer cambios de `main`: `docker compose up -d --build` si cambió el `Dockerfile` o
+`requirements.txt`, y `docker compose exec web python manage.py migrate` si hay migraciones nuevas.
+
 
 ## Inicio y cierre de sesión
 
@@ -71,6 +74,31 @@ Las cuentas nuevas se registran en `/usuarios/registro/` y quedan pendientes de 
 Solo una cuenta aprobada puede ingresar con correo y contraseña. El correo usa la misma
 normalización del registro; la contraseña se evalúa exactamente como fue ingresada.
 
+
+## Estilos (Tailwind)
+
+La interfaz usa **Tailwind CSS 4** con el diseño hecho en Stitch (`specs/013-diseno-ui/stitch/`).
+No hace falta Node: el `Dockerfile` instala el ejecutable de Tailwind dentro del contenedor.
+
+- `static/src/aqualab.css`: tema (colores, tipografía, sombras) y componentes (`btn`, `tarjeta`,
+  `tabla`, `etiqueta`, `aviso`, `form-control`, etc.).
+- `static/css/aqualab.css`: CSS compilado. **Se commitea**; el CI falla si no está al día.
+- `templates/ui/`: parciales reutilizables (menú, campo de formulario, resumen, estado, íconos…).
+  Las pantallas nuevas se arman con estos parciales en lugar de escribir el HTML desde cero.
+
+Después de cambiar clases en un template o en `static/src/aqualab.css`, recompilar y commitear el
+resultado (con `-u` el archivo queda a nombre de tu usuario y no de root):
+
+```bash
+docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify
+```
+
+Mientras se trabaja en templates conviene dejarlo recompilando solo, con `--watch` en lugar de
+`--minify` (antes de commitear, compilar una vez con `--minify`).
+
+Los formularios (`forms.py`) siguen asignando las clases `form-control`, `form-select` e
+`is-invalid` a los campos: son nombres heredados de Bootstrap que el CSS nuevo define, así que no
+hay que cambiarlos.
 
 ## Tests y formato
 
@@ -89,17 +117,24 @@ docker compose exec web ruff format --check .
 
 Para corregir automáticamente: `ruff check --fix .` y `ruff format .`.
 
-El CI (GitHub Actions) corre `ruff check`, `ruff format --check` y `pytest` contra PostgreSQL 16
-en cada PR. No se mergea con el CI en rojo.
+El CI (GitHub Actions) corre `ruff check`, `ruff format --check`, verifica que las migraciones y
+el CSS compilado estén al día y corre `pytest` contra PostgreSQL 16 en cada PR. No se mergea con el
+CI en rojo.
 
 ## Estructura
 
 ```text
-config/        settings, urls y wsgi/asgi del proyecto
-usuarios/      app de usuarios (modelo Usuario con email como login)
-templates/     base.html y templates compartidos
+config/        settings, urls, panel de inicio y filtros de templates compartidos
+usuarios/      usuarios (modelo Usuario con email como login), registro, sesión y avisos por correo
+clientes/      clientes: alta, búsqueda, ficha y edición
+muestras/      muestras y orígenes
+pruebas/       catálogo de pruebas
+estudios/      tipos de estudio y estudios sobre muestras
+templates/     base.html, base_acceso.html y parciales de interfaz (templates/ui/)
+static/        CSS (fuente y compilado), fuentes, imágenes y JS compartidos
 specs/         specs de cada user story (Spec Kit)
 ```
 
-Cada feature crea su propia app de Django (`clientes`, `muestras`, ...). Toda referencia al
-usuario se hace con `settings.AUTH_USER_MODEL`, nunca con el `User` de Django.
+Hay una app de Django por módulo del dominio (ver la constitution): las US de un mismo módulo
+(por ejemplo, 3.1 y 3.2) se implementan en la misma app. Toda referencia al usuario se hace con
+`settings.AUTH_USER_MODEL`, nunca con el `User` de Django.

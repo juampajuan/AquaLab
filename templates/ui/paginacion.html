@@ -1,0 +1,24 @@
+{# Paginación. Parámetros: page_obj y parametros (query string sin "page", ya codificada). #}
+{% if page_obj.has_other_pages %}
+  <nav aria-label="Paginación de resultados" class="flex items-center justify-between gap-3 border-t border-borde px-4 py-3 text-sm">
+    {% if page_obj.has_previous %}
+      <a class="btn btn-secundario px-3 py-1.5" href="?{{ parametros }}&page={{ page_obj.previous_page_number }}">
+        {% include "ui/icono.html" with nombre="chevron-left" clase="size-4" %} Anterior
+      </a>
+    {% else %}
+      <span class="btn btn-secundario px-3 py-1.5 opacity-50" aria-disabled="true">
+        {% include "ui/icono.html" with nombre="chevron-left" clase="size-4" %} Anterior
+      </span>
+    {% endif %}
+    <span class="text-tinta-suave">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a class="btn btn-secundario px-3 py-1.5" href="?{{ parametros }}&page={{ page_obj.next_page_number }}">
+        Siguiente {% include "ui/icono.html" with nombre="chevron-right" clase="size-4" %}
+      </a>
+    {% else %}
+      <span class="btn btn-secundario px-3 py-1.5 opacity-50" aria-disabled="true">
+        Siguiente {% include "ui/icono.html" with nombre="chevron-right" clase="size-4" %}
+      </span>
+    {% endif %}
+  </nav>
+{% endif %}

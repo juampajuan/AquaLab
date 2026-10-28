@@ -9,8 +9,18 @@
   const clientes = new Map(JSON.parse(datos.textContent).map((c) => [String(c.id), c]));
   const ficha = document.getElementById("ficha-cliente");
   const origenNuevo = document.getElementById("id_origen_nuevo");
+  const bloqueOrigen = document.getElementById("bloque-origen");
   const bloqueOrigenNuevo = document.getElementById("bloque-origen-nuevo");
   const botonOrigenNuevo = document.getElementById("mostrar-origen-nuevo");
+
+  // La lista de orígenes solo se muestra si el cliente elegido tiene orígenes: sin cliente no hay
+  // qué elegir y sin orígenes la única opción es uno nuevo (spec 007, casos borde). Se mantiene
+  // visible si muestra un error del servidor.
+  function actualizarListaOrigenes(cliente, mantenerSiHayError) {
+    if (!bloqueOrigen) return;
+    const conError = mantenerSiHayError && selectOrigen.classList.contains("is-invalid");
+    bloqueOrigen.hidden = !(cliente && cliente.origenes.length > 0) && !conError;
+  }
 
   function mostrarFicha(cliente) {
     ficha.hidden = !cliente;
@@ -31,8 +41,15 @@
     selectOrigen.value = "";
   }
 
+  // El link solo tiene sentido con un cliente elegido y el campo de origen nuevo oculto.
+  function actualizarBotonOrigenNuevo() {
+    if (!botonOrigenNuevo) return;
+    botonOrigenNuevo.hidden = !clientes.get(selectCliente.value) || !bloqueOrigenNuevo.hidden;
+  }
+
   function mostrarOrigenNuevo() {
     bloqueOrigenNuevo.hidden = false;
+    actualizarBotonOrigenNuevo();
     selectOrigen.value = "";
     origenNuevo.focus();
   }
@@ -43,7 +60,10 @@
     cargarOrigenes(cliente);
     // Un origen nuevo escrito para otro cliente no debe quedar como origen del elegido.
     if (origenNuevo) origenNuevo.value = "";
-    if (cliente && cliente.origenes.length === 0) bloqueOrigenNuevo.hidden = false;
+    // Sin orígenes, el campo nuevo es la única opción; con orígenes o sin cliente, vuelve a cerrarse.
+    bloqueOrigenNuevo.hidden = !(cliente && cliente.origenes.length === 0);
+    actualizarListaOrigenes(cliente, false);
+    actualizarBotonOrigenNuevo();
   });
 
   // Sin JavaScript el campo de origen nuevo queda siempre visible; con él, se abre a pedido.
@@ -52,7 +72,8 @@
     const sinOrigenes = elegido && elegido.origenes.length === 0;
     const conError = origenNuevo.classList.contains("is-invalid");
     bloqueOrigenNuevo.hidden = !origenNuevo.value && !conError && !sinOrigenes;
-    botonOrigenNuevo.hidden = false;
+    actualizarListaOrigenes(elegido, true);
+    actualizarBotonOrigenNuevo();
     botonOrigenNuevo.addEventListener("click", mostrarOrigenNuevo);
     origenNuevo.addEventListener("input", () => {
       if (origenNuevo.value.trim()) selectOrigen.value = "";

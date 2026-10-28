@@ -2,65 +2,83 @@
 
 {% block title %}Buscar cliente · AquaLab{% endblock %}
 
+{% block encabezado %}
+  {% include "ui/encabezado.html" with seccion="Clientes" titulo="Buscar cliente" subtitulo="Buscá un cliente por nombre, razón social o DNI/CUIT y consultá su ficha." %}
+{% endblock %}
+
 {% block content %}
-  <div class="row justify-content-center">
-    <div class="col-lg-10">
-      <h1 class="h3 mb-4">Buscar cliente</h1>
+  <form method="get" action="{% url 'clientes:buscar' %}" class="tarjeta mb-6 p-5 sm:p-6" novalidate>
+    <label for="{{ form.q.id_for_label }}" class="campo-etiqueta">{{ form.q.label }}</label>
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <div class="relative flex-1">
+        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-tinta-suave">
+          {% include "ui/icono.html" with nombre="search" clase="size-4" %}
+        </span>
+        <input type="text" name="q" id="{{ form.q.id_for_label }}" value="{{ form.q.value|default:'' }}"
+               class="form-control pl-9{% if form.q.errors %} is-invalid{% endif %}" autofocus>
+      </div>
+      <button type="submit" class="btn btn-primario">
+        {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar
+      </button>
+    </div>
+    {% if form.q.errors %}
+      <div class="campo-error" id="{{ form.q.auto_id }}_error">
+        {% for error in form.q.errors %}<div>{{ error }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    <p class="campo-ayuda flex items-center gap-1.5">
+      {% include "ui/icono.html" with nombre="info" clase="size-3.5" %}
+      Podés ingresar parte del nombre, de la razón social o del DNI/CUIT (con o sin puntos y guiones).
+    </p>
+  </form>
 
-      <form method="get" action="{% url 'clientes:buscar' %}" class="mb-4" novalidate>
-        <label for="{{ form.q.id_for_label }}" class="form-label">{{ form.q.label }}</label>
-        <div class="input-group">
-          <input type="text" name="q" id="{{ form.q.id_for_label }}" value="{{ form.q.value|default:'' }}"
-                 class="form-control{% if form.q.errors %} is-invalid{% endif %}" autofocus>
-          <button type="submit" class="btn btn-primary">Buscar</button>
-          {% for error in form.q.errors %}
-            <div class="invalid-feedback">{{ error }}</div>
-          {% endfor %}
-        </div>
-        <div class="form-text">Podés ingresar parte del nombre, de la razón social o del DNI/CUIT (con o sin puntos y guiones).</div>
-      </form>
-
-      {% if page_obj is not None %}
-        {% if page_obj.paginator.count %}
-          <p class="text-muted">{{ page_obj.paginator.count }} cliente{{ page_obj.paginator.count|pluralize }} encontrado{{ page_obj.paginator.count|pluralize }}</p>
-          <table class="table table-hover align-middle">
+  {% if page_obj is not None %}
+    <section class="tarjeta overflow-hidden">
+      {% if page_obj.paginator.count %}
+        <h2 class="px-4 py-4 text-sm font-semibold text-marino sm:px-5">
+          {{ page_obj.paginator.count }} cliente{{ page_obj.paginator.count|pluralize }} encontrado{{ page_obj.paginator.count|pluralize }}
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="tabla">
             <thead>
               <tr>
                 <th>Cliente</th>
                 <th>Documento</th>
                 <th>Correo electrónico</th>
-                <th></th>
+                <th><span class="sr-only">Acciones</span></th>
               </tr>
             </thead>
             <tbody>
               {% for cliente in page_obj %}
                 <tr>
-                  <td>{{ cliente.nombre_completo }}</td>
-                  <td>{{ cliente.tipo_documento }} {{ cliente.numero_documento }}</td>
-                  <td>{{ cliente.email }}</td>
-                  <td class="text-end"><a href="{% url 'clientes:detalle' cliente.pk %}" class="btn btn-outline-primary btn-sm">Ver ficha</a></td>
+                  <td>
+                    <span class="flex items-center gap-3">
+                      {% include "ui/iniciales.html" with texto=cliente.nombre_completo %}
+                      <span class="font-semibold text-tinta">{{ cliente.nombre_completo }}</span>
+                    </span>
+                  </td>
+                  <td class="numeros whitespace-nowrap text-tinta-suave">{{ cliente.tipo_documento }} {{ cliente.numero_documento }}</td>
+                  <td>
+                    <span class="flex items-center gap-1.5 text-tinta-suave">
+                      {% include "ui/icono.html" with nombre="mail" clase="size-4 shrink-0" %} {{ cliente.email }}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    <a href="{% url 'clientes:detalle' cliente.pk %}" class="btn btn-secundario px-3 py-1.5">
+                      Ver ficha {% include "ui/icono.html" with nombre="chevron-right" clase="size-4" %}
+                    </a>
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
-
-          {% if page_obj.has_other_pages %}
-            <nav aria-label="Paginación de resultados">
-              <ul class="pagination">
-                {% if page_obj.has_previous %}
-                  <li class="page-item"><a class="page-link" href="?q={{ q|urlencode }}&page={{ page_obj.previous_page_number }}">Anterior</a></li>
-                {% endif %}
-                <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
-                {% if page_obj.has_next %}
-                  <li class="page-item"><a class="page-link" href="?q={{ q|urlencode }}&page={{ page_obj.next_page_number }}">Siguiente</a></li>
-                {% endif %}
-              </ul>
-            </nav>
-          {% endif %}
-        {% else %}
-          <div class="alert alert-info">No se encontraron clientes para «{{ q }}».</div>
-        {% endif %}
+        </div>
+        {% with qq=q|urlencode %}
+          {% include "ui/paginacion.html" with parametros="q="|add:qq %}
+        {% endwith %}
+      {% else %}
+        {% include "ui/estado_vacio.html" with icono="search" mensaje="No se encontraron clientes para «"|add:q|add:"»." %}
       {% endif %}
-    </div>
-  </div>
+    </section>
+  {% endif %}
 {% endblock %}

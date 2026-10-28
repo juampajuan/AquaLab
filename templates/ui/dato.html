@@ -1,0 +1,5 @@
+{# Un dato de un resumen o ficha (dentro de <dl class="resumen">). Vacío → "—". #}
+<div class="{{ clase|default:'' }}">
+  <dt>{{ etiqueta }}</dt>
+  <dd>{% if valor or valor == 0 %}{{ valor }}{% else %}—{% endif %}{% if extra %} {{ extra }}{% endif %}</dd>
+</div>

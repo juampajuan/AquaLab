@@ -62,6 +62,8 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "usuarios.context_processors.contexto_sesion",
             ],
+            # Filtros compartidos de la interfaz: {% load ui %}.
+            "libraries": {"ui": "config.ui"},
         },
     },
 ]
@@ -90,6 +92,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+# Estilos, fuentes, imágenes y JS compartidos. El CSS se compila con Tailwind (ver README).
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

@@ -1,0 +1,42 @@
+{% comment %}
+  Botones de una pantalla de confirmación: confirmar, volver y editar, cancelar.
+  Parámetros: texto_confirmar (opc., "Confirmar"), url_volver (opc.) y token (opc.: flujo de
+  estudios, que envía "token" y el botón con name="accion"; los demás envían "accion" oculto).
+  accion_confirmar (opc., "confirmar"): valor del botón principal en el flujo con token.
+{% endcomment %}
+<div class="mt-6 flex flex-wrap items-center gap-3" data-componente="acciones-confirmacion">
+  {% if token %}
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="token" value="{{ token }}">
+      <button name="accion" value="{{ accion_confirmar|default:'confirmar' }}" class="btn btn-primario">
+        {% include "ui/icono.html" with nombre="check" clase="size-4" %} {{ texto_confirmar|default:"Confirmar" }}
+      </button>
+    </form>
+  {% else %}
+    {# El botón se deshabilita al enviar; "accion" va en el input oculto, así que sigue en el POST. #}
+    <form method="post" onsubmit="this.querySelector('button').disabled = true;">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="confirmar">
+      <button type="submit" class="btn btn-primario">
+        {% include "ui/icono.html" with nombre="check" clase="size-4" %} {{ texto_confirmar|default:"Confirmar" }}
+      </button>
+    </form>
+  {% endif %}
+  {% if url_volver %}
+    <a href="{{ url_volver }}" class="btn btn-secundario">
+      {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Volver y editar
+    </a>
+  {% endif %}
+  <form method="post" class="sm:ml-auto">
+    {% csrf_token %}
+    {% if token %}
+      <input type="hidden" name="token" value="{{ token }}">
+      <button name="accion" value="cancelar" class="btn btn-peligro">
+    {% else %}
+      <input type="hidden" name="accion" value="cancelar">
+      <button type="submit" class="btn btn-peligro">
+    {% endif %}
+      {% include "ui/icono.html" with nombre="x" clase="size-4" %} Cancelar
+    </button>
+  </form>
+</div>

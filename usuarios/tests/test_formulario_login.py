@@ -1,3 +1,4 @@
+import re
 from unittest.mock import patch
 
 import pytest
@@ -48,6 +49,37 @@ def test_pendiente_no_ingresa(client, usuario_pendiente):
     assert "Tu cuenta está pendiente de aprobación" in respuesta.content.decode()
     assert respuesta.context["form"].get_user() is None
     assert "_auth_user_id" not in client.session
+
+
+def aviso_del_login(html):
+    encontrado = re.search(r'<div[^>]*data-nivel="([^"]+)"[^>]*>.*?<div>([^<]*)</div>', html, re.S)
+    return encontrado.groups() if encontrado else None
+
+
+def test_pendiente_se_muestra_como_advertencia(client, usuario_pendiente):
+    respuesta = client.post(
+        reverse("usuarios:login"),
+        {"username": usuario_pendiente.email, "password": PASSWORD_EXISTENTE},
+    )
+
+    assert respuesta.context["form"].cuenta_pendiente
+    assert aviso_del_login(respuesta.content.decode()) == (
+        "advertencia",
+        "Tu cuenta está pendiente de aprobación",
+    )
+
+
+def test_credenciales_invalidas_se_muestran_como_error(client, usuario_aprobado):
+    respuesta = client.post(
+        reverse("usuarios:login"),
+        {"username": usuario_aprobado.email, "password": "incorrecta"},
+    )
+
+    assert not respuesta.context["form"].cuenta_pendiente
+    assert aviso_del_login(respuesta.content.decode()) == (
+        "error",
+        "Usuario o contraseña incorrectos",
+    )
 
 
 def test_correo_normalizado_password_literal(client, usuario_aprobado):

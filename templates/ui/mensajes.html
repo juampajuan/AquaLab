@@ -1,0 +1,25 @@
+{# Mensajes del framework de Django. Cada aviso lleva data-nivel (contracts/componentes-ui.md). #}
+{% if messages %}
+  <div class="mb-6 space-y-3">
+    {% for message in messages %}
+      {% if message.level_tag == "success" %}
+        <div class="aviso aviso-exito" role="status" data-nivel="exito">
+          {% include "ui/icono.html" with nombre="circle-check" clase="size-5 shrink-0" %}
+      {% elif message.level_tag == "error" %}
+        <div class="aviso aviso-error" role="alert" data-nivel="error">
+          {% include "ui/icono.html" with nombre="circle-alert" clase="size-5 shrink-0" %}
+      {% elif message.level_tag == "warning" %}
+        <div class="aviso aviso-advertencia" role="alert" data-nivel="advertencia">
+          {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+      {% else %}
+        <div class="aviso aviso-info" role="status" data-nivel="info">
+          {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+      {% endif %}
+          <div class="flex-1">{{ message }}</div>
+          <button type="button" class="-m-1 rounded p-1 opacity-70 hover:opacity-100" data-cerrar-mensaje aria-label="Cerrar">
+            {% include "ui/icono.html" with nombre="x" clase="size-4" %}
+          </button>
+        </div>
+    {% endfor %}
+  </div>
+{% endif %}

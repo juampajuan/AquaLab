@@ -1,43 +1,77 @@
 {% extends "base.html" %}
 {% block title %}Gestionar tipos · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% include "ui/encabezado.html" with seccion="Estudios" titulo="Gestionar tipos de estudio" subtitulo="Tipos de estudio del catálogo y las pruebas que incluye cada uno." %}
+{% endblock %}
+
 {% block content %}
-  <h1 class="h3">Gestionar tipos de estudio</h1>
-  <a href="{% url 'estudios:tipos_crear' %}" class="btn btn-primary mb-3">Crear tipo</a>
-  <form method="get" class="mb-3">
-    <label for="estado">Disponibilidad</label>
-    <select id="estado" name="estado" class="form-select">
-      <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Todos</option>
-      <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
-      <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
-    </select>
-    <button class="btn btn-outline-primary">Filtrar</button>
-  </form>
-  <table class="table">
-    <thead>
-      <tr><th>Nombre</th><th>Disponibilidad</th><th>Versión</th><th>Pruebas</th><th>Estudios</th><th>Acciones</th></tr>
-    </thead>
-    <tbody>
-      {% for tipo in page_obj %}
-        <tr>
-          <td>{{ tipo.nombre }}</td>
-          <td>{{ tipo.activo|yesno:"Activo,Inactivo" }}</td>
-          <td>{{ tipo.version }}</td>
-          <td>{{ tipo.cantidad_pruebas }}</td>
-          <td>{{ tipo.cantidad_estudios }}</td>
-          <td>
-            <a href="{% url 'estudios:tipos_editar' tipo.pk %}">Editar</a> ·
-            {% if tipo.activo %}
-              <a href="{% url 'estudios:tipos_desactivar' tipo.pk %}">Desactivar</a>
-            {% else %}
-              <a href="{% url 'estudios:tipos_reactivar' tipo.pk %}">Reactivar</a>
-            {% endif %} ·
-            <a href="{% url 'estudios:tipos_eliminar' tipo.pk %}">Eliminar</a>
-          </td>
-        </tr>
-      {% empty %}<tr><td colspan="6">No hay tipos de estudio para mostrar.</td></tr>{% endfor %}
-    </tbody>
-  </table>
-  {% if page_obj.has_previous %}<a href="?estado={{ estado }}&amp;page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
-  <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-  {% if page_obj.has_next %}<a href="?estado={{ estado }}&amp;page={{ page_obj.next_page_number }}">Siguiente</a>{% endif %}
+  <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <form method="get" class="flex items-end gap-3">
+      <div>
+        <label for="estado" class="campo-etiqueta">Disponibilidad</label>
+        <select id="estado" name="estado" class="form-select w-44">
+          <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Todos</option>
+          <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
+          <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+        </select>
+      </div>
+      <button class="btn btn-secundario">Filtrar</button>
+    </form>
+    <a href="{% url 'estudios:tipos_crear' %}" class="btn btn-primario">
+      {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Crear tipo
+    </a>
+  </div>
+
+  <section class="tarjeta overflow-hidden">
+    {% if page_obj.object_list %}
+      <div class="overflow-x-auto">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Disponibilidad</th>
+              <th>Versión</th>
+              <th>Pruebas</th>
+              <th>Estudios</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tipo in page_obj %}
+              <tr>
+                <td class="font-semibold text-marino">{{ tipo.nombre }}</td>
+                <td>
+                  {% if tipo.activo %}
+                    {% include "ui/estado.html" with estado="Activo" tipo="success" %}
+                  {% else %}
+                    {% include "ui/estado.html" with estado="Inactivo" tipo="neutral" %}
+                  {% endif %}
+                </td>
+                <td class="numeros text-tinta-suave">{{ tipo.version }}</td>
+                <td class="numeros">{{ tipo.cantidad_pruebas }}</td>
+                <td class="numeros">{{ tipo.cantidad_estudios }}</td>
+                <td>
+                  <div class="flex flex-wrap justify-end gap-2">
+                    <a href="{% url 'estudios:tipos_editar' tipo.pk %}" class="btn btn-secundario px-3 py-1.5">
+                      {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Editar
+                    </a>
+                    {% if tipo.activo %}
+                      <a href="{% url 'estudios:tipos_desactivar' tipo.pk %}" class="btn btn-secundario px-3 py-1.5">Desactivar</a>
+                    {% else %}
+                      <a href="{% url 'estudios:tipos_reactivar' tipo.pk %}" class="btn btn-secundario px-3 py-1.5">Reactivar</a>
+                    {% endif %}
+                    <a href="{% url 'estudios:tipos_eliminar' tipo.pk %}" class="btn btn-peligro px-3 py-1.5">Eliminar</a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "ui/paginacion.html" with parametros="estado="|add:estado %}
+    {% else %}
+      {% include "ui/estado_vacio.html" with icono="file-text" mensaje="No hay tipos de estudio para mostrar." %}
+    {% endif %}
+  </section>
 {% endblock %}

@@ -1,31 +1,32 @@
 <!--
 Sync Impact Report
 ==================
-Cambio de versión: (plantilla sin completar) → 1.0.0
-Motivo: ratificación inicial de la constitution de AquaLab.
+Cambio de versión: 1.0.0 → 1.1.0 (MINOR)
+Motivo: la interfaz pasa de Bootstrap 5.3 a Tailwind CSS para implementar el diseño profesional
+generado con Stitch (tarjeta SCRUM-67, spec 013-diseno-ui).
 
-Principios definidos (reemplazan los placeholders de la plantilla):
-- [PRINCIPLE_1_NAME] → I. Spec primero (SDD)
-- [PRINCIPLE_2_NAME] → II. Simplicidad y Django idiomático
-- [PRINCIPLE_3_NAME] → III. Tests obligatorios (NO NEGOCIABLE)
-- [PRINCIPLE_4_NAME] → IV. Integridad de los datos del laboratorio
-- [PRINCIPLE_5_NAME] → V. Seguridad
-- (nuevo)            → VI. Idioma y consistencia
+Principios modificados: ninguno.
 
-Secciones agregadas:
-- Stack tecnológico (reemplaza [SECTION_2_NAME])
-- Interfaz (UI) (sección adicional a la plantilla)
-- Flujo de trabajo (reemplaza [SECTION_3_NAME])
-- Gobierno (Governance, completada)
+Secciones modificadas:
+- Stack tecnológico: Bootstrap 5.3 → Tailwind CSS 4 (CLI standalone, sin Node) y Google Stitch
+  como herramienta de diseño.
+- Interfaz (UI): reglas de diseño reescritas (sistema visual único, componentes reutilizables,
+  CSS compilado y versionado en lugar de CDN).
 
-Secciones eliminadas: ninguna.
+Secciones agregadas / eliminadas: ninguna.
 
-Plantillas dependientes (leen la constitution en tiempo de ejecución, no se modifican aquí):
-- .specify/templates/plan-template.md     ✅ sin cambios necesarios (Constitution Check genérico)
+Plantillas dependientes:
+- .specify/templates/plan-template.md     ✅ sin cambios necesarios
 - .specify/templates/spec-template.md     ✅ sin cambios necesarios
 - .specify/templates/tasks-template.md    ✅ sin cambios necesarios
 
-TODOs diferidos: ninguno.
+Pendientes de seguimiento:
+- README.md todavía menciona Bootstrap 5.3 en el stack.
+- Specs 001–008 mencionan Bootstrap en plan/contratos: quedan como registro histórico; la
+  migración de sus templates la cubre la spec 013-diseno-ui.
+
+Historial:
+- 1.0.0 (2026-10-16): ratificación inicial.
 -->
 
 # Constitution de AquaLab
@@ -129,7 +130,8 @@ los integrantes y con los usuarios del laboratorio.
 | Django | 5.2 LTS |
 | PostgreSQL | 16, en Docker |
 | Docker Compose | Dos servicios: `web` (Django) y `db` (PostgreSQL). Todo el equipo desarrolla con Docker |
-| Bootstrap | 5.3 (interfaz) |
+| Tailwind CSS | 4 (interfaz). Se compila con el CLI standalone (sin Node); versión fijada en el plan de la spec 013 |
+| Google Stitch | Diseño de las pantallas (herramienta de diseño, no es dependencia del código) |
 | pytest-django | Tests |
 | ruff | Lint y formato |
 | GitHub + GitHub Actions | Repositorio, PR y CI (pytest + ruff en cada PR) |
@@ -145,7 +147,15 @@ Se agregan **solo cuando lo pida una spec** (semana 5):
 
 - Layout base común (`base.html`) con barra de navegación, usuario logueado y botón de cerrar
   sesión.
-- Componentes de Bootstrap 5.3; sin CSS propio salvo lo mínimo indispensable.
+- Estilos con Tailwind CSS siguiendo el **sistema visual definido en Stitch** (paleta, tipografía,
+  espaciados y componentes). Los colores y fuentes se definen una sola vez como tokens del tema; no
+  se usan valores sueltos en cada template.
+- Los elementos repetidos (campos de formulario, botones, tablas, fichas, resúmenes de confirmación,
+  badges de estado, mensajes) se implementan como **templates parciales reutilizables**
+  (`{% include %}`), no copiados pantalla por pantalla.
+- El CSS se compila y se versiona en el repo como archivo estático; no se carga Tailwind por CDN.
+- Toda pantalla nueva sigue el diseño de Stitch; si no tiene diseño propio, se arma con los
+  componentes existentes.
 - Formularios con mensajes de error claros junto a cada campo.
 - Las acciones que guardan o eliminan datos piden **confirmación** antes de ejecutarse (patrón común
   para todo el sistema).
@@ -182,4 +192,4 @@ Se agregan **solo cuando lo pida una spec** (semana 5):
   correspondiente.
 - En cada revisión de PR se verifica el cumplimiento de estos principios.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-16 | **Last Amended**: 2026-10-16
+**Version**: 1.1.0 | **Ratified**: 2026-10-16 | **Last Amended**: 2026-10-28

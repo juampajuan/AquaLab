@@ -1,0 +1,42 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AquaLab{% endblock %}</title>
+  <link rel="preload" href="{% static 'fuentes/InterVariable.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/aqualab.css' %}">
+  {% include "includes/estilo_sesion.html" %}
+  <script src="{% static 'js/aqualab.js' %}" defer></script>
+</head>
+<body class="min-h-screen bg-superficie">
+<div data-contenido-sensible class="min-h-screen lg:grid lg:grid-cols-[3fr_2fr]">
+  {# Panel de imágenes: una sola definición para las 4 pantallas de acceso (research R6b). #}
+  {# sticky + h-screen: con formularios largos (crear cuenta) el panel queda fijo mientras se scrollea. #}
+  <aside class="relative hidden overflow-hidden bg-marino-oscuro lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:justify-between lg:p-12">
+    <div class="absolute inset-0" aria-hidden="true">
+      <img src="{% static 'img/acceso/laboratorio.webp' %}" alt="" class="absolute inset-0 size-full object-cover">
+      <img src="{% static 'img/acceso/mesada-muestras.webp' %}" alt="" loading="lazy" decoding="async" class="acceso-foto absolute inset-0 size-full object-cover">
+      <img src="{% static 'img/acceso/toma-de-muestra.webp' %}" alt="" loading="lazy" decoding="async" class="acceso-foto absolute inset-0 size-full object-cover">
+      <img src="{% static 'img/acceso/tubos-pipeta.webp' %}" alt="" loading="lazy" decoding="async" class="acceso-foto absolute inset-0 size-full object-cover">
+      <div class="absolute inset-0 bg-linear-to-t from-marino-oscuro via-marino/75 to-marino/35"></div>
+      <div class="textura-puntos absolute inset-0"></div>
+    </div>
+    <div class="relative">{% include "ui/logo.html" with claro=True %}</div>
+    <div class="relative max-w-xl">
+      <p class="text-3xl leading-tight font-bold text-balance text-white xl:text-4xl">Gestión de muestras y análisis de agua</p>
+      <p class="mt-3 text-base text-pretty text-white/80 xl:text-lg">Clientes, muestras y estudios del laboratorio en un solo lugar.</p>
+    </div>
+  </aside>
+
+  <main class="flex min-h-screen items-center justify-center px-6 py-10 sm:px-10">
+    <div class="w-full max-w-md">
+      <div class="mb-10 lg:hidden">{% include "ui/logo.html" %}</div>
+      {% block mensajes %}{% include "ui/mensajes.html" %}{% endblock %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+{% include "includes/guardia_sesion.html" %}
+</body>
+</html>

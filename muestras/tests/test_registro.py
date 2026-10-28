@@ -83,9 +83,7 @@ def test_formulario_inicial_propone_hoy_y_agua(cliente_autenticado, hoy):
     assert respuesta.status_code == 200
     assert f'value="{hoy.isoformat()}"' in input_de(html, "fecha_muestreo")
     assert f'value="{hoy.isoformat()}"' in input_de(html, "fecha_ingreso")
-    assert re.search(
-        r'<option value="agua" selected>Agua</option>', select_de(html, "tipo_vertido")
-    )
+    assert re.search(r'<input[^>]*name="tipo_vertido" value="agua"[^>]*checked', html)
     assert "value=" not in input_de(html, "nombre")
     assert "value=" not in input_de(html, "responsable_muestreo")
 

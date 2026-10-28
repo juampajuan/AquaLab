@@ -2,41 +2,42 @@
 
 {% block title %}Cliente · AquaLab{% endblock %}
 
+{% block encabezado %}
+  {% url 'clientes:buscar' as url_buscar %}
+  {% if cliente.activo %}
+    {% include "ui/encabezado.html" with seccion="Clientes" anterior_texto="Buscar cliente" anterior_url=url_buscar miga="Ficha del cliente" titulo=cliente.nombre_completo estado="Activo" estado_tipo="success" %}
+  {% else %}
+    {% include "ui/encabezado.html" with seccion="Clientes" anterior_texto="Buscar cliente" anterior_url=url_buscar miga="Ficha del cliente" titulo=cliente.nombre_completo estado="Inactivo" estado_tipo="neutral" %}
+  {% endif %}
+{% endblock %}
+
 {% block content %}
-  <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-      <h1 class="h3 mb-4">Ficha del cliente</h1>
-
-      <div class="card mb-4">
-        <div class="card-body">
-          <dl class="row mb-0">
-            <dt class="col-sm-4">Nombre</dt>
-            <dd class="col-sm-8">{{ cliente.nombre|default:"—" }}</dd>
-            <dt class="col-sm-4">Razón social</dt>
-            <dd class="col-sm-8">{{ cliente.razon_social|default:"—" }}</dd>
-            <dt class="col-sm-4">Tipo de documento</dt>
-            <dd class="col-sm-8">{{ cliente.get_tipo_documento_display }}</dd>
-            <dt class="col-sm-4">Número de documento</dt>
-            <dd class="col-sm-8">{{ cliente.numero_documento }}</dd>
-            <dt class="col-sm-4">Correo electrónico</dt>
-            <dd class="col-sm-8">{{ cliente.email }}</dd>
-            <dt class="col-sm-4">Teléfono</dt>
-            <dd class="col-sm-8">{{ cliente.telefono|default:"—" }}</dd>
-            <dt class="col-sm-4">Domicilio</dt>
-            <dd class="col-sm-8">{{ cliente.domicilio|default:"—" }}</dd>
-            <dt class="col-sm-4">Estado</dt>
-            <dd class="col-sm-8">
-              {% if cliente.activo %}Activo{% else %}Inactivo{% endif %}
-            </dd>
-          </dl>
-        </div>
-      </div>
-
-      <div class="d-flex flex-wrap gap-2">
-        <a href="{% url 'clientes:editar' cliente.pk %}" class="btn btn-primary">Editar cliente</a>
-        <a href="{% url 'clientes:buscar' %}" class="btn btn-outline-primary">Volver a la búsqueda</a>
-        <a href="{% url 'clientes:registrar' %}" class="btn btn-outline-secondary">Registrar otro cliente</a>
-      </div>
+  <div class="max-w-4xl">
+    <div class="mb-5 flex flex-wrap gap-3">
+      <a href="{% url 'clientes:editar' cliente.pk %}" class="btn btn-primario">
+        {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Editar cliente
+      </a>
+      <a href="{% url 'clientes:buscar' %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver a la búsqueda
+      </a>
+      <a href="{% url 'clientes:registrar' %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="user-plus" clase="size-4" %} Registrar otro cliente
+      </a>
     </div>
+
+    <section class="tarjeta overflow-hidden">
+      <h2 class="flex items-center gap-2.5 border-b border-borde bg-fondo-hundido px-6 py-4 text-sm font-semibold text-marino">
+        {% include "ui/icono.html" with nombre="id-card" clase="size-4 text-cian-texto" %} Datos generales
+      </h2>
+      <dl class="resumen p-6 sm:grid-cols-3">
+        {% include "ui/dato.html" with etiqueta="Nombre" valor=cliente.nombre %}
+        {% include "ui/dato.html" with etiqueta="Razón social" valor=cliente.razon_social %}
+        {% include "ui/dato.html" with etiqueta="Tipo de documento" valor=cliente.get_tipo_documento_display %}
+        {% include "ui/dato.html" with etiqueta="Número de documento" valor=cliente.numero_documento %}
+        {% include "ui/dato.html" with etiqueta="Correo electrónico" valor=cliente.email %}
+        {% include "ui/dato.html" with etiqueta="Teléfono" valor=cliente.telefono %}
+        {% include "ui/dato.html" with etiqueta="Domicilio" valor=cliente.domicilio clase="sm:col-span-3" %}
+      </dl>
+    </section>
   </div>
 {% endblock %}

@@ -67,6 +67,8 @@ class RegistroMuestraForm(forms.Form):
         label="Tipo de vertido",
         choices=TipoVertido.choices,
         initial=TipoVertido.AGUA,
+        # Se dibuja como botones segmentados (templates/ui/campo.html).
+        widget=forms.RadioSelect,
     )
     nombre = forms.CharField(
         label="Nombre de la muestra",
