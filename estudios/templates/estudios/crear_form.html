@@ -1,23 +1,41 @@
 {% extends "base.html" %}
 {% block title %}Crear estudio · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% include "ui/encabezado.html" with seccion="Estudios" titulo="Crear estudio sobre una muestra" subtitulo="Elegí una muestra registrada y un tipo para revisar sus pruebas antes de crear el estudio." %}
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center"><div class="col-md-8 col-lg-6">
-  <h1 class="h3">Crear estudio sobre una muestra</h1>
-  <p>Elegí una muestra registrada y un tipo para revisar sus pruebas antes de crear el estudio.</p>
-  {% if not form.fields.muestra.queryset.exists %}<p class="alert alert-info">No hay muestras registradas disponibles.</p>{% endif %}
-  {% if not form.fields.tipo.queryset.exists %}<p class="alert alert-info">No hay tipos de estudio disponibles. Falta completar el catálogo.</p>{% endif %}
-  <form method="post" novalidate>
-    {% csrf_token %}
-    <input type="hidden" name="anterior" value="{{ anterior }}">
-    {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
-    {% for field in form %}
-    <div class="mb-3">
-      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field }}
-      {% for error in field.errors %}<div class="text-danger" role="alert">{{ error }}</div>{% endfor %}
-    </div>
-    {% endfor %}
-    <button type="submit" class="btn btn-primary">Revisar estudio</button>
-  </form>
-</div></div>
+  <div class="max-w-3xl space-y-4">
+    {% if not form.fields.muestra.queryset.exists %}
+      <div class="aviso aviso-info" role="status">
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>No hay muestras registradas disponibles.</div>
+      </div>
+    {% endif %}
+    {% if not form.fields.tipo.queryset.exists %}
+      <div class="aviso aviso-info" role="status">
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>No hay tipos de estudio disponibles. Falta completar el catálogo.</div>
+      </div>
+    {% endif %}
+    {% include "ui/errores_form.html" %}
+
+    <form method="post" novalidate class="space-y-6">
+      {% csrf_token %}
+      <input type="hidden" name="anterior" value="{{ anterior }}">
+      <section class="tarjeta seccion-form">
+        {% include "ui/seccion_titulo.html" with titulo="Muestra y tipo de estudio" icono="microscope" %}
+        <div class="grid gap-5 sm:grid-cols-2">
+          {% include "ui/campo.html" with field=form.muestra %}
+          {% include "ui/campo.html" with field=form.tipo %}
+        </div>
+      </section>
+      <div class="flex justify-end">
+        <button type="submit" class="btn btn-primario">
+          Revisar estudio {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}
+        </button>
+      </div>
+    </form>
+  </div>
 {% endblock %}

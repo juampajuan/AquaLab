@@ -1,0 +1,19 @@
+{# Campos del alta y la edición de cliente, agrupados como en stitch/registrar-cliente/. #}
+<section class="tarjeta seccion-form">
+  {% include "ui/seccion_titulo.html" with titulo="Identificación" icono="id-card" %}
+  <div class="grid gap-5 sm:grid-cols-2">
+    {% include "ui/campo.html" with field=form.nombre %}
+    {% include "ui/campo.html" with field=form.razon_social %}
+    {% include "ui/campo.html" with field=form.tipo_documento %}
+    {% include "ui/campo.html" with field=form.numero_documento %}
+  </div>
+</section>
+
+<section class="tarjeta seccion-form">
+  {% include "ui/seccion_titulo.html" with titulo="Contacto" icono="contact" %}
+  <div class="grid gap-5 sm:grid-cols-2">
+    {% include "ui/campo.html" with field=form.email clase="sm:col-span-2" %}
+    {% include "ui/campo.html" with field=form.telefono %}
+    {% include "ui/campo.html" with field=form.domicilio %}
+  </div>
+</section>

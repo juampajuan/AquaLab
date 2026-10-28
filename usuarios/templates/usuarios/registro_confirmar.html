@@ -1,39 +1,21 @@
-{% extends "base.html" %}
+{% extends "base_acceso.html" %}
 
 {% block title %}Revisar registro – AquaLab{% endblock %}
 
 {% block content %}
-  <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-      <h1 class="h3 mb-4">Revisar datos</h1>
+  <h1 class="text-3xl font-bold tracking-tight text-marino">Revisar datos</h1>
 
-      <div class="alert alert-info" role="alert">
-        Revisá tus datos. Al confirmar, tu cuenta quedará pendiente de aprobación por un administrador.
-      </div>
-
-      <dl class="row">
-        <dt class="col-sm-4">Nombre</dt>
-        <dd class="col-sm-8">{{ datos.first_name }}</dd>
-        <dt class="col-sm-4">Apellido</dt>
-        <dd class="col-sm-8">{{ datos.last_name }}</dd>
-        <dt class="col-sm-4">Correo electrónico</dt>
-        <dd class="col-sm-8">{{ datos.email }}</dd>
-      </dl>
-
-      <div class="d-flex gap-2">
-        {# El botón se deshabilita al enviar; "accion" va en el input oculto, así que sigue en el POST. #}
-        <form method="post" class="m-0" onsubmit="this.querySelector('button').disabled = true;">
-          {% csrf_token %}
-          <input type="hidden" name="accion" value="confirmar">
-          <button type="submit" class="btn btn-primary">Confirmar</button>
-        </form>
-        <a href="{% url 'usuarios:registro' %}" class="btn btn-outline-secondary">Volver y editar</a>
-        <form method="post" class="m-0">
-          {% csrf_token %}
-          <input type="hidden" name="accion" value="cancelar">
-          <button type="submit" class="btn btn-outline-danger">Cancelar</button>
-        </form>
-      </div>
-    </div>
+  <div class="aviso aviso-info mt-6" role="status">
+    {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+    <div>Revisá tus datos. Al confirmar, tu cuenta quedará pendiente de aprobación por un administrador.</div>
   </div>
+
+  <dl class="resumen mt-6 rounded-xl bg-fondo-hundido p-6 sm:grid-cols-1" data-componente="resumen">
+    {% include "ui/dato.html" with etiqueta="Nombre" valor=datos.first_name %}
+    {% include "ui/dato.html" with etiqueta="Apellido" valor=datos.last_name %}
+    {% include "ui/dato.html" with etiqueta="Correo electrónico" valor=datos.email %}
+  </dl>
+
+  {% url 'usuarios:registro' as url_volver %}
+  {% include "ui/acciones_confirmacion.html" with url_volver=url_volver %}
 {% endblock %}

@@ -2,54 +2,46 @@
 
 {% block title %}Confirmar muestra · AquaLab{% endblock %}
 
+{% block encabezado %}
+  {% url 'muestras:registrar' as url_registrar %}
+  {% include "ui/encabezado.html" with seccion="Muestras" anterior_texto="Registrar muestra" anterior_url=url_registrar titulo="Confirmar registro de muestra" %}
+{% endblock %}
+
 {% block content %}
-  <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-      <h1 class="h3 mb-4">Confirmar registro de muestra</h1>
-
-      <div class="alert alert-info" role="alert">
-        Revisá los datos de la muestra antes de confirmar el registro.
-      </div>
-
-      <dl class="row">
-        <dt class="col-sm-5">Cliente</dt>
-        <dd class="col-sm-7">{{ datos.cliente.nombre_completo }}</dd>
-        <dt class="col-sm-5">Documento</dt>
-        <dd class="col-sm-7">{{ datos.cliente.tipo_documento }} {{ datos.cliente.numero_documento }}</dd>
-        <dt class="col-sm-5">Correo electrónico</dt>
-        <dd class="col-sm-7">{{ datos.cliente.email }}</dd>
-        <dt class="col-sm-5">Origen</dt>
-        <dd class="col-sm-7">{{ datos.origen }}{% if datos.origen_es_nuevo %} (nuevo){% endif %}</dd>
-        <dt class="col-sm-5">Fecha de muestreo</dt>
-        <dd class="col-sm-7">{{ datos.fecha_muestreo|date:"d/m/Y" }}</dd>
-        <dt class="col-sm-5">Fecha de ingreso</dt>
-        <dd class="col-sm-7">{{ datos.fecha_ingreso|date:"d/m/Y" }}</dd>
-        <dt class="col-sm-5">Sitio de extracción</dt>
-        <dd class="col-sm-7">{{ datos.sitio_extraccion }}</dd>
-        <dt class="col-sm-5">Tipo de vertido</dt>
-        <dd class="col-sm-7">{{ datos.tipo_vertido }}</dd>
-        <dt class="col-sm-5">Nombre de la muestra</dt>
-        <dd class="col-sm-7">{{ datos.nombre }}{% if datos.nombre_es_por_defecto %} (el número se confirma al guardar){% endif %}</dd>
-        <dt class="col-sm-5">Responsable del muestreo</dt>
-        <dd class="col-sm-7">{{ datos.responsable_muestreo|default:"—" }}</dd>
-      </dl>
-
-      <p class="text-muted">El N° PI se asigna al confirmar.</p>
-
-      <div class="d-flex gap-2">
-        {# El botón se deshabilita al enviar; "accion" va en el input oculto, así que sigue en el POST. #}
-        <form method="post" class="m-0" onsubmit="this.querySelector('button').disabled = true;">
-          {% csrf_token %}
-          <input type="hidden" name="accion" value="confirmar">
-          <button type="submit" class="btn btn-primary">Confirmar</button>
-        </form>
-        <a href="{% url 'muestras:registrar' %}?volver=1" class="btn btn-outline-secondary">Volver y editar</a>
-        <form method="post" class="m-0">
-          {% csrf_token %}
-          <input type="hidden" name="accion" value="cancelar">
-          <button type="submit" class="btn btn-outline-danger">Cancelar</button>
-        </form>
-      </div>
+  <div class="max-w-3xl">
+    <div class="aviso aviso-info mb-6" role="status">
+      {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+      <div>Revisá los datos de la muestra antes de confirmar el registro.</div>
     </div>
+
+    <dl class="resumen tarjeta p-6 sm:p-7" data-componente="resumen">
+      {% include "ui/dato.html" with etiqueta="Cliente" valor=datos.cliente.nombre_completo %}
+      {% include "ui/dato.html" with etiqueta="Documento" valor=datos.cliente.tipo_documento|add:" "|add:datos.cliente.numero_documento %}
+      {% include "ui/dato.html" with etiqueta="Correo electrónico" valor=datos.cliente.email %}
+      {% if datos.origen_es_nuevo %}
+        {% include "ui/dato.html" with etiqueta="Origen" valor=datos.origen extra="(nuevo)" %}
+      {% else %}
+        {% include "ui/dato.html" with etiqueta="Origen" valor=datos.origen %}
+      {% endif %}
+      {% include "ui/dato.html" with etiqueta="Fecha de muestreo" valor=datos.fecha_muestreo|date:"d/m/Y" %}
+      {% include "ui/dato.html" with etiqueta="Fecha de ingreso" valor=datos.fecha_ingreso|date:"d/m/Y" %}
+      {% include "ui/dato.html" with etiqueta="Sitio de extracción" valor=datos.sitio_extraccion %}
+      {% include "ui/dato.html" with etiqueta="Tipo de vertido" valor=datos.tipo_vertido %}
+      {% if datos.nombre_es_por_defecto %}
+        {% include "ui/dato.html" with etiqueta="Nombre de la muestra" valor=datos.nombre extra="(el número se confirma al guardar)" %}
+      {% else %}
+        {% include "ui/dato.html" with etiqueta="Nombre de la muestra" valor=datos.nombre %}
+      {% endif %}
+      {% include "ui/dato.html" with etiqueta="Responsable del muestreo" valor=datos.responsable_muestreo %}
+      <div class="sm:col-span-2">
+        <dt>Estado inicial</dt>
+        <dd>{% include "ui/estado.html" with estado="Ingresada" tipo="info" %}</dd>
+      </div>
+    </dl>
+
+    <p class="mt-4 text-sm text-tinta-suave">El N° PI se asigna al confirmar.</p>
+
+    {% url 'muestras:registrar' as url_registrar %}
+    {% include "ui/acciones_confirmacion.html" with url_volver=url_registrar|add:"?volver=1" %}
   </div>
 {% endblock %}

@@ -89,26 +89,26 @@ registro sin sesión.
 
 ### Tests for User Story 2
 
-- [ ] T025 [P] [US2] En `clientes/tests/`: registrar y editar cliente dibujan `tipo_documento` como radios DNI / CUIT sin opción vacía, y un alta con CUIT sigue funcionando (research R8)
-- [ ] T026 [P] [US2] En `muestras/tests/`: `tipo_vertido` se dibuja como radios con Agua `checked` por defecto
-- [ ] T053 [P] [US2] En `config/tests/test_componentes.py`: los campos obligatorios llevan el marcador de obligatorio y los opcionales no (registrar cliente: Tipo de documento, Número de documento y Correo electrónico sí, Teléfono y Domicilio no; registrar muestra: Sitio de extracción sí, Nombre de la muestra no; crear cuenta: todos sí) (US2 escenario 1)
-- [ ] T054 [P] [US2] En `config/tests/test_componentes.py`: las 5 confirmaciones (registro de usuario, alta y edición de cliente, muestra y estudio) contienen `data-componente="resumen"` y `data-componente="acciones-confirmacion"`; la contraseña no aparece en el resumen del registro (US2 escenario 3)
-- [ ] T055 [P] [US2] En `config/tests/test_componentes.py`: un mensaje de éxito, uno de error y uno de información se dibujan con `data-nivel="exito"`, `"error"` e `"info"` respectivamente, cada uno con botón de cerrar (US2 escenario 5, FR-010)
+- [X] T025 [P] [US2] En `clientes/tests/`: registrar y editar cliente dibujan `tipo_documento` como radios DNI / CUIT sin opción vacía, y un alta con CUIT sigue funcionando (research R8)
+- [X] T026 [P] [US2] En `muestras/tests/`: `tipo_vertido` se dibuja como radios con Agua `checked` por defecto
+- [X] T053 [P] [US2] En `config/tests/test_componentes.py`: los campos obligatorios llevan el marcador de obligatorio y los opcionales no (registrar cliente: Tipo de documento, Número de documento y Correo electrónico sí, Teléfono y Domicilio no; registrar muestra: Sitio de extracción sí, Nombre de la muestra no; crear cuenta: todos sí) (US2 escenario 1)
+- [X] T054 [P] [US2] En `config/tests/test_componentes.py`: las 5 confirmaciones (registro de usuario, alta y edición de cliente, muestra y estudio) contienen `data-componente="resumen"` y `data-componente="acciones-confirmacion"`; la contraseña no aparece en el resumen del registro (US2 escenario 3)
+- [X] T055 [P] [US2] En `config/tests/test_componentes.py`: un mensaje de éxito, uno de error y uno de información se dibujan con `data-nivel="exito"`, `"error"` e `"info"` respectivamente, cada uno con botón de cerrar (US2 escenario 5, FR-010)
 
 ### Implementation for User Story 2
 
-- [ ] T027 [P] [US2] Crear `templates/ui/seccion_form.html`, `templates/ui/resumen.html` y `templates/ui/acciones_confirmacion.html` (contracts/componentes-ui.md)
-- [ ] T028 [P] [US2] `clientes/forms.py`: `tipo_documento` con `RadioSelect` y opciones DNI / CUIT sin vacío (research R8)
-- [ ] T029 [P] [US2] `muestras/forms.py`: `tipo_vertido` con `RadioSelect`; adaptar en `muestras/tests/test_registro.py` (línea ~87) la aserción del valor por defecto de `<select>` a radio `agua` `checked` (research R8)
-- [ ] T030 [P] [US2] Migrar `usuarios/templates/usuarios/registro_form.html` a `base_acceso.html` (maqueta `stitch/crear-cuenta/`): nombre y apellido en una fila, link "¿Ya tenés cuenta? Iniciar sesión"
-- [ ] T031 [P] [US2] Migrar `usuarios/templates/usuarios/registro_confirmar.html` (maqueta `stitch/confirmar-registro/`), conservando el input oculto `accion` y el botón que se deshabilita al enviar
-- [ ] T032 [P] [US2] Migrar `usuarios/templates/usuarios/registro_recibido.html` (maqueta `stitch/registro-recibido/`): ícono de espera grande, mensaje, botón "Iniciar sesión" y el contenido alternativo sin registro en curso
-- [ ] T033 [P] [US2] Migrar `clientes/templates/clientes/registro_form.html` (maqueta `stitch/registrar-cliente/`): secciones Identificación y Contacto
-- [ ] T034 [P] [US2] Migrar `clientes/templates/clientes/registro_confirmar.html` con `ui/resumen.html` y `ui/acciones_confirmacion.html`
-- [ ] T035 [P] [US2] Migrar `clientes/templates/clientes/editar_form.html` y `clientes/templates/clientes/editar_confirmar.html`
-- [ ] T036 [US2] Migrar `muestras/templates/muestras/registro_form.html` (maqueta `stitch/registrar-muestra/`): 3 secciones, mini-ficha, `segmentado`; conservar `id="ficha-cliente"`, `data-ficha`, `clientes-muestra`, `mostrar-origen-nuevo`, `bloque-origen-nuevo`; borrar `muestras/templates/muestras/_campo.html` y usar `ui/campo.html`
-- [ ] T037 [P] [US2] Migrar `muestras/templates/muestras/registro_confirmar.html` (badge "Ingresada")
-- [ ] T038 [P] [US2] Migrar `estudios/templates/estudios/crear_form.html` y `estudios/templates/estudios/crear_confirmar.html` (maqueta `stitch/confirmar-estudio/`), incluida la variante "Recuperar solicitud"
+- [X] T027 [P] [US2] Crear `templates/ui/seccion_form.html`, `templates/ui/resumen.html` y `templates/ui/acciones_confirmacion.html` (contracts/componentes-ui.md)
+- [X] T028 [P] [US2] `clientes/forms.py`: `tipo_documento` con `RadioSelect` y opciones DNI / CUIT sin vacío (research R8)
+- [X] T029 [P] [US2] `muestras/forms.py`: `tipo_vertido` con `RadioSelect`; adaptar en `muestras/tests/test_registro.py` (línea ~87) la aserción del valor por defecto de `<select>` a radio `agua` `checked` (research R8)
+- [X] T030 [P] [US2] Migrar `usuarios/templates/usuarios/registro_form.html` a `base_acceso.html` (maqueta `stitch/crear-cuenta/`): nombre y apellido en una fila, link "¿Ya tenés cuenta? Iniciar sesión"
+- [X] T031 [P] [US2] Migrar `usuarios/templates/usuarios/registro_confirmar.html` (maqueta `stitch/confirmar-registro/`), conservando el input oculto `accion` y el botón que se deshabilita al enviar
+- [X] T032 [P] [US2] Migrar `usuarios/templates/usuarios/registro_recibido.html` (maqueta `stitch/registro-recibido/`): ícono de espera grande, mensaje, botón "Iniciar sesión" y el contenido alternativo sin registro en curso
+- [X] T033 [P] [US2] Migrar `clientes/templates/clientes/registro_form.html` (maqueta `stitch/registrar-cliente/`): secciones Identificación y Contacto
+- [X] T034 [P] [US2] Migrar `clientes/templates/clientes/registro_confirmar.html` con `ui/resumen.html` y `ui/acciones_confirmacion.html`
+- [X] T035 [P] [US2] Migrar `clientes/templates/clientes/editar_form.html` y `clientes/templates/clientes/editar_confirmar.html`
+- [X] T036 [US2] Migrar `muestras/templates/muestras/registro_form.html` (maqueta `stitch/registrar-muestra/`): 3 secciones, mini-ficha, `segmentado`; conservar `id="ficha-cliente"`, `data-ficha`, `clientes-muestra`, `mostrar-origen-nuevo`, `bloque-origen-nuevo`; borrar `muestras/templates/muestras/_campo.html` y usar `ui/campo.html`
+- [X] T037 [P] [US2] Migrar `muestras/templates/muestras/registro_confirmar.html` (badge "Ingresada")
+- [X] T038 [P] [US2] Migrar `estudios/templates/estudios/crear_form.html` y `estudios/templates/estudios/crear_confirmar.html` (maqueta `stitch/confirmar-estudio/`), incluida la variante "Recuperar solicitud"
 
 **Checkpoint**: todos los formularios y confirmaciones migrados; suite completa en verde.
 

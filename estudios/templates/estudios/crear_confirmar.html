@@ -1,29 +1,56 @@
 {% extends "base.html" %}
 {% block title %}Confirmar estudio · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:crear' as url_crear %}
+  {% if recuperar %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Crear estudio" anterior_url=url_crear titulo="Recuperar solicitud" %}
+  {% else %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Crear estudio" anterior_url=url_crear titulo="Confirmar estudio" subtitulo="Revisá los datos y las pruebas antes de confirmar." %}
+  {% endif %}
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center"><div class="col-md-8 col-lg-6">
-  <h1 class="h3">{% if recuperar %}Recuperar solicitud{% else %}Confirmar estudio{% endif %}</h1>
-  {% if not recuperar %}
-  <p>Revisá los datos y las pruebas antes de confirmar.</p>
-  <dl class="row">
-    <dt class="col-sm-4">Muestra</dt><dd class="col-sm-8">PI {{ borrador.muestra.pi }}</dd>
-    <dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">{{ borrador.muestra.cliente }}</dd>
-    <dt class="col-sm-4">Origen</dt><dd class="col-sm-8">{{ borrador.muestra.origen }}</dd>
-    <dt class="col-sm-4">Tipo</dt><dd class="col-sm-8">{{ borrador.config.nombre }}</dd>
-    <dt class="col-sm-4">Descripción</dt><dd class="col-sm-8">{{ borrador.config.descripcion|default:"—" }}</dd>
-    <dt class="col-sm-4">Estado inicial</dt><dd class="col-sm-8">Pendiente de análisis</dd>
-  </dl>
-  <h2 class="h5">Pruebas asignadas</h2>
-  <ul>{% for prueba in borrador.config.pruebas %}<li>{{ prueba.codigo }} · {{ prueba.nombre }}</li>{% endfor %}</ul>
-  {% else %}<p>La confirmación venció. Recuperar mostrará el resultado existente o un resumen actualizado para volver a confirmar.</p>{% endif %}
-  <div class="d-flex gap-2 flex-wrap">
-    <form method="post">
-      {% csrf_token %}<input type="hidden" name="token" value="{{ borrador.token }}">
-      {% if recuperar %}<button name="accion" value="recuperar" class="btn btn-primary">Recuperar y revisar</button>
-      {% else %}<button name="accion" value="confirmar" class="btn btn-primary">Confirmar estudio</button>{% endif %}
-    </form>
-    {% if not recuperar %}<a class="btn btn-outline-secondary" href="{% url 'estudios:crear' %}?volver={{ borrador.datos.clave }}">Volver y editar</a>{% endif %}
-    <form method="post">{% csrf_token %}<input type="hidden" name="token" value="{{ borrador.token }}"><button name="accion" value="cancelar" class="btn btn-outline-danger">Cancelar</button></form>
+  <div class="max-w-3xl">
+    {% if recuperar %}
+      <div class="aviso aviso-advertencia" role="status">
+        {% include "ui/icono.html" with nombre="clock" clase="size-5 shrink-0" %}
+        <div>La confirmación venció. Recuperar mostrará el resultado existente o un resumen actualizado para volver a confirmar.</div>
+      </div>
+      {% include "ui/acciones_confirmacion.html" with token=borrador.token texto_confirmar="Recuperar y revisar" accion_confirmar="recuperar" %}
+    {% else %}
+      <div class="tarjeta p-6 sm:p-7">
+        <dl class="resumen" data-componente="resumen">
+          {% with pi=borrador.muestra.pi|stringformat:"s" %}
+            {% include "ui/dato.html" with etiqueta="Muestra" valor="PI "|add:pi %}
+          {% endwith %}
+          <div>
+            <dt>Estado inicial</dt>
+            <dd>{% include "ui/estado.html" with estado="Pendiente de análisis" tipo="warning" %}</dd>
+          </div>
+          {% include "ui/dato.html" with etiqueta="Cliente" valor=borrador.muestra.cliente %}
+          {% include "ui/dato.html" with etiqueta="Origen" valor=borrador.muestra.origen %}
+          {% include "ui/dato.html" with etiqueta="Tipo" valor=borrador.config.nombre %}
+          {% include "ui/dato.html" with etiqueta="Descripción" valor=borrador.config.descripcion %}
+        </dl>
+
+        <div class="mt-7 border-t border-borde pt-6">
+          <h2 class="mb-3 flex items-center justify-between text-sm font-semibold text-marino">
+            Pruebas asignadas
+            <span class="text-xs font-medium text-tinta-suave">{{ borrador.config.pruebas|length }} prueba{{ borrador.config.pruebas|length|pluralize }}</span>
+          </h2>
+          <ul class="space-y-2">
+            {% for prueba in borrador.config.pruebas %}
+              <li class="flex items-center gap-3 rounded-lg bg-fondo-hundido px-4 py-3 text-sm">
+                {% include "ui/icono.html" with nombre="flask-conical" clase="size-4 shrink-0 text-cian-texto" %}
+                <span><span class="font-semibold">{{ prueba.codigo }}</span> · {{ prueba.nombre }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% url 'estudios:crear' as url_crear %}
+      {% include "ui/acciones_confirmacion.html" with token=borrador.token texto_confirmar="Confirmar estudio" url_volver=url_crear|add:"?volver="|add:borrador.datos.clave %}
+    {% endif %}
   </div>
-</div></div>
 {% endblock %}

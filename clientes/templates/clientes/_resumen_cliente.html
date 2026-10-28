@@ -1,0 +1,10 @@
+{# Resumen de los datos de un cliente para las confirmaciones de alta y edición. #}
+<dl class="resumen tarjeta p-6 sm:p-7" data-componente="resumen">
+  {% include "ui/dato.html" with etiqueta="Nombre" valor=datos.nombre %}
+  {% include "ui/dato.html" with etiqueta="Razón social" valor=datos.razon_social %}
+  {% include "ui/dato.html" with etiqueta="Tipo de documento" valor=datos.tipo_documento %}
+  {% include "ui/dato.html" with etiqueta="Número de documento" valor=datos.numero_documento %}
+  {% include "ui/dato.html" with etiqueta="Correo electrónico" valor=datos.email %}
+  {% include "ui/dato.html" with etiqueta="Teléfono" valor=datos.telefono %}
+  {% include "ui/dato.html" with etiqueta="Domicilio" valor=datos.domicilio clase="sm:col-span-2" %}
+</dl>

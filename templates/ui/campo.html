@@ -7,7 +7,7 @@
 <div class="{{ clase|default:'' }}">
   {% if field.widget_type == "radioselect" %}
     <fieldset>
-      <legend class="campo-etiqueta">
+      <legend class="campo-etiqueta" data-campo="{{ field.name }}">
         {{ field.label }}{% if field.field.required and not sin_obligatorio %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
       </legend>
       <div class="segmentado" id="{{ field.auto_id }}">
@@ -17,7 +17,7 @@
       </div>
     </fieldset>
   {% else %}
-    <label for="{{ field.id_for_label }}" class="campo-etiqueta">
+    <label for="{{ field.id_for_label }}" class="campo-etiqueta" data-campo="{{ field.name }}">
       {{ field.label }}{% if field.field.required and not sin_obligatorio %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
     </label>
     {{ field }}

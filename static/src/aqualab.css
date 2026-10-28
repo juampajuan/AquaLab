@@ -169,6 +169,22 @@
     @apply border-peligro;
   }
 
+  /* Secciones de formulario: <section class="tarjeta seccion-form"> + ui/seccion_titulo.html */
+  .seccion-form {
+    @apply p-6 sm:p-7;
+  }
+
+  /* Resúmenes de confirmación y fichas: <dl class="resumen" data-componente="resumen"> + ui/dato.html */
+  .resumen {
+    @apply grid gap-x-8 gap-y-5 sm:grid-cols-2;
+  }
+  .resumen dt {
+    @apply text-[11px] font-semibold tracking-wide text-tinta-suave uppercase;
+  }
+  .resumen dd {
+    @apply mt-1 text-sm font-semibold break-words text-tinta;
+  }
+
   /* Tablas */
   .tabla {
     @apply w-full text-left text-sm;

@@ -2,6 +2,7 @@ from django import forms
 
 from .models import (
     Cliente,
+    TipoDocumento,
     normalizar_numero_documento,
     validar_documento,
     validar_telefono,
@@ -39,14 +40,15 @@ class RegistroClienteForm(forms.ModelForm):
             "telefono": "Teléfono",
             "domicilio": "Domicilio",
         }
+        # Se dibuja como botones segmentados DNI / CUIT (templates/ui/campo.html).
+        widgets = {"tipo_documento": forms.RadioSelect}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for nombre, campo in self.fields.items():
-            if nombre == "tipo_documento":
-                campo.widget.attrs["class"] = "form-select"
-            else:
-                campo.widget.attrs["class"] = "form-control"
+        # Sin la opción vacía "---------": con radios no tiene sentido.
+        self.fields["tipo_documento"].choices = TipoDocumento.choices
+        for campo in self.fields.values():
+            campo.widget.attrs["class"] = "form-control"
 
     def full_clean(self):
         super().full_clean()

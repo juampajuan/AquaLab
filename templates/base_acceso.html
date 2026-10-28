@@ -31,7 +31,7 @@
   <main class="flex min-h-screen items-center justify-center px-6 py-10 sm:px-10">
     <div class="w-full max-w-md">
       <div class="mb-10 lg:hidden">{% include "ui/logo.html" %}</div>
-      {% include "ui/mensajes.html" %}
+      {% block mensajes %}{% include "ui/mensajes.html" %}{% endblock %}
       {% block content %}{% endblock %}
     </div>
   </main>

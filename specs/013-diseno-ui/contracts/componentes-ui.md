@@ -23,9 +23,9 @@ guardia de sesión (`includes/estilo_sesion.html`, `includes/guardia_sesion.html
 | `encabezado.html` | `titulo`, `subtitulo` (opc.), `migas` (opc., lista de `(texto, url)`) | Migas de pan, título y subtítulo de la página |
 | `campo.html` | `field`, `ancho` (opc.) | Etiqueta (con marcador `<span data-obligatorio>*</span>` si es obligatorio), control, errores en `<div id="{{ field.auto_id }}_error">` con un `<div>` por error, y ayuda en `{{ field.auto_id }}_helptext` |
 | `errores_form.html` | `form` | Errores generales (`non_field_errors`) arriba del formulario |
-| `seccion_form.html` | `titulo`, `icono` | Tarjeta con título para agrupar campos (usada con `{% include %}` + contenido propio) |
-| `resumen.html` | `datos` (lista de `(etiqueta, valor)`) | Tarjeta de resumen de confirmación en grilla de dos columnas; vacío → "—". Raíz con `data-componente="resumen"` |
-| `acciones_confirmacion.html` | `texto_confirmar`, `url_volver`, campos ocultos según el flujo | Botón principal "Confirmar…", "Volver y editar" y "Cancelar" (rojo, separado). Raíz con `data-componente="acciones-confirmacion"` |
+| `seccion_titulo.html` | `titulo`, `icono` | Título de una sección de formulario. La sección es `<section class="tarjeta seccion-form">` (un `{% include %}` no puede envolver contenido) |
+| `dato.html` | `etiqueta`, `valor`, `extra` (opc.), `clase` (opc.) | Un dato de un resumen o ficha; vacío → "—". El contenedor es `<dl class="resumen" data-componente="resumen">` |
+| `acciones_confirmacion.html` | `texto_confirmar`, `url_volver`, `token` y `accion_confirmar` (flujo de estudios) | Botón principal "Confirmar…", "Volver y editar" y "Cancelar" (rojo, separado). Raíz con `data-componente="acciones-confirmacion"` |
 | `tabla.html` (patrón documentado, no parcial) | — | Tarjeta + `<table>` con clases `tabla`, encabezado, filas y `overflow-x-auto` |
 | `estado_vacio.html` | `mensaje`, `accion_texto` (opc.), `accion_url` (opc.) | Ilustración/ícono, mensaje y acción opcional. Raíz con `data-componente="estado-vacio"` |
 | `paginacion.html` | `page_obj`, `parametros` (query string sin `page`) | "Anterior", "Página X de Y", "Siguiente" |
