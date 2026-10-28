@@ -5,6 +5,7 @@ from django.db import DatabaseError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.html import format_html
 
 from clientes.models import normalizar_numero_documento
 from muestras.models import Muestra
@@ -27,7 +28,13 @@ MAX_NUMERO_PI_SQL = 2_147_483_647
 def exito(request, estudio):
     descartar(request, estudio.clave_idempotencia)
     messages.success(
-        request, f"Estudio {estudio.pk} creado para la muestra PI {estudio.muestra.numero_pi}."
+        request,
+        format_html(
+            '<a href="{}">Estudio {}</a> creado para la muestra PI {}.',
+            reverse("estudios:detalle", args=[estudio.pk]),
+            estudio.pk,
+            estudio.muestra.numero_pi,
+        ),
     )
     return redirect("estudios:crear")
 

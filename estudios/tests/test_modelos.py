@@ -115,3 +115,12 @@ def test_uuid_obligatorio_y_identificador_propio(muestra, tipo, empleado):
         ("completada", "Completada"),
     ]
     assert list(e.pruebas_asignadas.values_list("estado", flat=True)) == ["pendiente", "pendiente"]
+
+
+def test_admite_modificaciones_solo_pendiente_analisis(estudio):
+    from estudios.models import EstadoEstudio
+
+    assert estudio.admite_modificaciones
+    for estado in EstadoEstudio.values:
+        estudio.estado = estado
+        assert estudio.admite_modificaciones == (estado == EstadoEstudio.PENDIENTE_ANALISIS)

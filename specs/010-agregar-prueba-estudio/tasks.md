@@ -48,7 +48,7 @@ agregados no permitidos).
 
 **Purpose**: aprobación de la spec y base de US 5.1 sana antes de tocar código.
 
-- [ ] T001 **Gate de la constitution (Principio I)**: confirmar que el equipo aprobó `specs/010-agregar-prueba-estudio/spec.md` y actualizar su `**Status**` a «Aprobada por el equipo» con la fecha; sin aprobación no se ejecuta ninguna otra tarea. Después, verificar el entorno con `docker compose up -d`, `docker compose exec web python manage.py migrate` y `docker compose exec web pytest` (sobre `docker-compose.yml`) y confirmar que la suite actual pasa y que `docker compose exec web python manage.py makemigrations --check --dry-run` no detecta cambios.
+- [X] T001 **Gate de la constitution (Principio I)**: confirmar que el equipo aprobó `specs/010-agregar-prueba-estudio/spec.md` y actualizar su `**Status**` a «Aprobada por el equipo» con la fecha; sin aprobación no se ejecuta ninguna otra tarea. Después, verificar el entorno con `docker compose up -d`, `docker compose exec web python manage.py migrate` y `docker compose exec web pytest` (sobre `docker-compose.yml`) y confirmar que la suite actual pasa y que `docker compose exec web python manage.py makemigrations --check --dry-run` no detecta cambios.
 
 ---
 
@@ -58,16 +58,16 @@ agregados no permitidos).
 
 **⚠️ CRITICAL**: ninguna historia empieza antes de terminar esta fase.
 
-- [ ] T002 [P] Agregar en `estudios/tests/conftest.py` las fixtures:
+- [X] T002 [P] Agregar en `estudios/tests/conftest.py` las fixtures:
   - `estudio(datos, empleado)`: crea un estudio con `crear_estudio(datos, empleado)` (queda con las pruebas `TEST-A` y `TEST-B` del fixture `tipo`).
   - `prueba_extra()`: `Prueba.objects.create(codigo="TEST-C", nombre="Prueba de test C")`, que no está en el tipo.
-- [ ] T003 [P] Agregar en `estudios/tests/test_modelos.py` `test_admite_modificaciones_solo_pendiente_analisis`: un estudio recién creado admite modificaciones; con `estado` forzado a otro valor en memoria, no (depende de T002).
-- [ ] T004 Agregar en `estudios/models.py`, en `Estudio`, la propiedad `admite_modificaciones` que devuelve `self.estado == EstadoEstudio.PENDIENTE_ANALISIS` (FR-003, research R4). Sin cambiar campos ni `Meta`; verificar que `makemigrations --check --dry-run` siga sin cambios.
-- [ ] T005 [P] Agregar en `estudios/servicios.py`, debajo de `crear_estudio`, `GestionPruebasError(Exception)` y su subclase `PruebaYaAsignada`; el mensaje de cada excepción es el texto que ve el empleado (plan, "Servicio"). US 5.4 sumará otras subclases.
+- [X] T003 [P] Agregar en `estudios/tests/test_modelos.py` `test_admite_modificaciones_solo_pendiente_analisis`: un estudio recién creado admite modificaciones; con `estado` forzado a otro valor en memoria, no (depende de T002).
+- [X] T004 Agregar en `estudios/models.py`, en `Estudio`, la propiedad `admite_modificaciones` que devuelve `self.estado == EstadoEstudio.PENDIENTE_ANALISIS` (FR-003, research R4). Sin cambiar campos ni `Meta`; verificar que `makemigrations --check --dry-run` siga sin cambios.
+- [X] T005 [P] Agregar en `estudios/servicios.py`, debajo de `crear_estudio`, `GestionPruebasError(Exception)` y su subclase `PruebaYaAsignada`; el mensaje de cada excepción es el texto que ve el empleado (plan, "Servicio"). US 5.4 sumará otras subclases.
 - [X] T006 ~~Crear la vista `detalle`~~ Cubierta por US 5.2: `estudios.views.detalle` y la ruta `estudios:detalle` ya existen en `main`.
-- [ ] T007 En `estudios/templates/estudios/detalle.html` (existente, US 5.2), sección **Pruebas asignadas**: sumar la columna **Acción** a la derecha de la tabla (vacía en esta historia; la completa US 5.4) y, si `not estudio.admite_modificaciones`, el aviso «Este estudio ya no admite cambios en sus pruebas.» (depende de T004).
-- [ ] T008 Cambiar `exito` en `estudios/views.py` para que el mensaje sea `format_html('<a href="{}">Estudio {}</a> creado para la muestra PI {}.', reverse("estudios:detalle", args=[estudio.pk]), estudio.pk, estudio.muestra.numero_pi)`, sin cambiar la redirección a `estudios:crear` (research R1).
-- [ ] T009 Ejecutar `docker compose exec web pytest estudios` y dejar en verde T003 junto con los tests existentes de US 5.1 (depende de T002–T008).
+- [X] T007 En `estudios/templates/estudios/detalle.html` (existente, US 5.2), sección **Pruebas asignadas**: sumar la columna **Acción** a la derecha de la tabla (vacía en esta historia; la completa US 5.4) y, si `not estudio.admite_modificaciones`, el aviso «Este estudio ya no admite cambios en sus pruebas.» (depende de T004).
+- [X] T008 Cambiar `exito` en `estudios/views.py` para que el mensaje sea `format_html('<a href="{}">Estudio {}</a> creado para la muestra PI {}.', reverse("estudios:detalle", args=[estudio.pk]), estudio.pk, estudio.muestra.numero_pi)`, sin cambiar la redirección a `estudios:crear` (research R1).
+- [X] T009 Ejecutar `docker compose exec web pytest estudios` y dejar en verde T003 junto con los tests existentes de US 5.1 (depende de T002–T008).
 
 **Checkpoint**: el detalle del estudio se ve desde el mensaje de éxito; las historias pueden empezar.
 

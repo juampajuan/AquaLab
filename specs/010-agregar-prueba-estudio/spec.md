@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-27
 
-**Status**: Draft
+**Status**: Aprobada (2026-10-28)
 
 **Input**: User description: "US 5.3 – Agregar prueba al estudio. Como empleado del laboratorio quiero agregar una prueba adicional a un estudio existente para personalizar el análisis según los requerimientos específicos del cliente. Criterios de aceptación: sobre un estudio que permita modificaciones, se debe poder abrir el catálogo de pruebas; se debe poder seleccionar y añadir una prueba adicional; no se debe permitir añadir una prueba que ya forme parte del estudio; la prueba añadida debe sumarse a la lista de pruebas pendientes a realizar. Responsable del cronograma: Manuel."
 
