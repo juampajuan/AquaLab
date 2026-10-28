@@ -146,7 +146,7 @@ y reenviar la confirmación; verificar mensajes y que el estudio no cambia indeb
 
 - [X] T025 [P] Ejecutar `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`, y corregir lo que aparezca (Principios III y VI).
 - [X] T026 Ejecutar la suite completa `docker compose exec web pytest` y confirmar todo en verde.
-- [ ] T027 Recorrer los pasos 1 a 7 de validación manual de `specs/010-agregar-prueba-estudio/quickstart.md` y cronometrar un agregado desde el detalle: menos de 1 minuto (SC-005).
+- [X] T027 Recorrer los pasos 1 a 7 de validación manual de `specs/010-agregar-prueba-estudio/quickstart.md` y cronometrar un agregado desde el detalle: menos de 1 minuto (SC-005).
 - [X] T028 [P] Agregar en `CLAUDE.md` una sección breve "Pruebas de un estudio (US 5.3)" con lo no obvio: `agregar_prueba` bloquea la fila del estudio (`select_for_update`) y US 5.4 usa el mismo esquema; `Estudio.admite_modificaciones` es la única regla de estudio modificable; **US 5.4** completa la columna Acción de `estudios:detalle`; las pruebas agregadas nacen en estado Pendiente. No tocar el pendiente del envío de informes por correo.
 
 ---
