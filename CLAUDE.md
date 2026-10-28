@@ -55,3 +55,16 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Las vistas de consulta (`estudios:buscar`, `estudios:detalle` y `muestras:detalle`) muestran siempre
   `tipo_nombre_snapshot` y `tipo_descripcion_snapshot` para preservar la historia del estudio frente a
   ediciones posteriores del catálogo.
+
+## Pruebas de un estudio (US 5.3)
+
+- `estudios/servicios.py:agregar_prueba` bloquea la fila del estudio (`select_for_update`), no el
+  advisory lock global de la creación; US 5.4 (quitar) debe usar el mismo esquema.
+- `Estudio.admite_modificaciones` es la única regla de estudio modificable: la usan el detalle, la
+  vista y el servicio (que la revalida bajo el bloqueo).
+- La vista `estudios.views.agregar_prueba` tapa el nombre del servicio: llama a
+  `servicios.agregar_prueba` y en los tests se parchea `estudios.servicios.agregar_prueba`.
+- Un reenvío de `confirmar` falla el formulario (la prueba ya no está entre las opciones); la vista
+  lo detecta con `AgregarPruebaForm.prueba_ya_asignada()` y el servicio lo informa como aviso.
+- US 5.4 completa la columna Acción de `estudios:detalle`. Las pruebas agregadas nacen en estado
+  Pendiente.

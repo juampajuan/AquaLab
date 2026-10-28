@@ -245,6 +245,9 @@
   .aviso-info {
     @apply border-info-borde bg-info-suave text-info;
   }
+  .aviso a {
+    @apply font-semibold underline;
+  }
 
   /* Panel de acceso: textura de puntos e imágenes que alternan (research R6b). */
   .textura-puntos {

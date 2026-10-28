@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Agregar prueba · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:detalle' estudio.pk as url_detalle %}
+  {% with numero=estudio.pk|stringformat:"s" pi=estudio.muestra.numero_pi|stringformat:"s" %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Estudio "|add:numero anterior_url=url_detalle miga="Agregar prueba" titulo="Agregar prueba al estudio "|add:numero subtitulo="Muestra PI "|add:pi %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  {% url 'estudios:detalle' estudio.pk as url_detalle %}
+  <div class="max-w-3xl space-y-4">
+    {% if not form.fields.prueba.queryset.exists %}
+      <section class="tarjeta">
+        {% include "ui/estado_vacio.html" with mensaje="No hay pruebas disponibles para agregar: todas ya forman parte del estudio." icono="flask-conical" accion_texto="Volver al estudio" accion_url=url_detalle %}
+      </section>
+    {% else %}
+      {% include "ui/errores_form.html" %}
+      <form method="post" novalidate class="space-y-6">
+        {% csrf_token %}
+        <section class="tarjeta seccion-form">
+          {% include "ui/seccion_titulo.html" with titulo="Prueba del catálogo" icono="flask-conical" %}
+          {% include "ui/campo.html" with field=form.prueba %}
+        </section>
+        <div class="flex flex-wrap justify-end gap-3">
+          <a href="{{ url_detalle }}" class="btn btn-secundario">Cancelar</a>
+          <button type="submit" name="accion" value="revisar" class="btn btn-primario">
+            Revisar {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}
+          </button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Confirmar prueba · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:detalle' estudio.pk as url_detalle %}
+  {% with numero=estudio.pk|stringformat:"s" %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Estudio "|add:numero anterior_url=url_detalle miga="Agregar prueba" titulo="Confirmar prueba" subtitulo="Revisá la prueba antes de agregarla al estudio." %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-3xl">
+    <div class="aviso aviso-info mb-6" role="status">
+      {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+      <div>Se agregará la prueba <strong>{{ prueba }}</strong> al estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}).</div>
+    </div>
+    <div class="tarjeta p-6 sm:p-7">
+      <dl class="resumen" data-componente="resumen">
+        {% include "ui/dato.html" with etiqueta="Estudio" valor=estudio %}
+        {% with pi=estudio.muestra.numero_pi|stringformat:"s" %}
+          {% include "ui/dato.html" with etiqueta="Muestra" valor="PI "|add:pi %}
+        {% endwith %}
+        {% include "ui/dato.html" with etiqueta="Prueba" valor=prueba %}
+        <div>
+          <dt>Estado inicial</dt>
+          <dd>{% include "ui/estado.html" with estado="Pendiente" tipo="neutral" %}</dd>
+        </div>
+      </dl>
+    </div>
+    <div class="mt-6 flex flex-wrap items-center gap-3" data-componente="acciones-confirmacion">
+      <form method="post" onsubmit="this.querySelector('button').disabled = true;">
+        {% csrf_token %}
+        <input type="hidden" name="prueba" value="{{ prueba.pk }}">
+        <input type="hidden" name="accion" value="confirmar">
+        <button type="submit" class="btn btn-primario">
+          {% include "ui/icono.html" with nombre="check" clase="size-4" %} Confirmar
+        </button>
+      </form>
+      <a href="{% url 'estudios:agregar_prueba' estudio.pk %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Volver
+      </a>
+      <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-peligro sm:ml-auto">
+        {% include "ui/icono.html" with nombre="x" clase="size-4" %} Cancelar
+      </a>
+    </div>
+  </div>
+{% endblock %}
