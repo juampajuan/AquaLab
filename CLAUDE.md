@@ -56,15 +56,21 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   `tipo_nombre_snapshot` y `tipo_descripcion_snapshot` para preservar la historia del estudio frente a
   ediciones posteriores del catálogo.
 
-## Pruebas de un estudio (US 5.3)
+## Pruebas de un estudio (US 5.3 y US 5.4)
 
-- `estudios/servicios.py:agregar_prueba` bloquea la fila del estudio (`select_for_update`), no el
-  advisory lock global de la creación; US 5.4 (quitar) debe usar el mismo esquema.
+- `agregar_prueba` y `quitar_prueba` (`estudios/servicios.py`) bloquean la fila del estudio
+  (`select_for_update`), no el advisory lock global de la creación; así `quitar_prueba` cuenta las
+  asignaciones sin carreras y ningún estudio queda sin pruebas.
 - `Estudio.admite_modificaciones` es la única regla de estudio modificable: la usan el detalle, la
   vista y el servicio (que la revalida bajo el bloqueo).
-- La vista `estudios.views.agregar_prueba` tapa el nombre del servicio: llama a
-  `servicios.agregar_prueba` y en los tests se parchea `estudios.servicios.agregar_prueba`.
+- Las vistas `agregar_prueba` y `quitar_prueba` tapan el nombre del servicio: llaman a
+  `servicios.<nombre>` y en los tests se parchea `estudios.servicios.<nombre>`.
 - Un reenvío de `confirmar` falla el formulario (la prueba ya no está entre las opciones); la vista
   lo detecta con `AgregarPruebaForm.prueba_ya_asignada()` y el servicio lo informa como aviso.
-- US 5.4 completa la columna Acción de `estudios:detalle`. Las pruebas agregadas nacen en estado
-  Pendiente.
+- Las pruebas agregadas nacen en estado Pendiente. Quitar borra la asignación (sin historial) y
+  solo se permite si `PruebaEstudio.puede_quitarse()`, es decir, estado Pendiente.
+- **Epic 6 (mediciones y resultados):** pasar la prueba a `Cargada`/`Completada` al registrar
+  mediciones o resultados, con la asignación bloqueada (`quitar_prueba` la bloquea para leer el
+  estado), y referenciar `PruebaEstudio` con `on_delete=PROTECT`.
+- `motivo_para_no_quitar` es la única fuente de las reglas de quita: la usan la vista (GET) y el
+  servicio. `.btn-chico` es el botón para filas de tablas.

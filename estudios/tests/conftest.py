@@ -152,3 +152,8 @@ def prueba_extra():
     from pruebas.models import Prueba
 
     return Prueba.objects.create(codigo="TEST-C", nombre="Prueba de test C")
+
+
+@pytest.fixture
+def asignacion(estudio):
+    return estudio.pruebas_asignadas.get(prueba__codigo="TEST-A")

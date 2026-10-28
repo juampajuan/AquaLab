@@ -19,6 +19,7 @@ from .servicios import (
     CrearEstudioError,
     GestionPruebasError,
     PruebaYaAsignada,
+    PruebaYaQuitada,
     VersionDesactualizada,
     comprobar_identidad,
     crear_estudio,
@@ -232,4 +233,34 @@ def agregar_prueba(request, pk):
         messages.error(request, "No se pudo agregar la prueba. Intentá nuevamente.")
     else:
         messages.success(request, f"Prueba {prueba} agregada al estudio {estudio.pk}.")
+    return redirect("estudios:detalle", pk=estudio.pk)
+
+
+def quitar_prueba(request, pk, asignacion_pk):
+    estudio = get_object_or_404(Estudio.objects.select_related("muestra"), pk=pk)
+    if request.method != "POST":
+        asignacion = (
+            estudio.pruebas_asignadas.select_related("prueba").filter(pk=asignacion_pk).first()
+        )
+        if asignacion is None:
+            messages.info(request, "La prueba ya no forma parte del estudio.")
+            return redirect("estudios:detalle", pk=estudio.pk)
+        if motivo := servicios.motivo_para_no_quitar(estudio, asignacion):
+            messages.error(request, str(motivo))
+            return redirect("estudios:detalle", pk=estudio.pk)
+        return render(
+            request,
+            "estudios/quitar_prueba_confirmar.html",
+            {"estudio": estudio, "asignacion": asignacion},
+        )
+    try:
+        prueba = servicios.quitar_prueba(estudio.pk, asignacion_pk, request.user)
+    except PruebaYaQuitada as exc:
+        messages.info(request, str(exc))
+    except GestionPruebasError as exc:
+        messages.error(request, str(exc))
+    except DatabaseError:
+        messages.error(request, "No se pudo quitar la prueba. Intentá nuevamente.")
+    else:
+        messages.success(request, f"Prueba {prueba} quitada del estudio {estudio.pk}.")
     return redirect("estudios:detalle", pk=estudio.pk)

@@ -124,3 +124,12 @@ def test_admite_modificaciones_solo_pendiente_analisis(estudio):
     for estado in EstadoEstudio.values:
         estudio.estado = estado
         assert estudio.admite_modificaciones == (estado == EstadoEstudio.PENDIENTE_ANALISIS)
+
+
+def test_puede_quitarse_solo_pendiente(asignacion):
+    from estudios.models import EstadoPruebaEstudio
+
+    assert asignacion.puede_quitarse()
+    for estado in (EstadoPruebaEstudio.CARGADA, EstadoPruebaEstudio.COMPLETADA):
+        asignacion.estado = estado
+        assert not asignacion.puede_quitarse()

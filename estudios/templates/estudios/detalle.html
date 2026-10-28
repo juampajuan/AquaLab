@@ -103,7 +103,14 @@
                 <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
                 <td>{{ asignacion.prueba.nombre }}</td>
                 <td class="text-right">{% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}</td>
-                <td class="text-right"></td>
+                <td class="text-right">
+                  {% if not estudio.admite_modificaciones %}
+                  {% elif total_pruebas <= 1 %}
+                    <span class="text-xs text-tinta-suave">El estudio debe conservar al menos una prueba.</span>
+                  {% elif asignacion.puede_quitarse %}
+                    <a href="{% url 'estudios:quitar_prueba' estudio.pk asignacion.pk %}" class="btn btn-peligro btn-chico">Quitar</a>
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>

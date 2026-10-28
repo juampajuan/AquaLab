@@ -16,4 +16,9 @@ urlpatterns = [
     path("crear/confirmar/", views.confirmar, name="confirmar"),
     path("<int:pk>/", views.detalle, name="detalle"),
     path("<int:pk>/pruebas/agregar/", views.agregar_prueba, name="agregar_prueba"),
+    path(
+        "<int:pk>/pruebas/<int:asignacion_pk>/quitar/",
+        views.quitar_prueba,
+        name="quitar_prueba",
+    ),
 ]
