@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Confirmar estudio · AquaLab{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-8 col-lg-6">
+  <h1 class="h3">{% if recuperar %}Recuperar solicitud{% else %}Confirmar estudio{% endif %}</h1>
+  {% if not recuperar %}
+  <p>Revisá los datos y las pruebas antes de confirmar.</p>
+  <dl class="row">
+    <dt class="col-sm-4">Muestra</dt><dd class="col-sm-8">PI {{ borrador.muestra.pi }}</dd>
+    <dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">{{ borrador.muestra.cliente }}</dd>
+    <dt class="col-sm-4">Origen</dt><dd class="col-sm-8">{{ borrador.muestra.origen }}</dd>
+    <dt class="col-sm-4">Tipo</dt><dd class="col-sm-8">{{ borrador.config.nombre }}</dd>
+    <dt class="col-sm-4">Descripción</dt><dd class="col-sm-8">{{ borrador.config.descripcion|default:"—" }}</dd>
+    <dt class="col-sm-4">Estado inicial</dt><dd class="col-sm-8">Pendiente de análisis</dd>
+  </dl>
+  <h2 class="h5">Pruebas asignadas</h2>
+  <ul>{% for prueba in borrador.config.pruebas %}<li>{{ prueba.codigo }} · {{ prueba.nombre }}</li>{% endfor %}</ul>
+  {% else %}<p>La confirmación venció. Recuperar mostrará el resultado existente o un resumen actualizado para volver a confirmar.</p>{% endif %}
+  <div class="d-flex gap-2 flex-wrap">
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="token" value="{{ borrador.token }}">
+      {% if recuperar %}<button name="accion" value="recuperar" class="btn btn-primary">Recuperar y revisar</button>
+      {% else %}<button name="accion" value="confirmar" class="btn btn-primary">Confirmar estudio</button>{% endif %}
+    </form>
+    {% if not recuperar %}<a class="btn btn-outline-secondary" href="{% url 'estudios:crear' %}?volver={{ borrador.datos.clave }}">Volver y editar</a>{% endif %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="token" value="{{ borrador.token }}"><button name="accion" value="cancelar" class="btn btn-outline-danger">Cancelar</button></form>
+  </div>
+</div></div>
+{% endblock %}
