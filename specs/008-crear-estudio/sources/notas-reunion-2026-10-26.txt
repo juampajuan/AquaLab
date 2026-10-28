@@ -1,0 +1,406 @@
+AquaLab — Notas de reunión y definiciones clave
+26 de oct de 2026 · @Someone
+Pantallazo de la reunión
+El laboratorio no carga "estudios" sueltos: arma un catálogo de pruebas, las agrupa en tipos de estudio reutilizables y, sobre cada muestra, carga mediciones crudas que el sistema convierte en resultados para el informe. Esto unifica las notas de la reunión (NotasLab.txt) y el análisis del software actual del laboratorio (AnalisisPractico.txt), traducido al glosario de AquaLab.
+Traducción de términos
+En la reunión se usaron palabras del software actual del laboratorio. En AquaLab usamos siempre las del glosario.
+Lo que dijo el laboratorio
+Término en AquaLab
+Qué es
+Analito / determinación (pH, alcalinidad, pseudomonas, coliformes totales, fluoruro, arsénico)
+Prueba
+Una cosa que se mide sobre la muestra. Vive en el catálogo de pruebas
+Configuración > Analitos
+Catálogo de pruebas
+Donde cada prueba tiene su unidad, tipo de cálculo, fórmula y límites
+Plantilla ("microbiología de agua", "fisicoquímico de agua")
+Tipo de estudio
+Grupo reutilizable de pruebas del catálogo (US 5.5)
+Análisis que pide el cliente
+Estudio
+Un tipo de estudio aplicado a una muestra concreta, con sus pruebas (US 5.1)
+Lo que mido ("pH 7,4", "alcalinidad 1,5")
+Medición
+Valor crudo que carga el analista (US 6.1)
+Lo que va al informe ("1,5 × 20")
+Resultado
+Valor calculado, con unidad, que se compara contra los límites (US 6.2)
+Rango "para saber si dio bien o mal"
+Límites de la prueba
+Mínimo y máximo de referencia; definen si cumple (US 6.4)
+Informe
+Informe
+Documento final con los resultados calculados (US 7.2)
+Cómo fluye el trabajo
+1. El catálogo de pruebas ya viene cargado (lo definió el científico). Cada prueba sabe su unidad, sus límites y cómo se calcula.
+2. Con esas pruebas se arman tipos de estudio reutilizables, por ejemplo "Bacteriológico" (pseudomonas, coliformes totales, E. coli) o "Físico-Químico" (pH, alcalinidad, fluoruro, arsénico).
+3. Llega una muestra y se registra: cliente, origen, fechas y sitio de extracción. Recibe su N° PI automático.
+4. Sobre la muestra se crea un estudio eligiendo un tipo; las pruebas del tipo se precargan y se pueden agregar o quitar.
+5. En Mediciones aparece cada muestra con sus pruebas pendientes y se carga el valor crudo de cada una.
+6. El sistema calcula el resultado según el tipo de cálculo de la prueba (ver abajo) y lo compara con sus límites.
+7. El bioquímico valida los resultados; con todas las pruebas completadas se genera el informe.
+Los tres tipos de cálculo de una prueba
+Tipo de cálculo
+Qué hace el sistema
+Ejemplo de la reunión
+Directo
+El resultado es la medición tal cual
+pH: mido 7,4 → informo 7,4
+Fórmula
+Aplica la fórmula guardada en el catálogo de pruebas
+Alcalinidad: mido 1,5 → informo 1,5 × 20 = 30
+Curva de calibración
+Usa la recta de la curva (regresión lineal) para pasar de la lectura del equipo a concentración
+Fluoruro: la lectura entra en la curva y sale la concentración en mg/L
+El software actual tiene un cuarto caso, presencia/ausencia (A/P), para pruebas microbiológicas como E. coli: el resultado es "Ausente" o "Presente", no un número.
+Respuestas a las dudas que llevamos
+• ¿Qué tipos de estudio hay y vienen cargados? Sí: las pruebas vienen precargadas y los tipos de estudio son agrupaciones de ellas. Los mencionados fueron microbiología de agua y fisicoquímico de agua; el backlog suma "Vuelco a canal".
+• ¿Un estudio es un conjunto de pruebas sobre una muestra? Sí, es exactamente eso. Una muestra puede tener más de un estudio (por ejemplo, uno bacteriológico y uno físico-químico).
+• ¿Qué es la curva de calibración? Es una recta que se arma midiendo patrones de concentración conocida. Con ella se convierte la lectura del equipo en concentración real.
+• ¿Una curva por prueba o por estudio? Por prueba. Solo algunas pruebas la usan (por ejemplo fluoruro), y cada una tiene su propia curva activa con pendiente, ordenada y r².
+¿Qué datos contiene una muestra?
+Una muestra es el recipiente físico que entra al laboratorio: se identifica con un N° PI único y queda atada a un cliente y a un origen. No guarda resultados; esos viven en sus estudios.
+Campo
+Tipo de dato
+Obligatorio
+Cómo se completa
+De dónde sale
+N° PI
+Número entero, único
+Sí
+Automático: el sistema suma 1 al último. En el software actual arranca en 200001
+US 4.1 + software actual
+Cliente
+Referencia a Cliente
+Sí
+Se elige de los clientes registrados; trae razón social, CUIT/DNI y email
+US 4.1
+Origen
+Referencia a Origen (fuente de agua)
+Sí
+Se elige de una lista de orígenes del cliente (ej. "Pozo N°2")
+Nota US 4.1, necesario para US 8.1
+Nombre o identificación
+Texto
+No
+Texto libre; si queda vacío, "Muestra 1"
+Software actual
+Fecha de muestreo
+Fecha
+Sí
+Por defecto hoy; se puede corregir
+US 4.1
+Fecha de ingreso
+Fecha
+Sí
+Por defecto hoy; se puede corregir
+US 4.1
+Sitio de extracción
+Texto
+Sí
+Texto libre (ej. "Planta Luján – canilla sala de elaboración")
+US 4.1
+Responsable del muestreo
+Texto
+No
+Quién tomó la muestra
+Software actual
+Tipo de vertido
+Opción: Agua / Cloacal / Canal
+Sí
+Por defecto Agua. Define qué límites se aplican a los resultados
+Software actual
+Estado
+Opción
+Sí
+Automático: Ingresada → Con estudios en proceso → Informe generado
+Software actual
+Registrada por
+Referencia a Usuario
+Sí
+Automático: el usuario logueado (el software actual pone siempre "local")
+US 1.2
+Fecha y hora de registro
+Fecha y hora
+Sí
+Automático
+Constitución: trazabilidad
+Reglas que ya están acordadas:
+• No se registra sin los datos obligatorios y se pide confirmación antes de guardar (US 4.1).
+• Una muestra con historial no se borra; se desactiva (constitución, principio IV).
+• Falta decidir si "persona de contacto" va en el Cliente o en cada muestra (pendiente de la US 3.2).
+¿Qué datos contiene un estudio?
+Un estudio es un tipo de estudio aplicado a una muestra: tiene cabecera propia y una lista de pruebas, y cada prueba guarda su medición, su resultado y si cumple. El software actual del laboratorio no tiene esta entidad (mezcla muestra y resultados); en AquaLab sí existe, porque una muestra puede tener varios estudios.
+Cabecera del estudio
+Campo
+Tipo de dato
+Cómo se completa
+Historia
+Identificador
+Número único
+Automático
+US 5.2 (se busca por él)
+Muestra
+Referencia a Muestra
+Se elige una muestra registrada
+US 5.1
+Tipo de estudio
+Referencia a Tipo de estudio
+Se elige del catálogo (Bacteriológico, Físico-Químico, Vuelco a canal)
+US 5.1
+Estado
+Opción
+Automático: Pendiente de análisis → En proceso → Finalizado → Informe generado
+US 5.1, 5.2, 7.2
+Fecha de creación
+Fecha y hora
+Automático
+Trazabilidad
+Creado por
+Referencia a Usuario
+Automático
+Trazabilidad
+Fecha de informe
+Fecha
+Se completa al generar el informe
+US 7.2
+Cada prueba dentro del estudio
+Es una fila por prueba. Al crear el estudio se copian las pruebas del tipo; después se pueden agregar (US 5.3) o quitar si no tienen mediciones (US 5.4).
+Campo
+Tipo de dato
+Qué guarda
+Historia
+Prueba
+Referencia al catálogo
+Cuál es (ej. Fluoruro)
+US 5.1
+Estado de la prueba
+Opción
+Pendiente → Cargada → Completada (validada)
+US 5.2, 6.4
+Medición cruda
+Decimal (una o varias)
+Lo que leyó el analista: absorbancia, mL gastados, pH
+US 6.1
+Resultado
+Decimal, o Ausente/Presente
+Valor calculado que va al informe
+US 6.2
+Unidad
+Texto
+mg/L, UFC/mL, – (se copia del catálogo)
+US 6.2
+Límite mínimo y máximo
+Decimal
+Los vigentes para el tipo de vertido de la muestra
+US 6.4
+Límite de detección
+Decimal
+Por debajo se informa "< LD"
+Software actual
+Norma
+Texto
+Norma de referencia del límite (ej. Código Alimentario Argentino)
+Software actual
+Cumple
+Sí / No
+Resultado comparado contra los límites
+US 6.4
+Cálculo aplicado
+Texto
+Fórmula o curva usada, para auditar
+US 6.2
+Validado por y cuándo
+Usuario + fecha y hora
+Quién confirmó el resultado
+US 6.4
+Lo que el estudio toma del catálogo de pruebas
+No se carga en el estudio, pero el cálculo lo necesita. Cada prueba del catálogo tiene:
+• Código y nombre (ej. NO3, Nitratos), categoría (fisicoquímica o microbiológica) y unidad.
+• Tipo de cálculo: Directo, Fórmula, Curva de calibración o Presencia/Ausencia, con la fórmula cuando corresponde.
+• Límites generales, límite de detección y norma; más límites específicos por tipo de vertido (Agua, Cloacal, Canal) que reemplazan a los generales.
+• Si es una prueba de cálculo intermedio, que no se informa sola.
+• Curva de calibración (solo las que la usan): pendiente, ordenada, r², factor y si está activa.
+Ejemplo: una muestra con dos estudios
+La muestra PI 200417 tiene un estudio Físico-Químico y uno Bacteriológico; el arsénico da fuera de norma. Los valores son inventados, pero cada cálculo sigue los casos de la reunión (pH directo, alcalinidad × 20, fluoruro por curva).
+Muestra
+Campo
+Valor
+N° PI
+200417
+Cliente
+Alimentos del Sur S.A. (CUIT 30-71234567-8)
+Origen
+Pozo N°2
+Nombre
+Pozo N°2 – octubre
+Fecha de muestreo
+21/10/2026
+Fecha de ingreso
+21/10/2026
+Sitio de extracción
+Planta Luján – canilla de sala de elaboración
+Responsable del muestreo
+J. Pérez
+Tipo de vertido
+Agua
+Estado
+Con estudios en proceso
+Estudio 1: Físico-Químico (estado: Finalizado)
+Prueba
+Tipo de cálculo
+Medición cruda
+Cálculo
+Resultado
+Límites
+Cumple
+pH
+Directo
+7,4
+–
+7,4
+6,5 a 8,5
+Sí
+Alcalinidad
+Fórmula
+1,5 mL
+1,5 × 20
+30 mg/L CaCO3
+máx. 400
+Sí
+Fluoruro
+Curva de calibración
+Absorbancia 0,37
+(0,37 − 0,02) / 0,25
+1,4 mg/L
+máx. 1,5
+Sí
+Arsénico
+Directo
+0,015
+–
+0,015 mg/L
+máx. 0,01
+No
+La curva de fluoruro activa tiene pendiente 0,25, ordenada 0,02 y r² 0,998.
+Estudio 2: Bacteriológico (estado: En proceso)
+Prueba
+Tipo de cálculo
+Medición cruda
+Resultado
+Límites
+Estado de la prueba
+Coliformes totales
+Directo
+2
+2 NMP/100 mL
+máx. 3
+Completada
+E. coli
+Presencia/Ausencia
+Ausente
+Ausente
+Ausente
+Completada
+Pseudomonas aeruginosa
+Presencia/Ausencia
+–
+–
+Ausente
+Pendiente
+Como queda una prueba pendiente, AquaLab no deja generar el informe de este estudio (US 7.1).
+¿Qué tendría el dashboard?
+El dashboard tiene que contestar al abrir la app tres cosas: qué falta analizar, qué dio fuera de norma y cómo viene cada origen. Todo sale de datos que AquaLab ya guarda; no hace falta cargar nada extra.
+Bloque
+Qué muestra
+Para quién
+Sale de
+Historia
+Trabajo pendiente
+Estudios por estado: Pendiente de análisis / En proceso / Finalizado / Informe generado, con acceso a cada lista
+Analistas
+Estado del estudio
+US 5.2
+Pruebas por cargar
+Cantidad de pruebas en Pendiente, agrupadas por prueba (ej. 12 fluoruros), para armar la tanda del día
+Analistas
+Estado de la prueba
+US 6.1
+Fuera de norma
+Muestras con al menos un resultado que no cumple, con la prueba y el valor
+Bioquímico
+Cumple = No
+US 6.4
+Listos para informar
+Estudios con el 100 % de pruebas completadas y sin informe
+Quien emite informes
+Estado de pruebas
+US 7.1
+Tiempo de respuesta
+Promedio de días entre fecha de ingreso y fecha de informe; muestras que pasan un umbral
+Responsable técnico
+Fechas de muestra y estudio
+–
+Volumen
+Muestras por mes, por cliente y por tipo de vertido
+Responsable técnico
+Muestra
+–
+Curvas de calibración
+Curvas activas con su r², marcando las de r² bajo
+Responsable técnico
+Catálogo de pruebas
+US 6.2
+Evolución por origen
+Gráfico del resultado actual de una prueba contra el historial del mismo origen
+Responsable técnico
+Resultados + Origen
+US 8.1
+Desvíos sin revisar
+Alertas de variación relevante pendientes de marcar como revisadas
+Responsable técnico
+Notificaciones
+US 8.2
+Para la demo alcanzan los cuatro primeros bloques y la evolución por origen, que es el diferencial que pidió la profesora. Los gráficos usan Chart.js, ya previsto en la constitución para la semana 5.
+Diferenciales para sumar valor
+El diferencial principal ya está en el backlog: comparar cada resultado con el historial del mismo origen y avisar desvíos (US 8.1 y 8.2). Las ideas de IA de abajo se apoyan en esos mismos datos y no piden campos nuevos.
+Idea
+Cómo funciona
+Usa
+Esfuerzo
+Comparación histórica por origen (ya en backlog)
+Al cargar un resultado, muestra la serie del mismo origen y la variación
+Resultados + Origen
+Medio
+Alerta de desvío (ya en backlog)
+Si la variación supera un umbral, notifica al responsable técnico; no valida ni rechaza solo
+Resultados + Origen
+Medio
+Aviso de valor improbable al cargar
+Antes de guardar, advierte si la medición está muy lejos del historial del origen (ej. pH 74 en vez de 7,4)
+Mediciones + historial
+Bajo
+Chatbot de estado
+"¿Cómo está el PI 200417?" → responde estudios, estado de cada prueba y si algo no cumple
+Muestra + Estudio
+Medio
+Consultas en lenguaje natural
+"¿Qué muestras dieron arsénico fuera de norma este mes?" → la IA arma la consulta y devuelve la lista
+Toda la base, solo lectura
+Alto
+Conclusión asistida del informe
+La IA redacta un párrafo con lo que no cumple y contra qué norma; el bioquímico lo revisa antes de firmar
+Resultados + Norma + Tipo de vertido
+Medio
+Aviso al cliente
+Cuando se emite un informe con algo fuera de norma, se le envía un correo
+Email del cliente (ya existe en Cliente)
+Bajo
+Recomendación: sumar el aviso de valor improbable (sale casi gratis de la comparación histórica) y la conclusión asistida del informe, que es la que más se ve en una demo. Cualquiera de estas necesita su propia spec antes de programarla (constitución, principio I).
+Fuera de alcance y dudas abiertas
+Del software actual del laboratorio dejamos afuera todo lo de presupuestos: número de presupuesto, ítems, precios y aprobación. En AquaLab la muestra se registra directamente contra el cliente. También queda afuera el tipo de vertido "Harina", que no es agua.
+Cosas del software actual que AquaLab hace distinto a propósito:
+• Una muestra puede tener varios estudios (allá no existe la entidad Estudio).
+• Cada prueba tiene su estado y se puede cargar de a partes (allá se borran y reescriben todos los resultados).
+• El informe emitido no se puede modificar ni regenerar (US 7.3).
+• Cada dato queda con el usuario que lo cargó (allá siempre es "local").

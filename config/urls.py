@@ -10,5 +10,6 @@ urlpatterns = [
     path("usuarios/", include("usuarios.urls")),
     path("clientes/", include("clientes.urls")),
     path("muestras/", include("muestras.urls")),
+    path("estudios/", include("estudios.urls")),
     path("", TemplateView.as_view(template_name="inicio.html"), name="inicio"),
 ]
