@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Tipo de estudio · AquaLab{% endblock %}
+{% block content %}
+  <h1 class="h3">{% if operacion == 'editar' %}Editar{% else %}Crear{% endif %} tipo de estudio</h1>
+  {% if sin_pruebas %}
+    <p class="alert alert-warning">No hay pruebas precargadas. Es necesario disponer del catálogo de pruebas para crear tipos.</p>
+  {% endif %}
+  {% if actual %}
+    <p>Disponibilidad: {{ actual.activo|yesno:"Activo,Inactivo" }}. La edición no cambia la disponibilidad.</p>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="contexto" value="{{ contexto }}">
+    <input type="hidden" name="anterior" value="{{ anterior }}">
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="mb-3">
+        {{ field.label_tag }}{{ field }}
+        {% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <button class="btn btn-primary" type="submit" {% if sin_pruebas %}disabled{% endif %}>Revisar resumen</button>
+    <button class="btn btn-secondary" type="submit" name="cancelar" value="1" formnovalidate>Cancelar</button>
+  </form>
+{% endblock %}

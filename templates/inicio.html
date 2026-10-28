@@ -11,5 +11,8 @@
     <a href="{% url 'muestras:registrar' %}" class="btn btn-outline-primary">Registrar muestra</a>
     <a href="{% url 'estudios:crear' %}" class="btn btn-outline-primary">Crear estudio</a>
     <a href="{% url 'estudios:buscar' %}" class="btn btn-outline-primary">Buscar estudio</a>
+    {% if perms.estudios.gestionar_catalogo %}
+      <a href="{% url 'estudios:tipos_listar' %}" class="btn btn-outline-primary">Gestionar tipos</a>
+    {% endif %}
   </p>
 {% endblock %}

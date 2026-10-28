@@ -25,3 +25,6 @@ dist/
 Thumbs.db
 *.tmp
 *.swp
+
+# Respaldos locales, nunca publicar
+.local-backups/
