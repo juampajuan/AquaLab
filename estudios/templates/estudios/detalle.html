@@ -14,7 +14,10 @@
     <dt class="col-sm-4">Fecha de creación</dt><dd class="col-sm-8">{{ estudio.fecha_creacion|date:"d/m/Y H:i" }}</dd>
   </dl>
   {% if not estudio.admite_modificaciones %}<div class="alert alert-warning">Este estudio ya no admite cambios en sus pruebas.</div>{% endif %}
-  <h2 class="h5">Pruebas asignadas</h2>
+  <div class="d-flex justify-content-between align-items-center">
+    <h2 class="h5">Pruebas asignadas</h2>
+    {% if estudio.admite_modificaciones %}<a class="btn btn-primary btn-sm" href="{% url 'estudios:agregar_prueba' estudio.pk %}">Agregar prueba</a>{% endif %}
+  </div>
   <table class="table">
     <thead><tr><th>Código</th><th>Nombre</th><th>Estado</th><th>Acción</th></tr></thead>
     <tbody>

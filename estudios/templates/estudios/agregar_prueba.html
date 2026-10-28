@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Agregar prueba · AquaLab{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-8 col-lg-6">
+  <h1 class="h3">Agregar prueba al estudio {{ estudio.pk }}</h1>
+  <p>Estudio {{ estudio.pk }} · muestra PI {{ estudio.muestra.numero_pi }}</p>
+  {% if form.fields.prueba.queryset.exists %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.prueba.id_for_label }}">{{ form.prueba.label }}</label>
+      <select name="{{ form.prueba.html_name }}" id="{{ form.prueba.id_for_label }}" class="form-select{% if form.prueba.errors %} is-invalid{% endif %}">
+        {% for valor, etiqueta in form.prueba.field.choices %}<option value="{{ valor }}"{% if form.prueba.value|stringformat:"s" == valor|stringformat:"s" %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+      </select>
+      {% for error in form.prueba.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="d-flex gap-2">
+      <button name="accion" value="revisar" class="btn btn-primary">Revisar</button>
+      <a class="btn btn-outline-secondary" href="{% url 'estudios:detalle' estudio.pk %}">Cancelar</a>
+    </div>
+  </form>
+  {% else %}
+  <div class="alert alert-info">No hay pruebas disponibles para agregar: todas ya forman parte del estudio.</div>
+  <a class="btn btn-outline-secondary" href="{% url 'estudios:detalle' estudio.pk %}">Volver al estudio</a>
+  {% endif %}
+</div></div>
+{% endblock %}

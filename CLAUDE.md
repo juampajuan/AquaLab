@@ -46,3 +46,14 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - La ficha del cliente y sus orígenes se actualizan en vivo con
   `muestras/static/muestras/registro_muestra.js`; con un cliente ya elegido (errores o `?volver=1`)
   los renderiza el servidor. No hay buscador de clientes: se quitó tras la prueba manual.
+
+## Pruebas de un estudio (US 5.3)
+
+- `estudios/servicios.py:agregar_prueba` bloquea la fila del estudio (`select_for_update`) y revalida
+  todo bajo ese bloqueo; US 5.4 (`quitar_prueba`) usa el mismo esquema para la regla de al menos una
+  prueba. `Estudio.admite_modificaciones` es la única regla de estudio modificable.
+- La vista `agregar_prueba` y el servicio se llaman igual: la vista usa `servicios.agregar_prueba`, y
+  los tests que lo parchean apuntan a `estudios.servicios.agregar_prueba`.
+- `estudios:detalle` es la única vista del estudio: US 5.4 completa su columna Acción y US 5.2 debe
+  ampliarla en vez de crear otra. La columna Estado de cada prueba es el texto fijo «Pendiente» hasta
+  que US 5.2 / 6.4 agreguen el estado por prueba.

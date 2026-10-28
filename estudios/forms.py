@@ -1,6 +1,7 @@
 from django import forms
 
 from muestras.models import Muestra
+from pruebas.models import Prueba
 
 from .models import TipoEstudio
 
@@ -26,3 +27,14 @@ class CrearEstudioForm(forms.Form):
         super().__init__(*args, **kwargs)
         for campo in self.fields.values():
             campo.widget.attrs["class"] = "form-select"
+
+
+class AgregarPruebaForm(forms.Form):
+    def __init__(self, *args, estudio, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["prueba"] = forms.ModelChoiceField(
+            queryset=Prueba.objects.exclude(pk__in=estudio.pruebas_asignadas.values("prueba")),
+            label="Prueba",
+            empty_label="Elegí una prueba",
+        )
+        self.fields["prueba"].widget.attrs["class"] = "form-select"

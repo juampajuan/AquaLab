@@ -7,16 +7,21 @@ from django.utils.html import format_html
 
 from muestras.models import Muestra
 
+from . import servicios
 from .catalogo import CatalogoNoDisponible
 from .confirmaciones import cargar_token, descartar, pendientes, preparar
-from .forms import CrearEstudioForm
+from .forms import AgregarPruebaForm, CrearEstudioForm
 from .models import Estudio
 from .servicios import (
     CrearEstudioError,
+    GestionPruebasError,
+    PruebaYaAsignada,
     VersionDesactualizada,
     comprobar_identidad,
     crear_estudio,
 )
+
+MENSAJE_NO_MODIFICABLE = "Este estudio ya no admite cambios en sus pruebas."
 
 
 def exito(request, estudio):
@@ -41,6 +46,54 @@ def detalle(request, pk):
     return render(
         request, "estudios/detalle.html", {"estudio": estudio, "asignaciones": asignaciones}
     )
+
+
+def formulario_prueba(request, estudio, form):
+    return render(request, "estudios/agregar_prueba.html", {"estudio": estudio, "form": form})
+
+
+def agregar_prueba(request, pk):
+    estudio = get_object_or_404(Estudio.objects.select_related("muestra"), pk=pk)
+    volver = redirect("estudios:detalle", pk=estudio.pk)
+    if not estudio.admite_modificaciones:
+        messages.error(request, MENSAJE_NO_MODIFICABLE)
+        return volver
+    if request.method != "POST":
+        form = AgregarPruebaForm(estudio=estudio)
+        return formulario_prueba(request, estudio, form)
+    accion = request.POST.get("accion")
+    if accion not in ("revisar", "confirmar"):
+        messages.error(request, "La acción no es válida.")
+        return volver
+    form = AgregarPruebaForm(request.POST, estudio=estudio)
+    if not form.is_valid():
+        # Un reenvío de una confirmación ya aplicada se informa como aviso, no como error.
+        enviada = request.POST.get("prueba", "")
+        asignada = (
+            estudio.pruebas_asignadas.select_related("prueba").filter(prueba_id=enviada).first()
+            if accion == "confirmar" and enviada.isdigit()
+            else None
+        )
+        if asignada:
+            codigo = asignada.prueba.codigo
+            messages.info(request, f"La prueba {codigo} ya forma parte del estudio.")
+            return volver
+        return formulario_prueba(request, estudio, form)
+    prueba = form.cleaned_data["prueba"]
+    if accion == "revisar":
+        contexto = {"estudio": estudio, "prueba": prueba}
+        return render(request, "estudios/agregar_prueba_confirmar.html", contexto)
+    try:
+        servicios.agregar_prueba(estudio.pk, prueba.pk, request.user)
+    except PruebaYaAsignada as exc:
+        messages.info(request, str(exc))
+    except GestionPruebasError as exc:
+        messages.error(request, str(exc))
+    except DatabaseError:
+        messages.error(request, "No se pudo agregar la prueba. Intentá nuevamente.")
+    else:
+        messages.success(request, f"Prueba {prueba} agregada al estudio {estudio.pk}.")
+    return volver
 
 
 def resumen(request, borrador, *, recuperar=False):
