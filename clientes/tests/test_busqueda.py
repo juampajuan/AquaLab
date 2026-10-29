@@ -72,10 +72,12 @@ def test_ignora_tildes_tambien_en_razon_social(cliente_autenticado, clientes_bus
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("texto", ["", "   "])
-def test_busqueda_vacia_no_lista_clientes(cliente_autenticado, clientes_busqueda, texto):
+def test_busqueda_vacia_lista_todos_los_clientes(cliente_autenticado, clientes_busqueda, texto):
     respuesta = buscar(cliente_autenticado, texto)
-    assert respuesta.context["page_obj"] is None
-    assert "Ingresá un nombre, razón social o número de documento" in respuesta.content.decode()
+    assert respuesta.status_code == 200
+    assert not respuesta.context["form"].errors
+    assert respuesta.context["page_obj"] is not None
+    assert respuesta.context["page_obj"].paginator.count == 6
 
 
 @pytest.mark.django_db
@@ -86,11 +88,25 @@ def test_busqueda_de_un_caracter_pide_minimo(cliente_autenticado, clientes_busqu
 
 
 @pytest.mark.django_db
-def test_sin_parametro_muestra_formulario_sin_error(cliente_autenticado, clientes_busqueda):
+def test_sin_parametro_lista_todos_los_clientes(cliente_autenticado, clientes_busqueda):
     respuesta = cliente_autenticado.get(reverse(URL))
     assert respuesta.status_code == 200
-    assert respuesta.context["page_obj"] is None
     assert not respuesta.context["form"].errors
+    assert respuesta.context["page_obj"] is not None
+    assert respuesta.context["page_obj"].paginator.count == 6
+    html = respuesta.content.decode()
+    assert "6 clientes registrados" in html
+    assert 'role="tooltip"' in html
+    assert "group-hover:visible" in html
+
+
+@pytest.mark.django_db
+def test_sin_clientes_registrados_muestra_estado_vacio(cliente_autenticado):
+    respuesta = cliente_autenticado.get(reverse(URL))
+    assert respuesta.status_code == 200
+    assert respuesta.context["page_obj"] is not None
+    assert respuesta.context["page_obj"].paginator.count == 0
+    assert "Aún no hay clientes registrados." in respuesta.content.decode()
 
 
 @pytest.mark.django_db

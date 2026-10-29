@@ -122,10 +122,10 @@ class BuscarClienteForm(forms.Form):
 
     q = forms.CharField(
         label="Nombre, razón social o documento",
+        required=False,
         min_length=2,
         strip=True,
         error_messages={
-            "required": "Ingresá un nombre, razón social o número de documento para buscar.",
             "min_length": "Ingresá al menos 2 caracteres para buscar.",
         },
     )

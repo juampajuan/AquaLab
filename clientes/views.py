@@ -188,20 +188,23 @@ def detalle(request, pk):
     return render(request, "clientes/detalle.html", {"cliente": cliente})
 
 
-def buscar_clientes(texto):
-    """Clientes activos cuyo nombre, razón social o documento contienen `texto`."""
-    filtro = Q(nombre__unaccent__icontains=texto) | Q(razon_social__unaccent__icontains=texto)
-    documento = normalizar_numero_documento(texto)
-    if documento.isdigit():
-        filtro |= Q(numero_documento__contains=documento)
-    return Cliente.objects.filter(activo=True).filter(filtro).order_by(*Cliente._meta.ordering)
+def buscar_clientes(texto=""):
+    """Clientes activos (todos si `texto` está vacío, o los que coinciden con `texto`)."""
+    qs = Cliente.objects.filter(activo=True)
+    if texto:
+        filtro = Q(nombre__unaccent__icontains=texto) | Q(razon_social__unaccent__icontains=texto)
+        documento = normalizar_numero_documento(texto)
+        if documento.isdigit():
+            filtro |= Q(numero_documento__contains=documento)
+        qs = qs.filter(filtro)
+    return qs.order_by(*Cliente._meta.ordering)
 
 
 def buscar(request):
-    form = BuscarClienteForm(request.GET) if "q" in request.GET else BuscarClienteForm()
+    form = BuscarClienteForm(request.GET or None)
     contexto = {"form": form, "page_obj": None, "q": ""}
-    if form.is_bound and form.is_valid():
-        texto = form.cleaned_data["q"]
+    if not form.is_bound or form.is_valid():
+        texto = form.cleaned_data.get("q", "") if form.is_bound else ""
         paginador = Paginator(buscar_clientes(texto), RESULTADOS_POR_PAGINA)
         contexto.update(q=texto, page_obj=paginador.get_page(request.GET.get("page")))
     return render(request, "clientes/buscar.html", contexto)

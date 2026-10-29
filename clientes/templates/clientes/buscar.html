@@ -8,7 +8,18 @@
 
 {% block content %}
   <form method="get" action="{% url 'clientes:buscar' %}" class="tarjeta mb-6 p-5 sm:p-6" novalidate>
-    <label for="{{ form.q.id_for_label }}" class="campo-etiqueta">{{ form.q.label }}</label>
+    <div class="mb-1.5 flex items-center gap-1.5">
+      <label for="{{ form.q.id_for_label }}" class="campo-etiqueta mb-0">{{ form.q.label }}</label>
+      <span class="group relative inline-flex items-center" tabindex="0" aria-describedby="ayuda-busqueda-cliente">
+        <span class="inline-flex cursor-help items-center text-tinta-suave transition hover:text-cian-texto focus:text-cian-texto">
+          {% include "ui/icono.html" with nombre="info" clase="size-4" %}
+        </span>
+        <span id="ayuda-busqueda-cliente" role="tooltip"
+              class="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 rounded-lg bg-marino px-3 py-2 text-xs font-normal leading-relaxed text-white opacity-0 shadow-lg transition duration-150 group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">
+          Podés ingresar parte del nombre, de la razón social o del DNI/CUIT (con o sin puntos y guiones).
+        </span>
+      </span>
+    </div>
     <div class="flex flex-col gap-3 sm:flex-row">
       <div class="relative flex-1">
         <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-tinta-suave">
@@ -17,26 +28,31 @@
         <input type="text" name="q" id="{{ form.q.id_for_label }}" value="{{ form.q.value|default:'' }}"
                class="form-control pl-9{% if form.q.errors %} is-invalid{% endif %}" autofocus>
       </div>
-      <button type="submit" class="btn btn-primario">
-        {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar
-      </button>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primario">
+          {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar
+        </button>
+        {% if q %}
+          <a href="{% url 'clientes:buscar' %}" class="btn btn-secundario">Ver todos</a>
+        {% endif %}
+      </div>
     </div>
     {% if form.q.errors %}
       <div class="campo-error" id="{{ form.q.auto_id }}_error">
         {% for error in form.q.errors %}<div>{{ error }}</div>{% endfor %}
       </div>
     {% endif %}
-    <p class="campo-ayuda flex items-center gap-1.5">
-      {% include "ui/icono.html" with nombre="info" clase="size-3.5" %}
-      Podés ingresar parte del nombre, de la razón social o del DNI/CUIT (con o sin puntos y guiones).
-    </p>
   </form>
 
   {% if page_obj is not None %}
     <section class="tarjeta overflow-hidden">
       {% if page_obj.paginator.count %}
         <h2 class="px-4 py-4 text-sm font-semibold text-marino sm:px-5">
-          {{ page_obj.paginator.count }} cliente{{ page_obj.paginator.count|pluralize }} encontrado{{ page_obj.paginator.count|pluralize }}
+          {% if q %}
+            {{ page_obj.paginator.count }} cliente{{ page_obj.paginator.count|pluralize }} encontrado{{ page_obj.paginator.count|pluralize }}
+          {% else %}
+            {{ page_obj.paginator.count }} cliente{{ page_obj.paginator.count|pluralize }} registrado{{ page_obj.paginator.count|pluralize }}
+          {% endif %}
         </h2>
         <div class="overflow-x-auto">
           <table class="tabla">
@@ -76,8 +92,10 @@
         {% with qq=q|urlencode %}
           {% include "ui/paginacion.html" with parametros="q="|add:qq %}
         {% endwith %}
-      {% else %}
+      {% elif q %}
         {% include "ui/estado_vacio.html" with icono="search" mensaje="No se encontraron clientes para «"|add:q|add:"»." %}
+      {% else %}
+        {% include "ui/estado_vacio.html" with icono="users" mensaje="Aún no hay clientes registrados." %}
       {% endif %}
     </section>
   {% endif %}
