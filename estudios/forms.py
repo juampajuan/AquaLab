@@ -58,10 +58,10 @@ class AgregarPruebaForm(forms.Form):
 
 
 class BuscarEstudioForm(forms.Form):
-    """Texto de búsqueda de estudios (por GET): identificador, muestra o cliente."""
+    """Texto de búsqueda de estudios (por GET): identificador, muestra, cliente o tipo."""
 
     q = forms.CharField(
-        label="Identificador, muestra (N° PI / nombre) o cliente",
+        label="Identificador, muestra, cliente o tipo de estudio",
         required=False,
         max_length=MAX_LONGITUD_BUSQUEDA,
         strip=True,
@@ -73,9 +73,7 @@ class BuscarEstudioForm(forms.Form):
     def clean_q(self):
         valor = (self.cleaned_data.get("q") or "").strip()
         if not valor:
-            raise forms.ValidationError(
-                "Ingresá un identificador de estudio, N° PI, muestra o cliente para buscar."
-            )
+            return ""
         if valor.isdigit():
             try:
                 if not valor.isascii():

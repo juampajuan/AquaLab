@@ -134,14 +134,18 @@ def confirmar(request):
 def buscar(request):
     page_obj = None
     q = ""
-    if "q" in request.GET:
-        form = BuscarEstudioForm(request.GET)
-        if form.is_valid():
-            q = form.cleaned_data["q"]
+    form = BuscarEstudioForm(request.GET or None)
+    if not form.is_bound or form.is_valid():
+        q = form.cleaned_data.get("q", "") if form.is_bound else ""
+        qs = Estudio.objects.select_related(
+            "muestra", "muestra__cliente", "muestra__origen"
+        ).order_by(*Estudio._meta.ordering)
+        if q:
             filtro = (
                 Q(muestra__nombre__unaccent__icontains=q)
                 | Q(muestra__cliente__nombre__unaccent__icontains=q)
                 | Q(muestra__cliente__razon_social__unaccent__icontains=q)
+                | Q(tipo_nombre_snapshot__unaccent__icontains=q)
             )
             if q.isascii() and q.isdigit():
                 numero = int(q)
@@ -151,14 +155,8 @@ def buscar(request):
             q_doc = normalizar_numero_documento(q)
             if len(q_doc) >= 4 and q_doc.isascii() and q_doc.isdigit():
                 filtro |= Q(muestra__cliente__numero_documento__contains=q_doc)
-            qs = (
-                Estudio.objects.select_related("muestra", "muestra__cliente", "muestra__origen")
-                .filter(filtro)
-                .order_by(*Estudio._meta.ordering)
-            )
-            page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
-    else:
-        form = BuscarEstudioForm()
+            qs = qs.filter(filtro)
+        page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
     return render(
         request,
         "estudios/buscar.html",
