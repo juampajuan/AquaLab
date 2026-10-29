@@ -177,6 +177,20 @@ def test_buscar_por_nombre_de_muestra(cliente_http, escenario_consulta, texto):
     ]
 
 
+@pytest.mark.parametrize(
+    "texto",
+    ["Físico-Químico", "fisico-quimico", "FISICO", "quimico"],
+)
+def test_buscar_por_tipo_de_estudio(cliente_http, escenario_consulta, texto):
+    resp = cliente_http.get(reverse("estudios:buscar"), {"q": texto})
+    assert resp.status_code == 200
+    resultados = list(resp.context["page_obj"].object_list)
+    assert resultados == [
+        escenario_consulta["estudio_informado"],
+        escenario_consulta["estudio_en_proceso"],
+    ]
+
+
 def test_buscar_numero_incluye_nombres_de_muestra_y_cliente(
     cliente_http, escenario_consulta, empleado
 ):
@@ -362,22 +376,41 @@ def test_busqueda_sin_coincidencias(cliente_http, escenario_consulta):
     assert resp.context["page_obj"].paginator.count == 0
 
 
-def test_busqueda_sin_parametro_muestra_formulario_vacio(cliente_http):
+def test_busqueda_sin_parametro_lista_todos_los_estudios(cliente_http, escenario_consulta):
     resp = cliente_http.get(reverse("estudios:buscar"))
     assert resp.status_code == 200
-    assert resp.context["page_obj"] is None
     assert not resp.context["form"].errors
+    assert resp.context["page_obj"] is not None
+    resultados = list(resp.context["page_obj"].object_list)
+    assert resultados == [
+        escenario_consulta["estudio_informado"],
+        escenario_consulta["estudio_finalizado"],
+        escenario_consulta["estudio_en_proceso"],
+        escenario_consulta["estudio_pendiente"],
+    ]
+    html = resp.content.decode()
+    assert "4 estudios registrados" in html
+    assert 'role="tooltip"' in html
+    assert "group-hover:visible" in html
+
+
+def test_busqueda_sin_estudios_registrados_muestra_estado_vacio(cliente_http):
+    resp = cliente_http.get(reverse("estudios:buscar"))
+    assert resp.status_code == 200
+    assert resp.context["page_obj"] is not None
+    assert resp.context["page_obj"].paginator.count == 0
+    assert "Aún no hay estudios registrados." in resp.content.decode()
 
 
 @pytest.mark.parametrize("texto", ["", "   "])
-def test_busqueda_vacia_o_espacios_muestra_error(cliente_http, escenario_consulta, texto):
+def test_busqueda_vacia_o_espacios_lista_todos_los_estudios(
+    cliente_http, escenario_consulta, texto
+):
     resp = cliente_http.get(reverse("estudios:buscar"), {"q": texto})
     assert resp.status_code == 200
-    assert resp.context["page_obj"] is None
-    assert (
-        "Ingresá un identificador de estudio, N° PI, muestra o cliente para buscar."
-        in resp.content.decode()
-    )
+    assert not resp.context["form"].errors
+    assert resp.context["page_obj"] is not None
+    assert resp.context["page_obj"].paginator.count == 4
 
 
 @pytest.mark.parametrize("texto", ["a", "Z", "-"])
