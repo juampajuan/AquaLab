@@ -8,6 +8,8 @@ from .models import (
     validar_telefono,
 )
 
+MAX_LONGITUD_BUSQUEDA = 100
+
 CAMPOS_CLIENTE = (
     "nombre",
     "razon_social",
@@ -124,8 +126,10 @@ class BuscarClienteForm(forms.Form):
         label="Nombre, razón social o documento",
         required=False,
         min_length=2,
+        max_length=MAX_LONGITUD_BUSQUEDA,
         strip=True,
         error_messages={
             "min_length": "Ingresá al menos 2 caracteres para buscar.",
+            "max_length": "Ingresá como máximo 100 caracteres para buscar.",
         },
     )

@@ -67,7 +67,13 @@ def crear(request):
                 return redirect(f"{reverse('estudios:confirmar')}?solicitud={b['datos']['clave']}")
     else:
         b = pendientes(request).get(anterior)
-        form = CrearEstudioForm(initial=b["datos"] if b else None)
+        if b:
+            initial = b["datos"]
+        elif request.GET.get("muestra"):
+            initial = {"muestra": request.GET.get("muestra")}
+        else:
+            initial = None
+        form = CrearEstudioForm(initial=initial)
     return render(request, "estudios/crear_form.html", {"form": form, "anterior": anterior})
 
 

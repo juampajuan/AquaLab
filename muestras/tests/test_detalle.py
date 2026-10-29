@@ -142,13 +142,20 @@ def test_ficha_muestra_lista_estudios_asignados_con_estado_y_avance(
     assert reverse("estudios:detalle", args=[estudio_2.pk]) in html
 
 
-def test_ficha_muestra_sin_estudios_informa_y_ofrece_crear(cliente_autenticado, crear_muestra):
+def test_ficha_muestra_sin_estudios_informa_y_preselecciona_muestra_al_crear(
+    cliente_autenticado, crear_muestra, catalogo_pruebas
+):
     muestra = crear_muestra(200001)
     resp = cliente_autenticado.get(reverse("muestras:detalle", args=[muestra.pk]))
     assert resp.status_code == 200
     html = resp.content.decode()
     assert "Esta muestra aún no tiene estudios asignados." in html
-    assert reverse("estudios:crear") in html
+    url_crear_con_muestra = f"{reverse('estudios:crear')}?muestra={muestra.pk}"
+    assert url_crear_con_muestra in html
+
+    resp_crear = cliente_autenticado.get(url_crear_con_muestra)
+    assert resp_crear.status_code == 200
+    assert f'<option value="{muestra.pk}" selected>' in resp_crear.content.decode()
 
 
 def test_navegacion_cruzada_entre_estudio_y_ficha_de_muestra(
@@ -180,6 +187,10 @@ def test_navegacion_cruzada_entre_estudio_y_ficha_de_muestra(
     resp_muestra = cliente_autenticado.get(url_muestra)
     assert resp_muestra.status_code == 200
     assert url_estudio in resp_muestra.content.decode()
+
+    resp_inicio = cliente_autenticado.get(reverse("inicio"))
+    assert resp_inicio.status_code == 200
+    assert url_muestra in resp_inicio.content.decode()
 
 
 def test_ficha_muestra_sin_responsable_y_con_cliente_inactivo(
