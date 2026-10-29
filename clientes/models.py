@@ -6,6 +6,9 @@ from django.db.models import Q
 
 PESOS_CUIT = (5, 4, 3, 2, 7, 6, 5, 4, 3, 2)
 PATRON_TELEFONO = re.compile(r"^[+\d\s\-()]+$")
+MENSAJE_DOCUMENTO_CON_MUESTRAS = (
+    "No se puede modificar el documento de un cliente que ya tiene muestras registradas."
+)
 
 
 class TipoDocumento(models.TextChoices):
@@ -114,6 +117,15 @@ class Cliente(models.Model):
                 validar_documento(self.tipo_documento, self.numero_documento)
             except ValidationError as exc:
                 errores.update(exc.message_dict)
+            else:
+                if self.pk and self.muestras.exists():
+                    actual = (
+                        Cliente.objects.filter(pk=self.pk)
+                        .values_list("tipo_documento", "numero_documento")
+                        .first()
+                    )
+                    if actual and (self.tipo_documento, self.numero_documento) != actual:
+                        errores["numero_documento"] = [MENSAJE_DOCUMENTO_CON_MUESTRAS]
 
         if self.telefono:
             try:
