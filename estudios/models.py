@@ -117,3 +117,11 @@ class PruebaEstudio(models.Model):
 
     def __str__(self):
         return f"{self.estudio} · {self.prueba}"
+
+    def puede_quitarse(self):
+        """Solo una prueba Pendiente: Cargada y Completada tienen mediciones o resultados.
+
+        El Epic 6 cambia este estado al cargar mediciones o resultados, y sus tablas deben
+        referenciar a PruebaEstudio con on_delete=PROTECT.
+        """
+        return self.estado == EstadoPruebaEstudio.PENDIENTE

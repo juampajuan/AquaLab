@@ -7,6 +7,10 @@ No quedan `NEEDS CLARIFICATION`: las dudas de la spec se resolvieron en su secci
 estudio (R1), el bloqueo de fila (R3), `Estudio.admite_modificaciones` (R4) y el manejo de errores
 (R6).
 
+> **Actualización 2026-10-28**: US 5.2 ya guarda el estado individual de cada prueba asignada
+> (`Pendiente`, `Cargada`, `Completada`) y US 5.3 está implementada en `010-agregar-prueba-v2`. R2
+> pasa a los componentes de SCRUM-67 y R4 se apoya en ese estado.
+
 ## R1 — Quitar identifica la asignación, no la prueba
 
 - **Decision**: la URL de quitar usa el `pk` de `PruebaEstudio` y el servicio lo busca dentro del
@@ -25,7 +29,9 @@ estudio (R1), el bloqueo de fila (R3), `Estudio.admite_modificaciones` (R4) y el
 - **Rationale**: la operación tiene un solo dato, que ya está en la URL; no hace falta formulario ni
   sesión. Es el patrón habitual de Django para confirmar un borrado y cumple la regla de la
   constitution de confirmar antes de eliminar (FR-005).
-- **Alternatives**: modal de Bootstrap — depende de JavaScript y complica los tests.
+- **Alternatives**: un modal con JavaScript — depende de JavaScript y complica los tests.
+- **Interfaz**: la confirmación se arma con `ui/encabezado.html`, el resumen y las acciones de
+  confirmación de SCRUM-67, como `agregar_prueba_confirmar.html` de US 5.3.
 
 ## R3 — Servicio con bloqueo de fila y regla de la última prueba
 
@@ -34,7 +40,8 @@ estudio (R1), el bloqueo de fila (R3), `Estudio.admite_modificaciones` (R4) y el
   `transaction.atomic()`:
   1. `Estudio.objects.select_for_update().filter(pk=...).first()` (inexistente → error);
   2. revalida `admite_modificaciones`;
-  3. asignación inexistente o de otro estudio → `PruebaYaQuitada`;
+  3. asignación del estudio con `select_for_update()`; inexistente o de otro estudio →
+     `PruebaYaQuitada`;
   4. `pruebas_asignadas.count() <= 1` → `UltimaPrueba` (FR-011);
   5. `puede_quitarse()` falso → rechazo (R4);
   6. `delete()`; un `ProtectedError` (futuras mediciones con `PROTECT`) se traduce en el mismo
@@ -42,21 +49,26 @@ estudio (R1), el bloqueo de fila (R3), `Estudio.admite_modificaciones` (R4) y el
 - **Rationale**: el bloqueo de la fila del estudio serializa las quitas sobre un mismo estudio, así
   que dos quitas simultáneas de las dos únicas pruebas no pueden dejarlo vacío (edge case, SC-003):
   la segunda cuenta después de que la primera hizo commit. Es el mismo esquema de `agregar_prueba`.
+  Bloquear también la asignación hace que su estado se lea sin carreras: si una historia del Epic 6
+  la pasa a `Cargada` al mismo tiempo, una de las dos operaciones espera a la otra (edge case de
+  mediciones cargadas mientras se confirma).
 - **Alternatives**: confiar en una constraint — una restricción simple no puede contar filas
   relacionadas; `pg_advisory_xact_lock` global — serializa estudios sin relación.
 
 ## R4 — Punto de extensión para mediciones en el modelo
 
-- **Decision**: `PruebaEstudio.puede_quitarse()` devuelve hoy `True` (no existen mediciones ni
-  resultados). Su docstring indica que US 6.1 y siguientes deben devolver `False` cuando la
-  asignación tenga mediciones o resultados, y que esas tablas deben apuntar a `PruebaEstudio` con
-  `PROTECT`. El detalle lo usa para mostrar u ocultar «Quitar»; el servicio lo vuelve a comprobar
-  bajo el bloqueo.
-- **Rationale**: la constitution (Principio IV) pide las reglas de negocio en el modelo. Dejar el
-  método ahora fija FR-004 sin inventar modelos de mediciones (YAGNI); el `PROTECT` futuro es una
-  segunda barrera. Se agrega una nota en `CLAUDE.md` para US 6.1.
-- **Alternatives**: un campo booleano `tiene_mediciones` — duplica un dato que se podrá calcular;
-  crear ya el modelo `Medicion` — fuera del alcance.
+- **Decision**: `PruebaEstudio.puede_quitarse()` devuelve `self.estado == EstadoPruebaEstudio.PENDIENTE`.
+  `Cargada` significa una medición registrada y `Completada` un resultado validado (US 5.2), así que
+  ninguno de los dos se puede quitar. Su docstring indica que las historias del Epic 6 deben cambiar
+  ese estado al cargar mediciones o resultados y que esas tablas deben apuntar a `PruebaEstudio`
+  con `PROTECT`. El detalle lo usa para mostrar u ocultar «Quitar»; el servicio lo vuelve a
+  comprobar con la asignación bloqueada.
+- **Rationale**: la constitution (Principio IV) pide las reglas de negocio en el modelo. El estado ya
+  existe, así que FR-004 se cumple sin inventar modelos de mediciones (YAGNI); el `PROTECT` futuro
+  es una segunda barrera. Se agrega una nota en `CLAUDE.md` para el Epic 6.
+- **Alternatives**: devolver siempre `True` hasta US 6.1 — ignora el estado que US 5.2 ya guarda;
+  un campo booleano `tiene_mediciones` — duplica lo que dice el estado; crear ya el modelo
+  `Medicion` — fuera del alcance.
 
 ## R5 — Borrado real de la asignación
 

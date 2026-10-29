@@ -115,6 +115,9 @@
   .btn-peligro {
     @apply border border-peligro-borde bg-peligro-suave text-peligro hover:bg-red-100;
   }
+  .btn-chico {
+    @apply px-3 py-1.5 text-xs;
+  }
   .btn-link {
     @apply inline-flex items-center gap-1.5 text-sm font-semibold text-cian-texto hover:underline;
   }

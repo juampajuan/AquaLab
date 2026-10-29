@@ -1,6 +1,6 @@
 # Feature Specification: Quitar prueba del estudio
 
-**Feature Branch**: `011-quitar-prueba-estudio`
+**Feature Branch**: `011-quitar-prueba-v2` (la rama original `011-quitar-prueba-estudio` quedó desactualizada respecto de `main`; ver Clarifications 2026-10-28)
 
 **Created**: 2026-10-27
 
@@ -15,6 +15,11 @@
 - Q: ¿Una prueba quitada se borra o se conserva marcada como quitada? → A: Se borra la asignación; sin mediciones ni resultados no tiene historial.
 - Q: ¿Un estudio puede quedar sin pruebas? → A: No; la última prueba no se puede quitar.
 - Q: ¿US 5.3 y US 5.4 van en una sola spec? → A: No. Por decisión del equipo, cada US tiene su propia spec y su propia rama; esta spec cubre solo US 5.4 y se apoya en [US 5.3](../010-agregar-prueba-estudio/spec.md).
+
+### Session 2026-10-28
+
+- Q: La spec se escribió antes de US 5.2 y del rediseño de la interfaz (SCRUM-67). ¿Se actualiza o se rehace? → A: Se implementa a partir de esta spec actualizada en la rama `011-quitar-prueba-v2`, que sale de `010-agregar-prueba-v2` (US 5.3 ya implementada sobre US 5.2 y SCRUM-67). Responsable: Juan Pablo.
+- Q: US 5.2 ya guarda el estado de cada prueba asignada (`Pendiente`, `Cargada`, `Completada`). ¿Cómo se sabe si una prueba tiene mediciones o resultados? → A: Por ese estado: `Cargada` es una medición registrada y `Completada` un resultado validado. Solo se puede quitar una prueba en estado `Pendiente`.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -67,9 +72,9 @@ Como empleado, quiero que el sistema rechace quitas de pruebas con mediciones, d
 ### Functional Requirements
 
 - **FR-001**: El sistema MUST permitir quitar pruebas de un estudio únicamente a empleados con sesión activa.
-- **FR-002**: El sistema MUST ofrecer la acción de quitar en cada prueba del detalle del estudio que pueda quitarse. El detalle es el de US 5.3; esta historia no crea otra vista.
+- **FR-002**: El sistema MUST ofrecer la acción de quitar en cada prueba del detalle del estudio que pueda quitarse. El detalle es la ficha del estudio de US 5.2, con la columna Acción que dejó US 5.3; esta historia no crea otra vista.
 - **FR-003**: El sistema MUST permitir quitar pruebas solo en estudios que admiten modificaciones, con la misma regla que US 5.3 (estado "Pendiente de análisis").
-- **FR-004**: El sistema MUST permitir quitar una prueba del estudio solo si no tiene mediciones cargadas ni resultados guardados. Hasta que existan las historias de mediciones y resultados ninguna prueba los tiene, pero la regla MUST quedar establecida para que esas historias la respeten.
+- **FR-004**: El sistema MUST permitir quitar una prueba del estudio solo si no tiene mediciones cargadas ni resultados guardados, es decir, solo si su estado individual (US 5.2) es `Pendiente`. Una prueba `Cargada` (con medición) o `Completada` (con resultado) no se puede quitar. Las historias de mediciones y resultados (Epic 6) cambian ese estado y MUST respetar esta regla.
 - **FR-005**: El sistema MUST pedir confirmación explícita, mostrando la prueba y el estudio afectados, antes de quitar una prueba, y permitir cancelar sin cambios.
 - **FR-006**: El sistema MUST validar nuevamente al confirmar que el estudio admite modificaciones, que la prueba sigue asignada, que no tiene mediciones ni resultados y que no es la última, y rechazar la operación informando el motivo en caso contrario.
 - **FR-007**: Una prueba quitada MUST dejar de formar parte del conjunto de pruebas del estudio, de modo que no se incluya en la carga de mediciones ni en el informe final. La asignación se elimina: al no tener mediciones ni resultados, no tiene historial que conservar (constitution, principio IV).
@@ -81,7 +86,7 @@ Como empleado, quiero que el sistema rechace quitas de pruebas con mediciones, d
 ### Key Entities *(include if feature involves data)*
 
 - **Estudio**: Creado en US 5.1. Se le quitan pruebas mientras admite modificaciones; sus datos de cabecera no cambian por esta acción.
-- **Prueba asignada al estudio**: Pertenencia de una prueba al conjunto de un estudio, precargada por el tipo o agregada en US 5.3. Es la unidad que se quita y, en historias posteriores, la que recibe mediciones y resultados.
+- **Prueba asignada al estudio**: Pertenencia de una prueba al conjunto de un estudio, precargada por el tipo o agregada en US 5.3, con su estado individual (`Pendiente`, `Cargada` o `Completada`, US 5.2). Es la unidad que se quita y, en historias posteriores, la que recibe mediciones y resultados.
 
 ## Success Criteria *(mandatory)*
 
@@ -95,10 +100,11 @@ Como empleado, quiero que el sistema rechace quitas de pruebas con mediciones, d
 
 ## Assumptions
 
-- **Trazabilidad**: US 5.4 – Eliminar prueba del estudio. Responsable del cronograma: Manuel. Clave de Jira: pendiente de completar cuando el usuario la facilite.
-- **Dependencia US 5.3**: Esta historia usa el detalle del estudio, la regla de estudio modificable y el manejo de errores de [US 5.3](../010-agregar-prueba-estudio/spec.md). Su rama sale de `010-agregar-prueba-estudio` y su PR se mergea después del de US 5.3.
+- **Trazabilidad**: US 5.4 – Eliminar prueba del estudio. Jira: SCRUM-51. Responsable original del cronograma: Manuel; reimplementación: Juan Pablo (ver Clarifications 2026-10-28).
+- **Dependencia US 5.2 y US 5.3**: Esta historia usa la ficha del estudio y el estado de cada prueba de US 5.2, y la regla de estudio modificable (`Estudio.admite_modificaciones`), las excepciones (`GestionPruebasError`) y la columna Acción de [US 5.3](../010-agregar-prueba-estudio/spec.md). Su rama sale de `010-agregar-prueba-v2` y su PR se mergea después del de US 5.3.
 - **Spec separada de US 5.3**: El equipo no aprobó la spec conjunta de US 5.3 y US 5.4 (rama `009-gestionar-pruebas-estudio`) y pidió una spec y una rama por US.
-- **Mediciones y resultados**: Todavía no existen (US 6.1 y siguientes). La regla de FR-004 queda establecida ahora; esas historias deberán hacerla cumplir cuando una prueba asignada tenga mediciones o resultados.
+- **Mediciones y resultados**: Las pantallas de carga todavía no existen (US 6.1 y siguientes), pero el estado individual de US 5.2 ya las representa. FR-004 se apoya en ese estado; las historias del Epic 6 deberán pasar la prueba a `Cargada` o `Completada` al registrar mediciones o resultados.
+- **Interfaz**: las pantallas nuevas siguen el diseño de SCRUM-67 (constitution v1.1.0) y se arman con los componentes de `templates/ui/`.
 - **Mismo resultado al reenviar (FR-010)**: Como la quita borra la asignación, reenviar una confirmación ya aplicada se informa como "la prueba ya no forma parte del estudio", sin efectos adicionales.
 - **Datos académicos**: AquaLab es un proyecto FIUBA; las pruebas de desarrollo y demostración son ficticias (DEMO) y no tienen validez científica.
-- **Alcance excluido**: Agregar pruebas y el detalle del estudio (US 5.3); administración del catálogo (US 5.5); búsqueda de estudios y consulta general del avance (US 5.2); mediciones, resultados, informes y cambios de estado del estudio o de sus pruebas.
+- **Alcance excluido**: Agregar pruebas (US 5.3); el detalle del estudio (US 5.2); administración del catálogo (US 5.5); búsqueda de estudios y consulta general del avance (US 5.2); mediciones, resultados, informes y cambios de estado del estudio o de sus pruebas.

@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import IntegrityError, connection, transaction
+from django.db.models.deletion import ProtectedError
 
 from muestras.models import Muestra
 from pruebas.models import Prueba
@@ -91,6 +92,14 @@ class PruebaYaAsignada(GestionPruebasError):
     pass
 
 
+class PruebaYaQuitada(GestionPruebasError):
+    pass
+
+
+class UltimaPrueba(GestionPruebasError):
+    pass
+
+
 def agregar_prueba(estudio_pk, prueba_pk, usuario):
     if not usuario.is_authenticated or not usuario.is_active:
         raise GestionPruebasError("Se requiere una sesión activa.")
@@ -111,3 +120,43 @@ def agregar_prueba(estudio_pk, prueba_pk, usuario):
                 return PruebaEstudio.objects.create(estudio=estudio, prueba=prueba)
         except IntegrityError as exc:
             raise ya_asignada from exc
+
+
+def motivo_para_no_quitar(estudio, asignacion):
+    """Error que impide quitar la asignación del estudio, o `None` si se puede."""
+    if not estudio.admite_modificaciones:
+        return GestionPruebasError("Este estudio ya no admite cambios en sus pruebas.")
+    if estudio.pruebas_asignadas.count() <= 1:
+        return UltimaPrueba("El estudio debe conservar al menos una prueba.")
+    if not asignacion.puede_quitarse():
+        return GestionPruebasError(
+            "La prueba tiene mediciones o resultados cargados y no se puede quitar."
+        )
+    return None
+
+
+def quitar_prueba(estudio_pk, asignacion_pk, usuario):
+    if not usuario.is_authenticated or not usuario.is_active:
+        raise GestionPruebasError("Se requiere una sesión activa.")
+    with transaction.atomic():
+        estudio = Estudio.objects.select_for_update().filter(pk=estudio_pk).first()
+        if estudio is None:
+            raise GestionPruebasError("El estudio no está disponible.")
+        asignacion = (
+            estudio.pruebas_asignadas.select_for_update()
+            .select_related("prueba")
+            .filter(pk=asignacion_pk)
+            .first()
+        )
+        if asignacion is None:
+            raise PruebaYaQuitada("La prueba ya no forma parte del estudio.")
+        if motivo := motivo_para_no_quitar(estudio, asignacion):
+            raise motivo
+        try:
+            with transaction.atomic():
+                asignacion.delete()
+        except ProtectedError as exc:
+            raise GestionPruebasError(
+                "La prueba tiene mediciones o resultados cargados y no se puede quitar."
+            ) from exc
+        return asignacion.prueba
