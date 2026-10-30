@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Q
@@ -6,7 +7,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from .forms import CAMPOS_CLIENTE, BuscarClienteForm, EditarClienteForm, RegistroClienteForm
-from .models import Cliente, normalizar_numero_documento
+from .models import (
+    MENSAJE_DOCUMENTO_CON_MUESTRAS,
+    Cliente,
+    normalizar_numero_documento,
+)
 
 CLAVE_SESION = "cliente_pendiente"
 CLAVE_ULTIMO_ID = "ultimo_cliente_creado_id"
@@ -42,8 +47,14 @@ def crear_cliente(datos):
 
 
 def actualizar_cliente(cliente, datos):
-    """Actualiza el cliente existente. Deja propagar `IntegrityError` (documento ya registrado)."""
+    """Actualiza el cliente existente. Deja propagar `IntegrityError` o `ValidationError`."""
     with transaction.atomic():
+        bloqueado = Cliente.objects.select_for_update().get(pk=cliente.pk)
+        if (
+            datos["tipo_documento"] != bloqueado.tipo_documento
+            or datos["numero_documento"] != bloqueado.numero_documento
+        ) and bloqueado.muestras.exists():
+            raise ValidationError(MENSAJE_DOCUMENTO_CON_MUESTRAS)
         for campo in CAMPOS_CLIENTE:
             setattr(cliente, campo, datos[campo])
         cliente.save()
@@ -159,6 +170,9 @@ def editar_confirmar(request, pk):
             return redirect("clientes:editar", pk=cliente.pk)
         try:
             actualizar_cliente(cliente, datos)
+        except ValidationError:
+            messages.error(request, MENSAJE_DOCUMENTO_CON_MUESTRAS)
+            return redirect(f"{reverse('clientes:editar', kwargs={'pk': cliente.pk})}?volver=1")
         except IntegrityError:
             messages.error(request, MENSAJE_DUPLICADO)
             return redirect(f"{reverse('clientes:editar', kwargs={'pk': cliente.pk})}?volver=1")

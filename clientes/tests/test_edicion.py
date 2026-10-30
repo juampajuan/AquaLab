@@ -3,8 +3,10 @@ import re
 import pytest
 from django.db import DatabaseError
 from django.urls import reverse
+from django.utils import timezone
 
-from clientes.models import Cliente
+from clientes.models import MENSAJE_DOCUMENTO_CON_MUESTRAS, Cliente
+from muestras.models import Muestra, Origen
 
 pytestmark = pytest.mark.django_db
 
@@ -18,6 +20,21 @@ MENSAJE_CUIT_INVALIDO = "El CUIT debe tener 11 dígitos y un dígito verificador
 MENSAJE_TELEFONO_INVALIDO = "Ingresá un número de teléfono válido (entre 7 y 15 dígitos)."
 MENSAJE_ERROR_BD_EDICION = "No se pudo actualizar el cliente. Intentá nuevamente."
 AVISO_REVISION_EDICION = "Revisá los datos modificados del cliente antes de confirmar los cambios."
+
+
+def asignar_muestra(cliente, empleado, numero_pi=200001):
+    hoy = timezone.localdate()
+    origen = Origen.objects.create(cliente=cliente, nombre="Pozo Principal")
+    return Muestra.objects.create(
+        numero_pi=numero_pi,
+        nombre="Muestra de Control",
+        cliente=cliente,
+        origen=origen,
+        fecha_muestreo=hoy,
+        fecha_ingreso=hoy,
+        sitio_extraccion="Canilla de ingreso",
+        registrada_por=empleado,
+    )
 
 
 def clave_sesion_edicion(pk):
@@ -245,6 +262,63 @@ def test_edicion_mismo_documento_propio_con_o_sin_separadores_permitido(
     assert borrador["email"] == "nuevo@aguassur.com"
 
 
+@pytest.mark.parametrize(
+    ("nuevo_tipo", "nuevo_numero"),
+    [
+        ("CUIT", "30-71234562-0"),
+        ("DNI", "31222333"),
+    ],
+)
+def test_edicion_bloquea_cambio_de_documento_cuando_cliente_tiene_muestras(
+    cliente_autenticado,
+    cliente_existente,
+    datos_edicion_validos,
+    empleado,
+    nuevo_tipo,
+    nuevo_numero,
+):
+    asignar_muestra(cliente_existente, empleado)
+    url_editar = reverse("clientes:editar", args=[cliente_existente.pk])
+
+    datos = {
+        **datos_edicion_validos,
+        "tipo_documento": nuevo_tipo,
+        "numero_documento": nuevo_numero,
+    }
+    respuesta = cliente_autenticado.post(url_editar, datos)
+
+    assert respuesta.status_code == 200
+    assert respuesta.context["form"].errors["numero_documento"] == [MENSAJE_DOCUMENTO_CON_MUESTRAS]
+    assert MENSAJE_DOCUMENTO_CON_MUESTRAS in respuesta.content.decode()
+    assert clave_sesion_edicion(cliente_existente.pk) not in cliente_autenticado.session
+    cliente_existente.refresh_from_db()
+    assert cliente_existente.tipo_documento == "CUIT"
+    assert cliente_existente.numero_documento == "20123456786"
+
+
+def test_edicion_permite_modificar_otros_datos_si_cliente_tiene_muestras(
+    cliente_autenticado,
+    cliente_existente,
+    datos_edicion_validos,
+    empleado,
+):
+    asignar_muestra(cliente_existente, empleado)
+    url_editar = reverse("clientes:editar", args=[cliente_existente.pk])
+    url_confirmar = reverse("clientes:editar_confirmar", args=[cliente_existente.pk])
+
+    paso1 = cliente_autenticado.post(url_editar, datos_edicion_validos)
+    assert paso1.status_code == 302
+    assert paso1.url == url_confirmar
+
+    confirmacion = cliente_autenticado.post(url_confirmar, {"accion": "confirmar"})
+    assert confirmacion.status_code == 302
+
+    cliente_existente.refresh_from_db()
+    assert cliente_existente.nombre == "Roberto Gómez"
+    assert cliente_existente.email == "nuevo@aguassur.com"
+    assert cliente_existente.numero_documento == "20123456786"
+
+
 # Paso 2: revisión, confirmación, cancelación, idempotencia y errores de BD (T005)
 
 
@@ -404,6 +478,31 @@ def test_integrity_error_al_confirmar_edicion_informa_duplicado(
     assert respuesta.url == f"{url_editar}?volver=1"
     assert clave_sesion_edicion(cliente_existente.pk) in cliente_autenticado.session
     assert MENSAJE_DUPLICADO in cliente_autenticado.get(respuesta.url).content.decode()
+
+    cliente_existente.refresh_from_db()
+    assert cliente_existente.numero_documento == "20123456786"
+
+
+def test_confirmacion_rechaza_cambio_de_documento_si_se_asigna_muestra_concurrente(
+    cliente_autenticado, cliente_existente, datos_edicion_validos, empleado
+):
+    url_editar = reverse("clientes:editar", args=[cliente_existente.pk])
+    url_confirmar = reverse("clientes:editar_confirmar", args=[cliente_existente.pk])
+
+    datos = {
+        **datos_edicion_validos,
+        "tipo_documento": "CUIT",
+        "numero_documento": "30-71234562-0",
+    }
+    assert cliente_autenticado.post(url_editar, datos).status_code == 302
+
+    asignar_muestra(cliente_existente, empleado)
+
+    respuesta = cliente_autenticado.post(url_confirmar, {"accion": "confirmar"})
+    assert respuesta.status_code == 302
+    assert respuesta.url == f"{url_editar}?volver=1"
+    assert clave_sesion_edicion(cliente_existente.pk) in cliente_autenticado.session
+    assert MENSAJE_DOCUMENTO_CON_MUESTRAS in cliente_autenticado.get(respuesta.url).content.decode()
 
     cliente_existente.refresh_from_db()
     assert cliente_existente.numero_documento == "20123456786"

@@ -1,8 +1,10 @@
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
-from clientes.models import Cliente, es_cuit_valido
+from clientes.models import MENSAJE_DOCUMENTO_CON_MUESTRAS, Cliente, es_cuit_valido
+from muestras.models import Muestra, Origen
 
 pytestmark = pytest.mark.django_db
 
@@ -84,3 +86,23 @@ def test_constraint_nombre_o_razon_social_obligatorio():
 
     with pytest.raises(IntegrityError), transaction.atomic():
         cliente.save()
+
+
+def test_no_permite_cambiar_documento_si_cliente_tiene_muestras(cliente_existente, empleado):
+    hoy = timezone.localdate()
+    origen = Origen.objects.create(cliente=cliente_existente, nombre="Pozo 1")
+    Muestra.objects.create(
+        numero_pi=200001,
+        nombre="Muestra 1",
+        cliente=cliente_existente,
+        origen=origen,
+        fecha_muestreo=hoy,
+        fecha_ingreso=hoy,
+        sitio_extraccion="Canilla",
+        registrada_por=empleado,
+    )
+
+    cliente_existente.numero_documento = "30712345620"
+    with pytest.raises(ValidationError) as exc:
+        cliente_existente.full_clean()
+    assert exc.value.message_dict == {"numero_documento": [MENSAJE_DOCUMENTO_CON_MUESTRAS]}
