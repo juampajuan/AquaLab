@@ -1,6 +1,7 @@
 from django import forms
 
 from .models import (
+    MENSAJE_DOCUMENTO_CON_MUESTRAS,
     Cliente,
     TipoDocumento,
     normalizar_numero_documento,
@@ -9,6 +10,7 @@ from .models import (
 )
 
 MAX_LONGITUD_BUSQUEDA = 100
+MENSAJE_DOCUMENTO_DUPLICADO = "Ya existe un cliente registrado con este tipo y número de documento."
 
 CAMPOS_CLIENTE = (
     "nombre",
@@ -96,14 +98,22 @@ class RegistroClienteForm(forms.ModelForm):
                 except forms.ValidationError as exc:
                     self.add_error(None, exc)
                 else:
-                    qs = Cliente.objects.filter(tipo_documento=tipo, numero_documento=numero)
-                    if self.instance and self.instance.pk:
-                        qs = qs.exclude(pk=self.instance.pk)
-                    if qs.exists():
-                        self.add_error(
-                            "numero_documento",
-                            "Ya existe un cliente registrado con este tipo y número de documento.",
+                    if (
+                        self.instance
+                        and self.instance.pk
+                        and (
+                            tipo != self.instance.tipo_documento
+                            or numero != self.instance.numero_documento
                         )
+                        and self.instance.muestras.exists()
+                    ):
+                        self.add_error("numero_documento", MENSAJE_DOCUMENTO_CON_MUESTRAS)
+                    else:
+                        qs = Cliente.objects.filter(tipo_documento=tipo, numero_documento=numero)
+                        if self.instance and self.instance.pk:
+                            qs = qs.exclude(pk=self.instance.pk)
+                        if qs.exists():
+                            self.add_error("numero_documento", MENSAJE_DOCUMENTO_DUPLICADO)
 
         return cleaned_data
 
