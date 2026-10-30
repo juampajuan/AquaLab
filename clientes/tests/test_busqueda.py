@@ -88,6 +88,14 @@ def test_busqueda_de_un_caracter_pide_minimo(cliente_autenticado, clientes_busqu
 
 
 @pytest.mark.django_db
+def test_busqueda_supera_longitud_maxima_muestra_error(cliente_autenticado, clientes_busqueda):
+    respuesta = buscar(cliente_autenticado, "a" * 101)
+    assert respuesta.status_code == 200
+    assert respuesta.context["page_obj"] is None
+    assert "Ingresá como máximo 100 caracteres para buscar." in respuesta.content.decode()
+
+
+@pytest.mark.django_db
 def test_sin_parametro_lista_todos_los_clientes(cliente_autenticado, clientes_busqueda):
     respuesta = cliente_autenticado.get(reverse(URL))
     assert respuesta.status_code == 200

@@ -5,6 +5,7 @@ from django.db import DatabaseError
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.html import format_html
 
 from clientes.models import Cliente
 from estudios.models import EstadoPruebaEstudio
@@ -23,6 +24,14 @@ CLAVE_ULTIMO_PI = "ultima_muestra_pi"
 MENSAJE_EXITO = "Muestra registrada con N° PI {numero_pi}."
 MENSAJE_CANCELADO = "Registro de muestra cancelado."
 MENSAJE_ERROR_BD = "No se pudo registrar la muestra. Intentá nuevamente."
+
+
+def mensaje_exito_muestra(muestra):
+    return format_html(
+        'Muestra registrada con N° PI {}. <a href="{}">Ver ficha de la muestra</a>.',
+        muestra.numero_pi,
+        reverse("muestras:detalle", args=[muestra.pk]),
+    )
 
 
 def url_volver():
@@ -90,7 +99,13 @@ def registrar_confirmar(request):
         if datos is None:
             ultimo_pi = request.session.get(CLAVE_ULTIMO_PI)
             if ultimo_pi:
-                messages.info(request, MENSAJE_EXITO.format(numero_pi=ultimo_pi))
+                existente = Muestra.objects.filter(numero_pi=ultimo_pi).first()
+                messages.info(
+                    request,
+                    mensaje_exito_muestra(existente)
+                    if existente
+                    else MENSAJE_EXITO.format(numero_pi=ultimo_pi),
+                )
             return redirect("muestras:registrar")
         try:
             muestra = registrar_muestra(datos, request.user)
@@ -102,7 +117,7 @@ def registrar_confirmar(request):
         else:
             del request.session[CLAVE_SESION]
             request.session[CLAVE_ULTIMO_PI] = muestra.numero_pi
-            messages.success(request, MENSAJE_EXITO.format(numero_pi=muestra.numero_pi))
+            messages.success(request, mensaje_exito_muestra(muestra))
             return redirect("muestras:registrar")
     elif datos is None:
         return redirect("muestras:registrar")

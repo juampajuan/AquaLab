@@ -60,7 +60,9 @@
           <tbody>
             {% for muestra in ultimas_muestras %}
               <tr data-pi="{{ muestra.numero_pi }}">
-                <td class="font-semibold text-marino">{{ muestra.numero_pi }}</td>
+                <td class="font-semibold text-marino">
+                  <a href="{% url 'muestras:detalle' muestra.pk %}" class="text-cian-texto hover:underline">{{ muestra.numero_pi }}</a>
+                </td>
                 <td class="font-medium">{{ muestra.cliente.nombre_completo }}</td>
                 <td class="text-tinta-suave">{{ muestra.origen.nombre }}</td>
                 <td class="whitespace-nowrap text-tinta-suave">{{ muestra.fecha_ingreso|date:"d/m/Y" }}</td>

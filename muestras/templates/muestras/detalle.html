@@ -55,7 +55,7 @@
         <h2 class="flex items-center gap-2.5 text-sm font-semibold text-marino">
           {% include "ui/icono.html" with nombre="microscope" clase="size-4 text-cian-texto" %} Estudios asignados
         </h2>
-        <a href="{% url 'estudios:crear' %}" class="btn btn-primario px-3 py-1.5">
+        <a href="{% url 'estudios:crear' %}?muestra={{ muestra.pk }}" class="btn btn-primario px-3 py-1.5">
           {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Crear estudio
         </a>
       </div>

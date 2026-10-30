@@ -28,7 +28,7 @@
   }
 
   async function verificar() {
-    if (!pendiente || document.hidden || !document.hasFocus() || solicitud) return;
+    if (!pendiente || document.hidden || solicitud) return;
     const turno = generacion;
     const controller = new AbortController();
     solicitud = controller;
@@ -40,7 +40,7 @@
         credentials: "same-origin", cache: "no-store", redirect: "follow",
         headers: { "X-AquaLab-Sesion": config.dataset.huella }, signal: controller.signal,
       });
-      if (turno !== generacion || document.hidden || !document.hasFocus()) return;
+      if (turno !== generacion || document.hidden) return;
       if (controller.signal.aborted) throw new Error("La solicitud venció");
       const destino = new URL(respuesta.url);
       if (!respuesta.redirected && corresponde(destino, urlSesion) && respuesta.status === 204) {
@@ -71,10 +71,10 @@
   }
 
   window.addEventListener("pagehide", ocultar);
-  window.addEventListener("blur", ocultar);
   window.addEventListener("focus", programar);
   window.addEventListener("pageshow", (evento) => {
     if (evento.persisted) { ocultar(); programar(); }
+    else if (pendiente) { programar(); }
   });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) ocultar(); else programar();
