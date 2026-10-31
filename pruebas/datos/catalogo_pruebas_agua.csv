@@ -1,0 +1,91 @@
+codigo,nombre,unidad,unidad_medicion,tipo_calculo,formula,es_calculada,norma,limite_min,limite_max,limite_deteccion,activa,observacion
+PH,pH,UpH,UpH,DIRECTO,,no,4500• H+ B,6.4,8.5,0.1,si,
+TEMPERATURA,Temperatura,°C,°C,DIRECTO,,no,,,45,0.1,si,
+TURBIDEZ,Turbidez,NTU,NTU,DIRECTO,,no,,,3.0,0.1,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+COLOR,Color,Pt-Co,Pt-Co,DIRECTO,,no,SM 2120-B,,5.0,1.0,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+OLOR,Olor,NUO,,DIRECTO,,no,,,SOE,1.0,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+COND,Conductividad,microsiemens/cm2,,DIRECTO,,no,SM 2510 B,,,1.0,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+ALC,Alcalinidad,mg CO3Ca /l,ml,FORMULA,x*20,no,SM 2320 B,,,0.1,si,
+ALC-CO3,Alcalinidad Carbonatos,mg CO3Ca /l,ml,FORMULA,x*20,no,SM 2320 B,,,0.1,si,
+ALC-BO3,Alcalinidad Bicarbonatos,mg CO3Ca /l,ml,FORMULA,x*20,no,SM 2320 B,,,0.1,si,
+ACIDEZ,Acidez,--,--,DIRECTO,,no,SM 2310 B,,,0.1,si,
+DUREZA-T,Dureza Total,mg CO3Ca/l,ml,FORMULA,x*20,no,SM 2340 C,,400.0,1.0,si,
+PH-SAT,pH de Saturación,UpH,,DIRECTO,,no,SM 2330 B,"Ph-0,2","Ph+0,2",0.1,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+OXIDABILIDAD,Oxidabilidad (Permanganato),--,--,DIRECTO,,no,O.S.N,,,0.1,si,
+IAC,I.A.C.,UFC/ml,UFC,DIRECTO,,no,SM 9221 B/C / SM 9225 D,,500.0,1.0,si,
+SS10,Sólidos Sedimentables en 10 min,ml,,DIRECTO,,no,SM 2540 F,,Ausente,0.1,si,
+SST,Sólidos suspendidos totales,mg/l,microsiemens/cm2,FORMULA,x*10,no,EPA 160.2 / SM 2540 D,,,0.1,si,
+SDT,Sólidos disueltos,mg/l,microsiemens/cm2,FORMULA,{COND}*0.54,si,SM 2540 C,,,0.1,si,
+RESID-FIJO,Residuos Fijo,mg/l,,DIRECTO,,no,EPA 160.3 / SM 2540 E,,,0.1,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+OD,Oxígeno Disuelto,mg/l,,DIRECTO,,no,SM 4500 O G,,,0.1,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+OD-WINKLER,Oxígeno Disuelto (Winkler),mg/l,,DIRECTO,,no,SM 4500-O B (Winkler),,,0.1,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+NH4,Nitrógeno amoniacal / Amonio,mg/l,ml,FORMULA,x*0.28*5,no,SM 4500-N H3 C/F,,0.2,0.05,si,
+NTK,Nitrógeno orgánico Kjeldahl,mg/l,ml,FORMULA,({NTK-T}-{NH4}),si,SM 4500-Norg C/ NH3 F,,,0.1,si,
+NTK-T,Nitrógeno Total Kjeldahl,mg/l,ml,FORMULA,(25*0.05-x*0.05)*0.01408*100/50*10000,no,SM 4500-Norg C/ NH3 F,,,0.1,si,
+CL2-LIB,Cloro Libre / Residual,mg/l,,DIRECTO,,no,4500• CI G,,,0.05,si,
+CL2-DEM,Demanda de Cloro,mg/l,,DIRECTO,,no,SM 2350 B,,,0.1,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+CL-,Cloruro,mg/l,ml,FORMULA,x*10,no,SM 4500• CI B,,350.0,0.1,si,
+S2-,Sulfuro,mg/l,,DIRECTO,,no,,,,0.1,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+AyMG-EPA413,Aceite y Materia Grasa (EPA 413.2),mg/l,,DIRECTO,,no,EPA 413.2,,,,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+AyMG-EPA1664,Aceite y Materia Grasa (EPA 1664A – hexano),mg/l,,DIRECTO,,no,EPA 1664 A,,,,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+ACEIT-GRAS,Aceites y Grasas (SM 5520 B/C),mg/l,,DIRECTO,,no,SM 5520 B/C,,,,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+SSEE,Sust. Solubles en Éter Etílico (S.S.E.E.),mg/l,,DIRECTO,,no,OSN•Modificacion S.M. 6 Ed,,,1.0,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+DET-SAAM,Detergentes (S.A.A.M.),mg/l,,DIRECTO,,no,SM 5540 C,,10,0.1,si,
+DET-SRAO,Detergentes (S.R.A.O.),mg/l,,DIRECTO,,no,IRAM 25534,,,,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+FORM-AGUA,Formaldehído en agua,mg/l,mg/l,DIRECTO,,no,ASTM D 6303,,,,si,
+TOC,Carbono Orgánico Total (TOC),mg/l,mg/l,DIRECTO,,no,SM 5310 B,,,0.1,si,
+RAS,RAS (Relación Absorción Sodio),--,--,FORMULA,{NA}/sqrt(({CA}+{MG})/2),si,,,,0.1,si,
+DIG-MET,Digestión para metales (excl. Hg),--,--,DIRECTO,,no,EPA 3005 A / 3010 / 3015,,,,si,
+MET-AA-LLAMA,Metal — A.A. llama aire-acetileno,mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,,si,
+MET-AA-N2O,Metal — A.A. llama óxido nitroso,mg/l,mg/l,DIRECTO,,no,A.A. llama Oxido Nitroso,,,,si,
+MET-AA-HORNO,Metal — A.A. horno de grafito,mg/l,mg/l,DIRECTO,,no,A.A. Horno de grafito,,,,si,
+MET-AA-HIDR,Metal — A.A. hidruros,mg/l,mg/l,DIRECTO,,no,A.A. Hidruros,,,,si,
+MET-AA-VAPO,Metal — A.A. vapor frío (Hg),mg/l,mg/l,DIRECTO,,no,A.A. Vapor frio,,,,si,
+MET-ICP-20,Metales — Barrido ICP-OES hasta 20 elementos,--,--,DIRECTO,,no,ICP-OES,,,,si,
+MET-ICP-20+,Metales — Barrido ICP-OES más de 20 elementos,--,--,DIRECTO,,no,ICP-OES,,,,si,
+AL,Aluminio Residual (Al),mg/l,,DIRECTO,,no,A.A. llama aire acetileno,,0.2,0.01,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+AG,Plata (Ag),mg/l,,DIRECTO,,no,A.A. llama aire acetileno,,0.05,0.01,si,Sin tipo de cálculo en el sistema original; se asume DIRECTO (confirmar con el laboratorio).
+BA,Bario (Ba),mg/l,mg/l,DIRECTO,,no,A.A. Hidruros,,,0.01,si,
+BO,Boro (B),mg/l,mg/l,DIRECTO,,no,,,0.5,0.01,si,
+CA,Calcio (Ca),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
+CADMIO,Cadmio (Cd),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,5.0,0.01,si,
+COBRE,Cobre (Cu),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,1.0,0.01,si,
+CROMO-T,Cromo Total (Cr),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,0.05,0.01,si,
+CR6,Cromo Hexavalente (Cr⁶⁺),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
+FE,Hierro (Fe),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,0.3,0.01,si,
+HG,Mercurio (Hg) — A.A. vapor frío,mg/l,mg/l,DIRECTO,,no,A.A. Vapor frio,,1.0,0.01,si,
+MG,Magnesio (Mg),mg/l,mg/l,FORMULA,({DUREZA-T}-{CA}*2.5)*0.243,si,A.A. llama aire acetileno,,0.1,3.0,si,Fórmula corregida: en el sistema original decía {CA*2.5}.
+MN,Manganeso (Mn),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
+NA,Sodio (Na),mg/l,--,FORMULA,((x*321.41/140)*10/5*0.51),no,Fotometria llama,,,0.01,si,
+NI,Níquel (Ni),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
+PB,Plomo (Pb),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.0001,si,
+K,Potasio (K),mg/l,--,FORMULA,(x*39.1/5),no,Fotometria llama,,,0.01,si,
+SE,Selenio (Se) — A.A. Hidruros,mg/l,mg/l,DIRECTO,,no,A.A. Hidruros,,,0.01,si,
+SB,Antimonio (Sb),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
+CINC,Zinc (Zn),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
+COBALTO,Cobalto (Co),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
+VANADIO,Vanadio (V),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
+COL-TOT,Coliformes Totales,UFC/ 100 ml,UFC/100 ml,DIRECTO,,no,SM 9221 B y C,,3,1.0,si,
+COL-FEC,Coliformes Fecales,UFC/ 100 ml,UFC/100 ml,DIRECTO,,no,9222 D Std. Meth,,Ausencia,1.0,si,
+ECOLI,E. Coli,A/P,A/P,DIRECTO,,no,SM 9221 B/F,,Ausente,Ausente,si,
+PSEUDO,Pseudomona aeruginosa,A/P,A/P,DIRECTO,,no,SM 9213 E,,Ausente,Ausente,si,
+MESOFILAS,Bacterias Aerobias Mesófilas Totales,UFC/ 100 ml,UFC/100 ml,DIRECTO,,no,SM 9215 B,,500.0,1.0,si,
+BTEX-FID,BTEX (EPA 8015 GC•FID),mg/l,mg/l,DIRECTO,,no,EPA 8015 GC•FID,,,,si,
+BTEX-MS,BTEX (EPA 8260 GC-MS),mg/l,mg/l,DIRECTO,,no,EPA 8260 GC-MS,,,,si,
+VOC,Compuestos Orgánicos Volátiles (VOC's),mg/l,mg/l,DIRECTO,,no,EPA 5021 A-8015 C,,,,si,
+GRO,GRO — Hidrocarburos Purgables,mg/l,mg/l,DIRECTO,,no,EPA 5021 A-8015 C,,,,si,
+DRO,DRO — Hidrocarburos Extraíbles,mg/l,mg/l,DIRECTO,,no,EPA 3510 C-8015 C,,,,si,
+HTP,Hidrocarburos Totales (EPA 418.1),mg/l,mg/l,DIRECTO,,no,EPA 418. 1,,,1.0,si,
+CATIONES,Total Cationes,meq/l,--,FORMULA,({NA-MEQ}+{K-MEQ}+{CA-MEQ}+{MG-MEQ}),si,SM 1030 E,,,,si,
+HCO3,Bicarbonatos,mg/l,--,FORMULA,{ALC-BO3}*1.22,si,SM 2320 B,,,,si,
+CO3,Carbonatos,mg/l,--,FORMULA,{ALC-CO3}*0.6,si,SM 2320 B,,,,si,
+CO3-MEQ,Meq/l de Carbonatos,Meq/l,--,FORMULA,{CO3}/30,si,SM 2320 B,,,,si,
+BO3-MEQ,Meq/l de Bicarbonato,Meq/l,--,FORMULA,{HCO3}/61,si,SM 2320 B,,,,si,
+NA-MEQ,Meq/l de Sodio,Meq/l,--,FORMULA,{NA}/23,si,Fotometria llama,,,,si,
+K-MEQ,Meq/l de Potasio,Meq/l,--,FORMULA,{K}/39.1,si,Fotometria de llama,,,,si,
+CA-MEQ,Meq/l de Calcio,Meq/l,--,FORMULA,{CA}/20,si,A.A. llama aire acetileno,,,,si,
+MG-MEQ,Meq/l de Magnesio,Meq/l,--,FORMULA,{MG}/12.2,si,A.A. llama aire acetileno,,,,si,
+CL-MEQ,Meq/l de Cloruros,Meq/l,--,FORMULA,{CL-}/35.5,si,SM 4500• CI B,,,,si,
+COND/CATIONES,CE/Sumatoria de meE/l de Cationes,--,--,FORMULA,{COND}/{CATIONES},si,SM 1030 E,90.0,110.0,,si,
+CIANUROS,Cianuros,mg/l,mg/l,DIRECTO,,no,SM 4500 CN,,0.1,0.05,si,
+SS2HS,Solidos Sedientables en 2 Hs,ml,ml,DIRECTO,,no,,,0.1,0.1,si,
