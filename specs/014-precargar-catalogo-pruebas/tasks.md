@@ -51,8 +51,8 @@ sin duplicar ni romper el historial) y US3 (P3, admin). Se implementan en **dos 
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Verificar el punto de partida en la rama `014-precargar-catalogo-pruebas`: `git ls-files pruebas/datos` lista los dos CSV, y `docker compose exec web pytest` y `docker compose exec web python manage.py makemigrations --check --dry-run` pasan en verde y sin cambios pendientes.
-- [ ] T002 [P] Crear los paquetes vacíos `pruebas/management/__init__.py` y `pruebas/management/commands/__init__.py`.
+- [X] T001 Verificar el punto de partida en la rama `014-precargar-catalogo-pruebas`: `git ls-files pruebas/datos` lista los dos CSV, y `docker compose exec web pytest` y `docker compose exec web python manage.py makemigrations --check --dry-run` pasan en verde y sin cambios pendientes.
+- [X] T002 [P] Crear los paquetes vacíos `pruebas/management/__init__.py` y `pruebas/management/commands/__init__.py`.
 
 ---
 
@@ -63,13 +63,13 @@ sin duplicar ni romper el historial) y US3 (P3, admin). Se implementan en **dos 
 
 ### Tests del modelo (escribir primero, deben fallar)
 
-- [ ] T003 [P] Crear `pruebas/tests/conftest.py` con estas fixtures, copiando la forma de `estudios/tests/conftest.py`:
+- [X] T003 [P] Crear `pruebas/tests/conftest.py` con estas fixtures, copiando la forma de `estudios/tests/conftest.py`:
   - `empleado(django_user_model)`: usuario activo `test-pruebas@ejemplo.com`.
   - `muestra(empleado)`: un `Cliente` DNI `30123457`, un `Origen` y una `Muestra` con `numero_pi=200001`.
   - `prueba_en_tipo()`: `Prueba(codigo="USO-T", nombre="Prueba en tipo")` asignada a un `TipoEstudio` nuevo con `tipo.pruebas.set([...])`.
   - `prueba_en_estudio(muestra, empleado)`: `Prueba(codigo="USO-E", nombre="Prueba en estudio")` y un estudio creado con `estudios.servicios.crear_estudio({"clave": str(uuid4()), "muestra": muestra.pk, "tipo": tipo.pk, "version": tipo.version}, empleado)`, que crea su `PruebaEstudio`. Después se vacía el tipo con `TipoEstudioPrueba.objects.filter(tipo=tipo).delete()`, así la prueba queda en uso **solo** por el estudio.
   - `prueba_libre()`: `Prueba(codigo="LIBRE", nombre="Prueba libre")` sin asignaciones.
-- [ ] T004 [P] Ampliar `pruebas/tests/test_modelo.py`, manteniendo `test_prueba_minima` y `test_validacion`, con:
+- [X] T004 [P] Ampliar `pruebas/tests/test_modelo.py`, manteniendo `test_prueba_minima` y `test_validacion`, con:
   - `test_defaults_prueba_nueva` (FR-015): `Prueba.objects.create(codigo="X", nombre="Y")` queda con `tipo_calculo == TipoCalculo.DIRECTO`, `formula == ""`, `es_calculada is False`, `activa is True`, textos en `""` y pasa `full_clean()`.
   - `test_limites_se_guardan_como_texto` (FR-002), parametrizado con `"Ausente"`, `"NE"`, `"SOE"`, `"Ph-0,2"`, `"3.0"` y `" 45 "`: tras `full_clean()` + `save()` + `refresh_from_db()`, `limite_max` es el valor con `strip()` (`"3.0"` sigue siendo `"3.0"`). Lo mismo para `LimiteVertido.limite_max`.
   - `test_formula_segun_tipo_calculo` (FR-003): `DIRECTO` con fórmula y `FORMULA` sin fórmula fallan en `full_clean()`; `FORMULA` con `"x*20"` pasa.
@@ -82,11 +82,11 @@ sin duplicar ni romper el historial) y US3 (P3, admin). Se implementan en **dos 
 
 ### Implementación del modelo
 
-- [ ] T005 En `pruebas/models.py` agregar:
+- [X] T005 En `pruebas/models.py` agregar:
   - `class TipoCalculo(models.TextChoices)` con `DIRECTO = "DIRECTO", "Directo"` y `FORMULA = "FORMULA", "Fórmula"`.
   - `class TipoVertido(models.TextChoices)` con `CLOACAL = "cloacal", "Cloacal"` y `CANAL = "canal", "Canal"`.
   - `REFERENCIA = re.compile(r"\{([^{}]+)\}")` y `def referencias_formula(formula) -> set[str]`, que devuelve los códigos entre llaves con `strip()`.
-- [ ] T006 En `pruebas/models.py`, ampliar `Prueba` con estos campos (data-model.md), en este orden después de `nombre`:
+- [X] T006 En `pruebas/models.py`, ampliar `Prueba` con estos campos (data-model.md), en este orden después de `nombre`:
   - `unidad = models.CharField("unidad del resultado", max_length=50, blank=True, default="")`
   - `unidad_medicion = models.CharField("unidad de medición", max_length=50, blank=True, default="")`
   - `tipo_calculo = models.CharField("tipo de cálculo", max_length=10, choices=TipoCalculo.choices, default=TipoCalculo.DIRECTO)`
@@ -96,19 +96,19 @@ sin duplicar ni romper el historial) y US3 (P3, admin). Se implementan en **dos 
   - `limite_min`, `limite_max` y `limite_deteccion`: `models.CharField("límite mínimo" / "límite máximo" / "límite de detección", max_length=50, blank=True, default="")`
   - `activa = models.BooleanField("activa", default=True)`
   - `observacion = models.TextField("observación", blank=True, default="")`
-- [ ] T007 En `Prueba.Meta.constraints` (pruebas/models.py), conservar las dos existentes y agregar:
+- [X] T007 En `Prueba.Meta.constraints` (pruebas/models.py), conservar las dos existentes y agregar:
   - `CheckConstraint(condition=Q(tipo_calculo=TipoCalculo.DIRECTO, formula="") | (Q(tipo_calculo=TipoCalculo.FORMULA) & ~Q(formula="")), name="prueba_formula_segun_tipo")`
   - `CheckConstraint(condition=Q(es_calculada=False) | Q(tipo_calculo=TipoCalculo.FORMULA), name="prueba_calculada_es_formula")`
-- [ ] T008 En `Prueba` (pruebas/models.py):
+- [X] T008 En `Prueba` (pruebas/models.py):
   - Reemplazar el `strip()` de `save()` y `clean()` por un helper `_normalizar(self)` que recorte todos los campos de texto (`codigo`, `nombre`, `unidad`, `unidad_medicion`, `formula`, `norma`, `limite_min`, `limite_max`, `limite_deteccion`, `observacion`).
   - En `clean()`, después de normalizar, lanzar `ValidationError` por campo: `{"formula": "Una prueba de tipo Directo no lleva fórmula."}` / `{"formula": "Una prueba de tipo Fórmula necesita una fórmula."}` (mismas condiciones que T007); `{"formula": "La prueba no puede referenciarse a sí misma."}` si `self.codigo in referencias_formula(self.formula)`; `{"es_calculada": "Marcala solo si la fórmula referencia otras pruebas ({CODIGO})."}` si `es_calculada != bool(referencias_formula(self.formula))`.
   - Agregar `def esta_en_uso(self) -> bool`, que devuelve `self.pk is not None and (self.tipoestudioprueba_set.exists() or self.pruebaestudio_set.exists())`.
-- [ ] T009 En `pruebas/models.py`, crear `LimiteVertido`:
+- [X] T009 En `pruebas/models.py`, crear `LimiteVertido`:
   - Campos: `prueba = models.ForeignKey(Prueba, on_delete=models.CASCADE, related_name="limites_vertido", verbose_name="prueba")`; `tipo_vertido = models.CharField("tipo de vertido", max_length=10, choices=TipoVertido.choices)`; `limite_min` y `limite_max` como `CharField(max_length=50, blank=True, default="")`; `norma = models.CharField("norma", max_length=150, blank=True, default="")`.
   - `Meta`: `verbose_name = "límite por tipo de vertido"`, `verbose_name_plural = "límites por tipo de vertido"`, `ordering = ("prueba__codigo", "tipo_vertido")`, `constraints = [models.UniqueConstraint(fields=("prueba", "tipo_vertido"), name="limite_vertido_unico")]`.
   - `__str__` devuelve `f"{self.prueba.codigo} · {self.get_tipo_vertido_display()}"`, y `save()`/`clean()` aplican `strip()` a los textos.
-- [ ] T010 Generar `pruebas/migrations/0002_catalogo_pruebas.py` con `docker compose exec web python manage.py makemigrations pruebas --name catalogo_pruebas` y revisar que solo tenga `AddField`, `CreateModel(LimiteVertido)` y `AddConstraint`, sin `RunPython` (depende de T005–T009).
-- [ ] T011 Correr `docker compose exec web python manage.py migrate` y `docker compose exec web pytest`: T004 en verde y la suite completa en verde **sin tocar** tests de otras apps (FR-015).
+- [X] T010 Generar `pruebas/migrations/0002_catalogo_pruebas.py` con `docker compose exec web python manage.py makemigrations pruebas --name catalogo_pruebas` y revisar que solo tenga `AddField`, `CreateModel(LimiteVertido)` y `AddConstraint`, sin `RunPython` (depende de T005–T009).
+- [X] T011 Correr `docker compose exec web python manage.py migrate` y `docker compose exec web pytest`: T004 en verde y la suite completa en verde **sin tocar** tests de otras apps (FR-015).
 
 **Checkpoint**: modelo listo; las pruebas DEMO y los tests existentes siguen siendo válidos.
 
@@ -124,11 +124,11 @@ sin duplicar ni romper el historial) y US3 (P3, admin). Se implementan en **dos 
 
 ### Tests for User Story 1 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T012 [P] [US1] Crear `pruebas/tests/test_importacion.py` (`pytestmark = pytest.mark.django_db`) con:
+- [X] T012 [P] [US1] Crear `pruebas/tests/test_importacion.py` (`pytestmark = pytest.mark.django_db`) con:
   - Un helper `escribir_csv(tmp_path, nombre, encabezado, filas)` que escribe un CSV UTF-8 y devuelve la ruta.
   - Constantes `CATALOGO` y `LIMITES` con `settings.BASE_DIR / "pruebas/datos/..."`.
   - Un helper `importar_real()` que llama a `call_command("importar_catalogo_pruebas", stdout=StringIO())` y devuelve el texto.
-- [ ] T013 [US1] En `pruebas/tests/test_importacion.py`, agregar `test_importa_catalogo_real` (US1 Esc. 1–3, 6, 7; SC-001). Tras `importar_real()`:
+- [X] T013 [US1] En `pruebas/tests/test_importacion.py`, agregar `test_importa_catalogo_real` (US1 Esc. 1–3, 6, 7; SC-001). Tras `importar_real()`:
   - `Prueba.objects.count() == 90` y `LimiteVertido.objects.count() == 18`.
   - `PH` tiene `nombre "pH"`, `unidad "UpH"`, `unidad_medicion "UpH"`, `DIRECTO`, `formula ""`, `es_calculada False`, `norma "4500• H+ B"`, `limite_min "6.4"`, `limite_max "8.5"`, `limite_deteccion "0.1"` y `activa True`.
   - `TEMPERATURA` tiene `limite_min ""` (límite vacío queda vacío) y `limite_max "45"`.
@@ -136,27 +136,27 @@ sin duplicar ni romper el historial) y US3 (P3, admin). Se implementan en **dos 
   - `SDT` tiene `FORMULA`, `formula "{COND}*0.54"` y `es_calculada True`.
   - El límite `CL2-LIB` `cloacal` tiene `limite_max "NE"` y `norma "(AGOSBA) 389/98"`; `CL2-LIB` `canal` tiene `limite_max "0.5"`.
   - Alguna prueba con `limite_max` o `limite_deteccion` en `{"Ausente", "Ausencia", "SOE", "Ph+0,2"}` conserva el texto exacto: compararlo contra la fila leída del CSV con `csv.DictReader`.
-- [ ] T014 [P] [US1] En `pruebas/tests/test_importacion.py`, agregar:
+- [X] T014 [P] [US1] En `pruebas/tests/test_importacion.py`, agregar:
   - `test_pruebas_sin_tipo_quedan_directo_con_observacion` (US1 Esc. 4, SC-006): 17 pruebas con `observacion` que empieza con `"Sin tipo de cálculo en el sistema original"`, todas `DIRECTO`; `TURBIDEZ` entre ellas.
   - `test_magnesio_con_formula_corregida` (US1 Esc. 5): `MG.formula == "({DUREZA-T}-{CA}*2.5)*0.243"`, `es_calculada True` y `observacion` que menciona `{CA*2.5}`.
   - `test_formulas_se_guardan_sin_evaluar` (US1 Esc. 7): para cada fila `FORMULA` del CSV, la fórmula guardada es igual a la del archivo, y `referencias_formula` de cada una está incluido en los códigos importados.
 
 ### Implementación de User Story 1
 
-- [ ] T015 [US1] Crear `pruebas/importacion.py` con:
+- [X] T015 [US1] Crear `pruebas/importacion.py` con:
   - `COLUMNAS_CATALOGO = ("codigo", "nombre", "unidad", "unidad_medicion", "tipo_calculo", "formula", "es_calculada", "norma", "limite_min", "limite_max", "limite_deteccion", "activa", "observacion")` y `COLUMNAS_LIMITES = ("codigo", "tipo_vertido", "limite_min", "limite_max", "norma")`.
   - `class ErrorImportacion(Exception)` con el atributo `errores: list[str]`.
   - `@dataclass class Resumen` con `pruebas_creadas`, `pruebas_actualizadas`, `limites_creados`, `limites_actualizados` (int, en 0) y `avisos: list[str]` (`field(default_factory=list)`).
   - `def leer(ruta, columnas, errores) -> list[tuple[int, dict]]`: abre con `open(ruta, encoding="utf-8-sig", newline="")` y lee con `csv.DictReader`. Devuelve `(número de línea, fila con valores strip())`, con la línea de datos inicial en 2 (`reader.line_num`). Si falta alguna columna agrega `f"{ruta.name}: faltan las columnas: {', '.join(faltantes)}."` y si no puede leer el archivo agrega `f"no se puede leer {ruta}."`.
-- [ ] T016 [US1] En `pruebas/importacion.py`, implementar `def importar(ruta_catalogo, ruta_limites) -> Resumen`. En esta tarea cubre el camino feliz con las dos fases de research R5:
+- [X] T016 [US1] En `pruebas/importacion.py`, implementar `def importar(ruta_catalogo, ruta_limites) -> Resumen`. En esta tarea cubre el camino feliz con las dos fases de research R5:
   - **Fase 1 (sin escribir)**: por cada fila del catálogo, buscar la `Prueba` existente por `codigo` (o crear una instancia nueva), asignar los campos convirtiendo `si`/`no` a bool, y llamar a `full_clean(validate_unique=False)`. Por cada fila de límites, armar el `LimiteVertido` (existente por `(prueba, tipo_vertido)` o nuevo) y llamar a `full_clean(exclude=["prueba"], validate_unique=False)`.
   - **Fase 2**: si `errores` no está vacío, `raise ErrorImportacion(errores)`. Si no, dentro de `transaction.atomic()` guardar las pruebas, resolver `limite.prueba` por código y guardar los límites, contando creadas y actualizadas según `pk is None` antes de guardar.
-- [ ] T017 [US1] Crear `pruebas/management/commands/importar_catalogo_pruebas.py`:
+- [X] T017 [US1] Crear `pruebas/management/commands/importar_catalogo_pruebas.py`:
   - `help = "Importa el catálogo de pruebas de agua y sus límites por tipo de vertido."`
   - Opciones `--catalogo` y `--limites` (`type=Path`), con defaults `settings.BASE_DIR / "pruebas" / "datos" / "catalogo_pruebas_agua.csv"` y `... / "limites_vertido.csv"`.
   - Llama a `importar`. Si termina bien, escribe con `self.style.SUCCESS` la línea literal del contrato: `Catálogo importado: {n} pruebas ({c} creadas, {a} actualizadas) y {m} límites por tipo de vertido ({c} creados, {a} actualizados).`; después escribe cada aviso con `self.style.WARNING`.
   - `ErrorImportacion` se convierte en `CommandError("No se importó nada: el archivo tiene {N} errores.\n" + "\n".join(errores))`, con singular `1 error` cuando corresponde.
-- [ ] T018 [US1] Correr `docker compose exec web pytest pruebas/tests/test_importacion.py` y dejar T013–T014 en verde.
+- [X] T018 [US1] Correr `docker compose exec web pytest pruebas/tests/test_importacion.py` y dejar T013–T014 en verde.
 
 **Checkpoint**: MVP. El catálogo real se carga con un comando.
 
@@ -173,14 +173,14 @@ no cambia.
 
 ### Tests for User Story 2 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T019 [P] [US2] En `pruebas/tests/test_importacion.py`, agregar:
+- [X] T019 [P] [US2] En `pruebas/tests/test_importacion.py`, agregar:
   - `test_reimportar_no_duplica` (US2 Esc. 1, FR-007, SC-002): tres `importar_real()` seguidas dejan 90 y 18. La segunda y la tercera informan `(0 creadas, 90 actualizadas)` y `(0 creados, 18 actualizados)`. `Prueba.objects.values()` es igual después de la primera y de la tercera.
   - `test_reimportar_actualiza_por_codigo` (US2 Esc. 2, FR-006): importar un CSV con `PH` y `limite_max "8.5"` y otro límite. Reimportar con `limite_max "9"`, otra norma y otro `limite_max` de vertido. Queda el mismo `pk`, los valores nuevos y ninguna fila de más.
-- [ ] T020 [P] [US2] En `pruebas/tests/test_importacion.py`, agregar:
+- [X] T020 [P] [US2] En `pruebas/tests/test_importacion.py`, agregar:
   - `test_prueba_en_uso_conserva_nombre_y_asignaciones` (US2 Esc. 3–4, FR-008/008a, SC-003), parametrizado con las fixtures `prueba_en_tipo` y `prueba_en_estudio` (`request.getfixturevalue`). Se importa un CSV con el mismo código, `nombre "Nombre nuevo"` y `unidad "mg/l"`. Resultado: el nombre no cambia, `unidad == "mg/l"`, las asignaciones (`TipoEstudioPrueba` / `PruebaEstudio`) siguen iguales y la salida contiene `Aviso: la prueba {codigo} está en uso; se conserva el nombre «{viejo}» (el archivo dice «Nombre nuevo»).`
   - `test_prueba_libre_actualiza_nombre`: con `prueba_libre`, el nombre del archivo se aplica y no hay aviso.
   - `test_pruebas_fuera_del_archivo_no_se_tocan` (US2 Esc. 5, FR-008): `prueba_libre`, `prueba_en_tipo` y un `LimiteVertido` de `prueba_libre` siguen existiendo con los mismos valores (incluido `activa True`) después de `importar_real()`.
-- [ ] T021 [P] [US2] En `pruebas/tests/test_importacion.py`, agregar `test_archivo_invalido_no_cambia_nada` (US2 Esc. 6, FR-009/010, SC-004):
+- [X] T021 [P] [US2] En `pruebas/tests/test_importacion.py`, agregar `test_archivo_invalido_no_cambia_nada` (US2 Esc. 6, FR-009/010, SC-004):
   - Primero `importar_real()` y se toma una foto: `list(Prueba.objects.values())` y `list(LimiteVertido.objects.values())`.
   - Después, parametrizado por caso, un `call_command` con CSV de `tmp_path` lanza `CommandError` cuyo texto contiene `No se importó nada` y el fragmento esperado. La foto queda igual.
   - Casos (archivo afectado → fragmento esperado):
@@ -195,7 +195,7 @@ no cambia.
     - límites de `"XX"` → `la prueba «XX» no existe en el catálogo`
     - límite repetido `PH`/`canal` → `límite repetido para «PH» (canal)`
     - ruta inexistente → `no se puede leer`
-- [ ] T022 [P] [US2] En `pruebas/tests/test_importacion.py`, agregar:
+- [X] T022 [P] [US2] En `pruebas/tests/test_importacion.py`, agregar:
   - `test_reporta_todos_los_errores`: un catálogo con dos filas inválidas informa `el archivo tiene 2 errores` y ambas líneas.
   - `test_normaliza_espacios_y_acepta_bom`: CSV escrito con `encoding="utf-8-sig"` y valores `" PH "`, `" pH "`, `" SI "`. Se importa `PH` con `nombre "pH"` y `activa True`.
   - `test_referencia_valida_en_archivo_o_base`: `A` con fórmula `"{B}*2"` en la línea 2 y `B` en la línea 3 se importan juntas. Después, un CSV solo con `C` = `"{B}+1"` también se importa, porque `B` ya está en la base.
@@ -204,18 +204,18 @@ no cambia.
 
 ### Implementación de User Story 2
 
-- [ ] T023 [US2] En la fase 1 de `pruebas/importacion.py`, agregar estas validaciones, juntando **todos** los errores con el formato `f"{ruta.name}, línea {n}: {motivo}."` y los motivos literales de la tabla de `contracts/importar-catalogo-pruebas.md`:
+- [X] T023 [US2] En la fase 1 de `pruebas/importacion.py`, agregar estas validaciones, juntando **todos** los errores con el formato `f"{ruta.name}, línea {n}: {motivo}."` y los motivos literales de la tabla de `contracts/importar-catalogo-pruebas.md`:
   - si/no con `valor.lower() in {"si", "no"}`;
   - `tipo_calculo in TipoCalculo.values` y `tipo_vertido in TipoVertido.values`, validados antes de `full_clean`;
   - códigos repetidos (catálogo) y `(codigo, tipo_vertido)` repetidos (límites);
   - mensajes de `full_clean` aplanados con `"; ".join(e.messages)`;
   - referencias y códigos de límites contra `códigos del archivo ∪ set(Prueba.objects.values_list("codigo", flat=True))`.
-- [ ] T024 [US2] En `pruebas/importacion.py`, proteger las pruebas en uso (R6):
+- [X] T024 [US2] En `pruebas/importacion.py`, proteger las pruebas en uso (R6):
   - Calcular `en_uso = set(TipoEstudioPrueba.objects.values_list("prueba_id", flat=True)) | set(PruebaEstudio.objects.values_list("prueba_id", flat=True))`.
   - Si una prueba existente está en `en_uso` y el nombre del archivo es distinto, conservar el nombre guardado y agregar a `Resumen.avisos` el texto literal `Aviso: la prueba {codigo} está en uso; se conserva el nombre «{guardado}» (el archivo dice «{archivo}»).`
   - Confirmar que el código nunca llama a `delete()` ni toca `activa` de pruebas fuera del archivo.
-- [ ] T025 [US2] Correr `docker compose exec web pytest pruebas` y dejar T019–T022 en verde junto con lo anterior.
-- [ ] T026 **Cierre de la tanda 1**:
+- [X] T025 [US2] Correr `docker compose exec web pytest pruebas` y dejar T019–T022 en verde junto con lo anterior.
+- [X] T026 **Cierre de la tanda 1**:
   - `docker compose exec web pytest`, `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .` en verde.
   - Pasos 1 y 2 de `quickstart.md` ejecutados a mano contra la base de desarrollo.
   - Commit `feat(pruebas): SCRUM-64 – Modelo e importación del catálogo de pruebas` con `pruebas/` y `specs/014-precargar-catalogo-pruebas/tasks.md`, marcando T001–T026 como `[X]`.
