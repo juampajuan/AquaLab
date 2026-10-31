@@ -236,13 +236,13 @@ agregar una nueva y verificar que una prueba en uso no deja cambiar código ni n
 
 ### Tests for User Story 3 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T027 [P] [US3] Crear `pruebas/tests/test_admin.py` (`pytestmark = pytest.mark.django_db`) con las URLs `reverse("admin:pruebas_prueba_changelist")`, `..._add` y `..._change`, y estos tests:
+- [X] T027 [P] [US3] Crear `pruebas/tests/test_admin.py` (`pytestmark = pytest.mark.django_db`) con las URLs `reverse("admin:pruebas_prueba_changelist")`, `..._add` y `..._change`, y estos tests:
   - `test_admin_listado_busqueda_y_filtros` (US3 Esc. 1–3, FR-012): crea `PH`/`pH` DIRECTO, `SDT`/`Sólidos disueltos` FORMULA y `TURB`/`Turbidez` con observación. La respuesta del listado contiene las columnas `Código`, `Nombre`, `Unidad del resultado`, `Tipo de cálculo` y `Activa`. `?q=sól` devuelve solo SDT; `?q=ph` devuelve solo PH; `?tipo_calculo__exact=FORMULA` devuelve solo SDT; `?activa__exact=0` devuelve 0 resultados; `?observacion=con` devuelve solo TURB y `?observacion=sin` las otras dos. Se compara con `response.context["cl"].result_list`.
   - `test_admin_detalle_muestra_limites` (US3 Esc. 4): una prueba con límites `cloacal` y `canal` muestra ambos en el formulario inline (`limites_vertido-TOTAL_FORMS` = 2 y los valores en el HTML).
-- [ ] T028 [P] [US3] En `pruebas/tests/test_admin.py`, agregar:
+- [X] T028 [P] [US3] En `pruebas/tests/test_admin.py`, agregar:
   - `test_admin_alta_prueba` (US3 Esc. 5): POST a add con `codigo "NUEVA"`, `nombre "Prueba nueva"`, `tipo_calculo "FORMULA"`, `formula "x*2"`, `activa "on"` y el management form del inline vacío. Resultado: 302 y la prueba existe.
   - `test_admin_alta_rechaza_invalidas` (FR-014), parametrizado: código existente, código vacío, nombre vacío, `DIRECTO` con fórmula, fórmula `"{NOEXISTE}*2"` con `es_calculada "on"` (el error contiene `«NOEXISTE»`) y dos límites `canal`. En todos: 200 con errores en `response.context["adminform"]` o en los inline formsets, y ninguna prueba nueva.
-- [ ] T029 [P] [US3] En `pruebas/tests/test_admin.py`, agregar:
+- [X] T029 [P] [US3] En `pruebas/tests/test_admin.py`, agregar:
   - `test_admin_prueba_en_uso_codigo_nombre_solo_lectura` (US3 Esc. 6, FR-013), parametrizado con `prueba_en_tipo` y `prueba_en_estudio`. El GET del change no tiene `name="codigo"` ni `name="nombre"` pero muestra sus valores. Un POST que manda `codigo "OTRO"`, `nombre "Otro"` y `unidad "mg/l"` guarda la unidad y deja código y nombre igual.
   - `test_admin_prueba_libre_editable` (US3 Esc. 7): con `prueba_libre`, el GET tiene `name="codigo"` y `name="nombre"`, y el POST cambia ambos.
   - `test_admin_no_elimina_prueba_en_uso` (US3 Esc. 8): para la prueba en uso, el change no muestra el enlace de borrar y el GET a `admin:pruebas_prueba_delete` responde 403. La acción `delete_selected` con su pk, confirmada con `post="yes"`, no la borra. `prueba_libre` sí se borra desde su delete, junto con sus `LimiteVertido`.
@@ -250,22 +250,22 @@ agregar una nueva y verificar que una prueba en uso no deja cambiar código ni n
 
 ### Implementación de User Story 3
 
-- [ ] T030 [US3] Crear `pruebas/admin.py` con `PruebaAdminForm(forms.ModelForm)` (`model = Prueba`, `fields = "__all__"`). Su `clean()` llama a `super().clean()` y, si existe `formula`, valida que cada código de `referencias_formula(formula)` (sin el propio) exista con `Prueba.objects.filter(codigo__in=...)`. Si falta alguno, `self.add_error("formula", f"La fórmula referencia «{codigo}», que no existe en el catálogo.")`.
-- [ ] T031 [US3] En `pruebas/admin.py`, crear `ConObservacionFilter(admin.SimpleListFilter)`: `title = "observación"`, `parameter_name = "observacion"`, opciones `("con", "Con observación")` y `("sin", "Sin observación")`. Filtra con `~Q(observacion="")` o `Q(observacion="")`.
-- [ ] T032 [US3] En `pruebas/admin.py`, crear `LimiteVertidoInline(admin.TabularInline)` con `model = LimiteVertido`, `extra = 0`, `max_num = len(TipoVertido)`, `fields = ("tipo_vertido", "limite_min", "limite_max", "norma")` y `verbose_name_plural = "límites por tipo de vertido"`.
-- [ ] T033 [US3] En `pruebas/admin.py`, registrar `@admin.register(Prueba) class PruebaAdmin(admin.ModelAdmin)` según `contracts/admin-pruebas.md`:
+- [X] T030 [US3] Crear `pruebas/admin.py` con `PruebaAdminForm(forms.ModelForm)` (`model = Prueba`, `fields = "__all__"`). Su `clean()` llama a `super().clean()` y, si existe `formula`, valida que cada código de `referencias_formula(formula)` (sin el propio) exista con `Prueba.objects.filter(codigo__in=...)`. Si falta alguno, `self.add_error("formula", f"La fórmula referencia «{codigo}», que no existe en el catálogo.")`.
+- [X] T031 [US3] En `pruebas/admin.py`, crear `ConObservacionFilter(admin.SimpleListFilter)`: `title = "observación"`, `parameter_name = "observacion"`, opciones `("con", "Con observación")` y `("sin", "Sin observación")`. Filtra con `~Q(observacion="")` o `Q(observacion="")`.
+- [X] T032 [US3] En `pruebas/admin.py`, crear `LimiteVertidoInline(admin.TabularInline)` con `model = LimiteVertido`, `extra = 0`, `max_num = len(TipoVertido)`, `fields = ("tipo_vertido", "limite_min", "limite_max", "norma")` y `verbose_name_plural = "límites por tipo de vertido"`.
+- [X] T033 [US3] En `pruebas/admin.py`, registrar `@admin.register(Prueba) class PruebaAdmin(admin.ModelAdmin)` según `contracts/admin-pruebas.md`:
   - `form = PruebaAdminForm`, `inlines = [LimiteVertidoInline]`.
   - `list_display = ("codigo", "nombre", "unidad", "tipo_calculo", "activa")`, `search_fields = ("codigo", "nombre")`, `list_filter = ("tipo_calculo", "activa", "es_calculada", ConObservacionFilter)`.
   - `fieldsets`: `("Identificación", codigo, nombre, activa)`, `("Cálculo", tipo_calculo, formula, es_calculada, unidad_medicion, unidad)`, `("Límites", norma, limite_min, limite_max, limite_deteccion)` y `("Observación", observacion)`.
   - `get_readonly_fields(request, obj=None)` agrega `("codigo", "nombre")` si `obj is not None and obj.esta_en_uso()`.
   - `has_delete_permission(request, obj=None)` devuelve `False` si `obj is not None and obj.esta_en_uso()`; si no, `super()`.
-- [ ] T034 [US3] Correr `docker compose exec web pytest pruebas/tests/test_admin.py` y dejar T027–T029 en verde. Si la acción masiva sobre una prueba en uso no muestra los objetos protegidos de `PROTECT`, ajustar el test al comportamiento real de Django 5.2 (la página "no se puede borrar") sin agregar código propio.
+- [X] T034 [US3] Correr `docker compose exec web pytest pruebas/tests/test_admin.py` y dejar T027–T029 en verde. Si la acción masiva sobre una prueba en uso no muestra los objetos protegidos de `PROTECT`, ajustar el test al comportamiento real de Django 5.2 (la página "no se puede borrar") sin agregar código propio.
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T035 [P] Agregar a `CLAUDE.md` una sección `## Catálogo de pruebas (SCRUM-64)` con 4–6 viñetas:
+- [X] T035 [P] Agregar a `CLAUDE.md` una sección `## Catálogo de pruebas (SCRUM-64)` con 4–6 viñetas:
   - el comando `importar_catalogo_pruebas` y sus CSV en `pruebas/datos/`;
   - es todo o nada, actualiza por código y nunca borra ni desactiva;
   - conserva el nombre de una prueba en uso y avisa;
@@ -274,7 +274,7 @@ agregar una nueva y verificar que una prueba en uso no deja cambiar código ni n
   - **Epic 6:** convertir los límites a número y evaluar fórmulas; las 17 pruebas DIRECTO asumidas siguen a confirmar con el laboratorio.
 - [ ] T036 **Cierre de la tanda 2**:
   - `docker compose exec web pytest`, `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run` en verde.
-  - Paso 3 de `quickstart.md` ejecutado en el navegador con un superusuario.
+  - Paso 3 de `quickstart.md` ejecutado en el navegador con un superusuario. **Pendiente (2026-10-31)**: lo valida el usuario en el navegador; el resto del cierre (suite, ruff, `makemigrations --check` y commit) ya está hecho.
   - Commit `feat(pruebas): SCRUM-64 – Admin del catálogo de pruebas` con `pruebas/admin.py`, `pruebas/tests/test_admin.py`, `CLAUDE.md` y `tasks.md`, marcando T027–T036 como `[X]`.
 
 ---

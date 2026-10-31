@@ -74,3 +74,17 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   estado), y referenciar `PruebaEstudio` con `on_delete=PROTECT`.
 - `motivo_para_no_quitar` es la única fuente de las reglas de quita: la usan la vista (GET) y el
   servicio. `.btn-chico` es el botón para filas de tablas.
+
+## Catálogo de pruebas (SCRUM-64)
+
+- `python manage.py importar_catalogo_pruebas` carga `pruebas/datos/catalogo_pruebas_agua.csv` y
+  `pruebas/datos/limites_vertido.csv` (`pruebas/importacion.py`). Valida todo antes de escribir y
+  guarda en una transacción: un error deja la base igual. Actualiza por código; nunca borra ni
+  desactiva.
+- Si una prueba en uso trae otro nombre en el archivo, conserva el guardado y lo informa como aviso.
+- `Prueba.esta_en_uso()` (asignada a un tipo de estudio o a un estudio) es la regla de uso: el admin
+  deja código y nombre de solo lectura y no permite borrarla; la importación no le cambia el nombre.
+- Límites y fórmulas son texto sin evaluar (`x` = valor medido, `{CODIGO}` = otra prueba);
+  `referencias_formula` es la única forma de leer las referencias.
+- **Epic 6:** convertir los límites a número y evaluar las fórmulas. Las 17 pruebas sin tipo en el
+  sistema original quedaron DIRECTO y siguen a confirmar con el laboratorio (columna `observacion`).
