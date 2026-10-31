@@ -8,6 +8,13 @@
 
 **Input**: User description: "US 6.1 (Jira SCRUM-53) – Cargar mediciones. Como empleado del laboratorio quiero ingresar los valores de las mediciones obtenidas a partir de la muestra para registrar los datos primarios de cada prueba. Criterios de aceptación: (1) Desde un estudio se muestran sus pruebas que esperan carga de datos (estado Pendiente), con su nombre y la unidad de medición. (2) Se puede ingresar la medición cruda de cada prueba (un valor por prueba: lo que leyó el analista, ej. pH, mL gastados, absorbancia). (3) Se pueden cargar algunas pruebas y dejar otras para después; no hace falta completar todo el estudio de una vez. (4) El sistema valida que cada valor tenga formato numérico válido (acepta coma o punto decimal) y muestra el error junto al campo. (5) La medición queda asociada a la prueba del estudio, con el usuario que la cargó y la fecha y hora. (6) Al guardar una medición, la prueba pasa de Pendiente a Cargada. (7) Las pruebas calculadas a partir de otras (es_calculada) no piden medición. Fuera de alcance: calcular el resultado y aplicar fórmulas o límites (US 6.2), modificar mediciones ya cargadas (US 6.3), validar resultados (US 6.4)."
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: ¿Cuándo pasa el estudio a "En proceso"? → A: Con su primera medición; desde ahí no se agregan ni quitan pruebas (US 5.3/5.4 sin cambios).
+- Q: ¿Cuántos decimales se aceptan y se conservan los ceros finales? → A: Hasta 6 decimales; el valor se conserva tal como se escribió, con sus ceros finales (7,20 sigue siendo 7,20).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cargar las mediciones de las pruebas pendientes de un estudio (Priority: P1)
@@ -68,7 +75,8 @@ Como empleado, quiero que el sistema no pida mediciones para pruebas calculadas 
 - Dos empleados cargan al mismo tiempo la misma prueba: se guarda una sola medición (la primera confirmada) y el segundo recibe el aviso de que la prueba ya tenía medición.
 - Se intenta quitar una prueba (US 5.4) mientras se confirma su medición: o se quita sin medición o se carga y deja de poder quitarse; nunca queda una medición de una prueba quitada.
 - Valores negativos o cero (ej. absorbancia de un blanco): se aceptan; esta historia no valida rangos ni límites (US 6.2).
-- Valores con más cifras decimales de las que el sistema conserva o fuera del tamaño admitido: se rechazan con un error junto al campo, en lugar de redondearse.
+- Valores con más de 6 decimales o fuera del tamaño admitido: se rechazan con un error junto al campo, en lugar de redondearse.
+- Valores con ceros finales (ej. "7,20" o "0,4180"): se guardan y se muestran con los mismos decimales con que se escribieron.
 - Una prueba sin unidad de medición definida en el catálogo (ej. pH): se muestra sin unidad, con una indicación visible de que no tiene.
 - La unidad de medición o el nombre de la prueba cambian en el catálogo después de cargar: la medición conserva la unidad con la que se cargó.
 - Al guardar la primera medición, el estudio pasa a "En proceso" y deja de admitir que se agreguen o quiten pruebas (US 5.3 y US 5.4); las pruebas Pendientes restantes se siguen pudiendo cargar.
@@ -82,12 +90,12 @@ Como empleado, quiero que el sistema no pida mediciones para pruebas calculadas 
 - **FR-003**: El sistema MUST permitir cargar mediciones solo en estudios "Pendiente de análisis" o "En proceso"; en "Finalizado" o "Informe generado" MUST rechazarlo informando el motivo.
 - **FR-004**: La pantalla de carga MUST listar las pruebas del estudio en estado Pendiente que requieren medición, con código, nombre y unidad de medición, y un campo para un único valor por prueba. Las pruebas calculadas a partir de otras MUST mostrarse sin campo, indicando que su resultado se calcula, y no recibir medición.
 - **FR-005**: El sistema MUST permitir guardar solo algunas de las pruebas listadas; las que quedan vacías siguen Pendientes y se ofrecen en cargas posteriores. MUST exigir al menos un valor por envío.
-- **FR-006**: El sistema MUST aceptar como valor un número decimal con coma o punto como separador decimal, con signo opcional, y rechazar cualquier otro formato (texto, separadores de miles, más de un separador, notación científica, cifras fuera del tamaño o precisión admitidos), mostrando el error junto al campo correspondiente y conservando los valores ingresados.
+- **FR-006**: El sistema MUST aceptar como valor un número decimal con coma o punto como separador decimal, con signo opcional, y rechazar cualquier otro formato (texto, separadores de miles, más de un separador, notación científica, más de 6 decimales o cifras fuera del tamaño admitido), mostrando el error junto al campo correspondiente y conservando los valores ingresados.
 - **FR-007**: Si algún valor del envío es inválido, el sistema MUST NOT guardar ninguna medición de ese envío.
 - **FR-008**: El sistema MUST mostrar un resumen de las mediciones a guardar (prueba, valor y unidad) y pedir confirmación antes de guardarlas, permitiendo volver a corregir o cancelar sin cambios.
-- **FR-009**: Cada medición MUST guardarse asociada a la prueba del estudio, con el valor exacto ingresado (sin redondeo), la unidad de medición vigente al momento de cargarla, el usuario que la cargó y la fecha y hora de la carga.
+- **FR-009**: Cada medición MUST guardarse asociada a la prueba del estudio, con el valor exacto ingresado (sin redondeo y con la misma cantidad de decimales, incluidos los ceros finales), la unidad de medición vigente al momento de cargarla, el usuario que la cargó y la fecha y hora de la carga.
 - **FR-010**: Al guardar la medición de una prueba, su estado MUST pasar de Pendiente a Cargada en la misma operación. Una prueba Cargada no se puede quitar del estudio (regla de US 5.4).
-- **FR-011**: Al guardar la primera medición de un estudio "Pendiente de análisis", el estudio MUST pasar a "En proceso".
+- **FR-011**: Al guardar la primera medición de un estudio "Pendiente de análisis", el estudio MUST pasar a "En proceso" en la misma operación. Desde ese momento el estudio no admite agregar ni quitar pruebas (regla de US 5.3 y US 5.4, que no cambia).
 - **FR-012**: Cada prueba del estudio MUST tener como máximo una medición. Al confirmar, el sistema MUST revalidar cada prueba: si ya está Cargada o ya no forma parte del estudio, la omite sin cambiar sus datos y lo informa; el resto del envío se guarda. Reenviar una misma confirmación, incluso simultáneamente, MUST producir el mismo resultado que un único envío.
 - **FR-013**: El sistema MUST informar el resultado de cada carga: cuántas mediciones y de qué pruebas se guardaron, y cuáles se omitieron y por qué.
 - **FR-014**: El detalle del estudio MUST mostrar, para cada prueba Cargada, su valor medido con unidad, el usuario que la cargó y la fecha y hora.
@@ -114,10 +122,10 @@ Como empleado, quiero que el sistema no pida mediciones para pruebas calculadas 
 
 - **Trazabilidad**: US 6.1 – Cargar mediciones. Jira: SCRUM-53. Primera historia del Epic 6.
 - **Dependencias**: Se apoya en el detalle del estudio y el estado individual de las pruebas (US 5.2), la regla de quita por estado Pendiente (US 5.4) y el catálogo de pruebas con unidad de medición y marca de calculada (SCRUM-64).
-- **Estado "En proceso"**: Se toma la definición de US 5.2: un estudio está "En proceso" cuando al menos una prueba fue cargada o completada. Como consecuencia, desde la primera medición el estudio ya no admite agregar ni quitar pruebas (US 5.3 y US 5.4). Pasar a "Finalizado" no es parte de esta historia (US 6.4).
+- **Estado "En proceso"**: Se toma la definición de US 5.2: un estudio está "En proceso" cuando al menos una prueba fue cargada o completada (confirmado en Clarifications). Pasar a "Finalizado" no es parte de esta historia (US 6.4).
 - **Pruebas calculadas**: Son las marcadas como calculadas a partir de otras pruebas en el catálogo; quedan Pendientes hasta que se calcule su resultado (US 6.2). Las pruebas de tipo Fórmula que no son calculadas usan la medición propia (`x`) y sí piden valor.
 - **Unidad**: Se usa la unidad de medición de la prueba (lo que lee el analista), no la unidad del resultado. Se guarda junto con la medición (constitution, principio IV).
-- **Precisión**: La cantidad de cifras y decimales que se conservan se define en el plan, con margen suficiente para las lecturas habituales del laboratorio; los valores se guardan como decimales exactos, nunca como coma flotante.
+- **Precisión**: Hasta 6 decimales, conservando los escritos (Clarifications). La cantidad máxima de cifras enteras se define en el plan, con margen suficiente para las lecturas habituales del laboratorio; los valores se guardan como decimales exactos, nunca como coma flotante.
 - **Confirmación**: Guardar mediciones sigue el patrón común de confirmación antes de guardar (constitution, Interfaz).
 - **Interfaz**: Las pantallas nuevas siguen el diseño de SCRUM-67 y se arman con los componentes de `templates/ui/`.
 - **Datos académicos**: AquaLab es un proyecto FIUBA; los datos de desarrollo y demostración son ficticios (DEMO).
