@@ -1,0 +1,19 @@
+codigo,tipo_vertido,limite_min,limite_max,norma
+CL2-LIB,canal,,0.5,(AGOSBA) 389/98
+CL2-LIB,cloacal,,NE,(AGOSBA) 389/98
+COL-FEC,canal,,2000,(AGOSBA) 389/98
+COL-FEC,cloacal,,20000,(AGOSBA) 389/98
+DET-SAAM,canal,,2,(AGOSBA) 389/98
+DET-SAAM,cloacal,,10,(AGOSBA) 389/98
+NTK-T,canal,,35,(AGOSBA) 389/98
+NTK-T,cloacal,,105,(AGOSBA) 389/98
+PH,canal,6.5,10,(AGOSBA) 389/98
+PH,cloacal,7.01,10.0,(AGOSBA) 389/98
+SS10,canal,,Ausente,(AGOSBA) 389/98
+SS10,cloacal,,Ausente,(AGOSBA) 389/98
+SS2HS,canal,,0.1,(AGOSBA) 389/98
+SS2HS,cloacal,,10,(AGOSBA) 389/98
+SSEE,canal,,50,(AGOSBA) 389/98
+SSEE,cloacal,,100,(AGOSBA) 389/98
+TEMPERATURA,canal,,45,(AGOSBA) 389/98
+TEMPERATURA,cloacal,,45,(AGOSBA) 389/98
