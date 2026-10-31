@@ -260,6 +260,7 @@ agregar una nueva y verificar que una prueba en uso no deja cambiar código ni n
   - `get_readonly_fields(request, obj=None)` agrega `("codigo", "nombre")` si `obj is not None and obj.esta_en_uso()`.
   - `has_delete_permission(request, obj=None)` devuelve `False` si `obj is not None and obj.esta_en_uso()`; si no, `super()`.
 - [X] T034 [US3] Correr `docker compose exec web pytest pruebas/tests/test_admin.py` y dejar T027–T029 en verde. Si la acción masiva sobre una prueba en uso no muestra los objetos protegidos de `PROTECT`, ajustar el test al comportamiento real de Django 5.2 (la página "no se puede borrar") sin agregar código propio.
+- [X] T037 [US3] En `pruebas/admin.py`, agregar a `PruebaAdmin` un `class Media` con `js = ("pruebas/admin_prueba.js",)`. El script `pruebas/static/pruebas/admin_prueba.js` muestra las filas `formula` y `es_calculada` solo cuando `tipo_calculo` es `FORMULA`; al pasar a `DIRECTO` las oculta sin borrar lo escrito. La validación del servidor no cambia. Test `test_admin_incluye_js_de_formula` en `pruebas/tests/test_admin.py`: el add y el change incluyen `pruebas/admin_prueba.js`.
 
 ---
 

@@ -225,3 +225,9 @@ def test_admin_requiere_staff_y_permiso(django_user_model):
     assert staff.get(ALTA).status_code == 403
     assert staff.post(ALTA, formulario()).status_code == 403
     assert not Prueba.objects.exists()
+
+
+def test_admin_incluye_js_de_formula(admin_client):
+    prueba = Prueba.objects.create(codigo="PH", nombre="pH")
+    for url in (ALTA, editar(prueba)):
+        assert "pruebas/admin_prueba.js" in admin_client.get(url).content.decode()

@@ -80,6 +80,10 @@ class PruebaAdmin(admin.ModelAdmin):
         ("Observación", {"fields": ("observacion",)}),
     )
 
+    class Media:
+        # Oculta fórmula y "se calcula a partir de otras pruebas" salvo con tipo FORMULA.
+        js = ("pruebas/admin_prueba.js",)
+
     def get_readonly_fields(self, request, obj=None):
         # Una prueba en uso conserva código y nombre: los estudios la muestran así.
         if obj is not None and obj.esta_en_uso():
