@@ -273,7 +273,7 @@ agregar una nueva y verificar que una prueba en uso no deja cambiar código ni n
   - límites y fórmulas son texto sin evaluar (`x` = medido, `{CODIGO}` = otra prueba) y `referencias_formula` es la única forma de leer las referencias;
   - `Prueba.esta_en_uso()` es la regla de uso para el admin y la importación;
   - **Epic 6:** convertir los límites a número y evaluar fórmulas; las 17 pruebas DIRECTO asumidas siguen a confirmar con el laboratorio.
-- [ ] T036 **Cierre de la tanda 2**:
+- [X] T036 **Cierre de la tanda 2**:
   - `docker compose exec web pytest`, `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run` en verde.
   - Paso 3 de `quickstart.md` ejecutado en el navegador con un superusuario. **Pendiente (2026-10-31)**: lo valida el usuario en el navegador; el resto del cierre (suite, ruff, `makemigrations --check` y commit) ya está hecho.
   - Commit `feat(pruebas): SCRUM-64 – Admin del catálogo de pruebas` con `pruebas/admin.py`, `pruebas/tests/test_admin.py`, `CLAUDE.md` y `tasks.md`, marcando T027–T036 como `[X]`.
