@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block title %}Cargar mediciones · AquaLab{% endblock %}
 
 {% block encabezado %}
@@ -50,7 +51,7 @@
                   <tr>
                     <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
                     <td><label for="{{ field.id_for_label }}">{{ asignacion.prueba.nombre }}</label></td>
-                    <td>{{ asignacion.prueba.unidad_medicion|default:"Sin unidad" }}</td>
+                    <td>{{ asignacion.prueba.unidad_medicion|unidad }}</td>
                     <td>
                       {{ field }}
                       {% if field.errors %}

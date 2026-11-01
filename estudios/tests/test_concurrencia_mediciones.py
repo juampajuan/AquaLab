@@ -68,3 +68,29 @@ def test_carga_y_quita_concurrentes(estudio_mediciones, asignaciones_medicion, e
     else:
         assert asignacion.estado == EstadoPruebaEstudio.CARGADA
         assert Medicion.objects.filter(asignacion=asignacion).count() == 1
+
+
+def test_cargas_concurrentes_calculan_una_vez(estudio_de, empleado):
+    from estudios.models import Resultado
+    from estudios.tests.utiles import asignacion_de
+
+    estudio = estudio_de("CA", "DUREZA-T", "MG")
+    barrera = threading.Barrier(2)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futuros = [
+            pool.submit(
+                en_hilo,
+                cargar_mediciones,
+                empleado.pk,
+                barrera,
+                estudio.pk,
+                {asignacion_de(estudio, codigo).pk: Decimal(valor)},
+            )
+            for codigo, valor in (("CA", "80"), ("DUREZA-T", "15"))
+        ]
+        for futuro in futuros:
+            futuro.result(timeout=15)
+    mg = asignacion_de(estudio, "MG")
+    assert Resultado.objects.filter(asignacion=mg).count() == 1
+    assert mg.resultado.valor == Decimal("24.3")
+    assert mg.estado == EstadoPruebaEstudio.CARGADA

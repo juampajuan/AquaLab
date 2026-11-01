@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.db import models
@@ -104,6 +104,11 @@ class Estudio(models.Model):
     def admite_mediciones(self):
         return self.estado in (EstadoEstudio.PENDIENTE_ANALISIS, EstadoEstudio.EN_PROCESO)
 
+    @property
+    def admite_correcciones(self):
+        """Mediciones y resultados se pueden cambiar (y recalcular) hasta emitir el informe."""
+        return self.estado != EstadoEstudio.INFORME_GENERADO
+
 
 class PruebaEstudio(models.Model):
     estudio = models.ForeignKey(Estudio, on_delete=models.PROTECT, related_name="pruebas_asignadas")
@@ -164,3 +169,29 @@ class Medicion(models.Model):
     def valor_ingresado(self):
         """El valor con los decimales que escribió el analista (7,20 y no 7,200000)."""
         return self.valor.quantize(Decimal(1).scaleb(-self.decimales))
+
+
+class Resultado(models.Model):
+    asignacion = models.OneToOneField(
+        PruebaEstudio, on_delete=models.PROTECT, related_name="resultado", editable=False
+    )
+    valor = models.DecimalField("valor", max_digits=28, decimal_places=10)
+    unidad = models.CharField("unidad", max_length=50, blank=True, default="")
+    formula = models.CharField("fórmula", max_length=255, blank=True, default="")
+    fecha_calculo = models.DateTimeField("fecha de cálculo", auto_now=True)
+
+    class Meta:
+        verbose_name = "resultado"
+        verbose_name_plural = "resultados"
+
+    def __str__(self):
+        return f"{self.asignacion} = {self.valor_mostrado} {self.unidad}".rstrip()
+
+    @property
+    def valor_mostrado(self):
+        """Hasta 4 decimales y sin ceros finales (23,5; 0,0041); el guardado conserva 10."""
+        valor = self.valor.quantize(Decimal("0.0001"), ROUND_HALF_UP).normalize()
+        if not valor:
+            return Decimal(0)
+        # normalize() escribe 80 como 8E+1; un entero vuelve a exponente 0.
+        return valor.quantize(Decimal(1)) if valor.as_tuple().exponent > 0 else valor

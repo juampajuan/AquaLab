@@ -10,7 +10,7 @@ from django.utils.html import format_html
 from clientes.models import normalizar_numero_documento
 from muestras.models import Muestra
 
-from . import servicios
+from . import calculo, servicios
 from .catalogo import CatalogoNoDisponible
 from .confirmaciones import cargar_token, descartar, pendientes, preparar
 from .forms import (
@@ -185,9 +185,12 @@ def detalle(request, pk):
     )
     pruebas_asignadas = list(
         estudio.pruebas_asignadas.select_related(
-            "prueba", "medicion", "medicion__cargada_por"
+            "prueba", "medicion", "medicion__cargada_por", "resultado"
         ).order_by("prueba__codigo", "pk")
     )
+    todas = {a.prueba.codigo: a for a in pruebas_asignadas}
+    for asignacion in pruebas_asignadas:
+        asignacion.motivo_sin_resultado = calculo.motivo_sin_resultado(asignacion, todas)
     total_pruebas = len(pruebas_asignadas)
     pruebas_completadas = sum(
         1 for a in pruebas_asignadas if a.estado == EstadoPruebaEstudio.COMPLETADA
@@ -341,6 +344,10 @@ def cargar_mediciones(request, pk):
             messages.success(request, mensaje_guardadas(estudio, resultado.guardadas))
         for prueba, motivo in resultado.omitidas:
             messages.warning(request, f"{prueba.codigo}: {motivo}.")
+        for prueba, motivo in resultado.sin_calcular:
+            messages.warning(
+                request, f"{prueba.codigo}: no se pudo calcular el resultado ({motivo})."
+            )
         if quitadas := form.pruebas_quitadas():
             messages.warning(
                 request,

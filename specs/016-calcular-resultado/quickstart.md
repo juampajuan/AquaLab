@@ -36,7 +36,9 @@ Mensajes y formato exactos en [contracts/calculo-resultado.md](./contracts/calcu
    columna Resultado muestra «7,2 UpH» y «23,5 mg/l», con la fórmula `x*10` debajo de Cloruro.
 3. **Calculada que espera (US 2)**: cargar CA = 80. MG muestra «Faltan resultados de: DUREZA-T ·
    Dureza Total.» y sigue Pendiente.
-4. **Calculada completa**: cargar DUREZA-T = 300. MG muestra «24,3 mg/l» y pasa a Cargada.
+4. **Calculada completa**: cargar DUREZA-T = 15 (mL gastados; su fórmula `x*20` da 300 mg CO3Ca/l).
+   MG muestra «24,3 mg/l» y pasa a Cargada. Con DUREZA-T = 300 el resultado sería 6000 y MG
+   1409,4 mg/l, que también es correcto.
 5. **Referencia ausente**: en otro estudio con MG y CA pero sin DUREZA-T, cargar CA. MG muestra
    «No forma parte del estudio: DUREZA-T · Dureza Total.»
 6. **Recálculo (US 3)**: no hay pantalla hasta US 6.3; lo cubren los tests automáticos

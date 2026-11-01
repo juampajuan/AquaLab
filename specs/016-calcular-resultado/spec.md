@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-31
 
-**Status**: Draft
+**Status**: Aprobada (2026-10-31)
 
 **Input**: User description: "US 6.2 (Jira SCRUM-54) – Cálculo automático del resultado. Como empleado del laboratorio quiero que el sistema calcule automáticamente el resultado de la prueba para evitar errores de cálculo manual o transcripción. Criterios de aceptación: (1) El sistema debe aplicar la fórmula o curva de calibración correspondiente a la prueba. (2) El cálculo debe procesar los valores de las mediciones ingresadas. (3) El resultado calculado debe mostrarse con su unidad de medida correspondiente (ej. mg/L, UFC/ml). (4) El sistema debe advertir si faltan mediciones para completar el cálculo. (5) Al modificar una medición (US 6.3, SCRUM-55), el resultado de esa prueba y el de las pruebas calculadas que dependen de ella se recalculan automáticamente. Nota: riesgo identificado: errores en el cálculo; tests obligatorios. Acuerdo con US 6.3: el recálculo del resultado al modificar una medición se implementa en esta historia, que es la que tiene el modelo de resultados."
 

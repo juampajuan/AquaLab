@@ -203,3 +203,53 @@ def asignaciones_medicion(estudio_mediciones):
     return {
         a.prueba.codigo: a for a in estudio_mediciones.pruebas_asignadas.select_related("prueba")
     }
+
+
+@pytest.fixture
+def catalogo():
+    import io
+
+    from django.core.management import call_command
+
+    from pruebas.models import Prueba
+
+    call_command("importar_catalogo_pruebas", stdout=io.StringIO())
+    return {p.codigo: p for p in Prueba.objects.all()}
+
+
+@pytest.fixture
+def pruebas_division():
+    from pruebas.models import Prueba, TipoCalculo
+
+    return [
+        Prueba.objects.create(codigo="DIV-A", nombre="Dividendo", unidad="u", unidad_medicion="u"),
+        Prueba.objects.create(codigo="DIV-B", nombre="Divisor", unidad="u", unidad_medicion="u"),
+        Prueba.objects.create(
+            codigo="DIV",
+            nombre="Cociente",
+            unidad="u",
+            tipo_calculo=TipoCalculo.FORMULA,
+            formula="{DIV-A}/{DIV-B}",
+            es_calculada=True,
+        ),
+    ]
+
+
+@pytest.fixture
+def estudio_de(muestra, empleado, catalogo):
+    from estudios.models import TipoEstudio
+    from estudios.servicios import crear_estudio
+    from pruebas.models import Prueba
+
+    def crear(*codigos):
+        tipo = TipoEstudio.objects.create(nombre=f"Tipo de cálculo {uuid.uuid4()}")
+        tipo.pruebas.set(Prueba.objects.filter(codigo__in=codigos))
+        datos = {
+            "clave": str(uuid.uuid4()),
+            "muestra": muestra.pk,
+            "tipo": tipo.pk,
+            "version": tipo.version,
+        }
+        return crear_estudio(datos, empleado)
+
+    return crear
