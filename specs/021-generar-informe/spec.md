@@ -21,6 +21,9 @@
 - Q: ¿Qué columnas lleva cada prueba? → A: Prueba, resultado, unidad, límite, norma y si cumple, con lo fuera de norma resaltado.
 - Q: ¿Se genera PDF en esta historia? → A: No. Esta historia es la vista previa y la emisión en pantalla; PDF, impresión y firma son de la US 7.3.
 - Q: ¿Un informe por estudio o por muestra? → A: Uno por estudio: cada estudio se informa cuando se completa.
+- Q: ¿Quién puede ver la vista previa? → A: Cualquier empleado con sesión (como el control de la US 7.1); solo los usuarios con «Puede emitir informes» ven y usan «Emitir informe».
+- Q: Con límite «Ausente», ¿un resultado por debajo del límite de detección cumple? → A: Sí. Por debajo del límite de detección el valor no se distingue de cero («no detectado»), así que cuenta como ausente. Se ajusta la regla de evaluación de la US 6.4 en esta historia; si el laboratorio opina distinto, se revierte en un solo lugar.
+- Q: ¿Desde dónde se vuelve a ver un informe emitido? → A: Además de la pantalla que aparece al emitir, con un enlace «Ver informe» en el detalle del estudio y en el control de la US 7.1 cuando el estudio tiene informe. La búsqueda y el listado de informes siguen siendo de la US 7.3.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -80,18 +83,19 @@ Como laboratorio, quiero que solo los integrantes del grupo «Bioquímicos» pue
 ### Edge Cases
 
 - Doble envío de «Emitir informe» o dos bioquímicos emitiendo a la vez: se emite un solo informe; el segundo intento informa que el estudio ya tiene informe.
-- Un resultado por debajo del límite de detección en una prueba con límite «Ausente» (ej. Sólidos sedimentables 0,05 con LD 0,1): se informa «< 0,1» y la evaluación es la guardada al validar (US 6.4: con «Ausente» cumple solo el 0). *A confirmar con el laboratorio si «< LD» debería contar como cumple.*
+- Un resultado por debajo del límite de detección en una prueba con límite «Ausente» (ej. Sólidos sedimentables 0,05 con LD 0,1): se informa «< 0,1» y cumple (FR-016).
+- Resultados validados antes de este ajuste con la regla anterior conservan la evaluación guardada; los datos son de desarrollo (DEMO) y se revalidan si hace falta.
 - Límite de detección no numérico (ej. «Ausente» en E. coli): no se aplica «< LD».
 - Prueba sin límite comparable (US 6.4): se muestra el límite tal como figura y la evaluación «Sin límite comparable».
 - Datos opcionales vacíos (domicilio, responsable del muestreo, nombre de la muestra): se muestran como «—», no se omite la fila.
 - El informe muestra la evaluación y los límites guardados en la validación vigente de cada prueba (US 6.4), no los del catálogo actual.
-- Un estudio con informe emitido: el control de la US 7.1 ya no ofrece generar; la vista previa y la emisión se rechazan con el motivo.
+- Un estudio con informe emitido: el control de la US 7.1 ya no ofrece generar sino «Ver informe»; la vista previa y la emisión se rechazan con el motivo.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: Desde el control de la US 7.1, «Generar informe» MUST mostrar una vista previa del informe solo si el estudio está listo para informar (regla única de la US 7.1); si no, MUST rechazarlo con el motivo.
+- **FR-001**: Desde el control de la US 7.1, «Generar informe» MUST mostrar a cualquier empleado con sesión una vista previa del informe solo si el estudio está listo para informar (regla única de la US 7.1); si no, MUST rechazarlo con el motivo.
 - **FR-002**: La vista previa MUST identificarse claramente como borrador y MUST NOT modificar el estudio ni crear ningún informe.
 - **FR-003**: El informe MUST consolidar automáticamente: datos institucionales del laboratorio; cliente (nombre o razón social, tipo y número de documento, domicilio, correo); muestra (N° PI, nombre, origen, fecha de muestreo, fecha de ingreso, sitio de extracción, responsable del muestreo, tipo de vertido); estudio (número, tipo de estudio tal como se guardó al crearlo).
 - **FR-004**: Por cada prueba del estudio, el informe MUST mostrar nombre, resultado, unidad, límite, norma y si cumple, usando la evaluación y los límites guardados en su validación vigente (US 6.4), y MUST resaltar las que no cumplen.
@@ -106,6 +110,8 @@ Como laboratorio, quiero que solo los integrantes del grupo «Bioquímicos» pue
 - **FR-013**: Tras emitir, el sistema MUST mostrar el informe emitido con su número, sin la marca de borrador, e informar el éxito.
 - **FR-014**: El sistema MUST crear, como parte de sus datos iniciales, el permiso «Puede emitir informes» y asignarlo al grupo «Bioquímicos».
 - **FR-015**: Emitir MUST NOT modificar pruebas, mediciones, resultados, validaciones, la muestra, el cliente, el catálogo ni otros estudios.
+- **FR-016**: La evaluación de la US 6.4 MUST considerar que, con límite «Ausente» o «Ausencia», un resultado menor que el límite de detección numérico de la prueba cumple, igual que el 0. Aplica a la validación y a la evaluación que muestra el detalle del estudio.
+- **FR-017**: Cuando el estudio tiene informe emitido, el detalle del estudio y el control de la US 7.1 MUST ofrecer «Ver informe», que muestra el informe emitido a partir de su copia, a cualquier empleado con sesión.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -129,9 +135,8 @@ Como laboratorio, quiero que solo los integrantes del grupo «Bioquímicos» pue
 ## Assumptions
 
 - **Trazabilidad**: US 7.2 – Generar informe. Jira: clave a confirmar. Responsable: Delfina.
-- **Dependencias**: Se apoya en la US 7.1 (regla única para informar y `comprobar_generacion`, PR #34: esta rama sale de `020-controlar-pruebas-pendientes` y se pasa a `main` cuando se mergee), en la US 6.4 (validación con evaluación y límites guardados, grupo «Bioquímicos») y en el ajuste Ausente/Presente.
-- **Vista previa para todos**: Cualquier empleado con sesión puede ver la vista previa (el control de la US 7.1 está abierto a todos); solo emite quien tiene el permiso.
-- **Evaluación**: El informe no recalcula si cumple: usa la evaluación de la validación vigente de cada prueba (US 6.4).
+- **Dependencias**: Se apoya en la US 7.1 (regla única para informar y `comprobar_generacion`, PR #34, ya en `main`), en la US 6.4 (validación con evaluación y límites guardados, grupo «Bioquímicos») y en el ajuste Ausente/Presente.
+- **Evaluación**: El informe no recalcula si cumple: usa la evaluación de la validación vigente de cada prueba (US 6.4), ya con el ajuste de FR-016.
 - **Logo de ejemplo**: Se usa el logo de AquaLab como marcador hasta tener el del laboratorio.
 - **Interfaz**: Pantallas con el diseño de SCRUM-67 y los componentes de `templates/ui/`; el informe usa un diseño de documento en pantalla, preparado para la US 7.3.
 - **Datos académicos**: AquaLab es un proyecto FIUBA; los datos de desarrollo y demostración son ficticios (DEMO).

@@ -33,5 +33,5 @@
 
 - Las nueve decisiones de producto se tomaron con la usuaria antes de escribir la spec y quedaron en Clarifications (sesión 2026-11-01); no quedan marcadores [NEEDS CLARIFICATION].
 - Referencias técnicas mínimas en Assumptions (`comprobar_generacion`, `templates/ui/`), igual que en las specs 015 a 020, para la trazabilidad con la US 7.1 y el diseño de SCRUM-67.
-- Para confirmar con el laboratorio (no bloquea): si un resultado «< LD» con límite «Ausente» debería contar como cumple (caso borde); hoy se informa la evaluación guardada en la validación.
+- «< LD» con límite «Ausente» cuenta como cumple (Clarifications, FR-016); a revalidar con el laboratorio cuando responda.
 - Pendiente administrativo: clave de Jira de la US 7.2.
