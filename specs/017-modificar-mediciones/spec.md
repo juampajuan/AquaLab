@@ -14,6 +14,7 @@
 
 - Q: ¿Se conserva el historial de valores anteriores de una medición corregida? → A: No: se guarda solo el valor vigente, con quién la cargó y quién la corrigió por última vez (y cuándo). El valor anterior se reemplaza, como pide la tarjeta.
 - Q: ¿Se puede borrar una medición? → A: Sí, pero en su propia historia: US 6.5 – Borrar mediciones (SCRUM-72), con spec propia. Esta spec solo cubre corregir valores.
+- Q: ¿Quién puede corregir una medición? → A: Cualquier empleado con sesión activa, igual que la carga (US 6.1), no solo quien la cargó; queda registrado quién corrigió.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -83,7 +84,7 @@ Como empleado, quiero que, si una corrección cambia resultados ya validados, es
 
 ### Functional Requirements
 
-- **FR-001**: El sistema MUST permitir corregir mediciones únicamente a empleados con sesión activa.
+- **FR-001**: El sistema MUST permitir corregir mediciones a cualquier empleado con sesión activa, haya cargado o no la medición, y solo a ellos.
 - **FR-002**: El detalle del estudio MUST ofrecer la acción de corregir mediciones cuando el estudio no tiene informe emitido y tiene al menos una medición.
 - **FR-003**: El formulario de corrección MUST mostrar cada prueba con medición (código, nombre y unidad de medición), con su valor actual tal como se cargó, quién la cargó y cuándo, en un campo editable precargado.
 - **FR-004**: Los valores corregidos MUST validarse con las mismas reglas que la carga (US 6.1). Un campo vacío MUST rechazarse junto al campo. Si algún valor es inválido, MUST NOT guardarse ninguna corrección del envío.
