@@ -1,6 +1,7 @@
 from urllib.parse import urlencode
 
 from django.contrib import messages
+from django.contrib.auth.decorators import permission_required
 from django.core.paginator import Paginator
 from django.db import DatabaseError
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,7 +13,9 @@ from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
 from estudios.views import RESULTADOS_POR_PAGINA
 
 from . import servicios
-from .servicios import InformeNoDisponible
+from .contenido import armar_contenido
+from .models import Informe
+from .servicios import EmitirInformeError, InformeNoDisponible
 
 
 def listar(request):
@@ -65,20 +68,47 @@ def control(request, pk):
             "motivo": motivo,
             "listo": motivo is None,
             "informe_emitido": estudio.estado == EstadoEstudio.INFORME_GENERADO,
+            "informe": Informe.objects.filter(estudio=estudio).first(),
         },
     )
 
 
+def vista_previa(request, pk):
+    """Borrador del informe (US 7.2): cualquier empleado lo ve; no cambia nada."""
+    estudio = get_object_or_404(
+        Estudio.objects.select_related("muestra", "muestra__cliente", "muestra__origen"), pk=pk
+    )
+    motivo = servicios.motivo_para_no_informar(estudio, list(estudio.pruebas_asignadas.all()))
+    if motivo:
+        messages.error(request, motivo)
+        return redirect("informes:control", pk=estudio.pk)
+    contexto = {"estudio": estudio, "contenido": armar_contenido(estudio)}
+    return render(request, "informes/vista_previa.html", contexto)
+
+
+@permission_required("informes.emitir_informes", raise_exception=True)
 @require_POST
 def generar(request, pk):
+    """Emite el informe (US 7.2), confirmado desde la vista previa."""
     get_object_or_404(Estudio, pk=pk)
     try:
-        servicios.comprobar_generacion(pk)
-    except InformeNoDisponible as exc:
+        informe = servicios.emitir_informe(pk, request.user)
+    except (InformeNoDisponible, EmitirInformeError) as exc:
         messages.error(request, str(exc))
     except DatabaseError:
-        messages.error(request, "No se pudo verificar el estudio. Intentá nuevamente.")
+        messages.error(request, "No se pudo emitir el informe. Intentá nuevamente.")
     else:
-        # US 7.2: generar el informe acá, dentro de comprobar_generacion.
-        messages.info(request, "La generación del informe estará disponible próximamente.")
+        messages.success(
+            request, f"Se emitió el informe {informe.numero_mostrado} del estudio {pk}."
+        )
+        return redirect("informes:ver", pk=pk)
     return redirect("informes:control", pk=pk)
+
+
+def ver(request, pk):
+    """El informe emitido, siempre desde su copia (FR-010)."""
+    informe = get_object_or_404(
+        Informe.objects.select_related("estudio", "emitido_por"), estudio__pk=pk
+    )
+    contexto = {"estudio": informe.estudio, "informe": informe, "contenido": informe.contenido}
+    return render(request, "informes/ver.html", contexto)
