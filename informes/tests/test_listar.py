@@ -121,3 +121,12 @@ def test_listado_requiere_sesion(db):
     respuesta = Client().get(URL)
     assert respuesta.status_code == 302
     assert reverse("usuarios:login") in respuesta["Location"]
+
+
+def test_seleccionar_abre_control(cliente_http, estudio_de):
+    estudio = estudio_de("CL-")
+    html = cliente_http.get(URL).content.decode()
+    enlace = re.search(r'href="([^"]+)"[^>]*>Seleccionar</a>', html).group(1)
+    respuesta = cliente_http.get(enlace)
+    assert respuesta.status_code == 200
+    assert f"Controlar pruebas del estudio {estudio.pk}" in respuesta.content.decode()

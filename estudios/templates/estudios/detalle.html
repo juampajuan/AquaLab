@@ -168,6 +168,9 @@
       <a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">
         {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar estudios
       </a>
+      <a href="{% url 'informes:control' estudio.pk %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Controlar para informe
+      </a>
     </div>
   </div>
 {% endblock %}
