@@ -157,3 +157,49 @@ def prueba_extra():
 @pytest.fixture
 def asignacion(estudio):
     return estudio.pruebas_asignadas.get(prueba__codigo="TEST-A")
+
+
+@pytest.fixture
+def pruebas_medicion():
+    from pruebas.models import Prueba, TipoCalculo
+
+    return {
+        p.codigo: p
+        for p in [
+            Prueba.objects.create(codigo="TEST-PH", nombre="pH de test", unidad_medicion="UpH"),
+            Prueba.objects.create(
+                codigo="TEST-VOL", nombre="Volumen de test", unidad_medicion="mL"
+            ),
+            Prueba.objects.create(codigo="TEST-SIN", nombre="Sin unidad de test"),
+            Prueba.objects.create(
+                codigo="TEST-CALC",
+                nombre="Calculada de test",
+                tipo_calculo=TipoCalculo.FORMULA,
+                formula="{TEST-PH} * 2",
+                es_calculada=True,
+            ),
+        ]
+    }
+
+
+@pytest.fixture
+def estudio_mediciones(muestra, empleado, pruebas_medicion):
+    from estudios.models import TipoEstudio
+    from estudios.servicios import crear_estudio
+
+    tipo = TipoEstudio.objects.create(nombre="Tipo mediciones de test")
+    tipo.pruebas.set(pruebas_medicion.values())
+    datos = {
+        "clave": str(uuid.uuid4()),
+        "muestra": muestra.pk,
+        "tipo": tipo.pk,
+        "version": tipo.version,
+    }
+    return crear_estudio(datos, empleado)
+
+
+@pytest.fixture
+def asignaciones_medicion(estudio_mediciones):
+    return {
+        a.prueba.codigo: a for a in estudio_mediciones.pruebas_asignadas.select_related("prueba")
+    }

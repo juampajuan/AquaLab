@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-31
 
-**Status**: Draft
+**Status**: Aprobada (2026-10-31)
 
 **Input**: User description: "US 6.1 (Jira SCRUM-53) – Cargar mediciones. Como empleado del laboratorio quiero ingresar los valores de las mediciones obtenidas a partir de la muestra para registrar los datos primarios de cada prueba. Criterios de aceptación: (1) Desde un estudio se muestran sus pruebas que esperan carga de datos (estado Pendiente), con su nombre y la unidad de medición. (2) Se puede ingresar la medición cruda de cada prueba (un valor por prueba: lo que leyó el analista, ej. pH, mL gastados, absorbancia). (3) Se pueden cargar algunas pruebas y dejar otras para después; no hace falta completar todo el estudio de una vez. (4) El sistema valida que cada valor tenga formato numérico válido (acepta coma o punto decimal) y muestra el error junto al campo. (5) La medición queda asociada a la prueba del estudio, con el usuario que la cargó y la fecha y hora. (6) Al guardar una medición, la prueba pasa de Pendiente a Cargada. (7) Las pruebas calculadas a partir de otras (es_calculada) no piden medición. Fuera de alcance: calcular el resultado y aplicar fórmulas o límites (US 6.2), modificar mediciones ya cargadas (US 6.3), validar resultados (US 6.4)."
 

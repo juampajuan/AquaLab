@@ -3,6 +3,7 @@ from django import forms
 from muestras.models import Muestra
 from pruebas.models import Prueba
 
+from .mediciones import leer_valor
 from .models import TipoEstudio
 
 MAX_LONGITUD_BUSQUEDA = 100
@@ -55,6 +56,69 @@ class AgregarPruebaForm(forms.Form):
             return forms.ModelChoiceField(queryset=asignadas).clean(self.data.get("prueba"))
         except forms.ValidationError:
             return None
+
+
+class CargarMedicionesForm(forms.Form):
+    """Un campo opcional `medicion_<asignacion_pk>` por prueba del estudio."""
+
+    def __init__(self, *args, asignaciones, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.asignaciones = list(asignaciones)
+        self._valores = {}
+        for asignacion in self.asignaciones:
+            campo = forms.CharField(required=False, max_length=40, label=str(asignacion.prueba))
+            campo.widget.attrs.update(
+                {"inputmode": "decimal", "autocomplete": "off", "class": "form-control"}
+            )
+            self.fields[self.nombre(asignacion)] = campo
+
+    @staticmethod
+    def nombre(asignacion):
+        return f"medicion_{asignacion.pk}"
+
+    def clean(self):
+        datos = super().clean()
+        self._valores = {}
+        for asignacion in self.asignaciones:
+            nombre = self.nombre(asignacion)
+            if nombre not in datos:
+                continue
+            try:
+                valor = leer_valor(datos[nombre])
+            except forms.ValidationError as exc:
+                self.add_error(nombre, exc)
+                attrs = self.fields[nombre].widget.attrs
+                attrs["class"] += " is-invalid"
+                attrs["aria-describedby"] = f"{self[nombre].auto_id}_error"
+                continue
+            if valor is not None:
+                self._valores[asignacion.pk] = valor
+        if not self._valores and not self.errors:
+            raise forms.ValidationError("Ingresá al menos una medición.")
+        return datos
+
+    def pruebas_quitadas(self):
+        """Valores enviados para asignaciones que ya no son del estudio (pruebas quitadas)."""
+        propios = set(self.fields)
+        return sum(
+            1
+            for nombre, texto in self.data.items()
+            if nombre.startswith("medicion_") and nombre not in propios and texto.strip()
+        )
+
+    def filas(self):
+        return [(a, self[self.nombre(a)]) for a in self.asignaciones]
+
+    def valores(self):
+        return dict(self._valores)
+
+    def resumen(self):
+        """`(asignacion, nombre, texto)` de las pruebas con valor, para revisar y reenviar."""
+        return [
+            (a, self.nombre(a), self.cleaned_data[self.nombre(a)].strip())
+            for a in self.asignaciones
+            if a.pk in self._valores
+        ]
 
 
 class BuscarEstudioForm(forms.Form):

@@ -13,9 +13,15 @@ from muestras.models import Muestra
 from . import servicios
 from .catalogo import CatalogoNoDisponible
 from .confirmaciones import cargar_token, descartar, pendientes, preparar
-from .forms import AgregarPruebaForm, BuscarEstudioForm, CrearEstudioForm
+from .forms import (
+    AgregarPruebaForm,
+    BuscarEstudioForm,
+    CargarMedicionesForm,
+    CrearEstudioForm,
+)
 from .models import EstadoPruebaEstudio, Estudio
 from .servicios import (
+    CargarMedicionesError,
     CrearEstudioError,
     GestionPruebasError,
     PruebaYaAsignada,
@@ -178,7 +184,9 @@ def detalle(request, pk):
         pk=pk,
     )
     pruebas_asignadas = list(
-        estudio.pruebas_asignadas.select_related("prueba").order_by("prueba__codigo", "pk")
+        estudio.pruebas_asignadas.select_related(
+            "prueba", "medicion", "medicion__cargada_por"
+        ).order_by("prueba__codigo", "pk")
     )
     total_pruebas = len(pruebas_asignadas)
     pruebas_completadas = sum(
@@ -198,6 +206,11 @@ def detalle(request, pk):
             "pruebas_completadas": pruebas_completadas,
             "pruebas_cargadas": pruebas_cargadas,
             "pruebas_pendientes": pruebas_pendientes,
+            "pruebas_para_medir": sum(
+                1
+                for a in pruebas_asignadas
+                if a.estado == EstadoPruebaEstudio.PENDIENTE and not a.prueba.es_calculada
+            ),
         },
     )
 
@@ -267,4 +280,70 @@ def quitar_prueba(request, pk, asignacion_pk):
         messages.error(request, "No se pudo quitar la prueba. Intentá nuevamente.")
     else:
         messages.success(request, f"Prueba {prueba} quitada del estudio {estudio.pk}.")
+    return redirect("estudios:detalle", pk=estudio.pk)
+
+
+def asignaciones_para_medir(estudio):
+    return (
+        estudio.pruebas_asignadas.filter(
+            estado=EstadoPruebaEstudio.PENDIENTE, prueba__es_calculada=False
+        )
+        .select_related("prueba")
+        .order_by("prueba__codigo", "pk")
+    )
+
+
+def mensaje_guardadas(estudio, guardadas):
+    codigos = ", ".join(m.asignacion.prueba.codigo for m in guardadas)
+    if len(guardadas) == 1:
+        return f"Se guardó 1 medición del estudio {estudio.pk}: {codigos}."
+    return f"Se guardaron {len(guardadas)} mediciones del estudio {estudio.pk}: {codigos}."
+
+
+def cargar_mediciones(request, pk):
+    estudio = get_object_or_404(Estudio.objects.select_related("muestra"), pk=pk)
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    if accion != "confirmar" and not estudio.admite_mediciones:
+        # Al confirmar, la regla la revalida el servicio con el estudio bloqueado.
+        messages.error(request, "Este estudio ya no admite carga de mediciones.")
+        return redirect("estudios:detalle", pk=estudio.pk)
+    if request.method == "POST" and accion not in ("revisar", "editar", "confirmar"):
+        messages.error(request, "La acción no es válida.")
+        return redirect("estudios:detalle", pk=estudio.pk)
+    if accion == "confirmar":
+        # Con todas las no calculadas, el valor de una prueba que mientras tanto quedó
+        # Cargada llega al servicio, que la omite.
+        asignaciones = estudio.pruebas_asignadas.filter(prueba__es_calculada=False)
+        asignaciones = asignaciones.select_related("prueba").order_by("prueba__codigo", "pk")
+    else:
+        asignaciones = asignaciones_para_medir(estudio)
+    form = CargarMedicionesForm(request.POST or None, asignaciones=asignaciones)
+    calculadas = estudio.pruebas_asignadas.filter(
+        estado=EstadoPruebaEstudio.PENDIENTE, prueba__es_calculada=True
+    ).select_related("prueba")
+    contexto = {
+        "estudio": estudio,
+        "form": form,
+        "calculadas": calculadas.order_by("prueba__codigo"),
+    }
+    if accion in (None, "editar") or not form.is_valid():
+        return render(request, "estudios/cargar_mediciones.html", contexto)
+    if accion == "revisar":
+        return render(request, "estudios/cargar_mediciones_confirmar.html", contexto)
+    try:
+        resultado = servicios.cargar_mediciones(estudio.pk, form.valores(), request.user)
+    except CargarMedicionesError as exc:
+        messages.error(request, str(exc))
+    except DatabaseError:
+        messages.error(request, "No se pudieron guardar las mediciones. Intentá nuevamente.")
+    else:
+        if resultado.guardadas:
+            messages.success(request, mensaje_guardadas(estudio, resultado.guardadas))
+        for prueba, motivo in resultado.omitidas:
+            messages.warning(request, f"{prueba.codigo}: {motivo}.")
+        if quitadas := form.pruebas_quitadas():
+            messages.warning(
+                request,
+                f"{quitadas} prueba(s) ya no forman parte del estudio; su medición no se guardó.",
+            )
     return redirect("estudios:detalle", pk=estudio.pk)
