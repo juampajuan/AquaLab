@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Validar resultados · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:detalle' estudio.pk as url_detalle %}
+  {% with numero=estudio.pk|stringformat:"s" %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Estudio "|add:numero anterior_url=url_detalle miga="Validar resultados" titulo="Validar resultados" %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-5xl">
+    {% if not form.asignaciones %}
+      <div class="tarjeta">
+        {% url 'estudios:detalle' estudio.pk as url_detalle %}
+        {% include "ui/estado_vacio.html" with mensaje="No hay resultados para validar en este estudio." accion_texto="Volver al estudio" accion_url=url_detalle %}
+      </div>
+    {% else %}
+      <div class="aviso aviso-info mb-6" role="status">
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>Elegí los resultados del estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}) que querés validar. Vienen marcados los que cumplen.</div>
+      </div>
+      {% with fuera=form.fuera_de_norma %}
+        {% if fuera %}
+          <div class="aviso aviso-advertencia mb-6" role="alert">
+            {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+            <div>{% if fuera|length == 1 %}Hay 1 resultado fuera de norma: revisalo antes de marcarlo.{% else %}Hay {{ fuera|length }} resultados fuera de norma: revisalos antes de marcarlos.{% endif %}</div>
+          </div>
+        {% endif %}
+      {% endwith %}
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "ui/errores_form.html" %}
+        <div class="tarjeta overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th class="text-center">Validar</th>
+                  <th>Código</th>
+                  <th>Prueba</th>
+                  <th>Resultado</th>
+                  <th>Evaluación</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for asignacion, validar, resultado in form.filas %}
+                  <tr>
+                    <td class="text-center">
+                      {{ validar }}{{ resultado }}
+                      <label for="{{ validar.id_for_label }}" class="sr-only">{{ validar.label }}</label>
+                    </td>
+                    <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
+                    <td>{{ asignacion.prueba.nombre }}</td>
+                    <td class="numeros font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</td>
+                    <td>{% include "estudios/evaluacion.html" %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <button type="submit" name="accion" value="revisar" class="btn btn-primario">
+            {% include "ui/icono.html" with nombre="eye" clase="size-4" %} Revisar validación
+          </button>
+          <button type="submit" name="accion" value="marcar_todas" class="btn btn-secundario">
+            {% include "ui/icono.html" with nombre="circle-check" clase="size-4" %} Marcar todas
+          </button>
+          <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-secundario">Cancelar</a>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

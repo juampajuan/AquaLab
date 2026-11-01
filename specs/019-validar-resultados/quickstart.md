@@ -23,7 +23,8 @@ docker compose exec web python manage.py createsuperuser  # si no hay uno
 
 3. Registrar un cliente y una muestra de **Agua**; crear un tipo de estudio con **PH**, **CL-**,
    **ECOLI** y **OLOR**, y un estudio con ese tipo.
-4. Cargar mediciones: pH **7,4**; Cloruro **400**; E. coli **Ausente**; Olor **2**.
+4. Cargar mediciones: pH **7,4**; Cloruro **40** (fórmula `x*10` → 400 mg/l); E. coli **Ausente**;
+   Olor **2**.
    En el detalle, antes de validar:
    - pH → «Cumple» (límite 6.4 a 8.5);
    - Cloruro → «Fuera de norma» (máx. 350.0), en rojo;

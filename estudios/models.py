@@ -5,6 +5,8 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
 
+from pruebas.limites import Evaluacion
+
 
 class TipoEstudio(models.Model):
     nombre = models.CharField("nombre", max_length=150)
@@ -209,3 +211,58 @@ class Resultado(models.Model):
             return Decimal(0)
         # normalize() escribe 80 como 8E+1; un entero vuelve a exponente 0.
         return valor.quantize(Decimal(1)) if valor.as_tuple().exponent > 0 else valor
+
+
+class OrigenLimites(models.TextChoices):
+    GENERAL = "general", "Generales"
+    CLOACAL = "cloacal", "Cloacal"
+    CANAL = "canal", "Canal"
+
+
+class Validacion(models.Model):
+    """Un bioquímico confirmó el resultado de una prueba del estudio (US 6.4).
+
+    Hay a lo sumo una vigente por prueba, y la hay si y solo si la prueba está Completada. Cuando
+    deja de estarlo (recálculo o borrado de la medición) se anula y se conserva como historial.
+    """
+
+    asignacion = models.ForeignKey(
+        PruebaEstudio, on_delete=models.PROTECT, related_name="validaciones", editable=False
+    )
+    validada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="validaciones",
+        editable=False,
+    )
+    fecha_validacion = models.DateTimeField("fecha de validación", auto_now_add=True)
+    limite_min = models.CharField("límite mínimo", max_length=50, blank=True, default="")
+    limite_max = models.CharField("límite máximo", max_length=50, blank=True, default="")
+    norma = models.CharField("norma", max_length=150, blank=True, default="")
+    origen_limites = models.CharField(
+        "origen de los límites", max_length=10, choices=OrigenLimites.choices
+    )
+    evaluacion = models.CharField("evaluación", max_length=20, choices=Evaluacion.choices)
+    anulada = models.BooleanField("anulada", default=False)
+    fecha_anulacion = models.DateTimeField("fecha de anulación", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "validación"
+        verbose_name_plural = "validaciones"
+        permissions = [("validar_resultados", "Puede validar resultados")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["asignacion"],
+                condition=Q(anulada=False),
+                name="validacion_vigente_unica",
+            ),
+            models.CheckConstraint(
+                condition=Q(anulada=False, fecha_anulacion__isnull=True)
+                | Q(anulada=True, fecha_anulacion__isnull=False),
+                name="validacion_anulacion_completa",
+            ),
+        ]
+
+    def __str__(self):
+        estado = " (anulada)" if self.anulada else ""
+        return f"{self.asignacion}: {self.get_evaluacion_display()}{estado}"

@@ -23,4 +23,5 @@ urlpatterns = [
     ),
     path("<int:pk>/mediciones/cargar/", views.cargar_mediciones, name="cargar_mediciones"),
     path("<int:pk>/mediciones/corregir/", views.corregir_mediciones, name="corregir_mediciones"),
+    path("<int:pk>/resultados/validar/", views.validar_resultados, name="validar_resultados"),
 ]

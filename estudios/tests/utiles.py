@@ -15,3 +15,14 @@ def cargar(estudio, usuario, valores=None, **por_nombre):
         {asignacion_de(estudio, c).pk: Decimal(v) for c, v in por_codigo.items()},
         usuario,
     )
+
+
+def validar(estudio, usuario, *codigos):
+    """Valida por código las pruebas del estudio con el valor de su resultado vigente (US 6.4)."""
+    from estudios.servicios import validar_resultados
+
+    elegidas = {}
+    for codigo in codigos:
+        asignacion = asignacion_de(estudio, codigo)
+        elegidas[asignacion.pk] = str(asignacion.resultado.valor)
+    return validar_resultados(estudio.pk, elegidas, usuario)

@@ -1,6 +1,7 @@
 from django import forms
 
 from muestras.models import Muestra
+from pruebas.limites import Evaluacion
 from pruebas.models import Prueba
 
 from .mediciones import OPCIONES_PRESENCIA, es_presencia, leer_valor, texto_presencia
@@ -273,3 +274,52 @@ class BuscarEstudioForm(forms.Form):
         if len(valor) < 2:
             raise forms.ValidationError("Ingresá al menos 2 caracteres para buscar.")
         return valor
+
+
+class ValidarResultadosForm(forms.Form):
+    """Por cada prueba con resultado, `validar_<pk>` (marcada al abrir solo si cumple) y
+    `resultado_<pk>` (el valor que se vio, para no validar uno que cambió mientras tanto)."""
+
+    def __init__(self, *args, filas, marcar_todas=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.asignaciones = list(filas)
+        for asignacion in self.asignaciones:
+            resultado = getattr(asignacion, "resultado", None)
+            self.fields[self.validar(asignacion)] = forms.BooleanField(
+                required=False,
+                label=f"Validar {asignacion.prueba.codigo}",
+                initial=marcar_todas or asignacion.evaluacion == Evaluacion.CUMPLE,
+            )
+            self.fields[self.resultado(asignacion)] = forms.CharField(
+                required=False,
+                widget=forms.HiddenInput,
+                initial=str(resultado.valor) if resultado else "",
+            )
+
+    @staticmethod
+    def validar(asignacion):
+        return f"validar_{asignacion.pk}"
+
+    @staticmethod
+    def resultado(asignacion):
+        return f"resultado_{asignacion.pk}"
+
+    def clean(self):
+        datos = super().clean()
+        if not self.errors and not self.resumen():
+            raise forms.ValidationError("Elegí al menos un resultado para validar.")
+        return datos
+
+    def filas(self):
+        return [(a, self[self.validar(a)], self[self.resultado(a)]) for a in self.asignaciones]
+
+    def resumen(self):
+        """Las asignaciones marcadas para validar."""
+        return [a for a in self.asignaciones if self.cleaned_data.get(self.validar(a))]
+
+    def elegidas(self):
+        """`{asignacion_pk: valor_visto}` de las marcadas, para el servicio."""
+        return {a.pk: self.cleaned_data[self.resultado(a)] for a in self.resumen()}
+
+    def fuera_de_norma(self):
+        return [a for a in self.asignaciones if a.evaluacion == Evaluacion.FUERA_DE_NORMA]

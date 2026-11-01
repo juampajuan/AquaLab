@@ -84,6 +84,11 @@
               {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Corregir mediciones
             </a>
           {% endif %}
+          {% if perms.estudios.validar_resultados and estudio.admite_correcciones and hay_para_validar %}
+            <a href="{% url 'estudios:validar_resultados' estudio.pk %}" class="btn btn-primario">
+              {% include "ui/icono.html" with nombre="check" clase="size-4" %} Validar resultados
+            </a>
+          {% endif %}
           {% if estudio.admite_modificaciones %}
             <a href="{% url 'estudios:agregar_prueba' estudio.pk %}" class="btn btn-primario">
               {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Agregar prueba
@@ -132,6 +137,10 @@
                     <span class="numeros font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
                     {% if asignacion.resultado.formula %}
                       <span class="block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
+                    {% endif %}
+                    <span class="mt-1 block">{% include "estudios/evaluacion.html" %}</span>
+                    {% if asignacion.evaluacion and asignacion.validacion and asignacion.estado == "completada" %}
+                      <span class="block text-xs text-tinta-suave">Validada por {{ asignacion.validacion.validada_por.get_full_name|default:asignacion.validacion.validada_por.email }} · {{ asignacion.validacion.fecha_validacion|date:"d/m/Y H:i" }}</span>
                     {% endif %}
                   {% else %}
                     <span class="text-xs text-tinta-suave">{{ asignacion.motivo_sin_resultado }}</span>

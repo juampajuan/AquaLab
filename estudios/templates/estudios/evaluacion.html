@@ -1,0 +1,5 @@
+{# Evaluación de un resultado (US 6.4): etiqueta y límite aplicado. Requiere evaluar_asignaciones. #}
+{% if asignacion.evaluacion %}
+  {% include "ui/estado.html" with estado=asignacion.evaluacion.label tipo=asignacion.evaluacion_tipo %}
+  <span class="block text-xs text-tinta-suave">{% if asignacion.limite_texto %}Límite: {{ asignacion.limite_texto }}{% if asignacion.limite_norma %} · {{ asignacion.limite_norma }}{% endif %}{% if asignacion.limite_origen %} ({{ asignacion.limite_origen }}){% endif %}{% else %}Sin límite en el catálogo{% endif %}</span>
+{% endif %}

@@ -6,6 +6,7 @@ from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 
 from muestras.models import Muestra
+from pruebas.limites import evaluar, limites_aplicables
 from pruebas.models import Prueba
 
 from . import calculo
@@ -17,6 +18,7 @@ from .models import (
     Medicion,
     PruebaEstudio,
     TipoEstudio,
+    Validacion,
 )
 
 CLAVE_LOCK_ESTUDIOS = 5_100_001
@@ -354,3 +356,84 @@ def estado_tras_correccion(estudio):
     ):
         return EstadoEstudio.EN_PROCESO
     return estudio.estado
+
+
+class ValidarResultadosError(Exception):
+    pass
+
+
+@dataclass
+class ResultadoValidacion:
+    validadas: list = field(default_factory=list)  # pruebas
+    omitidas: list = field(default_factory=list)  # pares (prueba, motivo)
+    finalizado: bool = False
+
+
+def validar_resultados(estudio_pk, elegidas, usuario):
+    """Valida los resultados `{asignacion_pk: valor_visto}` del estudio (US 6.4).
+
+    Cada prueba se valida solo si sigue Cargada con el resultado que vio el bioquímico
+    (`str(resultado.valor)`); si no, se omite e informa. Se evalúa con los límites vigentes del
+    catálogo para el tipo de vertido de la muestra y la evaluación queda guardada en la
+    `Validacion`. Con todas las pruebas Completadas el estudio pasa a Finalizado. Bloquea el
+    estudio y después las pruebas, el mismo orden que la carga y la corrección.
+    """
+    if not usuario.is_authenticated or not usuario.is_active:
+        raise ValidarResultadosError("Se requiere una sesión activa.")
+    if not usuario.has_perm("estudios.validar_resultados"):
+        raise ValidarResultadosError("Se requiere permiso para validar resultados.")
+    resultado = ResultadoValidacion()
+    with transaction.atomic():
+        estudio = (
+            Estudio.objects.select_for_update(of=("self",))
+            .select_related("muestra")
+            .filter(pk=estudio_pk)
+            .first()
+        )
+        if estudio is None:
+            raise ValidarResultadosError("El estudio no está disponible.")
+        if not estudio.admite_correcciones:
+            raise ValidarResultadosError(
+                "El estudio ya tiene el informe emitido: sus resultados no se pueden validar."
+            )
+        asignaciones = (
+            estudio.pruebas_asignadas.select_for_update(of=("self",))
+            .select_related("prueba", "resultado")
+            .prefetch_related("prueba__limites_vertido")
+            .filter(pk__in=elegidas)
+            .order_by("prueba__codigo", "pk")
+        )
+        # Los pk que no son del estudio se ignoran.
+        for asignacion in asignaciones:
+            prueba = asignacion.prueba
+            if asignacion.estado == EstadoPruebaEstudio.COMPLETADA:
+                resultado.omitidas.append((prueba, "ya estaba validada"))
+                continue
+            if not calculo.tiene_resultado(asignacion):
+                resultado.omitidas.append((prueba, "ya no tenía resultado"))
+                continue
+            if str(asignacion.resultado.valor) != str(elegidas[asignacion.pk]):
+                resultado.omitidas.append((prueba, "cambió mientras se revisaba"))
+                continue
+            limites = limites_aplicables(prueba, estudio.muestra.tipo_vertido)
+            Validacion.objects.create(
+                asignacion=asignacion,
+                validada_por=usuario,
+                limite_min=limites.minimo,
+                limite_max=limites.maximo,
+                norma=limites.norma,
+                origen_limites=limites.origen,
+                evaluacion=evaluar(asignacion.resultado.valor, limites),
+            )
+            calculo.cambiar_estado(asignacion, EstadoPruebaEstudio.COMPLETADA)
+            resultado.validadas.append(prueba)
+        if (
+            resultado.validadas
+            and not estudio.pruebas_asignadas.exclude(
+                estado=EstadoPruebaEstudio.COMPLETADA
+            ).exists()
+        ):
+            estudio.estado = EstadoEstudio.FINALIZADO
+            estudio.save(update_fields=["estado"])
+            resultado.finalizado = True
+    return resultado

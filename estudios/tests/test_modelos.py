@@ -294,3 +294,38 @@ def test_medicion_correccion_completa(asignacion, empleado):
     Medicion.objects.filter(pk=medicion.pk).update(
         corregida_por=empleado, fecha_correccion=timezone.now()
     )
+
+
+def crear_validacion(asignacion, usuario, **extra):
+    from estudios.models import Validacion
+
+    datos = {"origen_limites": "general", "evaluacion": "cumple", **extra}
+    return Validacion.objects.create(asignacion=asignacion, validada_por=usuario, **datos)
+
+
+def test_validacion_una_vigente_por_asignacion(asignacion, empleado):
+    from django.utils import timezone
+
+    primera = crear_validacion(asignacion, empleado)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        crear_validacion(asignacion, empleado)
+    primera.anulada, primera.fecha_anulacion = True, timezone.now()
+    primera.save()
+    crear_validacion(asignacion, empleado)
+    assert asignacion.validaciones.count() == 2
+    assert asignacion.validaciones.filter(anulada=False).count() == 1
+
+
+@pytest.mark.parametrize("anulada,con_fecha", [(True, False), (False, True)])
+def test_validacion_anulacion_completa(asignacion, empleado, anulada, con_fecha):
+    from django.utils import timezone
+
+    fecha = timezone.now() if con_fecha else None
+    with pytest.raises(IntegrityError), transaction.atomic():
+        crear_validacion(asignacion, empleado, anulada=anulada, fecha_anulacion=fecha)
+
+
+def test_validacion_protege_asignacion(asignacion, empleado):
+    crear_validacion(asignacion, empleado)
+    with pytest.raises(ProtectedError), transaction.atomic():
+        asignacion.delete()

@@ -69,8 +69,6 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   lo detecta con `AgregarPruebaForm.prueba_ya_asignada()` y el servicio lo informa como aviso.
 - Las pruebas agregadas nacen en estado Pendiente. Quitar borra la asignación (sin historial) y
   solo se permite si `PruebaEstudio.puede_quitarse()`, es decir, estado Pendiente.
-- **Epic 6 (validación, US 6.4):** pasar la prueba a `Completada` al validar su resultado, con el
-  estudio bloqueado como en `cargar_mediciones`, y referenciar `PruebaEstudio` con `PROTECT`.
 - `motivo_para_no_quitar` es la única fuente de las reglas de quita: la usan la vista (GET) y el
   servicio. `.btn-chico` es el botón para filas de tablas.
 
@@ -140,7 +138,7 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Los límites son texto sin evaluar; las fórmulas (`x` = valor medido, `{CODIGO}` = otra prueba)
   se evalúan con `pruebas/formulas.py` (US 6.2). `referencias_formula` es la única forma de leer
   las referencias.
-- **US 6.4:** convertir los límites a número para comparar resultados. Las 17 pruebas sin tipo en el
+- Los límites se interpretan solo con `pruebas/limites.py` (US 6.4). Las 17 pruebas sin tipo en el
   sistema original quedaron DIRECTO y siguen a confirmar con el laboratorio (columna `observacion`).
 
 ## Pruebas Ausente/Presente (ajuste a US 6.1 y 6.3)
@@ -149,3 +147,21 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   (Presente): `estudios/mediciones.py` (`leer_valor(..., presencia=True)`, `texto_presencia`).
 - En las plantillas se muestran con el filtro `valor_medicion` de `config/ui.py`, nunca el número.
   La US 6.4 interpreta los límites «Ausente»/«Ausencia» del catálogo sobre esos 0 y 1.
+
+## Validación de resultados (US 6.4)
+
+- `pruebas/limites.py` es la única interpretación de los límites del catálogo: `leer_limite`
+  (número, «Ausente»/«Ausencia», vacío o no comparable), `limites_aplicables` (los del vertido de
+  la muestra reemplazan a los generales completos) y `evaluar` (cumple / fuera de norma / sin
+  límite comparable; bordes inclusivos; compara el valor completo, no el redondeado).
+- `Validacion` guarda quién, cuándo, los límites usados y la evaluación. Invariante: hay una
+  vigente (`anulada=False`) si y solo si la prueba está Completada. Al salir de Completada,
+  `calculo.cambiar_estado` la anula (`anulada`, `fecha_anulacion`); nunca se borra (FR-017).
+  Mostrar siempre la vigente (`views.validaciones_vigentes()` + `evaluar_asignaciones`).
+- `servicios.validar_resultados` revalida el permiso `estudios.validar_resultados`, bloquea el
+  estudio y después las pruebas, omite «ya estaba validada», «ya no tenía resultado» y «cambió
+  mientras se revisaba» (`resultado_<pk>` lleva `str(resultado.valor)`), y es el único que pasa el
+  estudio a Finalizado. La vuelta a En proceso sigue en `estado_tras_correccion`.
+- El grupo «Bioquímicos» lo crea la migración `estudios.0008`. Los tests con `transaction=True`
+  vacían la base: el fixture `bioquimico` crea el grupo si falta.
+- Cloruro (CL-) es fórmula `x*10`: en los tests, una medición de 40 da un resultado de 400 mg/l.
