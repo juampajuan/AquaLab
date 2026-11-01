@@ -68,6 +68,8 @@
   con CSRF; deshabilitado se dibuja como `<button disabled aria-describedby>` con el motivo visible.
   Sin JavaScript. El menú lateral suma la sección «Informes» y la pantalla de inicio un acceso
   rápido; el detalle del estudio, un enlace «Controlar para informe».
+  «Incompleta» y «Sin validar» usan las dos el tipo `warning`: la spec solo pide destacarlas y el
+  estado (con su color propio) ya las distingue.
 - **Rationale**: principios de interfaz de la constitution (componentes de `templates/ui/`).
 - **Confirmación**: «Generar informe» no guarda nada en esta historia; la confirmación (resumen y
   previsualización) es de US 7.2.

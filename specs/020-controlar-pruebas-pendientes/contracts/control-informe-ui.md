@@ -24,6 +24,8 @@ Todas las rutas requieren sesión (`LoginRequiredMiddleware`). Prefijo `informes
 - Resumen: «N de M pruebas completadas».
 - Tabla de **todas** las pruebas ordenadas por código: código, nombre, estado (`ui/estado.html`
   con `tipo_estado`) y, si bloquea, la etiqueta «Incompleta» (Pendiente) o «Sin validar» (Cargada).
+  Una calculada sin resultado muestra además el motivo de `calculo.motivo_sin_resultado`, como el
+  detalle del estudio.
 - Aviso según `motivo_para_no_informar`:
   - listo: aviso de éxito «El estudio está listo para informar: todas sus pruebas están completadas.»;
   - con pruebas sin completar: aviso de advertencia con el motivo («Hay N pruebas sin completar.»);

@@ -57,7 +57,7 @@ generación). La regla compartida va en la fase Foundational.
   - `test_motivo_para_no_informar` parametrizado sobre las filas de la tabla de `data-model.md`: informe emitido → «El informe de este estudio ya fue generado.»; sin asignaciones → «El estudio no tiene pruebas.»; 1 de 2 Completadas → «Hay 1 prueba sin completar.»; 0 de 3 → «Hay 3 pruebas sin completar.»; todas Completadas → `None`. Para «sin pruebas» basta con `estudio.pruebas_asignadas.all().delete()` en el test.
   - `test_cargadas_cuentan_como_sin_completar`: una Cargada y el resto Completadas → «Hay 1 prueba sin completar.».
   - `test_comprobar_generacion_ok` y `test_comprobar_generacion_rechaza`: devuelve el `Estudio` si está listo; si no, lanza `InformeNoDisponible` con el mismo texto que `motivo_para_no_informar`.
-  - `test_comprobar_generacion_bloquea_estudio`: con `django_assert_num_queries` o capturando SQL (`CaptureQueriesContext`), verificar que la consulta del estudio lleva `FOR UPDATE`.
+  - `test_comprobar_generacion_bloquea_estudio`: con `CaptureQueriesContext(connection)`, verificar que alguna consulta sobre `estudios_estudio` contiene `FOR UPDATE`.
 - [ ] T006 Implementar en `informes/servicios.py` (contrato «Servicio»):
   - `class InformeNoDisponible(Exception)`.
   - `motivo_para_no_informar(estudio, asignaciones) -> str | None`, con el orden de condiciones de `data-model.md` y el plural «Hay N pruebas sin completar.» / singular «Hay 1 prueba sin completar.».
@@ -84,22 +84,21 @@ primero.
 - [ ] T008 [P] [US1] Tests de la vista en `informes/tests/test_listar.py`:
   - `test_listado_muestra_estado_y_avance`: GET `informes:listar` → 200, cada estudio con N° de estudio, N° PI, cliente, tipo (snapshot), etiqueta de estado y «N de M pruebas completadas», y enlace «Seleccionar» a `informes:control`.
   - `test_listado_ordenado_y_paginado`: 21 estudios → la primera página tiene 20, del `pk` mayor al menor; `?page=2` tiene 1.
-  - `test_busqueda_por_numero_pi_cliente_y_tipo` parametrizado (N° PI, número de estudio, nombre de cliente, nombre de muestra, nombre de tipo) → solo el estudio que coincide.
+  - `test_busqueda_por_numero_pi_cliente_y_tipo` parametrizado (N° PI, número de estudio, nombre de cliente, razón social, documento del cliente con 4 o más dígitos, nombre de muestra, nombre de tipo) → solo el estudio que coincide.
   - `test_busqueda_sin_resultados`: `?q=zzz` → «No se encontraron estudios».
   - `test_busqueda_demasiado_larga`: `q` de 101 caracteres → «Ingresá como máximo 100 caracteres para buscar.».
   - `test_filtro_solo_listos`: `?listos=1` → solo el estudio con todas Completadas y sin informe; la casilla aparece marcada y la paginación conserva `listos=1` y `q`.
-  - `test_seleccionar_abre_control`: seguir el enlace «Seleccionar» → 200 en `informes:control` del estudio.
   - `test_menu_e_inicio_enlazan_informes`: GET `inicio` contiene `reverse("informes:listar")` en el menú (sección «Informes») y en un acceso rápido; en `informes:listar` el ítem del menú tiene `aria-current="page"`.
   - `test_listado_requiere_sesion`: cliente anónimo → redirige al login.
 
 ### Implementation for User Story 1
 
 - [ ] T009 [US1] En `informes/servicios.py`, `estudios_para_informar(q, solo_listos)`: `Estudio.objects.select_related("muestra", "muestra__cliente", "muestra__origen")`, `.annotate(total_pruebas=Count("pruebas_asignadas", distinct=True), pruebas_completadas=Count("pruebas_asignadas", filter=Q(pruebas_asignadas__estado=EstadoPruebaEstudio.COMPLETADA), distinct=True))`, filtro `filtro_busqueda(q)` si `q`, y si `solo_listos`: `total_pruebas__gt=0`, `pruebas_completadas=F("total_pruebas")`, `estado` distinto de `INFORME_GENERADO`; orden `Estudio._meta.ordering`. Comentario: las tres condiciones son las de `motivo_para_no_informar`.
-- [ ] T010 [US1] En `informes/views.py`, `listar(request)`: `BuscarEstudioForm(request.GET or None)`, `solo_listos = request.GET.get("listos") == "1"`, `Paginator(..., RESULTADOS_POR_PAGINA)` (importar la constante de `estudios.views`); contexto `form`, `page_obj`, `q`, `solo_listos`. Ruta `path("", views.listar, name="listar")` en `informes/urls.py`.
-- [ ] T011 [US1] Template `informes/templates/informes/listar.html` según el contrato `GET /informes/`: encabezado con `ui/encabezado.html` (sección «Informes», título «Seleccionar estudio a informar»), formulario GET con el campo `q` (como `estudios/buscar.html`) y la casilla «Solo listos para informar» (`name="listos" value="1"`), tabla con estado vía `ui/estado.html` + `tipo_estado`, avance, «Seleccionar»; vacío con `ui/estado_vacio.html` («No se encontraron estudios»); paginación con `ui/paginacion.html` conservando `q` y `listos`.
+- [ ] T010 [US1] En `informes/views.py`, `listar(request)`: `BuscarEstudioForm(request.GET or None)`, `solo_listos = request.GET.get("listos") == "1"`, `Paginator(..., RESULTADOS_POR_PAGINA)` (importar la constante de `estudios.views`); contexto `form`, `page_obj`, `q`, `solo_listos` y `parametros = urlencode({"q": q} | ({"listos": "1"} if solo_listos else {}))` (querystring sin `page` que espera `ui/paginacion.html`). Ruta `path("", views.listar, name="listar")` en `informes/urls.py`; registrar también `path("estudios/<int:pk>/", views.control, name="control")` con una vista `control` provisoria (`HttpResponse` vacía) que T015 reemplaza, para que el template del listado pueda resolver el enlace.
+- [ ] T011 [US1] Template `informes/templates/informes/listar.html` según el contrato `GET /informes/`: encabezado con `ui/encabezado.html` (sección «Informes», título «Seleccionar estudio a informar»), formulario GET con el campo `q` (como `estudios/buscar.html`) y la casilla «Solo listos para informar» (`name="listos" value="1"`), tabla con estado vía `ui/estado.html` + `tipo_estado`, avance, «Seleccionar»; vacío con `ui/estado_vacio.html` («No se encontraron estudios»); paginación con `{% include "ui/paginacion.html" with parametros=parametros %}` para conservar `q` y `listos`.
 - [ ] T012 [P] [US1] Navegación: en `templates/ui/menu.html`, sección «Informes» (icono existente en `templates/ui/iconos/`, por ejemplo `file-text`) con el ítem «Seleccionar estudio», activo en `informes:listar` e `informes:control`; en `templates/inicio.html`, acceso rápido «Informes» («Controlá que las pruebas de un estudio estén completas antes de emitir su informe.», enlace «Seleccionar»).
 
-**Checkpoint**: T007–T008 en verde (salvo `test_seleccionar_abre_control`, que necesita T014).
+**Checkpoint**: T007–T008 en verde. El enlace «Seleccionar» usa `{% url 'informes:control' %}`: hasta T015, T011 lo arma con la ruta registrada en T010 (ver abajo).
 
 ---
 
@@ -119,9 +118,11 @@ completar.», la Cargada con «Sin validar», botón deshabilitado; completar la
   - `test_boton_deshabilitado_con_pruebas_sin_completar`: `<button` con `disabled` y `aria-describedby="motivo-bloqueo"`; no hay `<form` con `action` a `informes:generar`.
   - `test_boton_habilitado_con_todas_completadas`: aviso «El estudio está listo para informar: todas sus pruebas están completadas.» y `<form method="post"` con `action` a `informes:generar` y `csrfmiddlewaretoken`.
   - `test_control_con_informe_emitido`: aviso «El informe de este estudio ya fue generado.» y ningún botón «Generar informe».
+  - `test_control_muestra_motivo_sin_resultado`: `estudio_de("CA", "DUREZA-T", "MG")` con solo DUREZA-T cargada → MG figura «Incompleta» con el mismo texto de `calculo.motivo_sin_resultado` que muestra `estudios:detalle`.
   - `test_control_estudio_inexistente_404`.
   - `test_consultar_no_modifica`: valores de `estado` de estudio y asignaciones y conteo de `Medicion` iguales antes y después del GET del listado y del control.
   - `test_control_y_detalle_muestran_el_mismo_estado`: para cada asignación, el texto `get_estado_display` aparece en el control y en `estudios:detalle`.
+  - `test_seleccionar_abre_control` (en `informes/tests/test_listar.py`): seguir el enlace «Seleccionar» del listado → 200 en `informes:control` del estudio.
   - `test_detalle_enlaza_control`: `estudios:detalle` contiene «Controlar para informe» con `reverse("informes:control", args=[pk])`.
 - [ ] T014 [P] [US2] Tests en `informes/tests/test_generar.py`:
   - `test_generar_rechaza_si_hay_pruebas_sin_completar`: POST → 302 a `informes:control` con el mensaje de error «Hay N pruebas sin completar.»; estados sin cambios.
@@ -134,9 +135,9 @@ completar.», la Cargada con «Sin validar», botón deshabilitado; completar la
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] En `informes/views.py`, `control(request, pk)`: `get_object_or_404` con `select_related("muestra", "muestra__cliente", "muestra__origen")`; asignaciones `select_related("prueba").order_by("prueba__codigo", "pk")`; `motivo = servicios.motivo_para_no_informar(estudio, asignaciones)`; contexto con `estudio`, `asignaciones`, `total_pruebas`, `pruebas_completadas`, `motivo`, `listo = motivo is None`, `informe_emitido = estudio.estado == EstadoEstudio.INFORME_GENERADO`. Ruta `path("estudios/<int:pk>/", views.control, name="control")`.
+- [ ] T015 [US2] En `informes/views.py`, `control(request, pk)`: `get_object_or_404` con `select_related("muestra", "muestra__cliente", "muestra__origen")`; asignaciones `select_related("prueba").order_by("prueba__codigo", "pk")`; a cada asignación, `motivo_sin_resultado = calculo.motivo_sin_resultado(asignacion, todas)` con `todas = {a.prueba.codigo: a for a in asignaciones}` (igual que `estudios.views.detalle`, sin modificarla; el `select_related` suma `"medicion"` y `"resultado"`); `motivo = servicios.motivo_para_no_informar(estudio, asignaciones)`; contexto con `estudio`, `asignaciones`, `total_pruebas`, `pruebas_completadas`, `motivo`, `listo = motivo is None`, `informe_emitido = estudio.estado == EstadoEstudio.INFORME_GENERADO`. Ruta `path("estudios/<int:pk>/", views.control, name="control")`.
 - [ ] T016 [US2] En `informes/views.py`, `generar(request, pk)` con `@require_POST`: `get_object_or_404(Estudio, pk=pk)`; `servicios.comprobar_generacion(pk)` (llamar vía el módulo `servicios` para que el parche de T014 funcione); `InformeNoDisponible` → `messages.error(str(exc))`; `DatabaseError` → «No se pudo verificar el estudio. Intentá nuevamente.»; si pasa → `messages.info("La generación del informe estará disponible próximamente.")` con un comentario `# US 7.2: generar el informe acá.`; siempre `redirect("informes:control", pk=pk)`. Ruta `path("estudios/<int:pk>/generar/", views.generar, name="generar")`.
-- [ ] T017 [US2] Template `informes/templates/informes/control.html` según el contrato `GET /informes/estudios/<pk>/`: encabezado «Controlar pruebas del estudio N» con «Volver al listado» y «Ver detalle del estudio»; ficha con `ui/dato.html`; resumen «N de M pruebas completadas»; tabla con `ui/estado.html` + `tipo_estado` y la etiqueta «Incompleta» (`tipo="warning"`) o «Sin validar» (`tipo="warning"`) con el mismo componente; aviso de éxito, advertencia o información según el caso (clases de `ui/mensajes.html`) con `id="motivo-bloqueo"` en el de advertencia; botón según el contrato (habilitado en `<form method="post">` con `{% csrf_token %}`, deshabilitado con `disabled aria-describedby="motivo-bloqueo"`, ausente con informe emitido).
+- [ ] T017 [US2] Template `informes/templates/informes/control.html` según el contrato `GET /informes/estudios/<pk>/`: encabezado «Controlar pruebas del estudio N» con «Volver al listado» y «Ver detalle del estudio»; ficha con `ui/dato.html`; resumen «N de M pruebas completadas»; tabla con `ui/estado.html` + `tipo_estado` y la etiqueta «Incompleta» o «Sin validar» con el mismo componente y `tipo="warning"` en ambas (research R6), más `asignacion.motivo_sin_resultado` en texto chico si lo hay, como en `estudios/detalle.html`; aviso de éxito, advertencia o información según el caso (clases de `ui/mensajes.html`) con `id="motivo-bloqueo"` en el de advertencia; botón según el contrato (habilitado en `<form method="post">` con `{% csrf_token %}`, deshabilitado con `disabled aria-describedby="motivo-bloqueo"`, ausente con informe emitido).
 - [ ] T018 [P] [US2] En `estudios/templates/estudios/detalle.html`, enlace secundario «Controlar para informe» a `{% url 'informes:control' estudio.pk %}` junto a las acciones del encabezado.
 
 **Checkpoint**: toda la suite de `informes` en verde.
@@ -154,7 +155,7 @@ completar.», la Cargada con «Sin validar», botón deshabilitado; completar la
 ## Dependencies & Execution Order
 
 - **Setup (T001–T003)** → **Foundational (T004–T006)** → **US1 (T007–T012)** y **US2 (T013–T018)** → **Polish (T019–T021)**.
-- US1 y US2 son independientes entre sí salvo dos enlaces: `test_seleccionar_abre_control` (US1) necesita la vista `control` (T015) y `test_detalle_enlaza_control` (US2) necesita la ruta de T015. Se pueden hacer en paralelo y cerrar esos dos tests al final.
+- US1 y US2 son independientes: la ruta `informes:control` se registra en T010 con una vista provisoria, y los tests que recorren listado → control (`test_seleccionar_abre_control`) están en US2.
 - Dentro de cada historia: tests → servicio → vista → template.
 
 ## Parallel Opportunities
