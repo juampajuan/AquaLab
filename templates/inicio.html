@@ -27,6 +27,8 @@
     {% include "ui/acceso_rapido.html" with url=url titulo="Crear estudio" descripcion="Asigná un tipo de estudio a una muestra y precargá sus pruebas." icono="microscope" color="bg-marino" borde="border-t-marino" enlace="Crear" %}
     {% url 'estudios:buscar' as url %}
     {% include "ui/acceso_rapido.html" with url=url titulo="Buscar estudio" descripcion="Consultá el estado de un estudio y sus pruebas por muestra o cliente." icono="clipboard-list" color="bg-turquesa" borde="border-t-turquesa" enlace="Buscar" %}
+    {% url 'informes:listar' as url %}
+    {% include "ui/acceso_rapido.html" with url=url titulo="Informes" descripcion="Controlá que las pruebas de un estudio estén completas antes de emitir su informe." icono="file-text" color="bg-cian-texto" borde="border-t-cian" enlace="Seleccionar" %}
     {% if perms.estudios.gestionar_catalogo %}
       {% url 'estudios:tipos_listar' as url %}
       {% include "ui/acceso_rapido.html" with url=url titulo="Gestionar tipos" descripcion="Administrá los tipos de estudio y las pruebas que incluye cada uno." icono="file-text" color="bg-marino-claro" borde="border-t-marino-claro" enlace="Gestionar" %}

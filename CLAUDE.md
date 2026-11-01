@@ -165,3 +165,14 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - El grupo «Bioquímicos» lo crea la migración `estudios.0008`. Los tests con `transaction=True`
   vacían la base: el fixture `bioquimico` crea el grupo si falta.
 - Cloruro (CL-) es fórmula `x*10`: en los tests, una medición de 40 da un resultado de 400 mg/l.
+
+## Control previo al informe (US 7.1)
+
+- App `informes` (sin modelos todavía): `informes:listar`, `informes:control` e `informes:generar`.
+- `informes/servicios.py:motivo_para_no_informar` es la única regla para informar (100% de las
+  pruebas Completadas y sin informe emitido): la usan el control y `comprobar_generacion`; el filtro
+  «Solo listos» de `estudios_para_informar` la repite en SQL y un test compara las dos.
+- `comprobar_generacion` bloquea el estudio (`select_for_update`) y revalida. **US 7.2:** crear el
+  informe dentro de esa transacción y reemplazar el aviso «próximamente» de `informes.views.generar`.
+- `estudios/busqueda.py:filtro_busqueda` es la única búsqueda de estudios (`estudios:buscar` e
+  `informes:listar`). Los tests de `informes` importan las fixtures de `estudios/tests/conftest.py`.

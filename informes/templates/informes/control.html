@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Controlar estudio #{{ estudio.pk }} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'informes:listar' as url_listar %}
+  {% with numero=estudio.pk|stringformat:"s" %}
+    {% with titulo="Controlar pruebas del estudio "|add:numero %}
+      {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Seleccionar estudio" anterior_url=url_listar titulo=titulo miga="Control de pruebas" estado=estudio.get_estado_display estado_tipo=estudio.estado|tipo_estado %}
+    {% endwith %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-5xl space-y-6">
+    <section class="tarjeta overflow-hidden">
+      <h2 class="flex items-center gap-2.5 border-b border-borde bg-fondo-hundido px-6 py-4 text-sm font-semibold text-marino">
+        {% include "ui/icono.html" with nombre="microscope" clase="size-4 text-cian-texto" %} Estudio a informar
+      </h2>
+      <dl class="resumen p-6 lg:grid-cols-3">
+        <div><dt>Muestra</dt><dd>N° PI {{ estudio.muestra.numero_pi }}<span class="mt-0.5 block text-xs font-normal text-tinta-suave">{{ estudio.muestra.nombre }}</span></dd></div>
+        <div><dt>Cliente</dt><dd>{{ estudio.muestra.cliente.nombre_completo }}</dd></div>
+        <div><dt>Tipo de estudio</dt><dd>{{ estudio.tipo_nombre_snapshot }}</dd></div>
+        <div><dt>Estado general</dt><dd>{{ estudio.get_estado_display }}</dd></div>
+        <div><dt>Avance</dt><dd>{{ pruebas_completadas }} de {{ total_pruebas }} prueba{{ total_pruebas|pluralize }} completada{{ total_pruebas|pluralize }}</dd></div>
+      </dl>
+    </section>
+
+    {% if listo %}
+      <div class="aviso aviso-exito" role="status">
+        {% include "ui/icono.html" with nombre="circle-check" clase="size-5 shrink-0" %}
+        <div class="flex-1">El estudio está listo para informar: todas sus pruebas están completadas.</div>
+      </div>
+    {% elif informe_emitido %}
+      <div class="aviso aviso-info" role="status">
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div class="flex-1">{{ motivo }}</div>
+      </div>
+    {% else %}
+      <div class="aviso aviso-advertencia" role="status" id="motivo-bloqueo">
+        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+        <div class="flex-1">{{ motivo }} Solo se puede generar el informe cuando todas las pruebas están completadas.</div>
+      </div>
+    {% endif %}
+
+    <section class="tarjeta overflow-hidden">
+      <h2 class="flex items-center gap-2.5 border-b border-borde bg-fondo-hundido px-6 py-4 text-sm font-semibold text-marino">
+        {% include "ui/icono.html" with nombre="flask-conical" clase="size-4 text-cian-texto" %} Pruebas del estudio
+      </h2>
+      <div class="overflow-x-auto">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Prueba</th>
+              <th class="text-right">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for asignacion in asignaciones %}
+              <tr data-prueba="{{ asignacion.prueba.codigo }}">
+                <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
+                <td>
+                  {{ asignacion.prueba.nombre }}
+                  {% if asignacion.motivo_sin_resultado %}
+                    <span class="mt-0.5 block text-xs text-tinta-suave">{{ asignacion.motivo_sin_resultado }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  <span class="inline-flex flex-wrap justify-end gap-1.5">
+                    {% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}
+                    {% if asignacion.estado == "pendiente" %}
+                      {% include "ui/estado.html" with estado="Incompleta" tipo="warning" %}
+                    {% elif asignacion.estado == "cargada" %}
+                      {% include "ui/estado.html" with estado="Sin validar" tipo="warning" %}
+                    {% endif %}
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="flex flex-wrap gap-3">
+      {% if listo %}
+        <form method="post" action="{% url 'informes:generar' estudio.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primario">
+            {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Generar informe
+          </button>
+        </form>
+      {% elif not informe_emitido %}
+        <button type="button" disabled aria-describedby="motivo-bloqueo" class="btn btn-primario opacity-50">
+          {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Generar informe
+        </button>
+      {% endif %}
+      <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="eye" clase="size-4" %} Ver detalle del estudio
+      </a>
+      <a href="{% url 'informes:listar' %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver al listado
+      </a>
+    </div>
+  </div>
+{% endblock %}
