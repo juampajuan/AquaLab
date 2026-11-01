@@ -21,6 +21,8 @@
 - Q: ¿Qué pasa con los límites que no son números ni «Ausente» (SOE, NE, Ph-0,2 / Ph+0,2)? → A: Se muestran el resultado y el límite tal como está en el catálogo, con la leyenda «Sin límite comparable», y la prueba se valida sin marcar si cumple.
 - Q: ¿Cuándo se ve si un resultado está fuera de norma? → A: Apenas existe el resultado, antes de validarlo, para que el bioquímico lo vea al revisar.
 - Q: ¿Se guarda la evaluación al validar? → A: Sí: quién validó, cuándo, los límites usados y si cumple, para que un cambio posterior del catálogo no altere lo validado ni el futuro informe.
+- Q: ¿Puede validar quien cargó o corrigió la medición? → A: Sí: alcanza con el permiso del grupo «Bioquímicos», sin doble control; quedan registrados quién cargó, quién corrigió y quién validó.
+- Q: ¿Las pruebas aparecen marcadas para validar al abrir la pantalla? → A: Solo las que cumplen; las fuera de norma y las sin límite comparable aparecen sin marcar, para elegirlas a conciencia. Hay una acción «Marcar todas».
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -35,7 +37,7 @@ Como bioquímico, desde el detalle de un estudio abro la validación, veo las pr
 **Acceptance Scenarios**:
 
 1. **Dado** un estudio sin informe emitido con al menos una prueba Cargada con resultado, **cuando** un usuario con el permiso de validar abre su detalle, **entonces** encuentra la acción para validar resultados.
-2. **Dado** el formulario de validación, **cuando** se abre, **entonces** lista cada prueba Cargada con resultado (código, nombre, resultado con unidad, límites aplicados con su norma y si cumple) para elegir cuáles validar.
+2. **Dado** el formulario de validación, **cuando** se abre, **entonces** lista cada prueba Cargada con resultado (código, nombre, resultado con unidad, límites aplicados con su norma y si cumple) para elegir cuáles validar; vienen marcadas solo las que cumplen, y las fuera de norma o sin límite comparable quedan sin marcar.
 3. **Dado** el formulario, **cuando** el bioquímico elige una o varias pruebas y continúa, **entonces** el sistema muestra un resumen de las pruebas a validar, destacando las que no cumplen, y pide confirmación; si vuelve o cancela, no cambia nada.
 4. **Dada** la confirmación, **cuando** se completa, **entonces** cada prueba elegida pasa a Completada y guarda quién la validó, cuándo, los límites usados y si cumple, y se informa el éxito.
 5. **Dado** un estudio al que, con esta validación, ya no le queda ninguna prueba sin validar, **cuando** se confirma, **entonces** el estudio pasa a Finalizado.
@@ -97,10 +99,10 @@ Como administrador, agrego a una persona al grupo «Bioquímicos» desde el pane
 
 ### Functional Requirements
 
-- **FR-001**: El sistema MUST permitir validar resultados únicamente a usuarios con sesión activa y el permiso «Puede validar resultados»; MUST rechazar cualquier intento sin ese permiso sin cambiar nada.
+- **FR-001**: El sistema MUST permitir validar resultados únicamente a usuarios con sesión activa y el permiso «Puede validar resultados», incluso si son quienes cargaron o corrigieron la medición (sin doble control); MUST rechazar cualquier intento sin ese permiso sin cambiar nada.
 - **FR-002**: El sistema MUST crear, como parte de sus datos iniciales, el grupo «Bioquímicos» con el permiso «Puede validar resultados». Agregar o quitar personas del grupo MUST hacerse desde el panel de administración existente.
 - **FR-003**: El detalle del estudio MUST ofrecer la acción de validar solo a usuarios con el permiso, cuando el estudio no tiene informe emitido y tiene al menos una prueba Cargada con resultado.
-- **FR-004**: El formulario de validación MUST listar las pruebas del estudio en estado Cargada que tienen resultado, con código, nombre, resultado con su unidad, límites aplicados con su norma y su evaluación, y permitir elegir una o varias. MUST exigir al menos una.
+- **FR-004**: El formulario de validación MUST listar las pruebas del estudio en estado Cargada que tienen resultado, con código, nombre, resultado con su unidad, límites aplicados con su norma y su evaluación, y permitir elegir una o varias. Al abrirse, MUST aparecer marcadas solo las que cumplen; las fuera de norma y las sin límite comparable MUST aparecer sin marcar. MUST ofrecer una acción para marcar todas y exigir al menos una elegida.
 - **FR-005**: El sistema MUST mostrar un resumen de las pruebas elegidas, destacando las que no cumplen, y pedir confirmación antes de validar, permitiendo volver a elegir o cancelar sin cambios.
 - **FR-006**: Los límites aplicables a un resultado MUST ser los del tipo de vertido de la muestra cuando la prueba tiene límites para ese vertido (Cloacal o Canal), y en caso contrario los límites generales de la prueba. Los límites del vertido MUST reemplazar a los generales completos.
 - **FR-007**: La evaluación de un resultado MUST ser una de tres: «Cumple», «Fuera de norma» o «Sin límite comparable», con estas reglas:
