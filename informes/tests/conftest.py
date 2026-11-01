@@ -8,7 +8,9 @@ from estudios.tests.conftest import *  # noqa: F401,F403
 def completar():
     """Pasa a Completada las asignaciones de esos códigos (todas si no se indican).
 
-    Atajo para no validar cada prueba (US 6.4): `estado` es editable=False.
+    Atajo para no validar cada prueba (US 6.4): `estado` es editable=False. No crea la
+    `Validacion`, así que deja pruebas Completadas sin validación vigente, algo que en la app
+    real no ocurre; para el flujo completo usar `validar()` de `estudios/tests/utiles.py`.
     """
     from estudios.models import EstadoPruebaEstudio
 
