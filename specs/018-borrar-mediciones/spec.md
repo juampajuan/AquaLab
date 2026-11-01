@@ -4,9 +4,15 @@
 
 **Created**: 2026-11-01
 
-**Status**: Draft
+**Status**: Aprobada (2026-11-01)
 
 **Input**: User description: "US 6.5 (Jira SCRUM-72) – Borrar mediciones. Como empleado del laboratorio quiero borrar una medición cargada por error (por ejemplo, en la prueba equivocada) para que la prueba vuelva a quedar pendiente y se cargue de nuevo cuando corresponda. Criterios de aceptación: (1) Desde la corrección de mediciones (6.3) se puede marcar una medición para borrar; el resumen la muestra como «valor anterior → se borra» y se pide confirmación antes de borrar. (2) Al confirmar, se borran la medición y su resultado, y la prueba vuelve a Pendiente para cargarse otra vez (6.1). (3) Las pruebas calculadas que dependen de la medición borrada pierden su resultado y vuelven a Pendiente; si estaban validadas, pierden la validación. (4) Si al estudio no le queda ninguna prueba cargada o completada, vuelve a «Pendiente de análisis» y vuelve a admitir agregar y quitar pruebas. (5) Con el informe emitido no se pueden borrar mediciones. Decisiones ya tomadas por el usuario al especificar la 6.3: casilla «Borrar» en cada fila del formulario de corrección (vaciar el campo sigue siendo un error); si una fila tiene la casilla marcada y además un valor editado, prevalece el borrado."
+
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: ¿Cómo se muestra el valor nuevo de una medición marcada para borrar en el resumen? → A: Con «—», como una prueba sin medición en el detalle, en lugar del texto «se borra» (que queda solo para lectores de pantalla). Pedido del usuario después del recorrido manual.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -21,7 +27,7 @@ Como empleado con sesión activa, en la corrección de mediciones (US 6.3) marco
 **Acceptance Scenarios**:
 
 1. **Dado** el formulario de corrección, **cuando** se abre, **entonces** cada fila ofrece una casilla «Borrar».
-2. **Dada** una medición marcada para borrar, **cuando** el empleado revisa, **entonces** el resumen la muestra como «valor anterior → se borra», junto con las correcciones del mismo envío, y pide confirmación; si cancela o vuelve, no cambia nada.
+2. **Dada** una medición marcada para borrar, **cuando** el empleado revisa, **entonces** el resumen la muestra con su valor anterior y «—» como valor nuevo (igual que una prueba sin medición), junto con las correcciones del mismo envío, y pide confirmación; si cancela o vuelve, no cambia nada.
 3. **Dada** la confirmación, **cuando** se completa, **entonces** la medición y su resultado se borran, la prueba vuelve a Pendiente y se informa el borrado.
 4. **Dada** una prueba cuya medición se borró, **cuando** el empleado abre «Cargar mediciones» (US 6.1), **entonces** la prueba se ofrece otra vez.
 5. **Dada** una fila con «Borrar» marcado y además un valor editado (o vaciado), **cuando** se envía, **entonces** prevalece el borrado y el valor escrito se ignora, sin errores en ese campo.
@@ -75,7 +81,7 @@ Como empleado, quiero que no se pueda borrar nada de un estudio con informe emit
 - **FR-001**: El sistema MUST permitir borrar mediciones a cualquier empleado con sesión activa, igual que corregirlas (US 6.3).
 - **FR-002**: El formulario de corrección (US 6.3) MUST ofrecer en cada fila una casilla «Borrar».
 - **FR-003**: Una fila con «Borrar» marcado MUST tratarse como borrado aunque traiga un valor editado o vacío, sin validar ese valor; un envío con al menos un borrado MUST contar como cambio.
-- **FR-004**: El resumen de revisión MUST mostrar cada borrado como «valor anterior → se borra», junto con las correcciones, y las pruebas que perderán la validación; MUST pedir confirmación antes de borrar.
+- **FR-004**: El resumen de revisión MUST mostrar cada borrado con su valor anterior y «—» como valor nuevo (con el texto «se borra» para lectores de pantalla), junto con las correcciones, y las pruebas que perderán la validación; MUST pedir confirmación antes de borrar.
 - **FR-005**: Al confirmar, el sistema MUST borrar la medición y su resultado, y la prueba MUST volver a Pendiente (también si estaba Completada) y ofrecerse otra vez en la carga (US 6.1).
 - **FR-006**: En la misma operación, las pruebas que dependen de la medición borrada MUST recalcularse (US 6.2): las calculadas que ya no se pueden calcular pierden su resultado y vuelven a Pendiente; si estaban validadas, pierden la validación.
 - **FR-007**: Si después del envío el estudio no tiene ninguna prueba Cargada ni Completada, MUST volver a «Pendiente de análisis» (y volver a admitir agregar y quitar pruebas). Si estaba Finalizado y le quedan pruebas sin validar, MUST volver a En proceso (US 6.3).

@@ -7,7 +7,7 @@
 ## Summary
 
 El borrado se suma a la corrección de mediciones de US 6.3: una casilla «Borrar» por fila, el
-resumen con «valor → se borra» y la misma confirmación. En el servicio `corregir_mediciones`, un
+resumen con el valor anterior y «—» como valor nuevo, y la misma confirmación. En el servicio `corregir_mediciones`, un
 valor nuevo `None` significa borrar: con la misma regla del valor original (y «ya no tenía
 medición» si ya no existe) se borra la `Medicion` y se llama a `recalcular_resultados` con las
 corregidas y las borradas, que por la regla de US 6.2 deja sin resultado y en Pendiente a la
@@ -56,7 +56,7 @@ Decisiones en [research.md](./research.md) (R1–R5). No hay `NEEDS CLARIFICATIO
 | **IV. Integridad de datos** | Solo se borra la medición (sin historial asociado) y los resultados que dependen de ella; nada con informe emitido; todo el envío es atómico. «No se borran registros con historial» no aplica: la medición no tiene historial (US 6.3). La pérdida de validación es la excepción ya justificada en US 6.2. | ⚠️ Excepción heredada de US 6.2 |
 | **V. Seguridad** | Solo por POST con CSRF; las asignaciones se buscan dentro del estudio de la URL; sesión obligatoria. | ✅ |
 | **VI. Idioma y consistencia** | Interfaz y mensajes en español; `borrar_<pk>`, `borradas`. ruff. | ✅ |
-| **Interfaz (UI)** | La acción que elimina datos pide confirmación (resumen «se borra»); avisos con `messages`; componentes existentes. | ✅ |
+| **Interfaz (UI)** | La acción que elimina datos pide confirmación (resumen con «—» como valor nuevo); avisos con `messages`; componentes existentes. | ✅ |
 
 **Post-diseño (Phase 1)**: cumple todos los principios; la única excepción es la de US 6.2.
 
@@ -84,7 +84,7 @@ en [data-model.md](./data-model.md).
 | Escenario / requisito | Test | Archivo |
 |---|---|---|
 | US1 Esc. 1, FR-001/002 — casilla «Borrar» en cada fila; cualquier empleado puede borrar | `test_formulario_ofrece_borrar`, `test_otro_empleado_puede_borrar` | `test_corregir_mediciones.py` |
-| US1 Esc. 2, FR-004 — resumen «se borra» con confirmación; cancelar sin cambios | `test_revisar_muestra_borrado` | `test_corregir_mediciones.py` |
+| US1 Esc. 2, FR-004 — resumen con «—» como valor nuevo, con confirmación; cancelar sin cambios | `test_revisar_muestra_borrado` | `test_corregir_mediciones.py` |
 | US1 Esc. 3–4, FR-005 — borrar: medición y resultado fuera, prueba Pendiente y ofrecida en la carga | `test_borrar_medicion`, `test_confirmar_borra_y_vuelve_a_ofrecerse` | `test_servicio_correccion.py`, `test_corregir_mediciones.py` |
 | US1 Esc. 5, FR-003 — prevalece el borrado (vacío o inválido) | `test_borrado_prevalece_sobre_el_valor` (parametrizado: vacío, `abc`, `9`) | `test_corregir_mediciones.py` |
 | US1 Esc. 6 — solo borrados cuenta como cambio | `test_solo_borrados_no_es_sin_cambios` | `test_corregir_mediciones.py` |
@@ -127,7 +127,7 @@ estudios/
 ├── views.py                                     # corregir_mediciones: asignaciones al confirmar; mensajes
 ├── templates/estudios/
 │   ├── corregir_mediciones.html                 # + columna Borrar
-│   └── corregir_mediciones_confirmar.html       # «se borra», aviso de cambios, oculto borrar_<pk>
+│   └── corregir_mediciones_confirmar.html       # «—» como valor nuevo, aviso de cambios, oculto borrar_<pk>
 └── tests/
     ├── test_servicio_correccion.py              # + borrado
     ├── test_corregir_mediciones.py              # + borrado

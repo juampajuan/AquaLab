@@ -125,3 +125,42 @@ def test_correcciones_concurrentes(estudio_de, empleado):
     assert [(p.codigo, m) for p, m in omitida.omitidas] == [("CA", "cambió mientras se editaba")]
     mg = asignacion_de(estudio, "MG")
     assert mg.resultado.valor == (Decimal("300") - final * Decimal("2.5")) * Decimal("0.243")
+
+
+def test_borrado_y_correccion_concurrentes(estudio_de, empleado):
+    from estudios.models import Medicion, Resultado
+    from estudios.servicios import corregir_mediciones
+    from estudios.tests.utiles import asignacion_de, cargar
+
+    estudio = estudio_de("CA", "DUREZA-T", "MG")
+    cargar(estudio, empleado, CA="80", DUREZA_T="15")
+    ca = asignacion_de(estudio, "CA")
+    barrera = threading.Barrier(2)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futuros = [
+            pool.submit(
+                en_hilo,
+                corregir_mediciones,
+                empleado.pk,
+                barrera,
+                estudio.pk,
+                {ca.pk: (Decimal("80"), nuevo)},
+            )
+            for nuevo in (None, Decimal("50"))
+        ]
+        resultados = [f.result(timeout=15) for f in futuros]
+    aplicados = [r for r in resultados if r.corregidas or r.borradas]
+    assert len(aplicados) == 1
+    omitida = next(r for r in resultados if r not in aplicados)
+    assert [m for _, m in omitida.omitidas] in (
+        ["cambió mientras se editaba"],
+        ["ya no tenía medición"],
+    )
+    mg = asignacion_de(estudio, "MG")
+    medicion = Medicion.objects.filter(asignacion=ca).first()
+    if medicion is None:
+        assert mg.estado == EstadoPruebaEstudio.PENDIENTE
+        assert not Resultado.objects.filter(asignacion=mg).exists()
+    else:
+        assert medicion.valor == Decimal("50")
+        assert mg.resultado.valor == (Decimal("300") - Decimal("125")) * Decimal("0.243")

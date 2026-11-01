@@ -23,7 +23,7 @@ Mensajes exactos en [contracts/borrar-mediciones-ui.md](./contracts/borrar-medic
 
 1. **Preparar**: un estudio con CL-, CA, DUREZA-T y MG; cargar CL- = 2,35, CA = 80 y DUREZA-T = 15.
 2. **Borrar (US 1)**: «Corregir mediciones» → marcar «Borrar» en CL- → «Revisar cambios» → resumen
-   «2,35 → se borra» → «Guardar correcciones». CL- queda Pendiente, sin medición ni resultado, y
+   CL- con 2,35 → «—» → «Guardar correcciones». CL- queda Pendiente, sin medición ni resultado, y
    aparece otra vez en «Cargar mediciones».
 3. **Prevalece el borrado**: marcar «Borrar» en CA y vaciar su campo → no hay error y se borra.
 4. **Dependientes (US 2)**: MG pierde su resultado, vuelve a Pendiente y avisa «Faltan resultados

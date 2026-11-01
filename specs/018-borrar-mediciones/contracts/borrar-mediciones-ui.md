@@ -14,7 +14,7 @@ lo que no se menciona no cambia.
 ## `POST` con `accion=revisar` (cambio)
 
 - Una fila con «Borrar» marcado no se valida (ni vacía ni formato) y su texto se ignora.
-- El resumen incluye las filas marcadas con «Valor nuevo» = «se borra».
+- El resumen incluye las filas marcadas con «Valor nuevo» = «—» (`<span aria-hidden="true">—</span>` más `<span class="sr-only">se borra</span>`), igual que una prueba sin medición en el detalle.
 - El aviso cuenta correcciones y borrados juntos: «Se aplicarán N cambios en el estudio X
   (muestra PI Y).» («Se aplicará 1 cambio…» con uno). Si solo hay correcciones, se mantiene el
   texto de US 6.3 («Se corregirá(n) …»).

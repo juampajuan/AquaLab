@@ -121,7 +121,12 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   compara con el original, nunca con la base.
 - `calculo.afectadas` es la única definición de pruebas afectadas por un cambio: la usan el aviso
   «Perderán la validación» y el recálculo.
-- Borrar mediciones es US 6.5 (SCRUM-72), en su propia spec.
+- **Borrar (US 6.5):** va en el mismo envío con `nuevo = None` en `cambios`; las omisiones suman
+  «ya no tenía medición». Al confirmar, el formulario incluye las asignaciones sin medición (las de
+  `original_<pk>` del POST) para que un reenvío lo informe. No tiene reglas propias de cálculo:
+  `calculo.descartar` deja sin resultado y en Pendiente a la borrada y a sus dependientes.
+  `estado_tras_correccion` devuelve el estudio a Pendiente de análisis si no le queda ninguna
+  prueba Cargada ni Completada.
 
 ## Catálogo de pruebas (SCRUM-64)
 

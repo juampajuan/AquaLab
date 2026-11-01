@@ -122,20 +122,24 @@ class CargarMedicionesForm(forms.Form):
 
 
 class CorregirMedicionesForm(forms.Form):
-    """Por cada prueba con medición, `medicion_<pk>` (el valor corregido, precargado) y
-    `original_<pk>` (el valor que se vio al abrir, para detectar cambios ajenos)."""
+    """Por cada prueba con medición, `medicion_<pk>` (el valor corregido, precargado),
+    `original_<pk>` (el valor que se vio al abrir, para detectar cambios ajenos) y `borrar_<pk>`."""
 
     def __init__(self, *args, asignaciones, **kwargs):
         super().__init__(*args, **kwargs)
         self.asignaciones = list(asignaciones)
-        self._nuevos, self._originales = {}, {}
+        self._nuevos, self._originales, self._borrar = {}, {}, set()
         for asignacion in self.asignaciones:
-            vigente = str(asignacion.medicion.valor_ingresado)
+            # Al confirmar puede venir una asignación cuya medición ya se borró (reenvío).
+            if hasattr(asignacion, "medicion"):
+                vigente = str(asignacion.medicion.valor_ingresado)
+            else:
+                vigente = ""
             campo = forms.CharField(
+                required=False,
                 max_length=40,
                 label=str(asignacion.prueba),
                 initial=vigente.replace(".", ","),
-                error_messages={"required": "La medición no puede quedar vacía."},
             )
             campo.widget.attrs.update(
                 {"inputmode": "decimal", "autocomplete": "off", "class": "form-control"}
@@ -143,6 +147,9 @@ class CorregirMedicionesForm(forms.Form):
             self.fields[self.nombre(asignacion)] = campo
             self.fields[self.original(asignacion)] = forms.CharField(
                 widget=forms.HiddenInput, initial=vigente
+            )
+            self.fields[self.borrar(asignacion)] = forms.BooleanField(
+                required=False, label=f"Borrar la medición de {asignacion.prueba.codigo}"
             )
 
     @staticmethod
@@ -153,9 +160,13 @@ class CorregirMedicionesForm(forms.Form):
     def original(asignacion):
         return f"original_{asignacion.pk}"
 
+    @staticmethod
+    def borrar(asignacion):
+        return f"borrar_{asignacion.pk}"
+
     def clean(self):
         datos = super().clean()
-        self._nuevos, self._originales = {}, {}
+        self._nuevos, self._originales, self._borrar = {}, {}, set()
         for asignacion in self.asignaciones:
             nombre = self.nombre(asignacion)
             try:
@@ -166,12 +177,22 @@ class CorregirMedicionesForm(forms.Form):
                 raise forms.ValidationError(
                     "La solicitud no es válida. Volvé a abrir la corrección."
                 )
+            if datos.get(self.borrar(asignacion)):
+                # Prevalece el borrado: el valor escrito no se valida.
+                self._errors.pop(nombre, None)
+                self._borrar.add(asignacion.pk)
+                continue
             if nombre not in datos:
                 continue
             try:
-                self._nuevos[asignacion.pk] = leer_valor(datos[nombre])
+                valor = leer_valor(datos[nombre])
             except forms.ValidationError as exc:
                 self.add_error(nombre, exc)
+                continue
+            if valor is None:
+                self.add_error(nombre, "La medición no puede quedar vacía.")
+            else:
+                self._nuevos[asignacion.pk] = valor
         if not self.errors and not self.cambios():
             raise forms.ValidationError("No hay cambios para guardar.")
         return datos
@@ -186,20 +207,26 @@ class CorregirMedicionesForm(forms.Form):
                 attrs["aria-describedby"] = f"{self[nombre].auto_id}_error"
 
     def filas(self):
-        return [(a, self[self.nombre(a)], self[self.original(a)]) for a in self.asignaciones]
+        return [
+            (a, self[self.nombre(a)], self[self.original(a)], self[self.borrar(a)])
+            for a in self.asignaciones
+        ]
 
     def originales(self):
         return dict(self._originales)
 
     def cambios(self):
         """`(asignacion, anterior, nuevo)` de las filas cuyo valor escrito difiere del que se vio
-        al abrir (con sus decimales: 7,2 ≠ 7,20). Nunca se compara con la base: si otro empleado
-        la cambió mientras tanto, el servicio lo detecta e informa."""
-        return [
-            (a, self._originales[a.pk], self._nuevos[a.pk])
-            for a in self.asignaciones
-            if a.pk in self._nuevos and str(self._nuevos[a.pk]) != str(self._originales[a.pk])
-        ]
+        al abrir (con sus decimales: 7,2 ≠ 7,20), con `nuevo = None` para las marcadas para borrar.
+        Nunca se compara con la base: si otro empleado la cambió mientras tanto, el servicio lo
+        detecta e informa."""
+        cambios = []
+        for a in self.asignaciones:
+            if a.pk in self._borrar:
+                cambios.append((a, self._originales[a.pk], None))
+            elif a.pk in self._nuevos and str(self._nuevos[a.pk]) != str(self._originales[a.pk]):
+                cambios.append((a, self._originales[a.pk], self._nuevos[a.pk]))
+        return cambios
 
 
 class BuscarEstudioForm(forms.Form):

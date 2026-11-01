@@ -371,6 +371,13 @@ def mensaje_corregidas(estudio, corregidas):
     return f"Se corrigieron {len(corregidas)} mediciones del estudio {estudio.pk}: {codigos}."
 
 
+def mensaje_borradas(estudio, borradas):
+    codigos = ", ".join(p.codigo for p in borradas)
+    if len(borradas) == 1:
+        return f"Se borró 1 medición del estudio {estudio.pk}: {codigos}."
+    return f"Se borraron {len(borradas)} mediciones del estudio {estudio.pk}: {codigos}."
+
+
 def corregir_mediciones(request, pk):
     estudio = get_object_or_404(Estudio.objects.select_related("muestra"), pk=pk)
     accion = request.POST.get("accion") if request.method == "POST" else None
@@ -381,18 +388,25 @@ def corregir_mediciones(request, pk):
     if request.method == "POST" and accion not in ("revisar", "editar", "confirmar"):
         messages.error(request, "La acción no es válida.")
         return redirect("estudios:detalle", pk=estudio.pk)
-    asignaciones = (
-        estudio.pruebas_asignadas.filter(medicion__isnull=False)
-        .select_related("prueba", "medicion", "medicion__cargada_por", "medicion__corregida_por")
-        .order_by("prueba__codigo", "pk")
-    )
+    asignaciones = estudio.pruebas_asignadas.select_related(
+        "prueba", "medicion", "medicion__cargada_por", "medicion__corregida_por"
+    ).order_by("prueba__codigo", "pk")
+    if accion == "confirmar":
+        # También las que ya no tienen medición, para que un reenvío de un borrado se informe
+        # («ya no tenía medición») en lugar de «No hay cambios para guardar».
+        enviadas = [n.removeprefix("original_") for n in request.POST if n.startswith("original_")]
+        asignaciones = asignaciones.filter(pk__in=[pk for pk in enviadas if pk.isdigit()])
+    else:
+        asignaciones = asignaciones.filter(medicion__isnull=False)
     form = CorregirMedicionesForm(request.POST or None, asignaciones=asignaciones)
     contexto = {"estudio": estudio, "form": form}
     if accion in (None, "editar") or not form.is_valid():
         return render(request, "estudios/corregir_mediciones.html", contexto)
     if accion == "revisar":
         todas = calculo.por_codigo(estudio)
-        codigos = calculo.afectadas(todas, {a.prueba.codigo for a, _, _ in form.cambios()})
+        cambios = form.cambios()
+        contexto["hay_borrados"] = any(nuevo is None for _, _, nuevo in cambios)
+        codigos = calculo.afectadas(todas, {a.prueba.codigo for a, _, _ in cambios})
         contexto["pierden_validacion"] = [
             todas[c] for c in sorted(codigos) if todas[c].estado == EstadoPruebaEstudio.COMPLETADA
         ]
@@ -407,6 +421,8 @@ def corregir_mediciones(request, pk):
     else:
         if resultado.corregidas:
             messages.success(request, mensaje_corregidas(estudio, resultado.corregidas))
+        if resultado.borradas:
+            messages.success(request, mensaje_borradas(estudio, resultado.borradas))
         for prueba, motivo in resultado.omitidas:
             messages.warning(request, f"{prueba.codigo}: {motivo}.")
         for prueba, motivo in resultado.sin_calcular:
