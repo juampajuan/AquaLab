@@ -3,7 +3,7 @@ from django import forms
 from muestras.models import Muestra
 from pruebas.models import Prueba
 
-from .mediciones import leer_valor
+from .mediciones import OPCIONES_PRESENCIA, es_presencia, leer_valor, texto_presencia
 from .models import TipoEstudio
 
 MAX_LONGITUD_BUSQUEDA = 100
@@ -58,6 +58,29 @@ class AgregarPruebaForm(forms.Form):
             return None
 
 
+def campo_medicion(asignacion, **kwargs):
+    """Campo de texto para el valor; en las pruebas A/P, un selector Ausente/Presente."""
+    if es_presencia(asignacion.prueba.unidad_medicion):
+        campo = forms.CharField(
+            required=False,
+            max_length=40,
+            label=str(asignacion.prueba),
+            widget=forms.Select(choices=OPCIONES_PRESENCIA),
+            **kwargs,
+        )
+        campo.widget.attrs["class"] = "form-select"
+        return campo
+    campo = forms.CharField(required=False, max_length=40, label=str(asignacion.prueba), **kwargs)
+    campo.widget.attrs.update(
+        {"inputmode": "decimal", "autocomplete": "off", "class": "form-control"}
+    )
+    return campo
+
+
+def leer_medicion(asignacion, texto):
+    return leer_valor(texto, presencia=es_presencia(asignacion.prueba.unidad_medicion))
+
+
 class CargarMedicionesForm(forms.Form):
     """Un campo opcional `medicion_<asignacion_pk>` por prueba del estudio."""
 
@@ -66,11 +89,7 @@ class CargarMedicionesForm(forms.Form):
         self.asignaciones = list(asignaciones)
         self._valores = {}
         for asignacion in self.asignaciones:
-            campo = forms.CharField(required=False, max_length=40, label=str(asignacion.prueba))
-            campo.widget.attrs.update(
-                {"inputmode": "decimal", "autocomplete": "off", "class": "form-control"}
-            )
-            self.fields[self.nombre(asignacion)] = campo
+            self.fields[self.nombre(asignacion)] = campo_medicion(asignacion)
 
     @staticmethod
     def nombre(asignacion):
@@ -84,7 +103,7 @@ class CargarMedicionesForm(forms.Form):
             if nombre not in datos:
                 continue
             try:
-                valor = leer_valor(datos[nombre])
+                valor = leer_medicion(asignacion, datos[nombre])
             except forms.ValidationError as exc:
                 self.add_error(nombre, exc)
                 attrs = self.fields[nombre].widget.attrs
@@ -135,16 +154,11 @@ class CorregirMedicionesForm(forms.Form):
                 vigente = str(asignacion.medicion.valor_ingresado)
             else:
                 vigente = ""
-            campo = forms.CharField(
-                required=False,
-                max_length=40,
-                label=str(asignacion.prueba),
-                initial=vigente.replace(".", ","),
-            )
-            campo.widget.attrs.update(
-                {"inputmode": "decimal", "autocomplete": "off", "class": "form-control"}
-            )
-            self.fields[self.nombre(asignacion)] = campo
+            if vigente and es_presencia(asignacion.prueba.unidad_medicion):
+                visible = texto_presencia(asignacion.medicion.valor)
+            else:
+                visible = vigente.replace(".", ",")
+            self.fields[self.nombre(asignacion)] = campo_medicion(asignacion, initial=visible)
             self.fields[self.original(asignacion)] = forms.CharField(
                 widget=forms.HiddenInput, initial=vigente
             )
@@ -185,7 +199,7 @@ class CorregirMedicionesForm(forms.Form):
             if nombre not in datos:
                 continue
             try:
-                valor = leer_valor(datos[nombre])
+                valor = leer_medicion(asignacion, datos[nombre])
             except forms.ValidationError as exc:
                 self.add_error(nombre, exc)
                 continue

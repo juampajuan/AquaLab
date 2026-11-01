@@ -45,8 +45,8 @@
                 <tr>
                   <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
                   <td>{{ asignacion.prueba.nombre }}</td>
-                  <td class="numeros text-right">{{ anterior }}</td>
-                  <td class="numeros text-right font-semibold">{% if nuevo is None %}<span aria-hidden="true">—</span><span class="sr-only">se borra</span>{% else %}{{ nuevo }}{% endif %}</td>
+                  <td class="numeros text-right">{{ anterior|valor_medicion:asignacion.prueba.unidad_medicion }}</td>
+                  <td class="numeros text-right font-semibold">{% if nuevo is None %}<span aria-hidden="true">—</span><span class="sr-only">se borra</span>{% else %}{{ nuevo|valor_medicion:asignacion.prueba.unidad_medicion }}{% endif %}</td>
                   <td>{{ asignacion.prueba.unidad_medicion|unidad }}</td>
                 </tr>
               {% endfor %}
