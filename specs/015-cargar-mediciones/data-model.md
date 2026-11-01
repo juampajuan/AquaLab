@@ -12,7 +12,7 @@ no cambian de esquema; solo cambian sus valores de `estado`.
 | `asignacion` | `OneToOneField(PruebaEstudio, on_delete=PROTECT, related_name="medicion", editable=False)` | Una medición por prueba del estudio (FR-012). `PROTECT`: la asignación no se borra si tiene medición (US 5.4) |
 | `valor` | `DecimalField(max_digits=18, decimal_places=6)` | Valor exacto ingresado; hasta 12 cifras enteras y 6 decimales; admite signo y cero |
 | `decimales` | `PositiveSmallIntegerField` | Cantidad de decimales escritos (0–6), sale del exponente del `Decimal` leído |
-| `unidad` | `CharField(max_length=50, blank=True)` | Copia de `Prueba.unidad_medicion` al cargar; no cambia si después cambia el catálogo |
+| `unidad` | `CharField(max_length=50, blank=True, default="")` | Copia de `Prueba.unidad_medicion` al cargar; no cambia si después cambia el catálogo |
 | `cargada_por` | `ForeignKey(AUTH_USER_MODEL, on_delete=PROTECT, related_name="mediciones_cargadas", editable=False)` | Usuario de la sesión |
 | `fecha_carga` | `DateTimeField(auto_now_add=True)` | Fecha y hora de la carga |
 

@@ -49,7 +49,8 @@ estudio, el flujo revisar/confirmar sin borrador y el manejo de errores.
 - **Decision**: función `leer_valor(texto) -> Decimal` en `estudios/mediciones.py`. Quita espacios
   al principio y al final, acepta `^[+-]?(\d+([.,]\d+)?|[.,]\d+)$`, reemplaza la coma por punto y
   construye el `Decimal` desde el texto. Rechaza (con `ValidationError` y mensaje en español): más
-  de 12 cifras enteras, más de 6 decimales y cualquier otro formato (letras, `1.234,5`, `1e3`,
+  de 12 cifras enteras (contadas sobre el `Decimal`, `max(valor.adjusted() + 1, 0)`, así los ceros a
+  la izquierda no cuentan), más de 6 decimales y cualquier otro formato (letras, `1.234,5`, `1e3`,
   espacios internos, `%`). Vacío → `None` (no se carga esa prueba).
 - **Rationale**: una expresión regular explícita evita lo que `Decimal()` acepta y el laboratorio
   no usa (`NaN`, `Infinity`, `1E3`, `_`). Al no aceptar separador de miles no hay ambigüedad entre
@@ -81,10 +82,12 @@ estudio, el flujo revisar/confirmar sin borrador y el manejo de errores.
 - **Decision**: `cargar_mediciones(estudio_pk, valores, usuario) -> ResultadoCarga` en
   `estudios/servicios.py`. Dentro de `transaction.atomic()`: `select_for_update()` del estudio →
   `admite_mediciones` → asignaciones del estudio con `select_for_update(of=("self",))` → por cada
-  valor, en orden de código: omitir si no existe, si no está `Pendiente` o si la prueba es
-  calculada; si no, crear la `Medicion` (unidad copiada de `prueba.unidad_medicion`) y pasar la
+  asignación encontrada, en orden de código: omitir e informar si no está `Pendiente` o si la
+  prueba es calculada; si no, crear la `Medicion` (unidad copiada de `prueba.unidad_medicion`) y pasar la
   asignación a `Cargada`. Si se guardó al menos una y el estudio está "Pendiente de análisis", pasa
-  a "En proceso".
+  a "En proceso". Los `pk` que no son asignaciones del estudio (pruebas quitadas o ajenas) no se
+  cargan; la vista informa las quitadas por cantidad (`form.pruebas_quitadas()`, R5), porque la
+  asignación ya no existe y no se puede nombrar la prueba.
 - **Rationale**: es el mismo orden de bloqueo que `agregar_prueba` y `quitar_prueba` (estudio →
   asignación): una carga y una quita simultáneas se serializan y nunca queda una medición de una
   prueba quitada; dos cargas simultáneas de la misma prueba guardan una sola. El reenvío de una

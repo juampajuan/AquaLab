@@ -122,7 +122,7 @@ tests se parchea `estudios.servicios.cargar_mediciones`, como en US 5.3/5.4). `d
 | Escenario / requisito | Test | Archivo |
 |---|---|---|
 | FR-001, US3 Esc. 6 — sesión obligatoria (GET y POST); estudio inexistente 404 | `test_cargar_mediciones_requiere_sesion`, `test_cargar_mediciones_estudio_inexistente_404` | `test_cargar_mediciones.py` |
-| US1 Esc. 1, FR-002 — detalle ofrece «Cargar mediciones» solo si corresponde | `test_detalle_ofrece_cargar_mediciones` (parametrizado: sin pendientes, solo calculadas, estudio cerrado) | `test_cargar_mediciones.py` |
+| US1 Esc. 1, FR-002 — detalle ofrece «Cargar mediciones» solo si corresponde | `test_detalle_ofrece_cargar_mediciones`, `test_detalle_no_ofrece_cargar_mediciones` (parametrizado: sin pendientes, solo calculadas, estudio cerrado) | `test_cargar_mediciones.py` |
 | US1 Esc. 2, FR-004 — lista pendientes con código, nombre y unidad («Sin unidad») | `test_formulario_lista_pendientes_con_unidad` | `test_cargar_mediciones.py` |
 | US3 Esc. 1, FR-004 — calculadas sin campo | `test_formulario_muestra_calculadas_sin_campo` | `test_cargar_mediciones.py` |
 | US3 Esc. 2 — sin pruebas para medir | `test_formulario_sin_pruebas_para_medir` | `test_cargar_mediciones.py` |

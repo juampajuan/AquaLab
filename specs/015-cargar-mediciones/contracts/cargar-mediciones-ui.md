@@ -8,8 +8,8 @@ mensajes van por el framework `messages`. `<pk>` es el estudio; si no existe →
 
 ## `GET /estudios/<pk>/` — `estudios:detalle` (existente, cambio)
 
-- En la cabecera de «Pruebas asignadas», botón **Cargar mediciones** (`btn btn-primario`, ícono de
-  carga) a `estudios:cargar_mediciones`, solo si `estudio.admite_mediciones` y hay al menos una
+- En la cabecera de «Pruebas asignadas», botón **Cargar mediciones** (`btn btn-primario`, ícono
+  `clipboard-list`) a `estudios:cargar_mediciones`, solo si `estudio.admite_mediciones` y hay al menos una
   prueba `Pendiente` no calculada (`pruebas_para_medir > 0` en el contexto).
 - La tabla suma la columna **Medición**: para una prueba con medición, el valor tal como se escribió
   con coma decimal y la unidad (o «Sin unidad»), y debajo, en texto chico, quién la cargó y la fecha
@@ -43,8 +43,9 @@ mensajes van por el framework `messages`. `<pk>` es el estudio; si no existe →
   - por campo, el mensaje de `leer_valor` (ver tabla);
   - sin ningún valor: error general «Ingresá al menos una medición.» (`ui/errores_form.html`).
 - Válido → 200 `estudios/cargar_mediciones_confirmar.html`: resumen con estudio y muestra, tabla
-  **Código / Prueba / Valor / Unidad** solo con las pruebas que tienen valor, y la cantidad («Se
-  guardarán N mediciones»). Campos ocultos `medicion_<pk>` con el texto ingresado.
+  **Código / Prueba / Valor / Unidad** solo con las pruebas que tienen valor, y el aviso «Se
+  guardarán N mediciones en el estudio X (muestra PI Y).» («Se guardará 1 medición en el estudio X
+  (muestra PI Y).» con una sola). Campos ocultos `medicion_<pk>` con el texto ingresado.
   Botones: **Guardar mediciones** (`accion=confirmar`, se deshabilita al enviar), **Volver a
   editar** (`accion=editar`) y **Cancelar** (enlace al detalle, no guarda nada).
 
@@ -57,10 +58,12 @@ mensajes van por el framework `messages`. `<pk>` es el estudio; si no existe →
 - Se revalida el formulario (con todas las asignaciones no calculadas del estudio). Inválido → 200
   con el formulario y errores (no se guarda nada).
 - Válido → `servicios.cargar_mediciones(...)` y 302 a `detalle` con:
-  - éxito: «Se guardaron N mediciones del estudio X: COD1, COD2.»;
-  - por cada omitida, advertencia «COD: <motivo>.» con motivo «ya tenía una medición cargada»,
-    «ya no forma parte del estudio» o «se calcula a partir de otras pruebas»;
-  - campos enviados de asignaciones que ya no existen: advertencia «N prueba(s) ya no forman parte
+  - éxito, solo si se guardó alguna: «Se guardaron N mediciones del estudio X: COD1, COD2.» («Se
+    guardó 1 medición del estudio X: COD1.» con una sola);
+  - por cada omitida, advertencia «COD: <motivo>.» con motivo «ya tenía una medición cargada» o
+    «se calcula a partir de otras pruebas»;
+  - campos enviados de asignaciones que ya no existen (pruebas quitadas; el servicio no las recibe
+    y la prueba ya no se puede nombrar): advertencia «N prueba(s) ya no forman parte
     del estudio; su medición no se guardó.»;
   - `CargarMedicionesError` → error con su mensaje; `DatabaseError` → error «No se pudieron guardar
     las mediciones. Intentá nuevamente.» (nada guardado).
@@ -74,3 +77,4 @@ mensajes van por el framework `messages`. `<pk>` es el estudio; si no existe →
 | `abc` · `1.234,5` · `1,2,3` · `1e3` · `7 25` · `7%` · `NaN` | «Ingresá un número válido (usá coma o punto para los decimales).» |
 | `0,1234567` | «Ingresá como máximo 6 decimales.» |
 | `1234567890123` | «El valor es demasiado grande (máximo 12 cifras enteras).» |
+| `0000000000000,5` | Válido (`0.5`): las cifras enteras se cuentan sobre el número, sin ceros a la izquierda |
