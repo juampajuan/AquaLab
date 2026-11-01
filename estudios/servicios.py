@@ -1,4 +1,5 @@
 import uuid
+from dataclasses import dataclass, field
 
 from django.db import IntegrityError, connection, transaction
 from django.db.models.deletion import ProtectedError
@@ -7,7 +8,14 @@ from muestras.models import Muestra
 from pruebas.models import Prueba
 
 from .catalogo import CatalogoNoDisponible, configuracion_bloqueada
-from .models import Estudio, PruebaEstudio, TipoEstudio
+from .models import (
+    EstadoEstudio,
+    EstadoPruebaEstudio,
+    Estudio,
+    Medicion,
+    PruebaEstudio,
+    TipoEstudio,
+)
 
 CLAVE_LOCK_ESTUDIOS = 5_100_001
 
@@ -160,3 +168,63 @@ def quitar_prueba(estudio_pk, asignacion_pk, usuario):
                 "La prueba tiene mediciones o resultados cargados y no se puede quitar."
             ) from exc
         return asignacion.prueba
+
+
+class CargarMedicionesError(Exception):
+    pass
+
+
+@dataclass
+class ResultadoCarga:
+    guardadas: list = field(default_factory=list)
+    omitidas: list = field(default_factory=list)  # pares (prueba, motivo)
+
+
+def cargar_mediciones(estudio_pk, valores, usuario):
+    """Guarda las mediciones `{asignacion_pk: Decimal}` de las pruebas pendientes del estudio.
+
+    Bloquea el estudio, como agregar_prueba y quitar_prueba, así una carga y una quita
+    simultáneas se serializan y cada prueba recibe una sola medición.
+    """
+    if not usuario.is_authenticated or not usuario.is_active:
+        raise CargarMedicionesError("Se requiere una sesión activa.")
+    resultado = ResultadoCarga()
+    with transaction.atomic():
+        estudio = Estudio.objects.select_for_update().filter(pk=estudio_pk).first()
+        if estudio is None:
+            raise CargarMedicionesError("El estudio no está disponible.")
+        if not estudio.admite_mediciones:
+            raise CargarMedicionesError("Este estudio ya no admite carga de mediciones.")
+        asignaciones = (
+            estudio.pruebas_asignadas.select_for_update(of=("self",))
+            .select_related("prueba")
+            .filter(pk__in=valores)
+            .order_by("prueba__codigo", "pk")
+        )
+        # Los pk que no son del estudio (pruebas quitadas o ajenas) no se cargan: la vista
+        # informa las quitadas.
+        for asignacion in asignaciones:
+            if asignacion.estado != EstadoPruebaEstudio.PENDIENTE:
+                resultado.omitidas.append((asignacion.prueba, "ya tenía una medición cargada"))
+                continue
+            if asignacion.prueba.es_calculada:
+                resultado.omitidas.append(
+                    (asignacion.prueba, "se calcula a partir de otras pruebas")
+                )
+                continue
+            valor = valores[asignacion.pk]
+            resultado.guardadas.append(
+                Medicion.objects.create(
+                    asignacion=asignacion,
+                    valor=valor,
+                    decimales=max(0, -valor.as_tuple().exponent),
+                    unidad=asignacion.prueba.unidad_medicion,
+                    cargada_por=usuario,
+                )
+            )
+            asignacion.estado = EstadoPruebaEstudio.CARGADA
+            asignacion.save(update_fields=["estado"])
+        if resultado.guardadas and estudio.estado == EstadoEstudio.PENDIENTE_ANALISIS:
+            estudio.estado = EstadoEstudio.EN_PROCESO
+            estudio.save(update_fields=["estado"])
+    return resultado

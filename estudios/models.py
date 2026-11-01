@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -98,6 +100,10 @@ class Estudio(models.Model):
     def admite_modificaciones(self):
         return self.estado == EstadoEstudio.PENDIENTE_ANALISIS
 
+    @property
+    def admite_mediciones(self):
+        return self.estado in (EstadoEstudio.PENDIENTE_ANALISIS, EstadoEstudio.EN_PROCESO)
+
 
 class PruebaEstudio(models.Model):
     estudio = models.ForeignKey(Estudio, on_delete=models.PROTECT, related_name="pruebas_asignadas")
@@ -121,7 +127,40 @@ class PruebaEstudio(models.Model):
     def puede_quitarse(self):
         """Solo una prueba Pendiente: Cargada y Completada tienen mediciones o resultados.
 
-        El Epic 6 cambia este estado al cargar mediciones o resultados, y sus tablas deben
-        referenciar a PruebaEstudio con on_delete=PROTECT.
+        La carga de mediciones (US 6.1) la pasa a Cargada; los resultados del Epic 6 deben
+        pasarla a Completada y referenciar a PruebaEstudio con on_delete=PROTECT.
         """
         return self.estado == EstadoPruebaEstudio.PENDIENTE
+
+
+class Medicion(models.Model):
+    asignacion = models.OneToOneField(
+        PruebaEstudio, on_delete=models.PROTECT, related_name="medicion", editable=False
+    )
+    valor = models.DecimalField("valor", max_digits=18, decimal_places=6)
+    decimales = models.PositiveSmallIntegerField("decimales")
+    unidad = models.CharField("unidad", max_length=50, blank=True, default="")
+    cargada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="mediciones_cargadas",
+        editable=False,
+    )
+    fecha_carga = models.DateTimeField("fecha de carga", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "medición"
+        verbose_name_plural = "mediciones"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(decimales__lte=6), name="medicion_decimales_validos"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.asignacion} = {self.valor_ingresado} {self.unidad}".rstrip()
+
+    @property
+    def valor_ingresado(self):
+        """El valor con los decimales que escribió el analista (7,20 y no 7,200000)."""
+        return self.valor.quantize(Decimal(1).scaleb(-self.decimales))

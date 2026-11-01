@@ -133,3 +133,63 @@ def test_puede_quitarse_solo_pendiente(asignacion):
     for estado in (EstadoPruebaEstudio.CARGADA, EstadoPruebaEstudio.COMPLETADA):
         asignacion.estado = estado
         assert not asignacion.puede_quitarse()
+
+
+def crear_medicion(asignacion, usuario, valor="7.20", decimales=2):
+    from decimal import Decimal
+
+    from estudios.models import Medicion
+
+    return Medicion.objects.create(
+        asignacion=asignacion,
+        valor=Decimal(valor),
+        decimales=decimales,
+        unidad="UpH",
+        cargada_por=usuario,
+    )
+
+
+def test_valor_ingresado_conserva_ceros_finales(asignaciones_medicion, empleado):
+    from decimal import Decimal
+
+    from estudios.models import Medicion
+
+    crear_medicion(asignaciones_medicion["TEST-PH"], empleado)
+    crear_medicion(asignaciones_medicion["TEST-VOL"], empleado, valor="18", decimales=0)
+    ph = Medicion.objects.get(asignacion=asignaciones_medicion["TEST-PH"])
+    vol = Medicion.objects.get(asignacion=asignaciones_medicion["TEST-VOL"])
+    assert ph.valor_ingresado == Decimal("7.20")
+    assert ph.valor_ingresado.as_tuple().exponent == -2
+    assert vol.valor_ingresado == Decimal("18")
+    assert vol.valor_ingresado.as_tuple().exponent == 0
+
+
+def test_una_medicion_por_asignacion(asignacion, empleado):
+    crear_medicion(asignacion, empleado)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        crear_medicion(asignacion, empleado, valor="8")
+
+
+def test_medicion_decimales_validos(asignacion, empleado):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        crear_medicion(asignacion, empleado, valor="1", decimales=7)
+
+
+def test_asignacion_con_medicion_protegida(asignacion, empleado):
+    crear_medicion(asignacion, empleado)
+    with pytest.raises(ProtectedError), transaction.atomic():
+        asignacion.delete()
+
+
+@pytest.mark.parametrize(
+    "estado,admite",
+    [
+        ("pendiente_analisis", True),
+        ("en_proceso", True),
+        ("finalizado", False),
+        ("informe_generado", False),
+    ],
+)
+def test_admite_mediciones_por_estado(estudio, estado, admite):
+    estudio.estado = estado
+    assert estudio.admite_mediciones is admite

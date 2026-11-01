@@ -69,11 +69,29 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   lo detecta con `AgregarPruebaForm.prueba_ya_asignada()` y el servicio lo informa como aviso.
 - Las pruebas agregadas nacen en estado Pendiente. Quitar borra la asignación (sin historial) y
   solo se permite si `PruebaEstudio.puede_quitarse()`, es decir, estado Pendiente.
-- **Epic 6 (mediciones y resultados):** pasar la prueba a `Cargada`/`Completada` al registrar
-  mediciones o resultados, con la asignación bloqueada (`quitar_prueba` la bloquea para leer el
-  estado), y referenciar `PruebaEstudio` con `on_delete=PROTECT`.
+- **Epic 6 (resultados):** pasar la prueba a `Completada` al validar resultados (US 6.4), con el
+  estudio y la asignación bloqueados como en `cargar_mediciones`, y referenciar `PruebaEstudio`
+  con `on_delete=PROTECT`.
 - `motivo_para_no_quitar` es la única fuente de las reglas de quita: la usan la vista (GET) y el
   servicio. `.btn-chico` es el botón para filas de tablas.
+
+## Carga de mediciones (US 6.1)
+
+- `Medicion` es uno a uno con `PruebaEstudio` (`PROTECT`): una medición por prueba del estudio.
+  US 6.3 (modificar) debe actualizar esa fila, no crear otra.
+- El valor va en `numeric(18, 6)` y los decimales escritos en `decimales`; mostrarlo siempre con
+  `Medicion.valor_ingresado` (conserva "7,20"). `leer_valor` (`estudios/mediciones.py`) es la única
+  lectura del texto: coma o punto, sin miles ni notación científica, hasta 12 enteros y 6 decimales.
+- `cargar_mediciones` (`estudios/servicios.py`) bloquea el estudio y después las asignaciones,
+  el mismo orden que `quitar_prueba`. No falla por prueba: omite e informa las ya cargadas y las
+  calculadas; los `pk` que no son del estudio los ignora y la vista cuenta las quitadas
+  (`CargarMedicionesForm.pruebas_quitadas()`). Con la primera medición el estudio pasa a
+  "En proceso" y deja de admitir agregar o quitar pruebas.
+- `Estudio.admite_mediciones` (Pendiente de análisis o En proceso) es la regla de carga, como
+  `admite_modificaciones`. Al confirmar, el formulario usa todas las asignaciones no calculadas
+  (no solo las pendientes) para que el servicio informe las que ya se cargaron.
+- La confirmación evita el doble envío con `data-enviado`, sin deshabilitar los botones: un botón
+  deshabilitado no envía su `accion`.
 
 ## Catálogo de pruebas (SCRUM-64)
 

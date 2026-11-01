@@ -74,6 +74,11 @@
           <p class="numeros text-xs text-tinta-suave">
             Total: {{ total_pruebas }} · Completadas: {{ pruebas_completadas }} · Cargadas: {{ pruebas_cargadas }} · Pendientes: {{ pruebas_pendientes }}
           </p>
+          {% if estudio.admite_mediciones and pruebas_para_medir %}
+            <a href="{% url 'estudios:cargar_mediciones' estudio.pk %}" class="btn btn-primario">
+              {% include "ui/icono.html" with nombre="clipboard-list" clase="size-4" %} Cargar mediciones
+            </a>
+          {% endif %}
           {% if estudio.admite_modificaciones %}
             <a href="{% url 'estudios:agregar_prueba' estudio.pk %}" class="btn btn-primario">
               {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Agregar prueba
@@ -93,6 +98,7 @@
             <tr>
               <th>Código</th>
               <th>Prueba</th>
+              <th>Medición</th>
               <th class="text-right">Estado</th>
               <th class="text-right">Acción</th>
             </tr>
@@ -102,6 +108,16 @@
               <tr>
                 <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
                 <td>{{ asignacion.prueba.nombre }}</td>
+                <td>
+                  {% if asignacion.medicion %}
+                    <span class="numeros font-semibold text-tinta">{{ asignacion.medicion.valor_ingresado }} {{ asignacion.medicion.unidad|default:"Sin unidad" }}</span>
+                    <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.cargada_por.get_full_name|default:asignacion.medicion.cargada_por.email }} · {{ asignacion.medicion.fecha_carga|date:"d/m/Y H:i" }}</span>
+                  {% elif asignacion.prueba.es_calculada %}
+                    <span class="text-xs text-tinta-suave">Se calcula</span>
+                  {% else %}
+                    <span class="text-tinta-suave">—</span>
+                  {% endif %}
+                </td>
                 <td class="text-right">{% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}</td>
                 <td class="text-right">
                   {% if not estudio.admite_modificaciones %}

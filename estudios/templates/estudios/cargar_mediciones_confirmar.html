@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Revisar mediciones · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:detalle' estudio.pk as url_detalle %}
+  {% with numero=estudio.pk|stringformat:"s" %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Estudio "|add:numero anterior_url=url_detalle miga="Cargar mediciones" titulo="Revisar mediciones" %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  {% with resumen=form.resumen %}
+    <div class="max-w-4xl">
+      <div class="aviso aviso-info mb-6" role="status">
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>{% if resumen|length == 1 %}Se guardará 1 medición{% else %}Se guardarán {{ resumen|length }} mediciones{% endif %} en el estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}).</div>
+      </div>
+      <div class="tarjeta overflow-hidden">
+        <dl class="resumen p-6" data-componente="resumen">
+          {% include "ui/dato.html" with etiqueta="Estudio" valor=estudio %}
+          {% with pi=estudio.muestra.numero_pi|stringformat:"s" %}
+            {% include "ui/dato.html" with etiqueta="Muestra" valor="PI "|add:pi %}
+          {% endwith %}
+        </dl>
+        <div class="overflow-x-auto border-t border-borde">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Prueba</th>
+                <th class="text-right">Valor</th>
+                <th>Unidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for asignacion, nombre, texto in resumen %}
+                <tr>
+                  <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
+                  <td>{{ asignacion.prueba.nombre }}</td>
+                  <td class="numeros text-right">{{ texto }}</td>
+                  <td>{{ asignacion.prueba.unidad_medicion|default:"Sin unidad" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="mt-6 flex flex-wrap items-center gap-3" data-componente="acciones-confirmacion">
+        {# Evita el doble envío sin deshabilitar los botones: deshabilitados no envían la acción. #}
+        <form method="post" class="flex flex-wrap gap-3" onsubmit="if (this.dataset.enviado) return false; this.dataset.enviado = '1';">
+          {% csrf_token %}
+          {% for asignacion, nombre, texto in resumen %}
+            <input type="hidden" name="{{ nombre }}" value="{{ texto }}">
+          {% endfor %}
+          <button type="submit" name="accion" value="confirmar" class="btn btn-primario">
+            {% include "ui/icono.html" with nombre="check" clase="size-4" %} Guardar mediciones
+          </button>
+          <button type="submit" name="accion" value="editar" class="btn btn-secundario">
+            {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Volver a editar
+          </button>
+        </form>
+        <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-peligro sm:ml-auto">
+          {% include "ui/icono.html" with nombre="x" clase="size-4" %} Cancelar
+        </a>
+      </div>
+    </div>
+  {% endwith %}
+{% endblock %}

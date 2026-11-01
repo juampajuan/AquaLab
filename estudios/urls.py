@@ -21,4 +21,5 @@ urlpatterns = [
         views.quitar_prueba,
         name="quitar_prueba",
     ),
+    path("<int:pk>/mediciones/cargar/", views.cargar_mediciones, name="cargar_mediciones"),
 ]
