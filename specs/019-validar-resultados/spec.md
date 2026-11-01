@@ -22,6 +22,7 @@
 - Q: ¿Cuándo se ve si un resultado está fuera de norma? → A: Apenas existe el resultado, antes de validarlo, para que el bioquímico lo vea al revisar.
 - Q: ¿Se guarda la evaluación al validar? → A: Sí: quién validó, cuándo, los límites usados y si cumple, para que un cambio posterior del catálogo no altere lo validado ni el futuro informe.
 - Q: ¿Puede validar quien cargó o corrigió la medición? → A: Sí: alcanza con el permiso del grupo «Bioquímicos», sin doble control; quedan registrados quién cargó, quién corrigió y quién validó.
+- Q: ¿Qué pasa con el registro de una validación que se pierde al corregir o borrar la medición? → A: (tras /speckit-analyze) Se conserva marcado como anulado, con la fecha de anulación; no se borra (principio IV). Solo se muestra la validación vigente.
 - Q: ¿Las pruebas aparecen marcadas para validar al abrir la pantalla? → A: Solo las que cumplen; las fuera de norma y las sin límite comparable aparecen sin marcar, para elegirlas a conciencia. Hay una acción «Marcar todas».
 
 ## User Scenarios & Testing *(mandatory)*
@@ -90,7 +91,7 @@ Como administrador, agrego a una persona al grupo «Bioquímicos» desde el pane
 - Confirmación de una prueba que ya fue validada (doble envío o validación de otro bioquímico): se omite e informa «ya estaba validada»; no cambia quién ni cuándo.
 - El resultado cambió entre la revisión y la confirmación (otro empleado corrigió una medición, US 6.3): esa prueba no se valida y se informa que cambió; el resto del envío se valida.
 - Confirmación sin ninguna prueba elegida: se rechaza pidiendo elegir al menos una.
-- Una prueba validada cuya medición se corrige después (US 6.3) o se borra (US 6.5): pierde la validación (ya resuelto en esas historias) y su evaluación guardada deja de mostrarse; al volver a validarla se evalúa con los límites vigentes en ese momento.
+- Una prueba validada cuya medición se corrige después (US 6.3) o se borra (US 6.5): pierde la validación (ya resuelto en esas historias): su registro queda anulado, se conserva y deja de mostrarse; al volver a validarla se evalúa con los límites vigentes en ese momento.
 - Límite de vertido con solo un extremo (ej. Coliformes fecales en Canal: máximo 2000): reemplaza a los límites generales completos; se compara solo contra el extremo que tiene.
 - Límites con decimales escritos con punto en el catálogo (ej. «8.5»): se interpretan como número.
 - El resultado se compara con su valor completo, no con el redondeo que se muestra en pantalla.
@@ -118,10 +119,11 @@ Como administrador, agrego a una persona al grupo «Bioquímicos» desde el pane
 - **FR-014**: Al confirmar, el sistema MUST omitir e informar las pruebas que ya estaban validadas, las que ya no tienen resultado y aquellas cuyo resultado cambió desde la revisión; el resto del envío MUST validarse. Reenviar una confirmación ya aplicada MUST NOT cambiar nada.
 - **FR-015**: El sistema MUST informar el resultado de la validación: qué pruebas se validaron, cuáles se omitieron y por qué, y si el estudio pasó a Finalizado.
 - **FR-016**: Validar MUST NOT modificar otras pruebas, la muestra, los datos históricos del estudio, el catálogo ni otros estudios.
+- **FR-017**: Cuando una prueba validada deja de estar Completada (US 6.2/6.3/6.5), su validación MUST quedar anulada con la fecha de anulación y MUST NOT borrarse. Solo la validación vigente (no anulada) MUST mostrarse y contar como validación de la prueba.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Validación de un resultado**: Registro de que un bioquímico confirmó el resultado de una prueba del estudio. Atributos: quién validó, fecha y hora, límites usados (mínimo, máximo, norma, origen: general o vertido) y evaluación (cumple, fuera de norma, sin límite comparable). Una por prueba del estudio; se pierde si el resultado se recalcula (US 6.2/6.3) o se descarta (US 6.5).
+- **Validación de un resultado**: Registro de que un bioquímico confirmó el resultado de una prueba del estudio. Atributos: quién validó, fecha y hora, límites usados (mínimo, máximo, norma, origen: general o vertido) y evaluación (cumple, fuera de norma, sin límite comparable). A lo sumo una vigente por prueba del estudio; si el resultado se recalcula (US 6.2/6.3) o se descarta (US 6.5), queda anulada con su fecha de anulación y se conserva como historial.
 - **Resultado** (US 6.2): Valor calculado con su unidad. No cambia al validarse.
 - **Prueba asignada al estudio**: Pasa de Cargada a Completada al validarse.
 - **Estudio**: Pasa a Finalizado cuando todas sus pruebas están Completadas.
@@ -143,7 +145,7 @@ Como administrador, agrego a una persona al grupo «Bioquímicos» desde el pane
 
 - **Trazabilidad**: US 6.4 – Validar resultados. Jira: clave a confirmar (probablemente SCRUM-56, siguiendo a SCRUM-53 a 55 de las US 6.1 a 6.3). Responsable: Delfina.
 - **Dependencias**: Se apoya en la carga de mediciones (US 6.1), el cálculo de resultados (US 6.2), la corrección y el borrado de mediciones (US 6.3 y 6.5), el ajuste Ausente/Presente de las pruebas A/P (PR #32, que debe mergearse antes) y el catálogo importado con sus límites (SCRUM-64).
-- **Pérdida de la validación**: Ya la definen las US 6.2, 6.3 y 6.5: un resultado recalculado o descartado vuelve a Cargada o Pendiente y el estudio deja de estar Finalizado. Esta historia solo agrega que, en ese caso, también se pierde el registro de la validación.
+- **Pérdida de la validación**: Ya la definen las US 6.2, 6.3 y 6.5: un resultado recalculado o descartado vuelve a Cargada o Pendiente y el estudio deja de estar Finalizado. Esta historia solo agrega que, en ese caso, el registro de la validación queda anulado (no se borra). No se registra quién la anuló: lo dice la corrección o el borrado de la medición (US 6.3/6.5).
 - **Sin revertir a mano**: Esta historia no ofrece «desvalidar» una prueba; la única forma de quitar una validación es corregir o borrar su medición.
 - **Bordes inclusivos**: Un resultado igual al mínimo o al máximo cumple.
 - **Pruebas sin tipo confirmado**: Las 17 pruebas importadas como Directo «a confirmar con el laboratorio» se evalúan igual que el resto con sus límites; varias tienen límites no comparables (ej. Olor «SOE», pH de saturación «Ph±0,2»).

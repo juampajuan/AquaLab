@@ -4,12 +4,13 @@
 
 ## Entidad nueva: `Validacion` (`estudios/models.py`)
 
-Registro de que un bioquímico confirmó el resultado de una prueba del estudio. Existe si y solo
-si la prueba está Completada (research R2).
+Registro de que un bioquímico confirmó el resultado de una prueba del estudio. Hay una vigente
+(no anulada) si y solo si la prueba está Completada; las anuladas se conservan como historial
+(research R2, FR-017).
 
 | Campo | Tipo | Reglas |
 |---|---|---|
-| `asignacion` | `OneToOneField(PruebaEstudio, on_delete=PROTECT, related_name="validacion", editable=False)` | Una por prueba del estudio. |
+| `asignacion` | `ForeignKey(PruebaEstudio, on_delete=PROTECT, related_name="validaciones", editable=False)` | A lo sumo una vigente por prueba del estudio (restricción de abajo). |
 | `validada_por` | `ForeignKey(AUTH_USER_MODEL, on_delete=PROTECT, related_name="validaciones", editable=False)` | Usuario de la sesión con el permiso. |
 | `fecha_validacion` | `DateTimeField(auto_now_add=True)` | |
 | `limite_min` | `CharField(50, blank=True, default="")` | Texto tal como estaba en el catálogo al validar. |
@@ -17,11 +18,15 @@ si la prueba está Completada (research R2).
 | `norma` | `CharField(150, blank=True, default="")` | Ídem. |
 | `origen_limites` | `CharField(10, choices=OrigenLimites)` | `general`, `cloacal` o `canal`. |
 | `evaluacion` | `CharField(20, choices=Evaluacion)` | `cumple`, `fuera_de_norma` o `sin_limite`. |
+| `anulada` | `BooleanField(default=False)` | `True` cuando la prueba dejó de estar Completada. |
+| `fecha_anulacion` | `DateTimeField(null=True, blank=True)` | Se completa al anular. |
 
 - `Meta.permissions = [("validar_resultados", "Puede validar resultados")]`.
 - `verbose_name = "validación"`, `verbose_name_plural = "validaciones"`.
-- No guarda el valor del resultado: mientras la validación existe, el resultado no puede cambiar
-  (cualquier recálculo la borra, R2).
+- `UniqueConstraint(fields=["asignacion"], condition=Q(anulada=False), name="validacion_vigente_unica")`.
+- `CheckConstraint`: `anulada` y `fecha_anulacion` van juntos (`Q(anulada=False, fecha_anulacion__isnull=True) | Q(anulada=True, fecha_anulacion__isnull=False)`, `name="validacion_anulacion_completa"`).
+- No guarda el valor del resultado: mientras la validación está vigente, el resultado no puede
+  cambiar (cualquier recálculo la anula, R2).
 
 ### Choices
 
@@ -56,9 +61,9 @@ si la prueba está Completada (research R2).
 
 | Desde | Hacia | Cuándo | Historia |
 |---|---|---|---|
-| Cargada (con resultado) | **Completada** | Se valida | **US 6.4** (crea `Validacion`) |
-| Completada | Cargada | Su resultado se recalcula | US 6.2/6.3 (borra `Validacion`, R2) |
-| Completada | Pendiente / Cargada sin resultado | Se borra su medición o la de una referencia | US 6.5 (borra `Validacion`, R2) |
+| Cargada (con resultado) | **Completada** | Se valida | **US 6.4** (crea `Validacion` vigente) |
+| Completada | Cargada | Su resultado se recalcula | US 6.2/6.3 (anula `Validacion`, R2) |
+| Completada | Pendiente / Cargada sin resultado | Se borra su medición o la de una referencia | US 6.5 (anula `Validacion`, R2) |
 
 ### Estudio
 

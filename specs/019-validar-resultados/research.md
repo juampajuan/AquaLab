@@ -12,30 +12,32 @@ catálogo con límites como texto y `LimiteVertido` por Cloacal/Canal (SCRUM-64)
 guardado como 0/1 (PR #32). Ninguna historia anterior pasa una prueba a Completada ni un estudio a
 Finalizado: eso es esta historia.
 
-## R1 — Una entidad `Validacion` aparte, uno a uno con la prueba del estudio
+## R1 — Una entidad `Validacion` aparte, con una sola vigente por prueba del estudio
 
-- **Decision**: modelo nuevo `estudios.Validacion` con `asignacion = OneToOneField(PruebaEstudio,
-  on_delete=PROTECT, related_name="validacion")`, quién y cuándo validó, los límites usados (texto
+- **Decision**: modelo nuevo `estudios.Validacion` con `asignacion = ForeignKey(PruebaEstudio,
+  on_delete=PROTECT, related_name="validaciones")`, `anulada` y `fecha_anulacion`, una restricción
+  única parcial (una sola no anulada por asignación), quién y cuándo validó, los límites usados (texto
   tal como estaban en el catálogo), su origen (general / cloacal / canal) y la evaluación. Detalle
   en [data-model.md](./data-model.md).
 - **Rationale**: `Resultado` se crea y se pisa con `update_or_create` en cada recálculo (US 6.2);
   si la validación viviera ahí, cada recálculo tendría que acordarse de vaciar seis campos. Una
-  fila aparte expresa directamente «esta prueba fue validada» y se borra entera cuando deja de
-  serlo (R2). `CLAUDE.md` pide referenciar `PruebaEstudio` con `PROTECT`.
+  fila aparte expresa directamente «esta prueba fue validada» y, cuando deja de serlo, se anula sin
+  borrarse (R2), así una prueba revalidada acumula su historial. `CLAUDE.md` pide referenciar `PruebaEstudio` con `PROTECT`.
 - **Alternatives**: campos en `Resultado` (acoplado al recálculo); campos en `PruebaEstudio`
-  (mezcla la asignación con la validación y obliga a muchos `null`); historial de validaciones
-  (no lo pide la spec: YAGNI).
+  (mezcla la asignación con la validación y obliga a muchos `null`); `OneToOneField` borrando la
+  fila al perderse (descartado en el análisis: borra historial, principio IV).
 
-## R2 — Invariante: hay `Validacion` si y solo si la prueba está Completada
+## R2 — Invariante: hay una `Validacion` vigente si y solo si la prueba está Completada
 
-- **Decision**: `calculo.cambiar_estado(asignacion, estado)` borra la `Validacion` cuando la
-  asignación sale de Completada. Es el único lugar por donde una prueba cambia de estado después
+- **Decision**: `calculo.cambiar_estado(asignacion, estado)` anula la `Validacion` vigente
+  (`anulada=True`, `fecha_anulacion=now`) cuando la asignación sale de Completada. Es el único lugar por donde una prueba cambia de estado después
   de la carga (`recalcular` y `descartar` lo usan), así que corregir (US 6.3) y borrar (US 6.5)
   quitan la validación sin tocar sus servicios. El servicio de esta historia crea la `Validacion`
   y pasa la prueba a Completada en la misma transacción.
 - **Rationale**: un solo punto mantiene el invariante; la pérdida de la validación ya es la
-  excepción al principio IV justificada en `specs/016-calcular-resultado/plan.md`.
-- **Alternatives**: borrarla en `corregir_mediciones` y en el borrado (dos lugares que se pueden
+  excepción al principio IV justificada en `specs/016-calcular-resultado/plan.md`, y anular en vez de
+  borrar cumple «no se borran registros con historial» (FR-017).
+- **Alternatives**: borrar la fila (pierde quién validó antes); anularla en `corregir_mediciones` y en el borrado (dos lugares que se pueden
   olvidar en una historia futura); `on_delete=CASCADE` desde `Resultado` (no cubre el recálculo,
   que conserva la fila).
 
@@ -114,7 +116,7 @@ Finalizado: eso es esta historia.
 ## R7 — Evaluación visible en el detalle
 
 - **Decision**: la vista `detalle` adjunta a cada asignación su evaluación: para Completada, la
-  guardada en `Validacion` (FR-012); para las que tienen resultado y no están validadas,
+  guardada en la `Validacion` vigente (FR-012); para las que tienen resultado y no están validadas,
   `limites_aplicables` + `evaluar` en vivo (FR-008). El template muestra una etiqueta
   `ui/estado.html` (Cumple → `success`, Fuera de norma → `danger`, Sin límite comparable →
   `neutral`), el límite como figura en el catálogo y, si está validada, «Validada por … · fecha».

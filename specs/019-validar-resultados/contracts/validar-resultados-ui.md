@@ -69,7 +69,7 @@ Sin el permiso → 403. `accion` no reconocida → 302 a `detalle` + «La acció
     Finalizado.»;
   - advertencia por cada omitida: «COD: ya estaba validada.», «COD: ya no tenía resultado.» o
     «COD: cambió mientras se revisaba.»;
-  - `ValidarResultadosError` → error con su mensaje; `DatabaseError` → «No se pudo validar los
+  - `ValidarResultadosError` → error con su mensaje; `DatabaseError` → «No se pudieron validar los
     resultados. Intentá nuevamente.» y nada cambia.
 
 ## Servicio — `estudios.servicios.validar_resultados(estudio_pk, elegidas, usuario)`

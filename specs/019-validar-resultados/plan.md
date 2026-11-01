@@ -15,8 +15,8 @@ validadas, las que ya no tienen resultado y las que cambiaron desde la revisión
 crea una `Validacion` (quién, cuándo, límites usados y evaluación) y la pasa a Completada; si no
 queda ninguna sin validar, el estudio pasa a Finalizado. La evaluación (cumple / fuera de norma /
 sin límite comparable) es un módulo puro `pruebas/limites.py` que el detalle también usa para
-mostrarla antes de validar. Un recálculo o borrado posterior quita la `Validacion` desde un único
-punto (`calculo.cambiar_estado`).
+mostrarla antes de validar. Un recálculo o borrado posterior anula la `Validacion` (sin borrarla) desde un
+único punto (`calculo.cambiar_estado`).
 
 ## Technical Context
 
@@ -80,7 +80,7 @@ POST                          accion=confirmar    → validar_resultados() → 3
 validar_resultados (estudio bloqueado)
   └─ permiso? informe? → filas bloqueadas → ya validada / sin resultado / cambió → omitir
      → evaluar(limites_aplicables) → Validacion + Completada → ¿todas Completadas? → Finalizado
-recalcular / descartar (US 6.2, 6.3, 6.5) → cambiar_estado: sale de Completada → borra Validacion
+recalcular / descartar (US 6.2, 6.3, 6.5) → cambiar_estado: sale de Completada → anula Validacion
 ```
 
 Rutas y mensajes en [contracts/validar-resultados-ui.md](./contracts/validar-resultados-ui.md);
@@ -102,7 +102,8 @@ modelo, reglas y transiciones en [data-model.md](./data-model.md).
 | US2 Esc. 1–8, FR-008/012 — evaluación visible antes de validar; validada muestra lo guardado aunque cambie el catálogo | `test_detalle_muestra_evaluacion`, `test_detalle_validada_usa_lo_guardado` | `estudios/tests/test_consulta.py` |
 | FR-013 — informe emitido rechaza (vista y servicio) | `test_informe_emitido_rechaza`, `test_vista_informe_emitido_rechaza` | `test_servicio_validacion.py`, `test_validar_resultados.py` |
 | FR-014 — omite ya validada, sin resultado y cambiada; reenvío no cambia nada | `test_omite_ya_validada`, `test_omite_sin_resultado`, `test_omite_si_cambio`, `test_reenvio_no_cambia` | `test_servicio_validacion.py` |
-| R2 — corregir o borrar una medición validada borra la `Validacion` | `test_correccion_borra_validacion`, `test_borrado_borra_validacion` | `test_servicio_validacion.py` |
+| R2, FR-017 — corregir o borrar una medición validada anula la `Validacion` (se conserva) y revalidar crea otra vigente | `test_correccion_anula_validacion`, `test_borrado_anula_validacion`, `test_revalidar_conserva_anulada` | `test_servicio_validacion.py` |
+| FR-015 — informa validadas, omitidas con su motivo y si el estudio quedó Finalizado | `test_confirmar_valida_y_redirige`, `test_confirmar_informa_omitidas` | `test_validar_resultados.py` |
 | FR-016 — no modifica resultado, medición, muestra, catálogo ni otros estudios | `test_validacion_no_modifica_otros_datos` | `test_servicio_validacion.py` |
 | Concurrencia — dos validaciones simultáneas del mismo estudio | `test_validaciones_concurrentes` (`transaction=True`, hilos) | `estudios/tests/test_concurrencia_validacion.py` |
 | Falla de base no valida nada | `test_error_de_base_al_validar` | `test_validar_resultados.py` |
@@ -136,7 +137,7 @@ estudios/
 ├── models.py                                  # + OrigenLimites, Validacion (permiso validar_resultados)
 ├── migrations/0007_validacion.py              # nueva
 ├── migrations/0008_grupo_bioquimicos.py       # nueva (datos)
-├── calculo.py                                 # cambiar_estado: al salir de Completada borra la Validacion
+├── calculo.py                                 # cambiar_estado: al salir de Completada anula la Validacion
 ├── forms.py                                   # + ValidarResultadosForm
 ├── servicios.py                               # + ValidarResultadosError, ResultadoValidacion, validar_resultados
 ├── views.py                                   # + validar_resultados; detalle con evaluación y botón
@@ -161,4 +162,4 @@ lógica del catálogo.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| Principio IV: un resultado validado pierde la validación al recalcularse o descartarse. | Es la excepción ya justificada y aprobada en `specs/016-calcular-resultado/plan.md`; esta historia solo agrega que, al perderse, se borra también la `Validacion` (R2), así lo guardado nunca describe un resultado distinto. | Ver el plan de US 6.2. Conservar la `Validacion` de un resultado que cambió mostraría una evaluación y un «Validada por» que ya no corresponden. |
+| Principio IV: un resultado validado pierde la validación al recalcularse o descartarse. | Es la excepción ya justificada y aprobada en `specs/016-calcular-resultado/plan.md`; esta historia agrega que, al perderse, la `Validacion` queda anulada (R2, FR-017): no se borra, y la vigente nunca describe un resultado distinto. | Ver el plan de US 6.2. Mantenerla vigente mostraría una evaluación y un «Validada por» que ya no corresponden; borrarla perdería el historial (principio IV). |
