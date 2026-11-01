@@ -122,7 +122,10 @@ def bioquimico(empleado):
     from django.contrib.auth.models import Group, Permission
 
     grupo, _ = Group.objects.get_or_create(name="Bioquímicos")
-    grupo.permissions.add(Permission.objects.get(codename="validar_resultados"))
+    grupo.permissions.add(
+        Permission.objects.get(codename="validar_resultados"),
+        Permission.objects.get(codename="emitir_informes"),  # US 7.2
+    )
     empleado.groups.add(grupo)
     return empleado
 

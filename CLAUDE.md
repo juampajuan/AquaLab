@@ -153,7 +153,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - `pruebas/limites.py` es la única interpretación de los límites del catálogo: `leer_limite`
   (número, «Ausente»/«Ausencia», vacío o no comparable), `limites_aplicables` (los del vertido de
   la muestra reemplazan a los generales completos) y `evaluar` (cumple / fuera de norma / sin
-  límite comparable; bordes inclusivos; compara el valor completo, no el redondeado).
+  límite comparable; bordes inclusivos; compara el valor completo, no el redondeado). Con
+  «Ausente»/«Ausencia» cumple el 0 y todo valor por debajo del límite de detección (US 7.2).
 - `Validacion` guarda quién, cuándo, los límites usados y la evaluación. Invariante: hay una
   vigente (`anulada=False`) si y solo si la prueba está Completada. Al salir de Completada,
   `calculo.cambiar_estado` la anula (`anulada`, `fecha_anulacion`); nunca se borra (FR-017).
@@ -172,7 +173,24 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - `informes/servicios.py:motivo_para_no_informar` es la única regla para informar (100% de las
   pruebas Completadas y sin informe emitido): la usan el control y `comprobar_generacion`; el filtro
   «Solo listos» de `estudios_para_informar` la repite en SQL y un test compara las dos.
-- `comprobar_generacion` bloquea el estudio (`select_for_update`) y revalida. **US 7.2:** crear el
-  informe dentro de esa transacción y reemplazar el aviso «próximamente» de `informes.views.generar`.
+- `estudio_listo_bloqueado` bloquea el estudio (`select_for_update`) y revalida; lo usan
+  `comprobar_generacion` y la emisión de la US 7.2 (ver «Generar informe»).
 - `estudios/busqueda.py:filtro_busqueda` es la única búsqueda de estudios (`estudios:buscar` e
   `informes:listar`). Los tests de `informes` importan las fixtures de `estudios/tests/conftest.py`.
+
+## Generar informe (US 7.2)
+
+- `informes/contenido.py:armar_contenido` arma el informe (laboratorio, cliente, muestra, estudio
+  y pruebas) solo con textos, sin `float`. Lo usan la vista previa y la emisión, y el parcial
+  `informes/documento.html` lo dibuja en los dos casos: el emitido sale igual a lo revisado.
+- `Informe.contenido` (`JSONField`) guarda esa copia; `informes:ver` muestra siempre la copia, no
+  los datos actuales. El informe no se edita ni se borra (`estudio` es `OneToOne` con `PROTECT`).
+- `servicios.emitir_informe`: permiso `informes.emitir_informes` → `estudio_listo_bloqueado` →
+  `pg_advisory_xact_lock(7_200_001)` → número máximo + 1 (sin huecos, como el N° PI) →
+  `Informe` → estudio «Informe generado». La migración `informes.0002` da el permiso al grupo
+  «Bioquímicos»; el fixture `bioquimico` también lo agrega.
+- Las evaluaciones del informe salen de la `Validacion` vigente; sin validación (el atajo
+  `completar` de los tests) se evalúa con el catálogo. «< LD» y «Ausente»/«Presente» los decide
+  `texto_resultado`.
+- Los datos del laboratorio son de ejemplo en `settings.AQUALAB_LABORATORIO`; `logo` es una
+  referencia («aqualab» → marca de AquaLab) que se copia al informe.
