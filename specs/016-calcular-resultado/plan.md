@@ -106,7 +106,7 @@ motivo_sin_resultado(asignacion, por_codigo) -> str | None
 | FR-002 — se rechaza lo que no es la gramática | `test_validar_formula_rechaza` (parametrizado: `__import__`, `x**2`, `1e3`, `abs(x)`, `{}`, paréntesis sin cerrar…) | `pruebas/tests/test_formulas.py` |
 | R1 — las 25 fórmulas del catálogo son válidas; el admin y la importación rechazan una inválida | `test_formulas_del_catalogo_validas`, `test_prueba_clean_rechaza_formula_invalida` | `pruebas/tests/test_formulas.py` |
 | US1 Esc. 1–2, FR-001/004 — Directo y Fórmula al guardar la medición, con unidad y fórmula | `test_carga_calcula_resultado_directo_y_formula` | `estudios/tests/test_calculo.py` |
-| US1 Esc. 3, FR-005 — detalle con resultado, unidad y 4 decimales | `test_detalle_muestra_resultado`, `test_valor_mostrado` (parametrizado: 23.5, 0.0041, 1234.5, 0, -0.00001) | `estudios/tests/test_cargar_mediciones.py`, `estudios/tests/test_modelos.py` |
+| US1 Esc. 3, FR-005 — detalle con resultado, unidad y 4 decimales; «--» se muestra «Sin unidad» | `test_detalle_muestra_resultado`, `test_valor_mostrado` (parametrizado: 23.5, 0.0041, 1234.5, 0, -0.00001), `test_filtro_unidad` | `estudios/tests/test_cargar_mediciones.py`, `estudios/tests/test_modelos.py` |
 | US2 Esc. 1, FR-003 — calculada con referencias pasa a Cargada | `test_calculada_se_calcula_al_completar_referencias` | `estudios/tests/test_calculo.py` |
 | US2 Esc. 2–4, FR-006 — motivos sin resultado | `test_motivo_sin_resultado` (parametrizado: falta medición, faltan referencias, referencia fuera del estudio, división por cero) | `estudios/tests/test_calculo.py` |
 | US2 Esc. 3 — cadena en orden | `test_cadena_de_calculadas` (NA → NA-MEQ → CATIONES con K-MEQ, CA-MEQ y MG-MEQ) | `estudios/tests/test_calculo.py` |
@@ -117,7 +117,7 @@ motivo_sin_resultado(asignacion, por_codigo) -> str | None
 | FR-010 — cambio de catálogo no recalcula; resultado conserva fórmula y unidad | `test_resultado_conserva_formula_y_unidad` | `estudios/tests/test_calculo.py` |
 | FR-011 — comando para mediciones previas, idempotente | `test_comando_calcular_resultados` | `estudios/tests/test_calculo.py` |
 | FR-012 — no cambia mediciones, muestra, snapshots, catálogo ni otros estudios | `test_calculo_no_modifica_otros_datos` | `estudios/tests/test_calculo.py` |
-| Edge — resultado de calculada que deja de poder calcularse vuelve a Pendiente | `test_calculada_sin_referencias_vuelve_a_pendiente` | `estudios/tests/test_calculo.py` |
+| Edge — resultado de calculada que deja de poder calcularse vuelve a Pendiente | `test_calculada_que_deja_de_calcularse_vuelve_a_pendiente` | `estudios/tests/test_calculo.py` |
 | Edge — referencias circulares | `test_referencias_circulares` | `estudios/tests/test_calculo.py` |
 | R2 — un resultado por asignación; `PROTECT` | `test_un_resultado_por_asignacion`, `test_asignacion_con_resultado_protegida` | `estudios/tests/test_modelos.py` |
 | Concurrencia — dos cargas simultáneas de las referencias de una calculada | `test_cargas_concurrentes_calculan_una_vez` (`transaction=True`, hilos) | `estudios/tests/test_concurrencia_mediciones.py` |
@@ -144,6 +144,7 @@ specs/016-calcular-resultado/
 
 ```text
 CLAUDE.md                                   # + sección «Cálculo de resultados (US 6.2)»; notas Epic 6 actualizadas
+config/ui.py                                # + filtro unidad («Sin unidad» si está vacía o es «--»)
 pruebas/
 ├── formulas.py                             # nuevo: validar_formula, evaluar_formula
 ├── models.py                               # Prueba.clean() valida la fórmula
@@ -154,7 +155,8 @@ estudios/
 ├── calculo.py                              # nuevo: recalcular, motivo_sin_resultado
 ├── servicios.py                            # cargar_mediciones llama a recalcular; + RecalculoError, recalcular_resultados
 ├── views.py                                # cargar_mediciones (advertencias), detalle (resultado y motivo)
-├── templates/estudios/detalle.html         # + columna Resultado
+├── templates/estudios/detalle.html         # + columna Resultado; unidades con |unidad
+├── templates/estudios/cargar_mediciones*.html   # unidades con |unidad (US 6.1 mostraba «--»)
 ├── management/commands/calcular_resultados.py   # nuevo
 └── tests/
     ├── conftest.py                         # + fixtures con pruebas reales del catálogo (PH, CL-, CA, DUREZA-T, MG, NA…)

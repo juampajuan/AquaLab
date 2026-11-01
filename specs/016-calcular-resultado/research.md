@@ -113,7 +113,9 @@ resultado de otra prueba) que hoy nadie evalúa (`CLAUDE.md`, «Epic 6»).
 - **Decision**: propiedad `Resultado.valor_mostrado` → `valor` redondeado a 4 decimales
   (`ROUND_HALF_UP`) y sin ceros finales (`normalize()`, con `0` en lugar de `-0`). Los templates lo
   muestran con la localización `es-ar` (coma decimal; `numberformat` usa formato `f`, así que
-  `1E+3` se ve «1000»). Sin unidad: «Sin unidad», igual que la medición.
+  `1E+3` se ve «1000»). Unidades: filtro `unidad` en `config/ui.py` que devuelve «Sin unidad» si el
+  texto está vacío o es `--` (el catálogo usa `--` para «sin unidad»); lo usan el resultado, la
+  medición y las pantallas de carga de US 6.1, que hoy mostraban «--».
 - **Rationale**: Clarifications («hasta 4 decimales, sin ceros finales»); sin filtros nuevos.
 
 ## R7 — Mediciones cargadas antes de esta historia

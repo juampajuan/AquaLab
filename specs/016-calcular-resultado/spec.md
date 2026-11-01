@@ -12,7 +12,7 @@
 
 ### Session 2026-10-31
 
-- Q: ¿Con cuántos decimales se muestra el resultado? → A: Se guarda completo y se muestra redondeado a 4 decimales como máximo, sin ceros finales de más (23,5; 0,72; 0,0041).
+- Q: ¿Con cuántos decimales se muestra el resultado? → A: Se guarda con 10 decimales y se muestra redondeado a 4 decimales como máximo, sin ceros finales de más (23,5; 0,72; 0,0041).
 - Q: ¿El mensaje al guardar mediciones avisa los resultados que no se pudieron calcular? → A: Sí, solo las fórmulas que no se pudieron evaluar; las pruebas que esperan otros resultados se ven solo en el detalle.
 - Q: Si se corrige una medición y una prueba que depende de ella ya está validada (Completada), ¿qué pasa? → A: Mientras no se haya emitido el informe, la corrección se acepta: los dependientes validados se recalculan, pierden la validación y vuelven a Cargada para revalidarse (US 6.3: «revalidarse»). Con informe emitido, se rechaza. Es una excepción al principio IV que se justifica en `plan.md`.
 
@@ -74,9 +74,9 @@ Como empleado, cuando una medición cambia (al corregirla en US 6.3), quiero que
 - Una prueba calculada que referencia otra calculada espera a que esa tenga resultado (cadenas de cualquier largo, sin ciclos: el catálogo no permite que una prueba se referencie a sí misma).
 - La fórmula o la unidad de la prueba cambian en el catálogo después de calcular: el resultado guardado conserva la fórmula y la unidad con las que se calculó; no se recalcula por cambios del catálogo.
 - Pruebas que tenían medición antes de esta historia (cargadas con US 6.1): obtienen su resultado al ponerse en marcha la historia, igual que si se hubieran cargado después.
-- Un resultado con más de 4 decimales (ej. 0,004123) se muestra redondeado (0,0041); uno menor que 0,00005 se muestra como 0. El valor guardado no se redondea.
+- Un resultado con más de 4 decimales (ej. 0,004123) se muestra redondeado (0,0041); uno menor que 0,00005 se muestra como 0. El valor guardado conserva sus 10 decimales.
 - Resultados negativos o cero (ej. NTK orgánico = NTK total − amonio): se guardan tal cual; esta historia no compara con límites (US 6.4).
-- Una prueba de tipo Fórmula sin unidad de resultado en el catálogo (ej. «--» en RAS): se muestra sin unidad, indicándolo.
+- Una prueba sin unidad en el catálogo, vacía o escrita «--» (ej. RAS, o la medición de Sodio): se muestra «Sin unidad», tanto en el resultado como en la medición.
 - Un estudio Finalizado (todas sus pruebas validadas) al que se le corrige una medición antes del informe: los dependientes vuelven a Cargada, así que el estudio deja de estar completo; volver de Finalizado a En proceso lo define US 6.4, dueña de ese estado.
 - Si el cálculo falla por un error inesperado, la medición se guarda igual y la prueba queda sin resultado con la advertencia; nunca se muestra un resultado incorrecto.
 
@@ -88,7 +88,7 @@ Como empleado, cuando una medición cambia (al corregirla en US 6.3), quiero que
 - **FR-002**: El sistema MUST evaluar las fórmulas del catálogo con números decimales exactos: suma, resta, multiplicación, división, paréntesis, raíz cuadrada, el valor medido (`x`) y resultados de otras pruebas del mismo estudio (`{CODIGO}`). Cualquier otra expresión MUST rechazarse sin evaluarse.
 - **FR-003**: Una prueba calculada a partir de otras MUST obtener su resultado en cuanto todas sus pruebas de referencia tengan resultado en el mismo estudio, y pasar de Pendiente a Cargada. Las cadenas de pruebas calculadas MUST resolverse en orden de dependencia.
 - **FR-004**: Cada resultado MUST guardarse asociado a la prueba del estudio, con su valor, la unidad del resultado de la prueba y la fórmula aplicada vigentes al calcularlo, y la fecha y hora del cálculo.
-- **FR-005**: El detalle del estudio MUST mostrar, para cada prueba, su resultado con su unidad (o «Sin unidad»), redondeado a 4 decimales como máximo y sin ceros finales de más (ej. 23,5; 0,72; 0,0041; 1234,5). El valor se guarda completo; el redondeo es solo para mostrarlo.
+- **FR-005**: El detalle del estudio MUST mostrar, para cada prueba, su resultado con su unidad (o «Sin unidad»), redondeado a 4 decimales como máximo y sin ceros finales de más (ej. 23,5; 0,72; 0,0041; 1234,5). El valor se guarda con 10 decimales; el redondeo a 4 es solo para mostrarlo. Una unidad vacía o «--» se muestra «Sin unidad».
 - **FR-006**: Para cada prueba sin resultado, el detalle MUST indicar por qué: falta su medición, faltan resultados de otras pruebas (listándolas por código y nombre), una prueba de referencia no forma parte del estudio, o la fórmula no se pudo evaluar (ej. división por cero).
 - **FR-007**: Un error al calcular MUST NOT impedir guardar la medición ni afectar el resultado de las demás pruebas; la prueba afectada queda sin resultado con la advertencia.
 - **FR-013**: Al guardar mediciones (US 6.1), el sistema MUST advertir en el mensaje de la carga cada prueba cuya fórmula no se pudo evaluar, con su código y el motivo. Las pruebas que solo esperan resultados de otras pruebas no se advierten en ese mensaje (se ven en el detalle, FR-006).

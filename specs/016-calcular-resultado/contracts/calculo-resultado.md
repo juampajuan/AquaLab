@@ -11,7 +11,7 @@ mediciones (US 6.1), y deja un servicio para US 6.3.
 
 - La tabla de pruebas suma la columna **Resultado**, entre Medición y Estado:
   - con resultado: `valor_mostrado` (coma decimal, hasta 4 decimales, sin ceros finales) y la
-    unidad guardada o «Sin unidad»; debajo, en texto chico, «Fórmula: <fórmula>» si no es Directo;
+    unidad guardada con el filtro `unidad` («Sin unidad» si está vacía o es `--`); debajo, en texto chico, «Fórmula: <fórmula>» si no es Directo;
   - sin resultado: el motivo en texto chico (`text-tinta-suave`), uno de:
     - «Falta la medición.»
     - «No forma parte del estudio: COD · nombre.» (una o más, separadas por coma)

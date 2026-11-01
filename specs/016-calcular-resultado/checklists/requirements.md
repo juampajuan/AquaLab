@@ -31,5 +31,5 @@
 
 ## Notes
 
-- FR-005 resuelto: hasta 4 decimales al mostrar, sin ceros finales; el valor se guarda completo.
+- FR-005 resuelto: hasta 4 decimales al mostrar, sin ceros finales; el valor se guarda con 10 decimales.
 - Los límites normativos quedan para US 6.4 (SCRUM-56: «contrastar el resultado contra los límites»).

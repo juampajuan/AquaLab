@@ -20,6 +20,9 @@ finales y sin `-0` (Clarifications).
 
 **`__str__`**: `"<asignacion> = <valor_mostrado> <unidad>"` sin espacio final.
 
+Las unidades se muestran con el filtro de template `unidad` (`config/ui.py`): «Sin unidad» si el
+texto está vacío o es `--`.
+
 Sin fila = sin resultado. El motivo de una prueba sin resultado no se guarda (research R4).
 
 ## 2. `estudios.Estudio` (existente)
