@@ -95,7 +95,7 @@ modelo y transiciones en [data-model.md](./data-model.md).
 | US3 Esc. 1 — el resumen avisa quién pierde la validación | `test_revisar_avisa_perdida_de_validacion` | `test_corregir_mediciones.py` |
 | US3 Esc. 2–3, FR-008 — validadas vuelven a Cargada; Finalizado → En proceso | `test_correccion_quita_validacion_y_reabre_estudio` | `test_servicio_correccion.py` |
 | US3 Esc. 4, FR-009 — informe emitido rechaza (vista y servicio) | `test_informe_emitido_rechaza` (servicio), `test_vista_informe_emitido_rechaza` | `test_servicio_correccion.py`, `test_corregir_mediciones.py` |
-| US3 Esc. 5, FR-010 — cambio ajeno omitido; reenvío no cambia nada | `test_omite_si_cambio_mientras_se_editaba`, `test_reenvio_informa_ya_tenia_ese_valor` | `test_servicio_correccion.py`, `test_corregir_mediciones.py` |
+| US3 Esc. 5, FR-010 — cambio ajeno omitido; reenvío no cambia nada | `test_omite_si_cambio_mientras_se_editaba`, `test_omite_si_ya_tenia_ese_valor`, `test_reenvio_informa_ya_tenia_ese_valor`, `test_confirmar_con_cambio_ajeno_se_informa` | `test_servicio_correccion.py`, `test_corregir_mediciones.py` |
 | Edge — corrección que hace imposible un cálculo | `test_correccion_a_division_por_cero_advierte` | `test_corregir_mediciones.py` |
 | FR-013 — no cambia otras mediciones, la muestra, el catálogo ni otros estudios | `test_correccion_no_modifica_otros_datos` | `test_servicio_correccion.py` |
 | Constraint — quién y cuándo corrigió van juntos | `test_medicion_correccion_completa` | `test_modelos.py` |
