@@ -541,3 +541,76 @@ def test_acceso_requiere_sesion_activa(client, escenario_consulta):
 def test_detalle_estudio_inexistente_responde_404(cliente_http):
     resp = cliente_http.get(reverse("estudios:detalle", args=[999999]))
     assert resp.status_code == 404
+
+
+# --- Evaluación de los resultados en el detalle (US 6.4, US2) ---
+
+
+def html_detalle(cliente, estudio):
+    return cliente.get(reverse("estudios:detalle", args=[estudio.pk])).content.decode()
+
+
+def fila(html, codigo):
+    """El HTML de la fila de la prueba en la tabla del detalle."""
+    inicio = html.index(f">{codigo}</td>")
+    return html[inicio : html.index("</tr>", inicio)]
+
+
+@pytest.mark.parametrize(
+    "codigo,valor,evaluacion,limite",
+    [
+        ("PH", "7.4", "Cumple", "Límite: 6.4 a 8.5"),
+        ("CL-", "40", "Fuera de norma", "Límite: máx. 350.0"),  # x*10 → 400
+        ("ECOLI", "1", "Fuera de norma", "Límite: máx. Ausente"),
+        ("SS10", "0", "Cumple", "Límite: máx. Ausente"),
+        ("OLOR", "2", "Sin límite comparable", "Límite: máx. SOE"),
+        ("CL2-LIB", "0.3", "Sin límite comparable", "Sin límite en el catálogo"),
+    ],
+)
+def test_detalle_muestra_evaluacion(
+    cliente_http, estudio_de, empleado, codigo, valor, evaluacion, limite
+):
+    from estudios.tests.utiles import cargar
+
+    estudio = estudio_de(codigo)
+    cargar(estudio, empleado, {codigo: valor})
+    html = fila(html_detalle(cliente_http, estudio), codigo)
+    assert f">{evaluacion}</span>" in html
+    assert limite in html
+    if evaluacion == "Fuera de norma":
+        assert 'data-estado="danger"' in html
+
+
+@pytest.mark.parametrize(
+    "vertido,codigo,valor,evaluacion,texto",
+    [
+        ("cloacal", "PH", "7", "Fuera de norma", "Límite: 7.01 a 10.0 · (AGOSBA) 389/98 (Cloacal)"),
+        ("agua", "PH", "7", "Cumple", "Límite: 6.4 a 8.5"),
+        ("cloacal", "CL2-LIB", "0.3", "Sin límite comparable", "Límite: máx. NE"),
+    ],
+)
+def test_detalle_usa_limites_del_vertido(
+    cliente_http, estudio_de, empleado, muestra, vertido, codigo, valor, evaluacion, texto
+):
+    from estudios.tests.utiles import cargar
+
+    muestra.tipo_vertido = vertido
+    muestra.save(update_fields=["tipo_vertido"])
+    estudio = estudio_de(codigo)
+    cargar(estudio, empleado, {codigo: valor})
+    html = fila(html_detalle(cliente_http, estudio), codigo)
+    assert f">{evaluacion}</span>" in html
+    assert texto in html
+
+
+def test_detalle_validada_usa_lo_guardado(cliente_http, estudio_de, empleado, bioquimico):
+    from estudios.tests.utiles import cargar, validar
+
+    estudio = estudio_de("CL-")
+    cargar(estudio, empleado, CL_="30")  # x*10 → 300 mg/l
+    validar(estudio, bioquimico, "CL-")
+    Prueba.objects.filter(codigo="CL-").update(limite_max="250")
+    html = fila(html_detalle(cliente_http, estudio), "CL-")
+    assert ">Cumple</span>" in html
+    assert "Límite: máx. 350.0" in html
+    assert "Validada por " in html

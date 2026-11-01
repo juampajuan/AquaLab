@@ -3,6 +3,8 @@
 from collections import defaultdict
 from decimal import ROUND_HALF_UP, Decimal
 
+from django.utils import timezone
+
 from pruebas.formulas import CalculoImposible, evaluar_formula
 from pruebas.models import Prueba, TipoCalculo, referencias_formula
 
@@ -164,6 +166,16 @@ def descartar(asignacion):
 
 
 def cambiar_estado(asignacion, estado):
+    """Único punto por el que una prueba cambia de estado después de la carga: si deja de estar
+    Completada, su validación vigente se anula (nunca se borra, US 6.4 FR-017)."""
+    sale_de_completada = (
+        asignacion.estado == EstadoPruebaEstudio.COMPLETADA
+        and estado != EstadoPruebaEstudio.COMPLETADA
+    )
+    if sale_de_completada:
+        asignacion.validaciones.filter(anulada=False).update(
+            anulada=True, fecha_anulacion=timezone.now()
+        )
     asignacion.estado = estado
     asignacion.save(update_fields=["estado"])
 

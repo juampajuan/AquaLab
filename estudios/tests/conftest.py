@@ -116,6 +116,25 @@ def gestor(empleado):
 
 
 @pytest.fixture
+def bioquimico(empleado):
+    """El empleado en el grupo «Bioquímicos» (US 6.4). El grupo lo crea la migración 0008; se
+    vuelve a crear porque los tests con transaction=True vacían la base al terminar."""
+    from django.contrib.auth.models import Group, Permission
+
+    grupo, _ = Group.objects.get_or_create(name="Bioquímicos")
+    grupo.permissions.add(Permission.objects.get(codename="validar_resultados"))
+    empleado.groups.add(grupo)
+    return empleado
+
+
+@pytest.fixture
+def cliente_bioquimico(bioquimico):
+    c = Client()
+    c.force_login(bioquimico)
+    return c
+
+
+@pytest.fixture
 def staff_sin_permiso(django_user_model):
     return django_user_model.objects.create_user(
         email="staff-us55@ejemplo.com", password="Clave-Valida-123", is_active=True, is_staff=True

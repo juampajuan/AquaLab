@@ -1,14 +1,16 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import permission_required
 from django.core import signing
 from django.core.paginator import Paginator
 from django.db import DatabaseError
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
 
 from clientes.models import normalizar_numero_documento
 from muestras.models import Muestra
+from pruebas.limites import Evaluacion, LimitesAplicables, evaluar, limites_aplicables
 
 from . import calculo, servicios
 from .catalogo import CatalogoNoDisponible
@@ -19,8 +21,9 @@ from .forms import (
     CargarMedicionesForm,
     CorregirMedicionesForm,
     CrearEstudioForm,
+    ValidarResultadosForm,
 )
-from .models import EstadoPruebaEstudio, Estudio
+from .models import EstadoPruebaEstudio, Estudio, OrigenLimites, Validacion
 from .servicios import (
     CargarMedicionesError,
     CorregirMedicionesError,
@@ -28,6 +31,7 @@ from .servicios import (
     GestionPruebasError,
     PruebaYaAsignada,
     PruebaYaQuitada,
+    ValidarResultadosError,
     VersionDesactualizada,
     comprobar_identidad,
     crear_estudio,
@@ -188,11 +192,14 @@ def detalle(request, pk):
     pruebas_asignadas = list(
         estudio.pruebas_asignadas.select_related(
             "prueba", "medicion", "medicion__cargada_por", "medicion__corregida_por", "resultado"
-        ).order_by("prueba__codigo", "pk")
+        )
+        .prefetch_related("prueba__limites_vertido", validaciones_vigentes())
+        .order_by("prueba__codigo", "pk")
     )
     todas = {a.prueba.codigo: a for a in pruebas_asignadas}
     for asignacion in pruebas_asignadas:
         asignacion.motivo_sin_resultado = calculo.motivo_sin_resultado(asignacion, todas)
+    evaluar_asignaciones(estudio, pruebas_asignadas)
     total_pruebas = len(pruebas_asignadas)
     pruebas_completadas = sum(
         1 for a in pruebas_asignadas if a.estado == EstadoPruebaEstudio.COMPLETADA
@@ -217,6 +224,7 @@ def detalle(request, pk):
                 for a in pruebas_asignadas
                 if a.estado == EstadoPruebaEstudio.PENDIENTE and not a.prueba.es_calculada
             ),
+            "hay_para_validar": any(validable(a) for a in pruebas_asignadas),
         },
     )
 
@@ -429,4 +437,135 @@ def corregir_mediciones(request, pk):
             messages.warning(
                 request, f"{prueba.codigo}: no se pudo calcular el resultado ({motivo})."
             )
+    return redirect("estudios:detalle", pk=estudio.pk)
+
+
+INFORME_EMITIDO_VALIDAR = (
+    "El estudio ya tiene el informe emitido: sus resultados no se pueden validar."
+)
+TIPOS_EVALUACION = {
+    Evaluacion.CUMPLE: "success",
+    Evaluacion.FUERA_DE_NORMA: "danger",
+    Evaluacion.SIN_LIMITE: "neutral",
+}
+
+
+def validaciones_vigentes():
+    return Prefetch(
+        "validaciones",
+        queryset=Validacion.objects.filter(anulada=False).select_related("validada_por"),
+        to_attr="validaciones_vigentes",
+    )
+
+
+def validable(asignacion):
+    return asignacion.estado == EstadoPruebaEstudio.CARGADA and calculo.tiene_resultado(asignacion)
+
+
+def texto_limite(limites):
+    minimo, maximo = limites.minimo.strip(), limites.maximo.strip()
+    if minimo and maximo:
+        return f"{minimo} a {maximo}"
+    if maximo:
+        return f"máx. {maximo}"
+    if minimo:
+        return f"mín. {minimo}"
+    return ""
+
+
+def evaluar_asignaciones(estudio, asignaciones):
+    """Adjunta a cada asignación con resultado su evaluación (US 6.4): la guardada al validar si
+    está Completada (FR-012); si no, la de los límites vigentes del catálogo (FR-008).
+
+    Espera `prueba__limites_vertido` y `validaciones_vigentes()` precargados.
+    """
+    for asignacion in asignaciones:
+        vigentes = getattr(asignacion, "validaciones_vigentes", [])
+        asignacion.validacion = vigentes[0] if vigentes else None
+        asignacion.evaluacion = None
+        if not calculo.tiene_resultado(asignacion):
+            continue
+        if asignacion.validacion and asignacion.estado == EstadoPruebaEstudio.COMPLETADA:
+            v = asignacion.validacion
+            limites = LimitesAplicables(v.limite_min, v.limite_max, v.norma, v.origen_limites)
+            evaluacion = Evaluacion(v.evaluacion)
+        else:
+            limites = limites_aplicables(asignacion.prueba, estudio.muestra.tipo_vertido)
+            evaluacion = evaluar(asignacion.resultado.valor, limites)
+        asignacion.evaluacion = evaluacion
+        asignacion.evaluacion_tipo = TIPOS_EVALUACION[evaluacion]
+        asignacion.limite_texto = texto_limite(limites)
+        asignacion.limite_norma = limites.norma
+        asignacion.limite_origen = (
+            "" if limites.origen == OrigenLimites.GENERAL else OrigenLimites(limites.origen).label
+        )
+
+
+def mensaje_validadas(estudio, validadas):
+    codigos = ", ".join(p.codigo for p in validadas)
+    if len(validadas) == 1:
+        return f"Se validó 1 resultado del estudio {estudio.pk}: {codigos}."
+    return f"Se validaron {len(validadas)} resultados del estudio {estudio.pk}: {codigos}."
+
+
+@permission_required("estudios.validar_resultados", raise_exception=True)
+def validar_resultados(request, pk):
+    estudio = get_object_or_404(Estudio.objects.select_related("muestra"), pk=pk)
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    if accion != "confirmar" and not estudio.admite_correcciones:
+        # Al confirmar, la regla la revalida el servicio con el estudio bloqueado.
+        messages.error(request, INFORME_EMITIDO_VALIDAR)
+        return redirect("estudios:detalle", pk=estudio.pk)
+    if request.method == "POST" and accion not in (
+        "revisar",
+        "editar",
+        "marcar_todas",
+        "confirmar",
+    ):
+        messages.error(request, "La acción no es válida.")
+        return redirect("estudios:detalle", pk=estudio.pk)
+    asignaciones = (
+        estudio.pruebas_asignadas.select_related("prueba", "resultado")
+        .prefetch_related("prueba__limites_vertido", validaciones_vigentes())
+        .order_by("prueba__codigo", "pk")
+    )
+    if accion == "confirmar":
+        # Las enviadas, aunque ya estén validadas: así un reenvío se informa en vez de fallar.
+        enviadas = [
+            n.removeprefix("resultado_") for n in request.POST if n.startswith("resultado_")
+        ]
+        asignaciones = asignaciones.filter(pk__in=[pk for pk in enviadas if pk.isdigit()])
+    else:
+        asignaciones = asignaciones.filter(
+            estado=EstadoPruebaEstudio.CARGADA, resultado__isnull=False
+        )
+    filas = list(asignaciones)
+    evaluar_asignaciones(estudio, filas)
+    if accion == "marcar_todas":
+        form = ValidarResultadosForm(filas=filas, marcar_todas=True)
+    else:
+        form = ValidarResultadosForm(request.POST or None, filas=filas)
+    contexto = {"estudio": estudio, "form": form}
+    if accion in (None, "editar", "marcar_todas") or not form.is_valid():
+        return render(request, "estudios/validar_resultados.html", contexto)
+    if accion == "revisar":
+        elegidas = form.resumen()
+        sin_validar = estudio.pruebas_asignadas.exclude(estado=EstadoPruebaEstudio.COMPLETADA)
+        contexto["elegidas"] = elegidas
+        contexto["no_cumplen"] = [a for a in elegidas if a.evaluacion == Evaluacion.FUERA_DE_NORMA]
+        contexto["finalizara"] = sin_validar.count() == len(elegidas)
+        return render(request, "estudios/validar_resultados_confirmar.html", contexto)
+    try:
+        resultado = servicios.validar_resultados(estudio.pk, form.elegidas(), request.user)
+    except ValidarResultadosError as exc:
+        messages.error(request, str(exc))
+    except DatabaseError:
+        messages.error(request, "No se pudieron validar los resultados. Intentá nuevamente.")
+    else:
+        if resultado.validadas:
+            messages.success(request, mensaje_validadas(estudio, resultado.validadas))
+        if resultado.finalizado:
+            messages.success(request, f"El estudio {estudio.pk} quedó Finalizado.")
+        for prueba, motivo in resultado.omitidas:
+            messages.warning(request, f"{prueba.codigo}: {motivo}.")
     return redirect("estudios:detalle", pk=estudio.pk)
