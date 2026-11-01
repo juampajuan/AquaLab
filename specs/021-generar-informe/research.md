@@ -125,9 +125,11 @@ Punto de partida (`main` con la US 7.1, PR #34): app `informes` sin modelos, con
 ## R9 — Datos institucionales en `settings.AQUALAB_LABORATORIO`
 
 - **Decision**: un diccionario en `config/settings.py` con `nombre`, `direccion`, `matricula`,
-  `responsable_tecnico`, `telefono` y `correo` de ejemplo (marcados «DEMO»). El logo es la marca de
-  AquaLab (`ui/logo.html` en versión para documento) hasta tener el del laboratorio.
-  `armar_contenido` copia estos datos al contenido del informe.
+  `responsable_tecnico` y `logo`, de ejemplo (marcados «DEMO»). `logo` es una referencia: hoy
+  `"aqualab"` (la marca de AquaLab, `ui/logo.html` en versión para documento); cuando llegue el del
+  laboratorio será la ruta de su imagen en `static/`, con un nombre nuevo si cambia, para que los
+  informes viejos sigan mostrando el suyo. `armar_contenido` copia estos datos, incluida la
+  referencia al logo, al contenido del informe.
 - **Rationale**: «un solo lugar» (FR-006); copiarlos al emitir mantiene los informes viejos aunque
   cambien (FR-010).
 - **Alternatives**: modelo editable en el admin (YAGNI hasta que el laboratorio pida editarlo);

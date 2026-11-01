@@ -30,8 +30,9 @@ llevan CSRF. Prefijo `informes/` (US 7.1). `<pk>` de estudio inexistente → **4
 
 Recibe el diccionario `contenido` (data-model) y opcionalmente `numero`/`fecha`/`emitido_por`.
 
-1. **Encabezado institucional**: marca del laboratorio, nombre, dirección, matrícula, teléfono y
-   correo; a la derecha «Informe N° INF-000001» (o «BORRADOR») y la fecha de emisión.
+1. **Encabezado institucional**: el logo según `contenido.laboratorio.logo` («aqualab» → marca de
+   AquaLab), nombre, dirección y matrícula; a la derecha «Informe N° INF-000001» (o «BORRADOR») y la
+   fecha de emisión.
 2. **Cliente**: nombre o razón social, documento («CUIT 30-…»/«DNI …»), domicilio, correo.
 3. **Muestra**: N° PI, nombre, origen, fecha de muestreo, fecha de ingreso, sitio de extracción,
    responsable del muestreo, tipo de vertido.

@@ -130,7 +130,7 @@ specs/021-generar-informe/
 CLAUDE.md                                      # + sección «Generar informe (US 7.2)»; actualizar la nota de la 7.1
 config/settings.py                             # + AQUALAB_LABORATORIO (datos de ejemplo)
 pruebas/
-├── limites.py                                 # LimitesAplicables.deteccion; evaluar: «Ausente» con < LD cumple
+├── limites.py                                 # LimitesAplicables.deteccion; evaluar: «Ausente» con < LD cumple; + texto_limite
 └── tests/test_limites.py                      # + casos FR-016
 informes/
 ├── models.py                                  # nuevo: Informe (permiso emitir_informes)
@@ -148,6 +148,7 @@ informes/
 └── tests/                                     # test_contenido, test_vista_previa, test_emitir, test_servicio_emision,
                                                # test_ver, test_permisos, test_concurrencia_emision; ajustar test_control, test_generar
 estudios/
+├── views.py                                   # texto_limite pasa a pruebas/limites.py (lo usa también el informe)
 ├── templates/estudios/detalle.html            # + «Ver informe»
 └── tests/conftest.py                          # bioquimico: + emitir_informes
 ```

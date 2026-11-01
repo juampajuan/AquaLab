@@ -23,7 +23,7 @@
 
 ```text
 {
-  "laboratorio": {nombre, direccion, matricula, responsable_tecnico, telefono, correo},
+  "laboratorio": {nombre, direccion, matricula, responsable_tecnico, logo},   # logo: referencia ("aqualab" o ruta en static/)
   "cliente":     {nombre_completo, tipo_documento, numero_documento, domicilio, email},
   "muestra":     {numero_pi, nombre, origen, fecha_muestreo, fecha_ingreso, sitio_extraccion,
                   responsable_muestreo, tipo_vertido},          # fechas "dd/mm/aaaa", vertido con su etiqueta
