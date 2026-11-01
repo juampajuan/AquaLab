@@ -12,5 +12,6 @@ urlpatterns = [
     path("clientes/", include("clientes.urls")),
     path("muestras/", include("muestras.urls")),
     path("estudios/", include("estudios.urls")),
+    path("informes/", include("informes.urls")),
     path("", views.inicio, name="inicio"),
 ]

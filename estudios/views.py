@@ -3,16 +3,16 @@ from django.contrib.auth.decorators import permission_required
 from django.core import signing
 from django.core.paginator import Paginator
 from django.db import DatabaseError
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
 
-from clientes.models import normalizar_numero_documento
 from muestras.models import Muestra
 from pruebas.limites import Evaluacion, LimitesAplicables, evaluar, limites_aplicables
 
 from . import calculo, servicios
+from .busqueda import filtro_busqueda
 from .catalogo import CatalogoNoDisponible
 from .confirmaciones import cargar_token, descartar, pendientes, preparar
 from .forms import (
@@ -38,7 +38,6 @@ from .servicios import (
 )
 
 RESULTADOS_POR_PAGINA = 20
-MAX_NUMERO_PI_SQL = 2_147_483_647
 
 
 def exito(request, estudio):
@@ -159,21 +158,7 @@ def buscar(request):
             "muestra", "muestra__cliente", "muestra__origen"
         ).order_by(*Estudio._meta.ordering)
         if q:
-            filtro = (
-                Q(muestra__nombre__unaccent__icontains=q)
-                | Q(muestra__cliente__nombre__unaccent__icontains=q)
-                | Q(muestra__cliente__razon_social__unaccent__icontains=q)
-                | Q(tipo_nombre_snapshot__unaccent__icontains=q)
-            )
-            if q.isascii() and q.isdigit():
-                numero = int(q)
-                filtro |= Q(pk=numero)
-                if numero <= MAX_NUMERO_PI_SQL:
-                    filtro |= Q(muestra__numero_pi=numero)
-            q_doc = normalizar_numero_documento(q)
-            if len(q_doc) >= 4 and q_doc.isascii() and q_doc.isdigit():
-                filtro |= Q(muestra__cliente__numero_documento__contains=q_doc)
-            qs = qs.filter(filtro)
+            qs = qs.filter(filtro_busqueda(q))
         page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
     return render(
         request,

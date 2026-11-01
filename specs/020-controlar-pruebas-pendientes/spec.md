@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-01
 
-**Status**: Draft
+**Status**: Aprobada (2026-11-01)
 
 **Input**: User description: "US 7.1 – Seleccionar estudio y controlar pruebas pendientes. Como empleado del laboratorio quiero seleccionar un estudio y verificar las pruebas pendientes para asegurarme de que todos los ensayos estén terminados antes de emitir el informe. Criterios de aceptación: * Se debe poder seleccionar el estudio a informar. * El sistema debe mostrar el listado de pruebas y su estado. * El sistema debe bloquear la generación del informe si existen pruebas incompletas o sin validar. * Solo se habilita la generación cuando el 100% de las pruebas estén finalizadas. Contexto: ya existen EstadoEstudio (pendiente_analisis, en_proceso, finalizado, informe_generado) y EstadoPruebaEstudio (pendiente, cargada, completada); "finalizada/validada" = Completada (la valida US 6.4). La generación del informe en sí es la US 7.2; esta US solo controla la habilitación."
 

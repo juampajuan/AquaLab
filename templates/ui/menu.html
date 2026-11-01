@@ -45,5 +45,13 @@
       </a>
     {% endif %}
   </div>
+  <div>
+    <p class="mb-1 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-tinta-suave uppercase">
+      {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Informes
+    </p>
+    <a href="{% url 'informes:listar' %}" class="block rounded-md px-3 py-2 pl-9 {% if vista == 'informes:listar' or vista == 'informes:control' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'informes:listar' or vista == 'informes:control' %} aria-current="page"{% endif %}>
+      Seleccionar estudio
+    </a>
+  </div>
 </nav>
 {% endwith %}
