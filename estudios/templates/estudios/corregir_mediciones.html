@@ -19,7 +19,7 @@
     {% else %}
       <div class="aviso aviso-info mb-6" role="status">
         {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
-        <div>Cambiá el valor de las mediciones con errores del estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}). Los resultados se recalculan al guardar.</div>
+        <div>Cambiá el valor de las mediciones con errores del estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}). Los resultados se recalculan al guardar. Para quitar una medición cargada por error, marcá Borrar.</div>
       </div>
       <form method="post" novalidate>
         {% csrf_token %}
@@ -34,10 +34,11 @@
                   <th>Unidad</th>
                   <th>Cargada por</th>
                   <th>Medición</th>
+                  <th class="text-center">Borrar</th>
                 </tr>
               </thead>
               <tbody>
-                {% for asignacion, field, original in form.filas %}
+                {% for asignacion, field, original, borrar in form.filas %}
                   {% with medicion=asignacion.medicion %}
                     <tr>
                       <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
@@ -56,6 +57,10 @@
                             {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
                           </div>
                         {% endif %}
+                      </td>
+                      <td class="text-center">
+                        {{ borrar }}
+                        <label for="{{ borrar.id_for_label }}" class="sr-only">{{ borrar.label }}</label>
                       </td>
                     </tr>
                   {% endwith %}

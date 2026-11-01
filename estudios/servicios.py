@@ -271,16 +271,19 @@ class CorregirMedicionesError(Exception):
 @dataclass
 class ResultadoCorreccion:
     corregidas: list = field(default_factory=list)
+    borradas: list = field(default_factory=list)  # pruebas
     omitidas: list = field(default_factory=list)  # pares (prueba, motivo)
     sin_calcular: list = field(default_factory=list)  # pares (prueba, motivo)
 
 
 def corregir_mediciones(estudio_pk, cambios, usuario):
-    """Corrige mediciones `{asignacion_pk: (original, nuevo)}` y recalcula sus resultados.
+    """Corrige mediciones `{asignacion_pk: (original, nuevo)}` y recalcula sus resultados;
+    `nuevo = None` borra la medición (US 6.5).
 
-    Una medición se corrige solo si todavía vale lo que se vio al abrir el formulario
-    (`original`); si no, se omite e informa. Todo ocurre en una transacción con el estudio
-    bloqueado, y el recálculo pasa por recalcular_resultados (US 6.2).
+    Una medición se corrige o se borra solo si todavía vale lo que se vio al abrir el
+    formulario (`original`); si no, se omite e informa. Todo ocurre en una transacción con el
+    estudio bloqueado, y el recálculo pasa por recalcular_resultados (US 6.2), que deja sin
+    resultado y en Pendiente a las pruebas que se quedaron sin datos.
     """
     if not usuario.is_authenticated or not usuario.is_active:
         raise CorregirMedicionesError("Se requiere una sesión activa.")
@@ -294,21 +297,31 @@ def corregir_mediciones(estudio_pk, cambios, usuario):
                 "El estudio ya tiene el informe emitido: sus mediciones y resultados no se "
                 "pueden cambiar."
             )
-        mediciones = (
-            Medicion.objects.select_for_update(of=("self",))
-            .select_related("asignacion__prueba")
-            .filter(asignacion__estudio=estudio, asignacion__pk__in=cambios)
-            .order_by("asignacion__prueba__codigo", "pk")
+        asignaciones = (
+            estudio.pruebas_asignadas.select_for_update(of=("self",))
+            .select_related("prueba", "medicion")
+            .filter(pk__in=cambios)
+            .order_by("prueba__codigo", "pk")
         )
-        for medicion in mediciones:
-            original, nuevo = cambios[medicion.asignacion_id]
+        cambiadas = []
+        for asignacion in asignaciones:
+            original, nuevo = cambios[asignacion.pk]
+            prueba = asignacion.prueba
+            medicion = getattr(asignacion, "medicion", None)
+            if medicion is None:
+                resultado.omitidas.append((prueba, "ya no tenía medición"))
+                continue
             vigente = str(medicion.valor_ingresado)
-            prueba = medicion.asignacion.prueba
-            if vigente == str(nuevo):
+            if nuevo is not None and vigente == str(nuevo):
                 resultado.omitidas.append((prueba, "ya tenía ese valor"))
                 continue
             if vigente != str(original):
                 resultado.omitidas.append((prueba, "cambió mientras se editaba"))
+                continue
+            cambiadas.append(asignacion.pk)
+            if nuevo is None:
+                medicion.delete()
+                resultado.borradas.append(prueba)
                 continue
             medicion.valor = nuevo
             medicion.decimales = max(0, -nuevo.as_tuple().exponent)
@@ -316,15 +329,28 @@ def corregir_mediciones(estudio_pk, cambios, usuario):
             medicion.fecha_correccion = timezone.now()
             medicion.save(update_fields=["valor", "decimales", "corregida_por", "fecha_correccion"])
             resultado.corregidas.append(medicion)
-        if resultado.corregidas:
+        if cambiadas:
             try:
-                resultado.sin_calcular = recalcular_resultados(
-                    estudio.pk, [m.asignacion_id for m in resultado.corregidas], usuario
-                )
+                resultado.sin_calcular = recalcular_resultados(estudio.pk, cambiadas, usuario)
             except RecalculoError as exc:
                 raise CorregirMedicionesError(str(exc)) from exc
-            reabierto = estudio.pruebas_asignadas.exclude(estado=EstadoPruebaEstudio.COMPLETADA)
-            if estudio.estado == EstadoEstudio.FINALIZADO and reabierto.exists():
-                estudio.estado = EstadoEstudio.EN_PROCESO
+            estado = estado_tras_correccion(estudio)
+            if estado != estudio.estado:
+                estudio.estado = estado
                 estudio.save(update_fields=["estado"])
     return resultado
+
+
+def estado_tras_correccion(estudio):
+    """Sin pruebas Cargadas ni Completadas vuelve a Pendiente de análisis (US 6.5); un estudio
+    Finalizado con alguna prueba sin validar vuelve a En proceso (US 6.3)."""
+    pruebas = estudio.pruebas_asignadas
+    con_datos = (EstadoPruebaEstudio.CARGADA, EstadoPruebaEstudio.COMPLETADA)
+    if not pruebas.filter(estado__in=con_datos).exists():
+        return EstadoEstudio.PENDIENTE_ANALISIS
+    if (
+        estudio.estado == EstadoEstudio.FINALIZADO
+        and pruebas.exclude(estado=EstadoPruebaEstudio.COMPLETADA).exists()
+    ):
+        return EstadoEstudio.EN_PROCESO
+    return estudio.estado

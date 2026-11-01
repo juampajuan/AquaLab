@@ -14,7 +14,7 @@
     <div class="max-w-4xl">
       <div class="aviso aviso-info mb-6" role="status">
         {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
-        <div>{% if cambios|length == 1 %}Se corregirá 1 medición{% else %}Se corregirán {{ cambios|length }} mediciones{% endif %} en el estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}).</div>
+        <div>{% if hay_borrados %}{% if cambios|length == 1 %}Se aplicará 1 cambio{% else %}Se aplicarán {{ cambios|length }} cambios{% endif %}{% elif cambios|length == 1 %}Se corregirá 1 medición{% else %}Se corregirán {{ cambios|length }} mediciones{% endif %} en el estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}).</div>
       </div>
       {% if pierden_validacion %}
         <div class="aviso aviso-advertencia mb-6" role="alert">
@@ -46,7 +46,7 @@
                   <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
                   <td>{{ asignacion.prueba.nombre }}</td>
                   <td class="numeros text-right">{{ anterior }}</td>
-                  <td class="numeros text-right font-semibold">{{ nuevo }}</td>
+                  <td class="numeros text-right font-semibold">{% if nuevo is None %}<span aria-hidden="true">—</span><span class="sr-only">se borra</span>{% else %}{{ nuevo }}{% endif %}</td>
                   <td>{{ asignacion.prueba.unidad_medicion|unidad }}</td>
                 </tr>
               {% endfor %}
@@ -58,9 +58,10 @@
         {# Evita el doble envío sin deshabilitar los botones: deshabilitados no envían la acción. #}
         <form method="post" class="flex flex-wrap gap-3" onsubmit="if (this.dataset.enviado) return false; this.dataset.enviado = '1';">
           {% csrf_token %}
-          {% for asignacion, field, original in form.filas %}
-            <input type="hidden" name="{{ field.html_name }}" value="{{ field.value }}">
+          {% for asignacion, field, original, borrar in form.filas %}
+            <input type="hidden" name="{{ field.html_name }}" value="{{ field.value|default_if_none:'' }}">
             <input type="hidden" name="{{ original.html_name }}" value="{{ original.value }}">
+            {% if borrar.value %}<input type="hidden" name="{{ borrar.html_name }}" value="on">{% endif %}
           {% endfor %}
           <button type="submit" name="accion" value="confirmar" class="btn btn-primario">
             {% include "ui/icono.html" with nombre="check" clase="size-4" %} Guardar correcciones
