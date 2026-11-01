@@ -24,7 +24,7 @@ Como empleado, cuando guardo la medición de una prueba (US 6.1), el sistema cal
 
 **Why this priority**: Es el objetivo de US 6.2: el cálculo manual o la transcripción son el riesgo identificado del proyecto, y sin resultado no hay validación (US 6.4) ni informe.
 
-**Independent Test**: Cargar la medición de una prueba de tipo Fórmula (ej. Cloruro, `x*10`, con 2,35 mL) y una de tipo Directo (ej. pH 7,20) y verificar que el detalle muestra 23,5 mg/l y 7,20 UpH.
+**Independent Test**: Cargar la medición de una prueba de tipo Fórmula (ej. Cloruro, `x*10`, con 2,35 mL) y una de tipo Directo (ej. pH 7,20) y verificar que el detalle muestra los resultados 23,5 mg/l y 7,2 UpH (la medición del pH se sigue viendo como 7,20).
 
 **Acceptance Scenarios**:
 
