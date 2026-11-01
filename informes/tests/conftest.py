@@ -8,7 +8,7 @@ from estudios.tests.conftest import *  # noqa: F401,F403
 def completar():
     """Pasa a Completada las asignaciones de esos códigos (todas si no se indican).
 
-    US 6.4 (validación) todavía no está en main y `estado` es editable=False.
+    Atajo para no validar cada prueba (US 6.4): `estado` es editable=False.
     """
     from estudios.models import EstadoPruebaEstudio
 

@@ -22,8 +22,8 @@
   La usan el control (GET) y `comprobar_generacion`; el filtro «Listos para informar» del listado
   la expresa en SQL con las mismas tres condiciones y un test compara los dos resultados.
 - **Rationale**: mismo patrón que `motivo_para_no_quitar` (US 5.4): una fuente para la vista y el
-  servicio. Se cuentan las pruebas en vez de mirar `Estudio.estado == FINALIZADO` porque US 6.4
-  todavía no está en `main` y porque el conteo es la definición del criterio de aceptación
+  servicio. Se cuentan las pruebas en vez de mirar `Estudio.estado == FINALIZADO` porque al
+  escribir el plan US 6.4 todavía no estaba en `main` y porque el conteo es la definición del criterio de aceptación
   («100% de las pruebas»); con US 6.4 los dos coinciden.
 - **Alternatives considered**: propiedad en `Estudio` (no recibe las asignaciones ya cargadas y
   duplicaría consultas); depender solo de `estado == FINALIZADO` (bloquea los tests hasta US 6.4 y

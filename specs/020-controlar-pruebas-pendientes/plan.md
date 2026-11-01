@@ -36,7 +36,7 @@ ruff 0.17.1.
 listado hace una consulta anotada por página.
 
 **Constraints**: La regla de habilitación es única y se revalida al generar (FR-009); consultar no
-modifica nada (FR-011); US 6.4 (rama `019-validar-resultados`) todavía no está en `main`.
+modifica nada (FR-011); US 6.4 (PR #33) se mergeó durante la implementación y la rama se rebasó sobre `main`.
 
 **Scale/Scope**: app nueva `informes` (servicios, vistas, urls, 2 templates, tests); extracción de
 `estudios/busqueda.py`; enlaces en menú, inicio y detalle del estudio; nota en `CLAUDE.md`.

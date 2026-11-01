@@ -31,7 +31,7 @@ docker compose exec -T web ruff check . && docker compose exec -T web ruff forma
 4. **Rechazo por otra vía** — Con el estudio incompleto, enviar el POST de generar (por ejemplo,
    desde una pestaña que quedó abierta cuando estaba listo): mensaje de error con el motivo y nada
    cambia.
-5. **Listo** — Completar todas las pruebas (con US 6.4, validándolas; sin ella, en el shell:
+5. **Listo** — Completar todas las pruebas (validándolas como bioquímico con US 6.4; para probar rápido, en el shell:
    `PruebaEstudio.objects.filter(estudio_id=N).update(estado="completada")`). El control avisa
    «El estudio está listo para informar…», «Generar informe» habilitado; al pulsarlo, aviso de que
    la generación estará disponible próximamente. El listado lo muestra con «Solo listos».

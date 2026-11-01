@@ -1,11 +1,13 @@
 import re
+from decimal import Decimal
 
 import pytest
 from django.urls import reverse
 
 from estudios import calculo
-from estudios.models import EstadoPruebaEstudio, Estudio, Medicion
-from estudios.tests.utiles import asignacion_de, cargar
+from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio, Medicion
+from estudios.servicios import corregir_mediciones
+from estudios.tests.utiles import asignacion_de, cargar, validar
 
 pytestmark = pytest.mark.django_db
 
@@ -137,3 +139,27 @@ def test_detalle_enlaza_control(cliente_http, estudio_de):
     estudio = estudio_de("CL-")
     html = cliente_http.get(reverse("estudios:detalle", args=[estudio.pk])).content.decode()
     assert re.search(rf'href="{url(estudio)}"[^>]*>.*?Controlar para informe', html, re.S)
+
+
+def test_flujo_con_validacion_real(cliente_http, bioquimico, estudio_de):
+    """Con US 6.4: validar todas habilita generar; corregir una medición vuelve a bloquear."""
+    estudio = estudio_de("CL-", "PH")
+    cargar(estudio, bioquimico, {"CL-": "40", "PH": "7.20"})
+    validar(estudio, bioquimico, "CL-")
+    html = cliente_http.get(url(estudio)).content.decode()
+    assert "Hay 1 prueba sin completar." in html
+    assert "Sin validar" in fila(html, "PH")
+
+    validar(estudio, bioquimico, "PH")
+    assert Estudio.objects.get(pk=estudio.pk).estado == EstadoEstudio.FINALIZADO
+    html = cliente_http.get(url(estudio)).content.decode()
+    assert "El estudio está listo para informar" in html
+    listos = cliente_http.get(reverse("informes:listar"), {"listos": "1"}).content.decode()
+    assert url(estudio) in listos
+
+    ph = asignacion_de(estudio, "PH")
+    original = Decimal(ph.medicion.valor_ingresado)  # el que vio el formulario (US 6.3)
+    corregir_mediciones(estudio.pk, {ph.pk: (original, Decimal("7.30"))}, bioquimico)
+    html = cliente_http.get(url(estudio)).content.decode()
+    assert "Hay 1 prueba sin completar." in html
+    assert re.search(r'<button type="button" disabled', html)

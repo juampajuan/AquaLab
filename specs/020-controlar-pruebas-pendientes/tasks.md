@@ -33,8 +33,9 @@ generación). La regla compartida va en la fase Foundational.
 - **Sin modelos ni migraciones** (data-model.md). `makemigrations --check` debe seguir limpio.
 - Los tests ponen las pruebas en Completada con
   `PruebaEstudio.objects.filter(...).update(estado=EstadoPruebaEstudio.COMPLETADA)` y el informe
-  emitido con `Estudio.objects.filter(pk=...).update(estado=EstadoEstudio.INFORME_GENERADO)`: US 6.4
-  y US 7.2 todavía no están en `main` y `estado` es `editable=False`.
+  emitido con `Estudio.objects.filter(pk=...).update(estado=EstadoEstudio.INFORME_GENERADO)`: `estado` es
+  `editable=False` y US 7.2 no existe. Con US 6.4 ya en `main`, `test_flujo_con_validacion_real`
+  (`informes/tests/test_control.py`) recorre el caso con `validar` y `corregir_mediciones` reales.
 - Comandos dentro de Docker: `docker compose exec web pytest informes estudios`,
   `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .`.
 
@@ -148,7 +149,7 @@ completar.», la Cargada con «Sin validar», botón deshabilitado; completar la
 
 - [X] T019 [P] Agregar en `CLAUDE.md` la sección «Control previo al informe (US 7.1)»: la app `informes`; `motivo_para_no_informar` es la única regla para informar (control, `comprobar_generacion` y, en SQL, `estudios_para_informar(solo_listos=True)`; un test compara ambas); **US 7.2** debe generar dentro de `comprobar_generacion` (estudio bloqueado) y reemplazar el aviso «próximamente» de `informes.views.generar`; `estudios/busqueda.py:filtro_busqueda` es la única búsqueda de estudios.
 - [X] T020 Ejecutar `docker compose exec web pytest`, `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`; anotar el resultado en este archivo.
-  - **Resultado (2026-11-01)**: `pytest` → **1005 passed** (961 previos + 44 de `informes`); `ruff check` y `ruff format --check` sin errores; `makemigrations --check` → «No changes detected».
+  - **Resultado (2026-11-01, rebasado sobre `main` con US 6.4)**: `pytest` → **1101 passed** (45 de `informes`); `ruff check` y `ruff format --check` sin errores; `makemigrations --check` → «No changes detected».
 - [ ] T021 Recorrido manual de `quickstart.md` (pasos 1–6) en el navegador; anotar lo observado y los ajustes.
 
 ---
