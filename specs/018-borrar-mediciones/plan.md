@@ -83,12 +83,12 @@ en [data-model.md](./data-model.md).
 
 | Escenario / requisito | Test | Archivo |
 |---|---|---|
-| US1 Esc. 1, FR-002 — casilla «Borrar» en cada fila | `test_formulario_ofrece_borrar` | `test_corregir_mediciones.py` |
+| US1 Esc. 1, FR-001/002 — casilla «Borrar» en cada fila; cualquier empleado puede borrar | `test_formulario_ofrece_borrar`, `test_otro_empleado_puede_borrar` | `test_corregir_mediciones.py` |
 | US1 Esc. 2, FR-004 — resumen «se borra» con confirmación; cancelar sin cambios | `test_revisar_muestra_borrado` | `test_corregir_mediciones.py` |
 | US1 Esc. 3–4, FR-005 — borrar: medición y resultado fuera, prueba Pendiente y ofrecida en la carga | `test_borrar_medicion`, `test_confirmar_borra_y_vuelve_a_ofrecerse` | `test_servicio_correccion.py`, `test_corregir_mediciones.py` |
 | US1 Esc. 5, FR-003 — prevalece el borrado (vacío o inválido) | `test_borrado_prevalece_sobre_el_valor` (parametrizado: vacío, `abc`, `9`) | `test_corregir_mediciones.py` |
 | US1 Esc. 6 — solo borrados cuenta como cambio | `test_solo_borrados_no_es_sin_cambios` | `test_corregir_mediciones.py` |
-| US2 Esc. 1, FR-006 — dependientes sin resultado y Pendiente | `test_borrar_deja_dependientes_pendientes` | `test_servicio_correccion.py` |
+| US2 Esc. 1, FR-006 — dependientes sin resultado y Pendiente; borrar y corregir referencias de la misma calculada | `test_borrar_deja_dependientes_pendientes`, `test_borrar_y_corregir_referencias_de_la_misma_calculada` | `test_servicio_correccion.py` |
 | US2 Esc. 2 — validadas: aviso y vuelven a Pendiente | `test_borrar_validada`, `test_revisar_avisa_validacion_por_borrado` | `test_servicio_correccion.py`, `test_corregir_mediciones.py` |
 | US2 Esc. 3, FR-007 — sin mediciones → Pendiente de análisis; vuelve a ofrecer agregar y quitar | `test_borrar_todo_vuelve_a_pendiente_de_analisis`, `test_detalle_tras_borrar_todo` | `test_servicio_correccion.py`, `test_corregir_mediciones.py` |
 | US2 Esc. 4 — Finalizado con mediciones restantes → En proceso | `test_borrar_en_finalizado_reabre` | `test_servicio_correccion.py` |
