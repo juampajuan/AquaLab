@@ -253,3 +253,12 @@ def test_comando_calcular_resultados(estudio_de, empleado):
     salida = io.StringIO()
     call_command("calcular_resultados", stdout=salida)
     assert salida.getvalue().strip() == "Resultados calculados: 0. Sin calcular: 0."
+
+
+def test_afectadas(estudio_de):
+    from estudios.calculo import afectadas, por_codigo
+
+    estudio = estudio_de("CA", "DUREZA-T", "MG", "PH")
+    todas = por_codigo(estudio)
+    assert afectadas(todas, {"CA"}) == {"CA", "MG"}
+    assert afectadas(todas, {"PH"}) == {"PH"}

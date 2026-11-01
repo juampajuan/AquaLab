@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Revisar correcciones · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:detalle' estudio.pk as url_detalle %}
+  {% with numero=estudio.pk|stringformat:"s" %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Estudio "|add:numero anterior_url=url_detalle miga="Corregir mediciones" titulo="Revisar correcciones" %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  {% with cambios=form.cambios %}
+    <div class="max-w-4xl">
+      <div class="aviso aviso-info mb-6" role="status">
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>{% if cambios|length == 1 %}Se corregirá 1 medición{% else %}Se corregirán {{ cambios|length }} mediciones{% endif %} en el estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}).</div>
+      </div>
+      {% if pierden_validacion %}
+        <div class="aviso aviso-advertencia mb-6" role="alert">
+          {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+          <div>Perderán la validación: {% for asignacion in pierden_validacion %}{{ asignacion.prueba.codigo }} · {{ asignacion.prueba.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}.</div>
+        </div>
+      {% endif %}
+      <div class="tarjeta overflow-hidden">
+        <dl class="resumen p-6" data-componente="resumen">
+          {% include "ui/dato.html" with etiqueta="Estudio" valor=estudio %}
+          {% with pi=estudio.muestra.numero_pi|stringformat:"s" %}
+            {% include "ui/dato.html" with etiqueta="Muestra" valor="PI "|add:pi %}
+          {% endwith %}
+        </dl>
+        <div class="overflow-x-auto border-t border-borde">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Prueba</th>
+                <th class="text-right">Valor anterior</th>
+                <th class="text-right">Valor nuevo</th>
+                <th>Unidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for asignacion, anterior, nuevo in cambios %}
+                <tr>
+                  <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
+                  <td>{{ asignacion.prueba.nombre }}</td>
+                  <td class="numeros text-right">{{ anterior }}</td>
+                  <td class="numeros text-right font-semibold">{{ nuevo }}</td>
+                  <td>{{ asignacion.prueba.unidad_medicion|unidad }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="mt-6 flex flex-wrap items-center gap-3" data-componente="acciones-confirmacion">
+        {# Evita el doble envío sin deshabilitar los botones: deshabilitados no envían la acción. #}
+        <form method="post" class="flex flex-wrap gap-3" onsubmit="if (this.dataset.enviado) return false; this.dataset.enviado = '1';">
+          {% csrf_token %}
+          {% for asignacion, field, original in form.filas %}
+            <input type="hidden" name="{{ field.html_name }}" value="{{ field.value }}">
+            <input type="hidden" name="{{ original.html_name }}" value="{{ original.value }}">
+          {% endfor %}
+          <button type="submit" name="accion" value="confirmar" class="btn btn-primario">
+            {% include "ui/icono.html" with nombre="check" clase="size-4" %} Guardar correcciones
+          </button>
+          <button type="submit" name="accion" value="editar" class="btn btn-secundario">
+            {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Volver a editar
+          </button>
+        </form>
+        <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-peligro sm:ml-auto">
+          {% include "ui/icono.html" with nombre="x" clase="size-4" %} Cancelar
+        </a>
+      </div>
+    </div>
+  {% endwith %}
+{% endblock %}

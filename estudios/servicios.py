@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 from django.db import IntegrityError, connection, transaction
 from django.db.models.deletion import ProtectedError
+from django.utils import timezone
 
 from muestras.models import Muestra
 from pruebas.models import Prueba
@@ -261,3 +262,69 @@ def recalcular_resultados(estudio_pk, asignacion_pks, usuario):
             pk__in=asignacion_pks
         )
         return calculo.recalcular(estudio, list(asignaciones))
+
+
+class CorregirMedicionesError(Exception):
+    pass
+
+
+@dataclass
+class ResultadoCorreccion:
+    corregidas: list = field(default_factory=list)
+    omitidas: list = field(default_factory=list)  # pares (prueba, motivo)
+    sin_calcular: list = field(default_factory=list)  # pares (prueba, motivo)
+
+
+def corregir_mediciones(estudio_pk, cambios, usuario):
+    """Corrige mediciones `{asignacion_pk: (original, nuevo)}` y recalcula sus resultados.
+
+    Una medición se corrige solo si todavía vale lo que se vio al abrir el formulario
+    (`original`); si no, se omite e informa. Todo ocurre en una transacción con el estudio
+    bloqueado, y el recálculo pasa por recalcular_resultados (US 6.2).
+    """
+    if not usuario.is_authenticated or not usuario.is_active:
+        raise CorregirMedicionesError("Se requiere una sesión activa.")
+    resultado = ResultadoCorreccion()
+    with transaction.atomic():
+        estudio = Estudio.objects.select_for_update().filter(pk=estudio_pk).first()
+        if estudio is None:
+            raise CorregirMedicionesError("El estudio no está disponible.")
+        if not estudio.admite_correcciones:
+            raise CorregirMedicionesError(
+                "El estudio ya tiene el informe emitido: sus mediciones y resultados no se "
+                "pueden cambiar."
+            )
+        mediciones = (
+            Medicion.objects.select_for_update(of=("self",))
+            .select_related("asignacion__prueba")
+            .filter(asignacion__estudio=estudio, asignacion__pk__in=cambios)
+            .order_by("asignacion__prueba__codigo", "pk")
+        )
+        for medicion in mediciones:
+            original, nuevo = cambios[medicion.asignacion_id]
+            vigente = str(medicion.valor_ingresado)
+            prueba = medicion.asignacion.prueba
+            if vigente == str(nuevo):
+                resultado.omitidas.append((prueba, "ya tenía ese valor"))
+                continue
+            if vigente != str(original):
+                resultado.omitidas.append((prueba, "cambió mientras se editaba"))
+                continue
+            medicion.valor = nuevo
+            medicion.decimales = max(0, -nuevo.as_tuple().exponent)
+            medicion.corregida_por = usuario
+            medicion.fecha_correccion = timezone.now()
+            medicion.save(update_fields=["valor", "decimales", "corregida_por", "fecha_correccion"])
+            resultado.corregidas.append(medicion)
+        if resultado.corregidas:
+            try:
+                resultado.sin_calcular = recalcular_resultados(
+                    estudio.pk, [m.asignacion_id for m in resultado.corregidas], usuario
+                )
+            except RecalculoError as exc:
+                raise CorregirMedicionesError(str(exc)) from exc
+            reabierto = estudio.pruebas_asignadas.exclude(estado=EstadoPruebaEstudio.COMPLETADA)
+            if estudio.estado == EstadoEstudio.FINALIZADO and reabierto.exists():
+                estudio.estado = EstadoEstudio.EN_PROCESO
+                estudio.save(update_fields=["estado"])
+    return resultado

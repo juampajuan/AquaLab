@@ -94,3 +94,34 @@ def test_cargas_concurrentes_calculan_una_vez(estudio_de, empleado):
     assert Resultado.objects.filter(asignacion=mg).count() == 1
     assert mg.resultado.valor == Decimal("24.3")
     assert mg.estado == EstadoPruebaEstudio.CARGADA
+
+
+def test_correcciones_concurrentes(estudio_de, empleado):
+    from estudios.models import Medicion
+    from estudios.servicios import corregir_mediciones
+    from estudios.tests.utiles import asignacion_de, cargar
+
+    estudio = estudio_de("CA", "DUREZA-T", "MG")
+    cargar(estudio, empleado, CA="80", DUREZA_T="15")
+    ca = asignacion_de(estudio, "CA")
+    barrera = threading.Barrier(2)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futuros = [
+            pool.submit(
+                en_hilo,
+                corregir_mediciones,
+                empleado.pk,
+                barrera,
+                estudio.pk,
+                {ca.pk: (Decimal("80"), Decimal(valor))},
+            )
+            for valor in ("50", "60")
+        ]
+        resultados = [f.result(timeout=15) for f in futuros]
+    final = Medicion.objects.get(asignacion=ca).valor
+    assert final in (Decimal("50"), Decimal("60"))
+    assert sorted(len(r.corregidas) for r in resultados) == [0, 1]
+    omitida = next(r for r in resultados if not r.corregidas)
+    assert [(p.codigo, m) for p, m in omitida.omitidas] == [("CA", "cambió mientras se editaba")]
+    mg = asignacion_de(estudio, "MG")
+    assert mg.resultado.valor == (Decimal("300") - final * Decimal("2.5")) * Decimal("0.243")

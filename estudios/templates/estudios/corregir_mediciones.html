@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Corregir mediciones · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'estudios:detalle' estudio.pk as url_detalle %}
+  {% with numero=estudio.pk|stringformat:"s" %}
+    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Estudio "|add:numero anterior_url=url_detalle miga="Corregir mediciones" titulo="Corregir mediciones" %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-5xl">
+    {% if not form.asignaciones %}
+      <div class="tarjeta">
+        {% url 'estudios:detalle' estudio.pk as url_detalle %}
+        {% include "ui/estado_vacio.html" with mensaje="Este estudio no tiene mediciones para corregir." accion_texto="Volver al estudio" accion_url=url_detalle %}
+      </div>
+    {% else %}
+      <div class="aviso aviso-info mb-6" role="status">
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>Cambiá el valor de las mediciones con errores del estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}). Los resultados se recalculan al guardar.</div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "ui/errores_form.html" %}
+        <div class="tarjeta overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Prueba</th>
+                  <th>Unidad</th>
+                  <th>Cargada por</th>
+                  <th>Medición</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for asignacion, field, original in form.filas %}
+                  {% with medicion=asignacion.medicion %}
+                    <tr>
+                      <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
+                      <td><label for="{{ field.id_for_label }}">{{ asignacion.prueba.nombre }}</label></td>
+                      <td>{{ asignacion.prueba.unidad_medicion|unidad }}</td>
+                      <td class="text-xs text-tinta-suave">
+                        {{ medicion.cargada_por.get_full_name|default:medicion.cargada_por.email }} · {{ medicion.fecha_carga|date:"d/m/Y H:i" }}
+                        {% if medicion.corregida_por %}
+                          <span class="block">Corregida por {{ medicion.corregida_por.get_full_name|default:medicion.corregida_por.email }} · {{ medicion.fecha_correccion|date:"d/m/Y H:i" }}</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {{ field }}{{ original }}
+                        {% if field.errors %}
+                          <div class="campo-error" id="{{ field.auto_id }}_error">
+                            {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
+                          </div>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endwith %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <button type="submit" name="accion" value="revisar" class="btn btn-primario">
+            {% include "ui/icono.html" with nombre="eye" clase="size-4" %} Revisar cambios
+          </button>
+          <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-secundario">Cancelar</a>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

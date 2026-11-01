@@ -152,6 +152,15 @@ class Medicion(models.Model):
         editable=False,
     )
     fecha_carga = models.DateTimeField("fecha de carga", auto_now_add=True)
+    corregida_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="mediciones_corregidas",
+        editable=False,
+    )
+    fecha_correccion = models.DateTimeField("fecha de corrección", null=True, blank=True)
 
     class Meta:
         verbose_name = "medición"
@@ -159,6 +168,11 @@ class Medicion(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=Q(decimales__lte=6), name="medicion_decimales_validos"
+            ),
+            models.CheckConstraint(
+                condition=Q(corregida_por__isnull=True, fecha_correccion__isnull=True)
+                | Q(corregida_por__isnull=False, fecha_correccion__isnull=False),
+                name="medicion_correccion_completa",
             ),
         ]
 

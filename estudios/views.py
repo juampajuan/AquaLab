@@ -17,11 +17,13 @@ from .forms import (
     AgregarPruebaForm,
     BuscarEstudioForm,
     CargarMedicionesForm,
+    CorregirMedicionesForm,
     CrearEstudioForm,
 )
 from .models import EstadoPruebaEstudio, Estudio
 from .servicios import (
     CargarMedicionesError,
+    CorregirMedicionesError,
     CrearEstudioError,
     GestionPruebasError,
     PruebaYaAsignada,
@@ -185,7 +187,7 @@ def detalle(request, pk):
     )
     pruebas_asignadas = list(
         estudio.pruebas_asignadas.select_related(
-            "prueba", "medicion", "medicion__cargada_por", "resultado"
+            "prueba", "medicion", "medicion__cargada_por", "medicion__corregida_por", "resultado"
         ).order_by("prueba__codigo", "pk")
     )
     todas = {a.prueba.codigo: a for a in pruebas_asignadas}
@@ -209,6 +211,7 @@ def detalle(request, pk):
             "pruebas_completadas": pruebas_completadas,
             "pruebas_cargadas": pruebas_cargadas,
             "pruebas_pendientes": pruebas_pendientes,
+            "hay_mediciones": any(calculo.tiene_medicion(a) for a in pruebas_asignadas),
             "pruebas_para_medir": sum(
                 1
                 for a in pruebas_asignadas
@@ -352,5 +355,62 @@ def cargar_mediciones(request, pk):
             messages.warning(
                 request,
                 f"{quitadas} prueba(s) ya no forman parte del estudio; su medición no se guardó.",
+            )
+    return redirect("estudios:detalle", pk=estudio.pk)
+
+
+INFORME_EMITIDO = (
+    "El estudio ya tiene el informe emitido: sus mediciones y resultados no se pueden cambiar."
+)
+
+
+def mensaje_corregidas(estudio, corregidas):
+    codigos = ", ".join(m.asignacion.prueba.codigo for m in corregidas)
+    if len(corregidas) == 1:
+        return f"Se corrigió 1 medición del estudio {estudio.pk}: {codigos}."
+    return f"Se corrigieron {len(corregidas)} mediciones del estudio {estudio.pk}: {codigos}."
+
+
+def corregir_mediciones(request, pk):
+    estudio = get_object_or_404(Estudio.objects.select_related("muestra"), pk=pk)
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    if accion != "confirmar" and not estudio.admite_correcciones:
+        # Al confirmar, la regla la revalida el servicio con el estudio bloqueado.
+        messages.error(request, INFORME_EMITIDO)
+        return redirect("estudios:detalle", pk=estudio.pk)
+    if request.method == "POST" and accion not in ("revisar", "editar", "confirmar"):
+        messages.error(request, "La acción no es válida.")
+        return redirect("estudios:detalle", pk=estudio.pk)
+    asignaciones = (
+        estudio.pruebas_asignadas.filter(medicion__isnull=False)
+        .select_related("prueba", "medicion", "medicion__cargada_por", "medicion__corregida_por")
+        .order_by("prueba__codigo", "pk")
+    )
+    form = CorregirMedicionesForm(request.POST or None, asignaciones=asignaciones)
+    contexto = {"estudio": estudio, "form": form}
+    if accion in (None, "editar") or not form.is_valid():
+        return render(request, "estudios/corregir_mediciones.html", contexto)
+    if accion == "revisar":
+        todas = calculo.por_codigo(estudio)
+        codigos = calculo.afectadas(todas, {a.prueba.codigo for a, _, _ in form.cambios()})
+        contexto["pierden_validacion"] = [
+            todas[c] for c in sorted(codigos) if todas[c].estado == EstadoPruebaEstudio.COMPLETADA
+        ]
+        return render(request, "estudios/corregir_mediciones_confirmar.html", contexto)
+    cambios = {a.pk: (anterior, nuevo) for a, anterior, nuevo in form.cambios()}
+    try:
+        resultado = servicios.corregir_mediciones(estudio.pk, cambios, request.user)
+    except CorregirMedicionesError as exc:
+        messages.error(request, str(exc))
+    except DatabaseError:
+        messages.error(request, "No se pudieron guardar las correcciones. Intentá nuevamente.")
+    else:
+        if resultado.corregidas:
+            messages.success(request, mensaje_corregidas(estudio, resultado.corregidas))
+        for prueba, motivo in resultado.omitidas:
+            messages.warning(request, f"{prueba.codigo}: {motivo}.")
+        for prueba, motivo in resultado.sin_calcular:
+            messages.warning(
+                request, f"{prueba.codigo}: no se pudo calcular el resultado ({motivo})."
             )
     return redirect("estudios:detalle", pk=estudio.pk)
