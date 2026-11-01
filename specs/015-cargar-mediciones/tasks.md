@@ -197,7 +197,7 @@ prueba tiene como máximo una medición.
 
 - [X] T030 [P] Ejecutar `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`, y corregir lo que aparezca (principios III y VI).
 - [X] T031 Ejecutar la suite completa `docker compose exec web pytest` y confirmar todo en verde.
-- [ ] T032 Recorrer los pasos 1 a 7 de `specs/015-cargar-mediciones/quickstart.md` y cronometrar la carga de un estudio de 10 pruebas: menos de 3 minutos con una sola confirmación (SC-001).
+- [X] T032 Recorrer los pasos 1 a 7 de `specs/015-cargar-mediciones/quickstart.md` y cronometrar la carga de un estudio de 10 pruebas: menos de 3 minutos con una sola confirmación (SC-001).
 - [X] T033 [P] En `CLAUDE.md`: agregar la sección «Carga de mediciones (US 6.1)» con lo no obvio: `Medicion` es uno a uno con `PruebaEstudio` (`PROTECT`); el valor se guarda en `numeric(18, 6)` y los decimales escritos aparte, y se muestra siempre con `valor_ingresado`; `leer_valor` (`estudios/mediciones.py`) es la única lectura del texto; `cargar_mediciones` bloquea el estudio (mismo orden que `quitar_prueba`), omite e informa en vez de fallar, y pasa el estudio a "En proceso" con la primera medición; `Estudio.admite_mediciones` es la regla de carga; al confirmar, el formulario usa todas las asignaciones no calculadas para informar las ya cargadas. Reescribir la nota **Epic 6** de «Pruebas de un estudio» dejando solo lo pendiente (pasar a `Completada` en US 6.4; las mediciones se modifican en US 6.3 actualizando la misma fila) y la nota **Epic 6** del catálogo sin cambios. No tocar el pendiente del envío de informes.
 
 ---
