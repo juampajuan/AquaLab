@@ -326,3 +326,36 @@ def test_confirmar_prueba_quitada_se_informa(
         "1 prueba(s) ya no forman parte del estudio; su medición no se guardó.",
     ]
     assert [m.asignacion.prueba.codigo for m in Medicion.objects.all()] == ["TEST-PH"]
+
+
+def test_detalle_muestra_resultado(cliente_http, estudio_de):
+    from estudios.tests.utiles import asignacion_de
+
+    estudio = estudio_de("PH", "CL-", "NA")
+    datos = {"accion": "confirmar"}
+    for codigo, texto in (("PH", "7,20"), ("CL-", "2,35"), ("NA", "0,5")):
+        datos[campo(asignacion_de(estudio, codigo))] = texto
+    cliente_http.post(url_cargar(estudio), datos)
+    html = cliente_http.get(url_detalle(estudio)).content.decode()
+    assert "Resultado" in html
+    assert "7,2 UpH" in html
+    assert "7,20 UpH" in html
+    assert "23,5 mg/l" in html
+    assert "Fórmula: x*10" in html
+    assert "0,5 Sin unidad" in html
+    assert "--" not in html.split("<tbody>")[1]
+
+
+def test_mensaje_carga_advierte_falla_de_calculo(cliente_http, estudio_de, pruebas_division):
+    from estudios.tests.utiles import asignacion_de
+
+    estudio = estudio_de("DIV-A", "DIV-B", "DIV", "CA", "MG")
+    datos = {"accion": "confirmar"}
+    for codigo, texto in (("DIV-A", "5"), ("DIV-B", "0"), ("CA", "80")):
+        datos[campo(asignacion_de(estudio, codigo))] = texto
+    avisos = mensajes(cliente_http.post(url_cargar(estudio), datos))
+    assert "DIV: no se pudo calcular el resultado (división por cero)." in avisos
+    assert not any(a.startswith("MG") for a in avisos)
+    html = cliente_http.get(url_detalle(estudio)).content.decode()
+    assert "No se pudo calcular: división por cero." in html
+    assert "No forma parte del estudio: DUREZA-T · Dureza Total." in html

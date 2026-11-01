@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block title %}Revisar mediciones · AquaLab{% endblock %}
 
 {% block encabezado %}
@@ -38,7 +39,7 @@
                   <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
                   <td>{{ asignacion.prueba.nombre }}</td>
                   <td class="numeros text-right">{{ texto }}</td>
-                  <td>{{ asignacion.prueba.unidad_medicion|default:"Sin unidad" }}</td>
+                  <td>{{ asignacion.prueba.unidad_medicion|unidad }}</td>
                 </tr>
               {% endfor %}
             </tbody>

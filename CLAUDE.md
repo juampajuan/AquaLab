@@ -69,9 +69,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   lo detecta con `AgregarPruebaForm.prueba_ya_asignada()` y el servicio lo informa como aviso.
 - Las pruebas agregadas nacen en estado Pendiente. Quitar borra la asignación (sin historial) y
   solo se permite si `PruebaEstudio.puede_quitarse()`, es decir, estado Pendiente.
-- **Epic 6 (resultados):** pasar la prueba a `Completada` al validar resultados (US 6.4), con el
-  estudio y la asignación bloqueados como en `cargar_mediciones`, y referenciar `PruebaEstudio`
-  con `on_delete=PROTECT`.
+- **Epic 6 (validación, US 6.4):** pasar la prueba a `Completada` al validar su resultado, con el
+  estudio bloqueado como en `cargar_mediciones`, y referenciar `PruebaEstudio` con `PROTECT`.
 - `motivo_para_no_quitar` es la única fuente de las reglas de quita: la usan la vista (GET) y el
   servicio. `.btn-chico` es el botón para filas de tablas.
 
@@ -93,6 +92,25 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - La confirmación evita el doble envío con `data-enviado`, sin deshabilitar los botones: un botón
   deshabilitado no envía su `accion`.
 
+## Cálculo de resultados (US 6.2)
+
+- `pruebas/formulas.py` es la única forma de evaluar fórmulas: un analizador propio con `Decimal`
+  (nunca `eval`, `ast` ni `float`) que acepta solo la gramática del catálogo. `Prueba.clean()` lo
+  usa para validar fórmulas en el admin y en la importación.
+- `Resultado` es uno a uno con `PruebaEstudio` (`PROTECT`), con 10 decimales y la unidad y la
+  fórmula usadas (un cambio del catálogo no lo recalcula). Mostrarlo con `valor_mostrado` (hasta 4
+  decimales) y las unidades con el filtro `|unidad` (`--` o vacío → «Sin unidad»).
+- `calculo.recalcular(estudio, asignaciones)` exige el estudio bloqueado por el llamador y solo
+  toca las cambiadas y sus dependientes, en orden de dependencia. El motivo de una prueba sin
+  resultado no se guarda: lo da `calculo.motivo_sin_resultado`.
+- Un recálculo deja el resultado en `Cargada` aunque estuviera `Completada` (excepción al
+  principio IV, justificada en specs/016-calcular-resultado/plan.md). Con informe emitido
+  (`Estudio.admite_correcciones`) no se cambia nada.
+- **US 6.3:** actualizar la fila de `Medicion` y llamar a `servicios.recalcular_resultados` en la
+  misma transacción; si lo rechaza por el informe, se deshace también la medición.
+- `python manage.py calcular_resultados` completa los resultados de mediciones sin resultado
+  (las cargadas antes de US 6.2); es idempotente.
+
 ## Catálogo de pruebas (SCRUM-64)
 
 - `python manage.py importar_catalogo_pruebas` carga `pruebas/datos/catalogo_pruebas_agua.csv` y
@@ -102,7 +120,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Si una prueba en uso trae otro nombre en el archivo, conserva el guardado y lo informa como aviso.
 - `Prueba.esta_en_uso()` (asignada a un tipo de estudio o a un estudio) es la regla de uso: el admin
   deja código y nombre de solo lectura y no permite borrarla; la importación no le cambia el nombre.
-- Límites y fórmulas son texto sin evaluar (`x` = valor medido, `{CODIGO}` = otra prueba);
-  `referencias_formula` es la única forma de leer las referencias.
-- **Epic 6:** convertir los límites a número y evaluar las fórmulas. Las 17 pruebas sin tipo en el
+- Los límites son texto sin evaluar; las fórmulas (`x` = valor medido, `{CODIGO}` = otra prueba)
+  se evalúan con `pruebas/formulas.py` (US 6.2). `referencias_formula` es la única forma de leer
+  las referencias.
+- **US 6.4:** convertir los límites a número para comparar resultados. Las 17 pruebas sin tipo en el
   sistema original quedaron DIRECTO y siguen a confirmar con el laboratorio (columna `observacion`).

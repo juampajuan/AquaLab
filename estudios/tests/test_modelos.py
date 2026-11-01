@@ -193,3 +193,90 @@ def test_asignacion_con_medicion_protegida(asignacion, empleado):
 def test_admite_mediciones_por_estado(estudio, estado, admite):
     estudio.estado = estado
     assert estudio.admite_mediciones is admite
+
+
+def crear_resultado(asignacion, valor="23.5"):
+    from decimal import Decimal
+
+    from estudios.models import Resultado
+
+    return Resultado.objects.create(
+        asignacion=asignacion, valor=Decimal(valor), unidad="mg/l", formula="x*10"
+    )
+
+
+@pytest.mark.parametrize(
+    "valor,esperado",
+    [
+        ("23.5", "23.5"),
+        ("0.00412", "0.0041"),
+        ("1234.5", "1234.5"),
+        ("1.17085", "1.1709"),
+        ("0", "0"),
+        ("-0.00001", "0"),
+        ("-2.5", "-2.5"),
+        ("80", "80"),
+        ("6000", "6000"),
+        ("300.0000000000", "300"),
+    ],
+)
+def test_valor_mostrado(asignacion, valor, esperado):
+    from decimal import Decimal
+
+    from estudios.models import Resultado
+
+    crear_resultado(asignacion, valor)
+    mostrado = Resultado.objects.get(asignacion=asignacion).valor_mostrado
+    assert mostrado == Decimal(esperado)
+    assert str(mostrado) == esperado
+
+
+def test_valor_mostrado_entero_sin_exponente(asignacion):
+    from django.utils.formats import localize
+
+    from estudios.models import Resultado
+
+    crear_resultado(asignacion, "1000")
+    assert localize(Resultado.objects.get(asignacion=asignacion).valor_mostrado) == "1000"
+
+
+def test_un_resultado_por_asignacion(asignacion):
+    crear_resultado(asignacion)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        crear_resultado(asignacion, "1")
+
+
+def test_asignacion_con_resultado_protegida(asignacion):
+    crear_resultado(asignacion)
+    with pytest.raises(ProtectedError), transaction.atomic():
+        asignacion.delete()
+
+
+@pytest.mark.parametrize(
+    "estado,admite",
+    [
+        ("pendiente_analisis", True),
+        ("en_proceso", True),
+        ("finalizado", True),
+        ("informe_generado", False),
+    ],
+)
+def test_admite_correcciones_por_estado(estudio, estado, admite):
+    estudio.estado = estado
+    assert estudio.admite_correcciones is admite
+
+
+@pytest.mark.parametrize(
+    "texto,esperado",
+    [
+        ("mg/l", "mg/l"),
+        ("", "Sin unidad"),
+        ("--", "Sin unidad"),
+        (" -- ", "Sin unidad"),
+        (None, "Sin unidad"),
+    ],
+)
+def test_filtro_unidad(texto, esperado):
+    from config.ui import unidad
+
+    assert unidad(texto) == esperado

@@ -36,3 +36,10 @@ def iniciales(texto):
     importantes = [p for p in palabras if p[0].isupper()]
     elegidas = importantes if len(importantes) >= 2 else palabras
     return "".join(p[0] for p in elegidas[:2]).upper()
+
+
+@register.filter
+def unidad(texto):
+    """Unidad de una medición o resultado; el catálogo escribe «--» cuando no tiene."""
+    texto = (texto or "").strip()
+    return "Sin unidad" if texto in ("", "--") else texto

@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 
+from .formulas import FormulaInvalida, validar_formula
+
 REFERENCIA = re.compile(r"\{([^{}]+)\}")
 
 
@@ -93,6 +95,11 @@ class Prueba(models.Model):
             raise ValidationError({"formula": "Una prueba de tipo Directo no lleva fórmula."})
         if self.tipo_calculo == TipoCalculo.FORMULA and not self.formula:
             raise ValidationError({"formula": "Una prueba de tipo Fórmula necesita una fórmula."})
+        if self.formula:
+            try:
+                validar_formula(self.formula)
+            except FormulaInvalida as exc:
+                raise ValidationError({"formula": exc.messages}) from exc
         referencias = referencias_formula(self.formula)
         if self.codigo in referencias:
             raise ValidationError({"formula": "La prueba no puede referenciarse a sí misma."})

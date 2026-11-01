@@ -86,11 +86,17 @@ def test_cargar_mediciones_guarda_valor_unidad_usuario_y_fecha(
 @pytest.mark.django_db
 def test_carga_parcial_deja_pendientes(estudio_mediciones, asignaciones_medicion, empleado):
     cargar_mediciones(estudio_mediciones.pk, valores(asignaciones_medicion, TEST_PH="7"), empleado)
-    for codigo in ("TEST-VOL", "TEST-SIN", "TEST-CALC"):
+    for codigo in ("TEST-VOL", "TEST-SIN"):
         asignacion = asignaciones_medicion[codigo]
         asignacion.refresh_from_db()
         assert asignacion.estado == EstadoPruebaEstudio.PENDIENTE
         assert not Medicion.objects.filter(asignacion=asignacion).exists()
+    # La calculada no recibe medición; desde US 6.2 obtiene su resultado ({TEST-PH} * 2).
+    calculada = asignaciones_medicion["TEST-CALC"]
+    calculada.refresh_from_db()
+    assert not Medicion.objects.filter(asignacion=calculada).exists()
+    assert calculada.estado == EstadoPruebaEstudio.CARGADA
+    assert calculada.resultado.valor == Decimal("14")
 
 
 @pytest.mark.django_db

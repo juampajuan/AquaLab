@@ -7,6 +7,7 @@ from django.db.models.deletion import ProtectedError
 from muestras.models import Muestra
 from pruebas.models import Prueba
 
+from . import calculo
 from .catalogo import CatalogoNoDisponible, configuracion_bloqueada
 from .models import (
     EstadoEstudio,
@@ -178,6 +179,7 @@ class CargarMedicionesError(Exception):
 class ResultadoCarga:
     guardadas: list = field(default_factory=list)
     omitidas: list = field(default_factory=list)  # pares (prueba, motivo)
+    sin_calcular: list = field(default_factory=list)  # pares (prueba, motivo)
 
 
 def cargar_mediciones(estudio_pk, valores, usuario):
@@ -224,7 +226,38 @@ def cargar_mediciones(estudio_pk, valores, usuario):
             )
             asignacion.estado = EstadoPruebaEstudio.CARGADA
             asignacion.save(update_fields=["estado"])
+        if resultado.guardadas:
+            resultado.sin_calcular = calculo.recalcular(
+                estudio, [m.asignacion for m in resultado.guardadas]
+            )
         if resultado.guardadas and estudio.estado == EstadoEstudio.PENDIENTE_ANALISIS:
             estudio.estado = EstadoEstudio.EN_PROCESO
             estudio.save(update_fields=["estado"])
     return resultado
+
+
+class RecalculoError(Exception):
+    pass
+
+
+def recalcular_resultados(estudio_pk, asignacion_pks, usuario):
+    """Recalcula los resultados de esas asignaciones y de las calculadas que dependen de ellas.
+
+    US 6.3 lo llama en la misma transacción en que actualiza la medición: si se rechaza porque
+    el informe ya se emitió, también se deshace el cambio de la medición.
+    """
+    if not usuario.is_authenticated or not usuario.is_active:
+        raise RecalculoError("Se requiere una sesión activa.")
+    with transaction.atomic():
+        estudio = Estudio.objects.select_for_update().filter(pk=estudio_pk).first()
+        if estudio is None:
+            raise RecalculoError("El estudio no está disponible.")
+        if not estudio.admite_correcciones:
+            raise RecalculoError(
+                "El estudio ya tiene el informe emitido: sus mediciones y resultados no se "
+                "pueden cambiar."
+            )
+        asignaciones = estudio.pruebas_asignadas.select_related("prueba").filter(
+            pk__in=asignacion_pks
+        )
+        return calculo.recalcular(estudio, list(asignaciones))
