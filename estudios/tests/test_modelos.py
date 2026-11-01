@@ -280,3 +280,17 @@ def test_filtro_unidad(texto, esperado):
     from config.ui import unidad
 
     assert unidad(texto) == esperado
+
+
+def test_medicion_correccion_completa(asignacion, empleado):
+    from django.utils import timezone
+
+    from estudios.models import Medicion
+
+    medicion = crear_medicion(asignacion, empleado)
+    for cambios in ({"corregida_por": empleado}, {"fecha_correccion": timezone.now()}):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Medicion.objects.filter(pk=medicion.pk).update(**cambios)
+    Medicion.objects.filter(pk=medicion.pk).update(
+        corregida_por=empleado, fecha_correccion=timezone.now()
+    )

@@ -68,6 +68,19 @@ def dependientes(todas):
     return grafo
 
 
+def afectadas(todas, codigos):
+    """Los códigos dados y las pruebas del estudio que dependen de ellos, directa o
+    indirectamente: lo que cambia si cambian esas mediciones."""
+    grafo = dependientes(todas)
+    resultado, por_revisar = set(), list(codigos)
+    while por_revisar:
+        codigo = por_revisar.pop()
+        if codigo not in resultado:
+            resultado.add(codigo)
+            por_revisar.extend(grafo[codigo])
+    return resultado
+
+
 def en_orden(codigos, todas):
     """Orden topológico (Kahn) de `codigos`; devuelve también los que quedan en un ciclo."""
     pendientes = {c: referencias_formula(todas[c].prueba.formula) & codigos for c in codigos}
@@ -107,15 +120,8 @@ def recalcular(estudio, asignaciones):
     resultados no se informan.
     """
     todas = por_codigo(estudio)
-    grafo = dependientes(todas)
-    afectadas, por_revisar = set(), [a.prueba.codigo for a in asignaciones]
-    while por_revisar:
-        codigo = por_revisar.pop()
-        if codigo not in afectadas:
-            afectadas.add(codigo)
-            por_revisar.extend(grafo[codigo])
     valores = {c: a.resultado.valor for c, a in todas.items() if tiene_resultado(a)}
-    orden, ciclo = en_orden(afectadas, todas)
+    orden, ciclo = en_orden(afectadas(todas, {a.prueba.codigo for a in asignaciones}), todas)
     fallas = []
     for codigo in orden + ciclo:
         asignacion = todas[codigo]

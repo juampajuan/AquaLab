@@ -121,6 +121,87 @@ class CargarMedicionesForm(forms.Form):
         ]
 
 
+class CorregirMedicionesForm(forms.Form):
+    """Por cada prueba con medición, `medicion_<pk>` (el valor corregido, precargado) y
+    `original_<pk>` (el valor que se vio al abrir, para detectar cambios ajenos)."""
+
+    def __init__(self, *args, asignaciones, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.asignaciones = list(asignaciones)
+        self._nuevos, self._originales = {}, {}
+        for asignacion in self.asignaciones:
+            vigente = str(asignacion.medicion.valor_ingresado)
+            campo = forms.CharField(
+                max_length=40,
+                label=str(asignacion.prueba),
+                initial=vigente.replace(".", ","),
+                error_messages={"required": "La medición no puede quedar vacía."},
+            )
+            campo.widget.attrs.update(
+                {"inputmode": "decimal", "autocomplete": "off", "class": "form-control"}
+            )
+            self.fields[self.nombre(asignacion)] = campo
+            self.fields[self.original(asignacion)] = forms.CharField(
+                widget=forms.HiddenInput, initial=vigente
+            )
+
+    @staticmethod
+    def nombre(asignacion):
+        return f"medicion_{asignacion.pk}"
+
+    @staticmethod
+    def original(asignacion):
+        return f"original_{asignacion.pk}"
+
+    def clean(self):
+        datos = super().clean()
+        self._nuevos, self._originales = {}, {}
+        for asignacion in self.asignaciones:
+            nombre = self.nombre(asignacion)
+            try:
+                self._originales[asignacion.pk] = leer_valor(datos.get(self.original(asignacion)))
+            except forms.ValidationError:
+                self._originales[asignacion.pk] = None
+            if self._originales[asignacion.pk] is None:
+                raise forms.ValidationError(
+                    "La solicitud no es válida. Volvé a abrir la corrección."
+                )
+            if nombre not in datos:
+                continue
+            try:
+                self._nuevos[asignacion.pk] = leer_valor(datos[nombre])
+            except forms.ValidationError as exc:
+                self.add_error(nombre, exc)
+        if not self.errors and not self.cambios():
+            raise forms.ValidationError("No hay cambios para guardar.")
+        return datos
+
+    def full_clean(self):
+        super().full_clean()
+        for asignacion in self.asignaciones:
+            nombre = self.nombre(asignacion)
+            if nombre in self.errors:
+                attrs = self.fields[nombre].widget.attrs
+                attrs["class"] += " is-invalid"
+                attrs["aria-describedby"] = f"{self[nombre].auto_id}_error"
+
+    def filas(self):
+        return [(a, self[self.nombre(a)], self[self.original(a)]) for a in self.asignaciones]
+
+    def originales(self):
+        return dict(self._originales)
+
+    def cambios(self):
+        """`(asignacion, anterior, nuevo)` de las filas cuyo valor escrito difiere del que se vio
+        al abrir (con sus decimales: 7,2 ≠ 7,20). Nunca se compara con la base: si otro empleado
+        la cambió mientras tanto, el servicio lo detecta e informa."""
+        return [
+            (a, self._originales[a.pk], self._nuevos[a.pk])
+            for a in self.asignaciones
+            if a.pk in self._nuevos and str(self._nuevos[a.pk]) != str(self._originales[a.pk])
+        ]
+
+
 class BuscarEstudioForm(forms.Form):
     """Texto de búsqueda de estudios (por GET): identificador, muestra, cliente o tipo."""
 

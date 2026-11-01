@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-01
 
-**Status**: Draft
+**Status**: Aprobada (2026-11-01)
 
 **Input**: User description: "US 6.3 (Jira SCRUM-55) – Modificar las mediciones. Como empleado del laboratorio quiero visualizar y modificar los datos de las mediciones para corregir errores de carga antes de la finalización del estudio. Criterios de aceptación: (1) Se deben mostrar los valores cargados previamente para su revisión. (2) Se deben poder editar las mediciones mientras el estudio no esté finalizado. (3) Al modificar un valor, el sistema debe recalcular el resultado automáticamente. (4) Los nuevos valores deben reemplazar a los anteriores y revalidarse. Aclaración del usuario: «estudio finalizado» en esta historia significa que se emitió el informe (estado Informe generado); hasta entonces las mediciones se pueden corregir, también en un estudio en estado Finalizado. Acuerdo con US 6.2 (SCRUM-54, PR #29): el recálculo lo provee la 6.2; esta historia agrega la pantalla y la actualización de la medición, y un resultado validado que se recalcula pierde la validación y vuelve a Cargada para revalidarse."
 

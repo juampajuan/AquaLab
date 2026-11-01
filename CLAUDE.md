@@ -77,7 +77,7 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 ## Carga de mediciones (US 6.1)
 
 - `Medicion` es uno a uno con `PruebaEstudio` (`PROTECT`): una medición por prueba del estudio.
-  US 6.3 (modificar) debe actualizar esa fila, no crear otra.
+  Corregirla (US 6.3) actualiza esa fila; nunca se crea otra.
 - El valor va en `numeric(18, 6)` y los decimales escritos en `decimales`; mostrarlo siempre con
   `Medicion.valor_ingresado` (conserva "7,20"). `leer_valor` (`estudios/mediciones.py`) es la única
   lectura del texto: coma o punto, sin miles ni notación científica, hasta 12 enteros y 6 decimales.
@@ -106,10 +106,22 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Un recálculo deja el resultado en `Cargada` aunque estuviera `Completada` (excepción al
   principio IV, justificada en specs/016-calcular-resultado/plan.md). Con informe emitido
   (`Estudio.admite_correcciones`) no se cambia nada.
-- **US 6.3:** actualizar la fila de `Medicion` y llamar a `servicios.recalcular_resultados` en la
-  misma transacción; si lo rechaza por el informe, se deshace también la medición.
 - `python manage.py calcular_resultados` completa los resultados de mediciones sin resultado
   (las cargadas antes de US 6.2); es idempotente.
+
+## Corrección de mediciones (US 6.3)
+
+- `servicios.corregir_mediciones` actualiza la misma fila de `Medicion` (`corregida_por`,
+  `fecha_correccion`; sin historial de valores) y recalcula con `recalcular_resultados` en la misma
+  transacción: si el recálculo se rechaza, también se deshace la corrección. Un estudio Finalizado
+  al que le queda alguna prueba sin validar vuelve a En proceso.
+- Concurrencia optimista: el formulario lleva `original_<pk>` (el valor que se vio al abrir).
+  Bajo el bloqueo del estudio, si el vigente ya es el nuevo se omite con «ya tenía ese valor» y si
+  difiere del original, con «cambió mientras se editaba». `CorregirMedicionesForm.cambios()`
+  compara con el original, nunca con la base.
+- `calculo.afectadas` es la única definición de pruebas afectadas por un cambio: la usan el aviso
+  «Perderán la validación» y el recálculo.
+- Borrar mediciones es US 6.5 (SCRUM-72), en su propia spec.
 
 ## Catálogo de pruebas (SCRUM-64)
 
