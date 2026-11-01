@@ -57,7 +57,7 @@ Decisiones en [research.md](./research.md) (R1–R9). No hay `NEEDS CLARIFICATIO
 
 | Principio | Cumplimiento | Estado |
 |---|---|---|
-| **I. Spec primero (SDD)** | Spec de US 7.2 con 12 aclaraciones (2026-11-01). PR: «US 7.2 – Generar informe». El código espera la aprobación de la spec. Clave de Jira a confirmar. | ✅ |
+| **I. Spec primero (SDD)** | Spec de US 7.2 con 12 aclaraciones (2026-11-01), aprobada por el equipo el 2026-11-01 a las 18:40. PR: «US 7.2 – Generar informe». Clave de Jira a confirmar. | ✅ |
 | **II. Simplicidad y Django idiomático** | App `informes` prevista en la constitution; `JSONField`, permisos y grupos de Django; un armado y un template para vista previa y emitido; sin JS ni dependencias; datos institucionales en settings (YAGNI). | ✅ |
 | **III. Tests obligatorios** | Cada escenario y FR con test (ver [Mapa de tests](#mapa-de-tests)); «< LD» y la regla ajustada con casos conocidos del catálogo. | ✅ |
 | **IV. Integridad de datos** | Informe emitido inmodificable (sin pantalla ni admin que lo edite) y con copia de los datos; valores como texto exacto de `Decimal`; número sin huecos; un informe por estudio; con informe emitido no se corrigen mediciones (US 6.3). | ✅ |
@@ -94,7 +94,7 @@ modelo y contenido en [data-model.md](./data-model.md).
 | FR-003/004/005 — armado: laboratorio, cliente, muestra, estudio, pruebas; «< LD»; A/P; evaluación de la validación vigente; vacíos | `test_armar_contenido_*` | `informes/tests/test_contenido.py` |
 | US1 Esc. 1–5, FR-001/002 — vista previa con todos los datos y «BORRADOR», sin cambios | `test_vista_previa_muestra_documento`, `test_vista_previa_no_cambia_nada` | `informes/tests/test_vista_previa.py` |
 | US1 Esc. 6 — no listo o ya informado → 302 con motivo | `test_vista_previa_rechaza_no_listo` (parametrizado) | `informes/tests/test_vista_previa.py` |
-| FR-007, US3 Esc. 2 — «Emitir» solo con permiso; sin permiso 403 y servicio rechaza | `test_emitir_solo_con_permiso`, `test_sin_permiso_403` | `informes/tests/test_emitir.py` |
+| FR-007, US3 Esc. 2 — «Emitir» solo con permiso; sin permiso 403 y servicio rechaza | `test_vista_previa_emitir_solo_con_permiso`, `test_sin_permiso_403`, `test_sin_permiso_no_emite` | `informes/tests/test_vista_previa.py`, `test_emitir.py`, `test_permisos.py` |
 | US2 Esc. 1–2, FR-009/011/013 — emite, número, quién, cuándo, estado, redirige y muestra | `test_emitir_crea_informe_y_cambia_estado`, `test_emitir_redirige_al_informe` | `informes/tests/test_emitir.py`, `informes/tests/test_servicio_emision.py` |
 | US2 Esc. 4–5, SC-004 — correlativo desde 1; falla no deja huecos | `test_numeracion_correlativa`, `test_falla_no_deja_huecos` | `informes/tests/test_servicio_emision.py` |
 | US2 Esc. 3, FR-010/SC-002/003 — emitido igual a la vista previa; editar cliente/catálogo no lo cambia | `test_emitido_igual_a_vista_previa`, `test_informe_no_cambia_al_editar` | `informes/tests/test_ver.py` |
