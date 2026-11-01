@@ -15,6 +15,10 @@
 - Q: ¿Cuándo pasa el estudio a "En proceso"? → A: Con su primera medición; desde ahí no se agregan ni quitan pruebas (US 5.3/5.4 sin cambios).
 - Q: ¿Cuántos decimales se aceptan y se conservan los ceros finales? → A: Hasta 6 decimales; el valor se conserva tal como se escribió, con sus ceros finales (7,20 sigue siendo 7,20).
 
+### Session 2026-11-01 (ajuste posterior: pruebas A/P)
+
+- Q: ¿Cómo se cargan las pruebas de presencia/ausencia (unidad «A/P» en el catálogo, ej. E. coli y Pseudomonas)? → A: Con un selector Ausente/Presente en lugar del campo numérico. Se guarda 0 (Ausente) o 1 (Presente) sin cambiar el modelo de medición, y las pantallas muestran siempre el texto, sin repetir la unidad.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cargar las mediciones de las pruebas pendientes de un estudio (Priority: P1)
@@ -90,7 +94,7 @@ Como empleado, quiero que el sistema no pida mediciones para pruebas calculadas 
 - **FR-003**: El sistema MUST permitir cargar mediciones solo en estudios "Pendiente de análisis" o "En proceso"; en "Finalizado" o "Informe generado" MUST rechazarlo informando el motivo.
 - **FR-004**: La pantalla de carga MUST listar las pruebas del estudio en estado Pendiente que requieren medición, con código, nombre y unidad de medición, y un campo para un único valor por prueba. Las pruebas calculadas a partir de otras MUST mostrarse sin campo, indicando que su resultado se calcula, y no recibir medición.
 - **FR-005**: El sistema MUST permitir guardar solo algunas de las pruebas listadas; las que quedan vacías siguen Pendientes y se ofrecen en cargas posteriores. MUST exigir al menos un valor por envío.
-- **FR-006**: El sistema MUST aceptar como valor un número decimal con coma o punto como separador decimal, con signo opcional, y rechazar cualquier otro formato (texto, separadores de miles, más de un separador, notación científica, más de 6 decimales o cifras fuera del tamaño admitido), mostrando el error junto al campo correspondiente y conservando los valores ingresados.
+- **FR-006**: El sistema MUST aceptar como valor un número decimal con coma o punto como separador decimal, con signo opcional, y rechazar cualquier otro formato (texto, separadores de miles, más de un separador, notación científica, más de 6 decimales o cifras fuera del tamaño admitido), mostrando el error junto al campo correspondiente y conservando los valores ingresados. Excepción: en las pruebas con unidad de medición «A/P» el valor MUST elegirse entre Ausente y Presente (se guarda 0 o 1) y cualquier otro valor MUST rechazarse.
 - **FR-007**: Si algún valor del envío es inválido, el sistema MUST NOT guardar ninguna medición de ese envío.
 - **FR-008**: El sistema MUST mostrar un resumen de las mediciones a guardar (prueba, valor y unidad) y pedir confirmación antes de guardarlas, permitiendo volver a corregir o cancelar sin cambios.
 - **FR-009**: Cada medición MUST guardarse asociada a la prueba del estudio, con el valor exacto ingresado (sin redondeo y con la misma cantidad de decimales, incluidos los ceros finales), la unidad de medición vigente al momento de cargarla, el usuario que la cargó y la fecha y hora de la carga.

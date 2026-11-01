@@ -116,7 +116,7 @@
                 <td>{{ asignacion.prueba.nombre }}</td>
                 <td>
                   {% if asignacion.medicion %}
-                    <span class="numeros font-semibold text-tinta">{{ asignacion.medicion.valor_ingresado }} {{ asignacion.medicion.unidad|unidad }}</span>
+                    <span class="numeros font-semibold text-tinta">{{ asignacion.medicion.valor_ingresado|valor_medicion:asignacion.medicion.unidad }}{% if not asignacion.medicion.unidad|es_presencia %} {{ asignacion.medicion.unidad|unidad }}{% endif %}</span>
                     <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.cargada_por.get_full_name|default:asignacion.medicion.cargada_por.email }} · {{ asignacion.medicion.fecha_carga|date:"d/m/Y H:i" }}</span>
                     {% if asignacion.medicion.corregida_por %}
                       <span class="block text-xs text-tinta-suave">Corregida por {{ asignacion.medicion.corregida_por.get_full_name|default:asignacion.medicion.corregida_por.email }} · {{ asignacion.medicion.fecha_correccion|date:"d/m/Y H:i" }}</span>
@@ -129,7 +129,7 @@
                 </td>
                 <td>
                   {% if asignacion.resultado %}
-                    <span class="numeros font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado }} {{ asignacion.resultado.unidad|unidad }}</span>
+                    <span class="numeros font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
                     {% if asignacion.resultado.formula %}
                       <span class="block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
                     {% endif %}

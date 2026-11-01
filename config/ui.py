@@ -1,5 +1,7 @@
 from django import template
 
+from estudios.mediciones import es_presencia, texto_presencia
+
 register = template.Library()
 
 # Color de la etiqueta de cada estado del dominio (FR-009 de la spec 013): un único lugar para
@@ -43,3 +45,15 @@ def unidad(texto):
     """Unidad de una medición o resultado; el catálogo escribe «--» cuando no tiene."""
     texto = (texto or "").strip()
     return "Sin unidad" if texto in ("", "--") else texto
+
+
+@register.filter
+def valor_medicion(valor, unidad):
+    """Valor de una medición o resultado; en las pruebas A/P, «Ausente» o «Presente»."""
+    return texto_presencia(valor) if es_presencia(unidad) else valor
+
+
+@register.filter(name="es_presencia")
+def es_presencia_filtro(unidad):
+    """Si la unidad es «A/P»: el valor ya dice Ausente/Presente y la unidad no se repite."""
+    return es_presencia(unidad)

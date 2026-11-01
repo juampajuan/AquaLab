@@ -15,6 +15,7 @@
 - Q: ¿Se conserva el historial de valores anteriores de una medición corregida? → A: No: se guarda solo el valor vigente, con quién la cargó y quién la corrigió por última vez (y cuándo). El valor anterior se reemplaza, como pide la tarjeta.
 - Q: ¿Se puede borrar una medición? → A: Sí, pero en su propia historia: US 6.5 – Borrar mediciones (SCRUM-72), con spec propia. Esta spec solo cubre corregir valores.
 - Q: ¿Quién puede corregir una medición? → A: Cualquier empleado con sesión activa, igual que la carga (US 6.1), no solo quien la cargó; queda registrado quién corrigió.
+- Q: ¿Cómo se corrige una prueba A/P? → A: (ajuste posterior) Con el mismo selector Ausente/Presente que la carga (FR-006 de la US 6.1), precargado con el valor vigente; el resumen muestra «Ausente → Presente».
 
 ## User Scenarios & Testing *(mandatory)*
 

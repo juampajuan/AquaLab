@@ -142,3 +142,10 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   las referencias.
 - **US 6.4:** convertir los límites a número para comparar resultados. Las 17 pruebas sin tipo en el
   sistema original quedaron DIRECTO y siguen a confirmar con el laboratorio (columna `observacion`).
+
+## Pruebas Ausente/Presente (ajuste a US 6.1 y 6.3)
+
+- Las pruebas con unidad «A/P» (E. coli, Pseudomonas) guardan la medición como 0 (Ausente) o 1
+  (Presente): `estudios/mediciones.py` (`leer_valor(..., presencia=True)`, `texto_presencia`).
+- En las plantillas se muestran con el filtro `valor_medicion` de `config/ui.py`, nunca el número.
+  La US 6.4 interpreta los límites «Ausente»/«Ausencia» del catálogo sobre esos 0 y 1.
