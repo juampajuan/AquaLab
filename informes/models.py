@@ -9,7 +9,8 @@ class Informe(models.Model):
     """Informe emitido de un estudio (US 7.2), con la copia de todo lo que se mostró.
 
     `contenido` se arma con `informes.contenido.armar_contenido` y no cambia: el informe emitido
-    se muestra siempre desde esa copia, aunque después se editen el cliente o el catálogo.
+    se muestra siempre desde esa copia, aunque después se editen el cliente o el catálogo. Es
+    inalterable (US 7.3): no está en el admin y `save()`/`delete()` rechazan cambiarlo o borrarlo.
     """
 
     numero = models.PositiveIntegerField("número", unique=True, editable=False)
@@ -36,6 +37,16 @@ class Informe(models.Model):
 
     def __str__(self):
         return f"{self.numero_mostrado} · {self.estudio}"
+
+    def save(self, *args, **kwargs):
+        """Solo se guarda al emitir: un informe emitido no se modifica (US 7.3, FR-017)."""
+        if not self._state.adding:
+            raise ValueError("Un informe emitido no se puede modificar.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Un informe emitido no se borra (US 7.3, FR-017)."""
+        raise ValueError("Un informe emitido no se puede borrar.")
 
     @property
     def numero_mostrado(self):

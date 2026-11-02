@@ -60,3 +60,40 @@ def test_una_firma_por_usuario(empleado):
     FirmaProfesional.objects.create(usuario=empleado, imagen=png(), matricula="MP 1")
     with pytest.raises(IntegrityError), transaction.atomic():
         FirmaProfesional.objects.create(usuario=empleado, imagen=png(), matricula="MP 2")
+
+
+def test_informe_no_registrado_en_admin(estudio_de, empleado, django_user_model):
+    from django.contrib import admin
+    from django.test import Client
+
+    assert Informe not in admin.site._registry
+    informe = crear(estudio_de("PH"), empleado)
+    admin_user = django_user_model.objects.create_superuser("admin-us73@ejemplo.com", "Clave-123!")
+    c = Client()
+    c.force_login(admin_user)
+    assert c.get("/admin/informes/informe/").status_code == 404
+    assert c.get(f"/admin/informes/informe/{informe.pk}/change/").status_code == 404
+
+
+def test_informe_no_se_modifica(estudio_de, empleado):
+    informe = crear(estudio_de("PH"), empleado)
+    informe.contenido = {"pruebas": ["cambiado"]}
+    with pytest.raises(ValueError, match="Un informe emitido no se puede modificar."):
+        informe.save()
+    assert Informe.objects.get(pk=informe.pk).contenido == {"pruebas": []}
+
+
+def test_informe_no_se_borra(estudio_de, empleado):
+    informe = crear(estudio_de("PH"), empleado)
+    with pytest.raises(ValueError, match="Un informe emitido no se puede borrar."):
+        informe.delete()
+    assert Informe.objects.filter(pk=informe.pk).exists()
+
+
+def test_no_se_borran_estudio_muestra_ni_cliente(estudio_de, empleado):
+    estudio = estudio_de("PH")
+    crear(estudio, empleado)
+    muestra = estudio.muestra
+    for objeto in (estudio, muestra, muestra.cliente):
+        with pytest.raises(ProtectedError), transaction.atomic():
+            objeto.delete()

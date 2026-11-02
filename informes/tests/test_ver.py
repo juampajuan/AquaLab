@@ -77,3 +77,14 @@ def test_parcial_firma():
     sin_firma = render_to_string("informes/firma.html", {})
     assert "Sin firma registrada" in sin_firma
     assert "<img" not in sin_firma
+
+
+def test_ver_vuelve_a_emitidos(cliente_bioquimico, estudio_listo, bioquimico):
+    emitir_informe(estudio_listo.pk, bioquimico)
+    html = cliente_bioquimico.get(reverse("informes:ver", args=[estudio_listo.pk])).content.decode()
+    assert f'href="{reverse("informes:emitidos")}"' in html
+    assert "Volver a informes emitidos" in html
+
+
+def test_ver_pk_inexistente_404(cliente_http):
+    assert cliente_http.get(reverse("informes:ver", args=[999999])).status_code == 404

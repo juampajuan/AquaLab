@@ -20,7 +20,12 @@
     {% include "informes/documento.html" %}
 
     <div class="flex flex-wrap items-center gap-3" data-componente="acciones-confirmacion">
-      {% if perms.informes.emitir_informes %}
+      {% if falta_firma %}
+        <div class="aviso aviso-advertencia" role="status">
+          {% include "ui/icono.html" with nombre="pen-line" clase="size-5 shrink-0" %}
+          <div class="flex-1">Para emitir necesitás cargar tu firma y matrícula. <a href="{% url 'informes:mi_firma' %}">Cargar mi firma</a></div>
+        </div>
+      {% elif perms.informes.emitir_informes %}
         {# Evita el doble envío sin deshabilitar el botón: deshabilitado no se envía. #}
         <form method="post" action="{% url 'informes:generar' estudio.pk %}" onsubmit="if (this.dataset.enviado) return false; this.dataset.enviado = '1';">
           {% csrf_token %}

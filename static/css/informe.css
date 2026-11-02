@@ -1,0 +1,279 @@
+/*
+ * Hoja A4 del informe emitido (US 7.3): la usan el PDF (WeasyPrint) y la impresión del navegador,
+ * con el mismo HTML (informes/impreso.html). Escrita a mano, no pasa por Tailwind: solo CSS 2.1 y
+ * Paged Media (sin grid, variables ni oklch), que WeasyPrint y los navegadores interpretan igual.
+ * Colores: paleta de SCRUM-67 (static/src/aqualab.css) en hex.
+ */
+
+/* Inter variable: un @font-face por peso, porque WeasyPrint no acepta el rango «100 900». */
+@font-face {
+  font-family: "Inter";
+  font-weight: 400;
+  src: url("../fuentes/InterVariable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-weight: 600;
+  src: url("../fuentes/InterVariable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-weight: 700;
+  src: url("../fuentes/InterVariable.woff2") format("woff2");
+}
+
+@page {
+  size: A4;
+  margin: 18mm 15mm 20mm;
+
+  @bottom-center {
+    content: string(numero) " · Página " counter(page) " de " counter(pages);
+    font-family: "Inter", "DejaVu Sans", sans-serif;
+    font-size: 8pt;
+    color: #475569;
+  }
+}
+
+html {
+  font-family: "Inter", "DejaVu Sans", sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.35;
+  color: #0b1c30;
+}
+
+body {
+  margin: 0;
+}
+
+.inf-documento {
+  background: #ffffff;
+}
+
+/* Membrete */
+.inf-membrete {
+  width: 100%;
+  border-collapse: collapse;
+  border-bottom: 1.5pt solid #0f2744;
+  margin-bottom: 5mm;
+}
+.inf-membrete td {
+  vertical-align: top;
+  padding: 0 0 3mm;
+}
+.inf-logo {
+  width: 12mm;
+  height: 12mm;
+  background: #0f2744;
+  color: #0ea5e9;
+  text-align: center;
+  vertical-align: middle;
+  border-radius: 2mm;
+}
+.inf-logo svg {
+  width: 7mm;
+  height: 7mm;
+  margin-top: 2.5mm;
+}
+.inf-laboratorio {
+  padding-left: 3mm !important;
+}
+.inf-laboratorio-nombre {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #0f2744;
+  margin: 0;
+}
+.inf-laboratorio p,
+.inf-identificacion p {
+  margin: 0.5mm 0 0;
+  font-size: 8.5pt;
+  color: #475569;
+}
+.inf-identificacion {
+  text-align: right;
+}
+.inf-identificacion .inf-titulo {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #0f2744;
+  margin: 0;
+}
+.inf-numero {
+  string-set: numero content();
+}
+
+/* Secciones de datos */
+.inf-seccion {
+  margin-bottom: 4mm;
+}
+.inf-seccion h2 {
+  font-size: 10pt;
+  font-weight: 700;
+  color: #0f2744;
+  margin: 0 0 1.5mm;
+  padding-bottom: 1mm;
+  border-bottom: 0.5pt solid #e2e8f0;
+}
+.inf-datos {
+  width: 100%;
+  border-collapse: collapse;
+}
+.inf-datos th,
+.inf-datos td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.8mm 2mm 0.8mm 0;
+}
+.inf-datos th {
+  width: 22%;
+  font-size: 7.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #475569;
+}
+.inf-datos td {
+  width: 28%;
+  font-weight: 600;
+}
+
+/* Resultados */
+.inf-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+.inf-tabla thead {
+  display: table-header-group;
+}
+.inf-tabla th {
+  text-align: left;
+  font-size: 7.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #475569;
+  background: #eff4ff;
+  padding: 1.5mm 2mm;
+  border-bottom: 0.75pt solid #cbd5e1;
+}
+.inf-tabla td {
+  padding: 1.5mm 2mm;
+  border-bottom: 0.5pt solid #e2e8f0;
+  vertical-align: top;
+}
+.inf-tabla tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.inf-codigo {
+  display: block;
+  font-size: 7.5pt;
+  color: #475569;
+}
+.inf-resultado {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.inf-derecha {
+  text-align: right;
+}
+.inf-chico {
+  font-size: 8pt;
+}
+.inf-fuera td {
+  background: #fff1f2;
+}
+.inf-fuera .inf-evaluacion {
+  color: #ba1a1a;
+  font-weight: 700;
+}
+.inf-cumple .inf-evaluacion {
+  color: #047857;
+  font-weight: 600;
+}
+
+/* Pie del documento y firma (informes/firma.html) */
+.inf-pie {
+  margin-top: 8mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  width: 100%;
+  border-collapse: collapse;
+}
+.inf-pie td {
+  vertical-align: bottom;
+  font-size: 8.5pt;
+  color: #475569;
+}
+.firma {
+  display: inline-block;
+  text-align: center;
+  min-width: 55mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.firma-imagen {
+  display: block;
+  max-width: 60mm;
+  max-height: 20mm;
+  margin: 0 auto;
+}
+.firma-nombre {
+  display: block;
+  border-top: 0.75pt solid #0b1c30;
+  padding-top: 1mm;
+  font-weight: 600;
+  color: #0b1c30;
+}
+.firma-matricula {
+  display: block;
+  font-size: 8pt;
+}
+.firma-ausente {
+  display: block;
+  font-style: italic;
+  padding-top: 12mm;
+  border-top: 0.75pt solid #cbd5e1;
+}
+
+/* Página de impresión en pantalla: una hoja A4 centrada con la barra de acciones. */
+@media screen {
+  body {
+    background: #eff4ff;
+    padding: 0 0 12mm;
+  }
+  .inf-barra {
+    position: sticky;
+    top: 0;
+    padding: 3mm 0;
+    background: #0f2744;
+    text-align: center;
+  }
+  .inf-barra a,
+  .inf-barra button {
+    display: inline-block;
+    margin: 0 2mm;
+    padding: 2mm 5mm;
+    border: 0;
+    border-radius: 1.5mm;
+    font: 600 10pt "Inter", sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    color: #0f2744;
+    background: #ffffff;
+  }
+  .inf-documento {
+    width: 210mm;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 8mm auto 0;
+    padding: 18mm 15mm 20mm;
+    box-shadow: 0 2mm 6mm rgb(15 39 68 / 0.15);
+  }
+}
+
+@media print {
+  .inf-barra {
+    display: none;
+  }
+}

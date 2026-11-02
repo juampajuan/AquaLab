@@ -184,7 +184,7 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   y pruebas) solo con textos, sin `float`. Lo usan la vista previa y la emisión, y el parcial
   `informes/documento.html` lo dibuja en los dos casos: el emitido sale igual a lo revisado.
 - `Informe.contenido` (`JSONField`) guarda esa copia; `informes:ver` muestra siempre la copia, no
-  los datos actuales. El informe no se edita ni se borra (`estudio` es `OneToOne` con `PROTECT`).
+  los datos actuales. Es inalterable: ver «Consultar y exportar informe».
 - `servicios.emitir_informe`: permiso `informes.emitir_informes` → `estudio_listo_bloqueado` →
   `pg_advisory_xact_lock(7_200_001)` → número máximo + 1 (sin huecos, como el N° PI) →
   `Informe` → estudio «Informe generado». La migración `informes.0002` da el permiso al grupo
@@ -194,3 +194,23 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   `texto_resultado`.
 - Los datos del laboratorio son de ejemplo en `settings.AQUALAB_LABORATORIO`; `logo` es una
   referencia («aqualab» → marca de AquaLab) que se copia al informe.
+
+## Consultar y exportar informe (US 7.3)
+
+- `informes/busqueda.py:informes_emitidos` es la única búsqueda de informes (`informes:emitidos`):
+  busca en la copia (`KT()` sobre `contenido`), no en el cliente ni la muestra actuales.
+- PDF (`informes/pdf.py`, WeasyPrint 70.0) e impresión (`informes:imprimir`) usan el mismo
+  `informes/impreso.html` + `static/css/informe.css`, siempre desde `informe.contenido`. La hoja
+  A4 es CSS propio sin Tailwind (CSS 2.1 + Paged Media) y no se compila. WeasyPrint necesita
+  `FontConfiguration` para cargar Inter. Las librerías de sistema (Pango) van iguales en el
+  `Dockerfile` y en el CI.
+- La firma (`FirmaProfesional`) se guarda en la base como PNG (Render borra los archivos), validado
+  solo por `informes/firmas.py:leer_firma` (≤ 64 KB, ≤ 1200 × 400 px). La dibuja `firma.js` (Pointer
+  Events, sin librerías) en `informes:mi_firma`, solo con `informes.emitir_informes`.
+- `emitir_informe` exige la firma y la copia en `contenido["firma"]` (nombre, matrícula, imagen);
+  los informes anteriores no la tienen y salen con «Sin firma registrada». `informes/firma.html`
+  es el bloque compartido por pantalla e impreso.
+- `Informe.save()` sobre uno existente y `Informe.delete()` lanzan `ValueError`; no hay admin de
+  informes. En los tests, cambiar un informe con `Informe.objects.filter(...).update(...)`.
+- Tests: `bioquimico` ya tiene firma («MP 1234»), `bioquimico_sin_firma` no; `firma_de(usuario)`
+  crea una. `informes/tests/utiles.py:png()` arma PNG válidos sin Pillow.

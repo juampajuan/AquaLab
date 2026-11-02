@@ -34,6 +34,11 @@
             {% include "ui/iniciales.html" with texto=user.get_full_name|default:user.email clase="bg-marino text-white" %}
             <span class="hidden text-sm font-semibold text-tinta sm:inline">{{ user.get_full_name|default:user.email }}</span>
           </span>
+          {% if perms.informes.emitir_informes %}
+            <a href="{% url 'informes:mi_firma' %}" class="flex items-center gap-1.5 text-sm font-semibold text-marino hover:underline"{% if request.resolver_match.view_name == 'informes:mi_firma' %} aria-current="page"{% endif %}>
+              {% include "ui/icono.html" with nombre="pen-line" clase="size-4" %} <span class="hidden sm:inline">Mi firma</span>
+            </a>
+          {% endif %}
           <form method="post" action="{% url 'usuarios:logout' %}" class="border-l border-borde pl-3 sm:pl-5">
             {% csrf_token %}
             <button type="submit" class="flex items-center gap-1.5 text-sm font-semibold text-peligro hover:underline">

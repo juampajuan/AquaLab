@@ -1,0 +1,110 @@
+{% load ui %}
+{% comment %}
+  Documento A4 del informe emitido (US 7.3), para el PDF y la impresión. Mismos datos y orden que
+  informes/documento.html, siempre desde `contenido` (Informe.contenido). Solo clases inf-* de
+  static/css/informe.css: nada de Tailwind, que WeasyPrint no interpreta.
+{% endcomment %}
+{% with lab=contenido.laboratorio cliente=contenido.cliente muestra=contenido.muestra estudio=contenido.estudio %}
+  <article class="inf-documento" data-componente="informe-impreso">
+    <table class="inf-membrete">
+      <tr>
+        {% if lab.logo == "aqualab" %}
+          <td class="inf-logo">{% include "ui/icono.html" with nombre="droplet" clase="inf-logo-icono" %}</td>
+        {% endif %}
+        <td class="inf-laboratorio">
+          <p class="inf-laboratorio-nombre">{{ lab.nombre }}</p>
+          <p>{{ lab.direccion|default:"—" }}</p>
+          <p>{{ lab.matricula|default:"—" }}</p>
+        </td>
+        <td class="inf-identificacion">
+          <p class="inf-titulo">Informe N° <span class="inf-numero">{{ informe.numero_mostrado }}</span></p>
+          <p>Emitido el {{ informe.fecha_emision|date:"d/m/Y H:i" }}</p>
+        </td>
+      </tr>
+    </table>
+
+    <section class="inf-seccion">
+      <h2>Cliente</h2>
+      <table class="inf-datos">
+        <tr>
+          <th>Nombre o razón social</th><td>{{ cliente.nombre_completo|default:"—" }}</td>
+          <th>Documento</th><td>{{ cliente.tipo_documento }} {{ cliente.numero_documento }}</td>
+        </tr>
+        <tr>
+          <th>Domicilio</th><td>{{ cliente.domicilio|default:"—" }}</td>
+          <th>Correo electrónico</th><td>{{ cliente.email|default:"—" }}</td>
+        </tr>
+      </table>
+    </section>
+
+    <section class="inf-seccion">
+      <h2>Muestra</h2>
+      <table class="inf-datos">
+        <tr>
+          <th>N° PI</th><td>{{ muestra.numero_pi }}</td>
+          <th>Nombre</th><td>{{ muestra.nombre|default:"—" }}</td>
+        </tr>
+        <tr>
+          <th>Origen</th><td>{{ muestra.origen|default:"—" }}</td>
+          <th>Tipo de vertido</th><td>{{ muestra.tipo_vertido|default:"—" }}</td>
+        </tr>
+        <tr>
+          <th>Fecha de muestreo</th><td>{{ muestra.fecha_muestreo|default:"—" }}</td>
+          <th>Fecha de ingreso</th><td>{{ muestra.fecha_ingreso|default:"—" }}</td>
+        </tr>
+        <tr>
+          <th>Sitio de extracción</th><td>{{ muestra.sitio_extraccion|default:"—" }}</td>
+          <th>Responsable del muestreo</th><td>{{ muestra.responsable_muestreo|default:"—" }}</td>
+        </tr>
+      </table>
+    </section>
+
+    <section class="inf-seccion">
+      <h2>Estudio</h2>
+      <table class="inf-datos">
+        <tr>
+          <th>N° de estudio</th><td>{{ estudio.numero }}</td>
+          <th>Tipo de estudio</th><td>{{ estudio.tipo|default:"—" }}</td>
+        </tr>
+      </table>
+    </section>
+
+    <section class="inf-seccion">
+      <h2>Resultados</h2>
+      <table class="inf-tabla">
+        <thead>
+          <tr>
+            <th>Prueba</th>
+            <th>Resultado</th>
+            <th>Unidad</th>
+            <th>Límite</th>
+            <th>Norma</th>
+            <th class="inf-derecha">Cumple</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for prueba in contenido.pruebas %}
+            <tr class="{% if prueba.evaluacion == 'fuera_de_norma' %}inf-fuera{% elif prueba.evaluacion == 'cumple' %}inf-cumple{% endif %}" data-evaluacion="{{ prueba.evaluacion }}">
+              <td>{{ prueba.nombre }}<span class="inf-codigo">{{ prueba.codigo }}</span></td>
+              <td class="inf-resultado">{{ prueba.resultado_texto }}</td>
+              <td>{% if not prueba.unidad|es_presencia %}{{ prueba.unidad|unidad }}{% endif %}</td>
+              <td>{{ prueba.limite_texto|default:"—" }}{% if prueba.origen_limites != "general" %} <span class="inf-chico">({{ prueba.origen_limites|capfirst }})</span>{% endif %}</td>
+              <td class="inf-chico">{{ prueba.norma|default:"—" }}</td>
+              <td class="inf-derecha inf-evaluacion">{{ prueba.evaluacion_texto }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <table class="inf-pie">
+      <tr>
+        <td>
+          <p>Responsable técnico: {{ lab.responsable_tecnico|default:"—" }}</p>
+          <p>Emitido el {{ informe.fecha_emision|date:"d/m/Y H:i" }}</p>
+        </td>
+        <td class="inf-derecha">{% include "informes/firma.html" with firma=contenido.firma %}</td>
+      </tr>
+    </table>
+  </article>
+{% endwith %}
