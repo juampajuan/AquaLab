@@ -172,7 +172,7 @@ imprimir), US3 (P1, mi firma y emisión con firma) y US4 (P2, inalterable).
 - [X] T039 Ejecutar `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`.
 - [X] T040 [P] Recompilar Tailwind (`docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify`); si `static/css/aqualab.css` cambia, incluirlo en el commit. `static/css/informe.css` no se compila.
 - [X] T041 Ejecutar la suite completa `docker compose exec web pytest`: todo en verde, incluidos los PDF reales.
-- [ ] T042 Recorrer `specs/022-consultar-exportar-informe/quickstart.md` (pasos 1 a 12) en el navegador, incluida la firma con el dedo (celular o modo táctil de las herramientas del navegador) y la impresión en Chrome, y marcar el resultado en esta lista.
+- [X] T042 Recorrer `specs/022-consultar-exportar-informe/quickstart.md` (pasos 1 a 12) en el navegador, incluida la firma con el dedo (celular o modo táctil de las herramientas del navegador) y la impresión en Chrome, y marcar el resultado en esta lista.
 - [ ] T043 Abrir el PR «US 7.3 – Consultar y exportar informe» (referencia a `specs/022-consultar-exportar-informe/` y SCRUM-59) y comprobar en GitHub Actions que pasan los pasos «Librerías de sistema de WeasyPrint», «WeasyPrint instalado» y `pytest`.
 
 ---
