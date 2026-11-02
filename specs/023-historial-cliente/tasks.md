@@ -49,7 +49,7 @@ estado) y US3 (P2, ir al detalle del estudio, de la muestra o al informe).
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 *(Suite base en verde —1152 tests— y `makemigrations --check` sin cambios el 2026-11-02. Implementación iniciada a pedido del autor antes de la aprobación formal; responsable cargado (Manuelklly); falta aprobación del equipo y confirmar la clave de Jira, probablemente SCRUM-46.)* **Gate de la constitution (principio I)**: confirmar que el equipo aprobó `specs/023-historial-cliente/spec.md`, completar la clave de Jira en su **Input** y en **Assumptions → Trazabilidad** (y el responsable) y actualizar su `**Status**` a «Aprobada (fecha)». Confirmar que la rama `023-historial-cliente` sale de `main` con la US 7.2 y ejecutar `docker compose exec web pytest` y `docker compose exec web python manage.py makemigrations --check --dry-run`: suite en verde y sin cambios pendientes.
+- [ ] T001 *(Suite base en verde —1152 tests— y `makemigrations --check` sin cambios el 2026-11-02. Implementación iniciada a pedido del autor antes de la aprobación formal; responsable (Manuelklly) y clave de Jira (SCRUM-46) cargados; falta la aprobación del equipo.)* **Gate de la constitution (principio I)**: confirmar que el equipo aprobó `specs/023-historial-cliente/spec.md`, completar la clave de Jira en su **Input** y en **Assumptions → Trazabilidad** (y el responsable) y actualizar su `**Status**` a «Aprobada (fecha)». Confirmar que la rama `023-historial-cliente` sale de `main` con la US 7.2 y ejecutar `docker compose exec web pytest` y `docker compose exec web python manage.py makemigrations --check --dry-run`: suite en verde y sin cambios pendientes.
 
 ---
 

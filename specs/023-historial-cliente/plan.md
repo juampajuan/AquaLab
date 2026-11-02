@@ -2,7 +2,7 @@
 
 **Branch**: `023-historial-cliente` | **Date**: 2026-11-02 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `specs/023-historial-cliente/spec.md` (US 3.3, Jira a confirmar)
+**Input**: Feature specification from `specs/023-historial-cliente/spec.md` (US 3.3, SCRUM-46)
 
 ## Summary
 
@@ -55,7 +55,7 @@ Decisiones en [research.md](./research.md) (R1–R7). No hay `NEEDS CLARIFICATIO
 
 | Principio | Cumplimiento | Estado |
 |---|---|---|
-| **I. Spec primero (SDD)** | Spec de US 3.3 (commit `6b7e212`); la aprobación del equipo es requisito antes de `/speckit-implement`. PR: «US 3.3 – Consultar historial del cliente». Clave de Jira a confirmar. | ⚠️ aprobación pendiente |
+| **I. Spec primero (SDD)** | Spec de US 3.3 (commit `6b7e212`); la aprobación del equipo es requisito antes de `/speckit-implement`. PR: «US 3.3 – Consultar historial del cliente». Jira: SCRUM-46. | ⚠️ aprobación pendiente |
 | **II. Simplicidad y Django idiomático** | Vista función + `forms.Form` + ORM (`Prefetch`, `Paginator`) en la app `clientes` (la US es del módulo Clientes); reutiliza las vistas de detalle existentes; sin JS, sin modelos ni dependencias (YAGNI). | ✅ |
 | **III. Tests obligatorios** | Cada escenario y FR con test (ver [Mapa de tests](#mapa-de-tests)). Sin cálculos nuevos. | ✅ |
 | **IV. Integridad de datos** | Solo lectura: no hay POST ni escritura; el informe se muestra desde su copia (`informes:ver`, US 7.2). | ✅ |

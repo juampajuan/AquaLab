@@ -6,7 +6,7 @@
 
 **Status**: Borrador
 
-**Input**: User description: "US 3.3 – Consultar historial del cliente. Como empleado del laboratorio quiero consultar el historial de muestras, estudios e informes de un cliente para conocer sus análisis anteriores y responder sus consultas. Criterios de aceptación: (1) Se debe poder acceder al historial desde la ficha del cliente seleccionado. (2) Se deben listar las muestras del cliente con su código (N° PI), fecha de ingreso, estudios asociados y estado de cada estudio. (3) El listado debe ordenarse del más reciente al más antiguo. (4) Se debe poder filtrar por rango de fechas y por estado del estudio. (5) Se debe poder acceder al detalle de cada estudio y, si tiene informe generado, consultarlo. (6) Si el cliente no tiene muestras registradas, el sistema debe indicarlo."
+**Input**: User description: "SCRUM-46 – US 3.3 – Consultar historial del cliente. Como empleado del laboratorio quiero consultar el historial de muestras, estudios e informes de un cliente para conocer sus análisis anteriores y responder sus consultas. Criterios de aceptación: (1) Se debe poder acceder al historial desde la ficha del cliente seleccionado. (2) Se deben listar las muestras del cliente con su código (N° PI), fecha de ingreso, estudios asociados y estado de cada estudio. (3) El listado debe ordenarse del más reciente al más antiguo. (4) Se debe poder filtrar por rango de fechas y por estado del estudio. (5) Se debe poder acceder al detalle de cada estudio y, si tiene informe generado, consultarlo. (6) Si el cliente no tiene muestras registradas, el sistema debe indicarlo."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -113,7 +113,7 @@ No se agregan entidades ni datos nuevos: la historia solo consulta información 
 
 ## Assumptions
 
-- **Trazabilidad**: US 3.3 – Consultar historial del cliente. Jira: clave a confirmar (probablemente SCRUM-46: las claves conocidas siguen el orden de `docs/extra/jira-import.csv`, ID 13 + 33). Responsable: Manuelklly.
+- **Trazabilidad**: US 3.3 – Consultar historial del cliente. Jira: SCRUM-46. Responsable: Manuelklly.
 - **Dependencias**: Se apoya en la ficha del cliente (US 3.1/3.2), las muestras y orígenes (US 4.1), el detalle del estudio y de la muestra (US 5.2) y el informe emitido (US 7.2, ya en `main`). La búsqueda y exportación de informes es de la US 7.3 (rama `022-consultar-exportar-informe`); acá solo se enlaza al informe emitido.
 - **Rango de fechas**: Se filtra por fecha de ingreso de la muestra, que es la fecha que muestra el listado.
 - **Permisos**: Como la ficha del cliente, cualquier empleado con sesión puede ver el historial.
