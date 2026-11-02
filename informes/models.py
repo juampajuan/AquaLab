@@ -1,3 +1,5 @@
+import base64
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -38,3 +40,30 @@ class Informe(models.Model):
     @property
     def numero_mostrado(self):
         return f"INF-{self.numero:06d}"
+
+
+class FirmaProfesional(models.Model):
+    """Firma manuscrita y matrícula de quien emite informes (US 7.3).
+
+    La imagen es un PNG chico validado por `informes.firmas.leer_firma` y se guarda en la base
+    (Render no conserva los archivos subidos). Al emitir se copia dentro de `Informe.contenido`,
+    así que cambiarla después no modifica los informes ya emitidos.
+    """
+
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="firma_profesional"
+    )
+    imagen = models.BinaryField("imagen")
+    matricula = models.CharField("matrícula", max_length=40)
+    actualizada = models.DateTimeField("actualizada", auto_now=True)
+
+    class Meta:
+        verbose_name = "firma profesional"
+        verbose_name_plural = "firmas profesionales"
+
+    def __str__(self):
+        return f"Firma de {self.usuario}"
+
+    @property
+    def data_url(self):
+        return "data:image/png;base64," + base64.b64encode(bytes(self.imagen)).decode()

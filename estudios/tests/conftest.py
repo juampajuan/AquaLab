@@ -115,9 +115,8 @@ def gestor(empleado):
     return empleado
 
 
-@pytest.fixture
-def bioquimico(empleado):
-    """El empleado en el grupo «Bioquímicos» (US 6.4). El grupo lo crea la migración 0008; se
+def en_grupo_bioquimicos(usuario):
+    """Agrega el usuario al grupo «Bioquímicos» (US 6.4). El grupo lo crea la migración 0008; se
     vuelve a crear porque los tests con transaction=True vacían la base al terminar."""
     from django.contrib.auth.models import Group, Permission
 
@@ -126,8 +125,35 @@ def bioquimico(empleado):
         Permission.objects.get(codename="validar_resultados"),
         Permission.objects.get(codename="emitir_informes"),  # US 7.2
     )
-    empleado.groups.add(grupo)
+    usuario.groups.add(grupo)
+    return usuario
+
+
+@pytest.fixture
+def firma_de():
+    """Crea la firma profesional (US 7.3) de un usuario, con un PNG chico válido."""
+    from informes.models import FirmaProfesional
+    from informes.tests.utiles import png
+
+    def crear(usuario, matricula="MP 1234"):
+        return FirmaProfesional.objects.create(usuario=usuario, imagen=png(), matricula=matricula)
+
+    return crear
+
+
+@pytest.fixture
+def bioquimico(empleado, firma_de):
+    """El empleado en el grupo «Bioquímicos», con su firma cargada: desde la US 7.3 no se emite
+    sin firma."""
+    en_grupo_bioquimicos(empleado)
+    firma_de(empleado)
     return empleado
+
+
+@pytest.fixture
+def bioquimico_sin_firma(empleado):
+    """El empleado en el grupo «Bioquímicos» sin firma cargada (US 7.3)."""
+    return en_grupo_bioquimicos(empleado)
 
 
 @pytest.fixture

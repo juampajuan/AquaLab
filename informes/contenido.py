@@ -3,9 +3,14 @@
 El resultado es un diccionario solo de textos, listo para mostrar y para guardar como copia en
 `Informe.contenido`: el informe emitido se dibuja siempre desde esa copia (FR-010), con el mismo
 template que la vista previa, así se ven idénticos.
+
+Desde la US 7.3 la copia incluye la firma, el nombre y la matrícula de quien emite (clave
+`"firma"`): cambiar la firma después no modifica los informes emitidos. Los emitidos antes de esa
+historia no tienen la clave y se muestran con «Sin firma registrada».
 """
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Prefetch
 
 from estudios import calculo
@@ -72,8 +77,22 @@ def armar_prueba(asignacion, tipo_vertido):
     }
 
 
-def armar_contenido(estudio):
-    """Datos del laboratorio, del cliente, de la muestra, del estudio y de cada prueba."""
+def armar_firma(firmante):
+    """Firma, nombre y matrícula del firmante, o None si no cargó su firma (US 7.3)."""
+    try:
+        firma = firmante.firma_profesional
+    except ObjectDoesNotExist:
+        return None
+    return {
+        "nombre": firmante.get_full_name() or firmante.email,
+        "matricula": firma.matricula,
+        "imagen": firma.data_url,
+    }
+
+
+def armar_contenido(estudio, firmante=None):
+    """Datos del laboratorio, del cliente, de la muestra, del estudio y de cada prueba; con
+    `firmante` (quien emite o revisa la vista previa), también su firma si la tiene."""
     muestra = estudio.muestra
     cliente = muestra.cliente
     asignaciones = (
@@ -88,7 +107,7 @@ def armar_contenido(estudio):
         )
         .order_by("prueba__codigo", "pk")
     )
-    return {
+    contenido = {
         "laboratorio": {clave: str(valor) for clave, valor in settings.AQUALAB_LABORATORIO.items()},
         "cliente": {
             "nombre_completo": cliente.nombre_completo,
@@ -114,3 +133,7 @@ def armar_contenido(estudio):
             if calculo.tiene_resultado(a)
         ],
     }
+    firma = armar_firma(firmante) if firmante is not None else None
+    if firma:
+        contenido["firma"] = firma
+    return contenido

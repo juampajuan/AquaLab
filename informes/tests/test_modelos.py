@@ -1,8 +1,12 @@
+import base64
+
 import pytest
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
 
-from informes.models import Informe
+from informes.models import FirmaProfesional, Informe
+
+from .utiles import png
 
 pytestmark = pytest.mark.django_db
 
@@ -41,3 +45,18 @@ def test_estudio_con_informe_protegido(estudio_de, empleado):
     crear(estudio, empleado)
     with pytest.raises(ProtectedError), transaction.atomic():
         estudio.delete()
+
+
+def test_firma_data_url(empleado):
+    datos = png()
+    firma = FirmaProfesional.objects.create(usuario=empleado, imagen=datos, matricula="MP 1")
+    firma.refresh_from_db()
+    prefijo = "data:image/png;base64,"
+    assert firma.data_url.startswith(prefijo)
+    assert base64.b64decode(firma.data_url[len(prefijo) :]) == datos
+
+
+def test_una_firma_por_usuario(empleado):
+    FirmaProfesional.objects.create(usuario=empleado, imagen=png(), matricula="MP 1")
+    with pytest.raises(IntegrityError), transaction.atomic():
+        FirmaProfesional.objects.create(usuario=empleado, imagen=png(), matricula="MP 2")
