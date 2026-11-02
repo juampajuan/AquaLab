@@ -1,5 +1,8 @@
 from django import forms
 
+from estudios.models import EstadoEstudio
+from muestras.forms import SelectorFecha
+
 from .models import (
     MENSAJE_DOCUMENTO_CON_MUESTRAS,
     Cliente,
@@ -10,6 +13,8 @@ from .models import (
 )
 
 MAX_LONGITUD_BUSQUEDA = 100
+FORMATOS_FECHA = ["%Y-%m-%d", "%d/%m/%Y"]
+MENSAJE_FECHA_INVALIDA = "Ingresá una fecha válida (dd/mm/aaaa)."
 MENSAJE_DOCUMENTO_DUPLICADO = "Ya existe un cliente registrado con este tipo y número de documento."
 
 CAMPOS_CLIENTE = (
@@ -143,3 +148,51 @@ class BuscarClienteForm(forms.Form):
             "max_length": "Ingresá como máximo 100 caracteres para buscar.",
         },
     )
+
+
+class HistorialClienteForm(forms.Form):
+    """Filtros del historial del cliente (US 3.3), por GET: rango de fecha de ingreso y estado.
+
+    Mostrar «Limpiar filtros» no se decide acá: la vista lo hace con los parámetros recibidos,
+    válidos o no.
+    """
+
+    desde = forms.DateField(
+        label="Ingreso desde",
+        required=False,
+        input_formats=FORMATOS_FECHA,
+        widget=SelectorFecha(),
+        error_messages={"invalid": MENSAJE_FECHA_INVALIDA},
+    )
+    hasta = forms.DateField(
+        label="Ingreso hasta",
+        required=False,
+        input_formats=FORMATOS_FECHA,
+        widget=SelectorFecha(),
+        error_messages={"invalid": MENSAJE_FECHA_INVALIDA},
+    )
+    estado = forms.ChoiceField(
+        label="Estado del estudio",
+        required=False,
+        choices=[("", "Todos"), *EstadoEstudio.choices],
+        error_messages={"invalid_choice": "Elegí un estado de la lista."},
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for campo in self.fields.values():
+            clase = "form-select" if isinstance(campo.widget, forms.Select) else "form-control"
+            campo.widget.attrs["class"] = clase
+
+    def full_clean(self):
+        super().full_clean()
+        for nombre in self.errors:
+            if nombre in self.fields:
+                self.fields[nombre].widget.attrs["class"] += " is-invalid"
+
+    def clean(self):
+        datos = super().clean()
+        desde, hasta = datos.get("desde"), datos.get("hasta")
+        if desde and hasta and desde > hasta:
+            self.add_error("desde", "La fecha desde no puede ser posterior a la fecha hasta.")
+        return datos

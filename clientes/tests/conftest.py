@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from django.test import Client
 from django.urls import reverse
@@ -115,3 +117,60 @@ def clientes_busqueda():
     return [
         Cliente.objects.create(email=f"cliente{i}@ejemplo.com", **d) for i, d in enumerate(datos)
     ]
+
+
+@pytest.fixture
+def muestra_de(empleado):
+    """Fábrica de muestras para el historial (US 3.3): `muestra_de(cliente, fecha, numero_pi)`."""
+    from muestras.models import Muestra, Origen
+
+    def crear(cliente, fecha_ingreso, numero_pi, origen="Pozo 1"):
+        origen_obj, _ = Origen.objects.get_or_create(cliente=cliente, nombre=origen)
+        return Muestra.objects.create(
+            numero_pi=numero_pi,
+            nombre=f"Muestra {numero_pi}",
+            cliente=cliente,
+            origen=origen_obj,
+            fecha_muestreo=fecha_ingreso,
+            fecha_ingreso=fecha_ingreso,
+            sitio_extraccion="Sitio test",
+            registrada_por=empleado,
+        )
+
+    return crear
+
+
+@pytest.fixture
+def estudio_en(empleado):
+    """Fábrica de estudios en un estado dado, con informe opcional (US 3.3).
+
+    `estado` es `editable=False`: se fija con `update()`. Con `con_informe=True` el estudio queda en
+    «Informe generado» y se crea su `Informe` (número correlativo dentro del test).
+    """
+    from estudios.models import EstadoEstudio, Estudio, TipoEstudio
+    from informes.models import Informe
+
+    def crear(
+        muestra, estado=EstadoEstudio.PENDIENTE_ANALISIS, tipo="Agua de red", con_informe=False
+    ):
+        tipo_obj, _ = TipoEstudio.objects.get_or_create(nombre=tipo)
+        estudio = Estudio.objects.create(
+            muestra=muestra,
+            tipo=tipo_obj,
+            creado_por=empleado,
+            tipo_nombre_snapshot=tipo,
+            tipo_version_snapshot=1,
+            clave_idempotencia=uuid.uuid4(),
+        )
+        if con_informe:
+            estado = EstadoEstudio.INFORME_GENERADO
+            Informe.objects.create(
+                numero=Informe.objects.count() + 1,
+                estudio=estudio,
+                emitido_por=empleado,
+                contenido={},
+            )
+        Estudio.objects.filter(pk=estudio.pk).update(estado=estado)
+        return Estudio.objects.get(pk=estudio.pk)
+
+    return crear

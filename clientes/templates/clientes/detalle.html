@@ -17,6 +17,9 @@
       <a href="{% url 'clientes:editar' cliente.pk %}" class="btn btn-primario">
         {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Editar cliente
       </a>
+      <a href="{% url 'clientes:historial' cliente.pk %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="clock" clase="size-4" %} Historial
+      </a>
       <a href="{% url 'clientes:buscar' %}" class="btn btn-secundario">
         {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver a la búsqueda
       </a>

@@ -113,3 +113,19 @@ def test_ficha_muestra_raya_en_los_datos_vacios_y_sus_acciones(
     assert re.search(r"<dt>Teléfono</dt>\s*<dd>—</dd>", html)
     assert "Editar cliente" in html
     assert "Volver a la búsqueda" in html
+
+
+def test_historial_usa_componentes(cliente_autenticado, cliente_existente, muestra_de, estudio_en):
+    """Historial del cliente (US 3.3): estado vacío, etiqueta de estado y paginación de ui/."""
+    from datetime import date
+
+    url = reverse("clientes:historial", args=[cliente_existente.pk])
+    vacio = cliente_autenticado.get(url).content.decode()
+    assert 'data-componente="estado-vacio"' in vacio
+
+    for i in range(21):
+        estudio_en(muestra_de(cliente_existente, date(2026, 10, 1), 200001 + i))
+    html = cliente_autenticado.get(url).content.decode()
+
+    assert "data-estado=" in html
+    assert 'aria-label="Paginación de resultados"' in html

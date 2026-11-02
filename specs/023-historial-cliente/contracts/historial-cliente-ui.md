@@ -27,6 +27,8 @@ Todas las rutas requieren sesión (`LoginRequiredMiddleware`; sin sesión → 30
 
 Parámetro inválido (fecha mal escrita, `desde > hasta`, estado desconocido) → 200, error junto al
 campo, **sin filtrar** (historial completo) y con «Limpiar filtros».
+Mensajes: «La fecha desde no puede ser posterior a la fecha hasta.» (en `desde`), «Ingresá una fecha
+válida (dd/mm/aaaa).» y «Elegí un estado de la lista.».
 
 ### Pantalla — `clientes/historial.html`
 
