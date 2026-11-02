@@ -26,7 +26,7 @@ Todas las rutas requieren sesión (`LoginRequiredMiddleware`; sin sesión → 30
 | `page` | número | página de 20 muestras |
 
 Parámetro inválido (fecha mal escrita, `desde > hasta`, estado desconocido) → 200, error junto al
-campo y **sin filtrar** (historial completo).
+campo, **sin filtrar** (historial completo) y con «Limpiar filtros».
 
 ### Pantalla — `clientes/historial.html`
 
@@ -34,8 +34,9 @@ campo y **sin filtrar** (historial completo).
    `clientes:detalle`, miga «Historial», título `cliente.nombre_completo`, subtítulo
    «{{ tipo_documento }} {{ numero_documento }}».
 2. **Filtros** (form GET): «Ingreso desde», «Ingreso hasta», «Estado del estudio» (Todos + los
-   cuatro estados); botones **Filtrar** (`btn btn-primario`) y, con algún filtro aplicado,
-   **Limpiar filtros** (`btn btn-secundario`, URL sin parámetros). Errores con
+   cuatro estados); botones **Filtrar** (`btn btn-primario`) y, con algún filtro en la URL
+   (`desde`, `hasta` o `estado` no vacíos, válidos o no), **Limpiar filtros**
+   (`btn btn-secundario`, URL sin parámetros). Errores con
    `ui/errores_form.html` / `ui/campo.html`.
 3. **Listado** (tabla, una fila por muestra; `data-muestra="<numero_pi>"`):
    - **N° PI** — enlace a `muestras:detalle muestra.pk`.
@@ -44,8 +45,8 @@ campo y **sin filtrar** (historial completo).
    - **Estudios** — por cada estudio de `estudios_historial` (`data-estudio="<pk>"`):
      enlace «Estudio N° {{ pk }} · {{ tipo_nombre_snapshot }}» → `estudios:detalle`, etiqueta
      `ui/estado.html` con `estudio.get_estado_display` y `estudio.estado|tipo_estado`, y, si el
-     estado es «Informe generado», enlace **Ver informe {{ estudio.informe.numero_mostrado }}** →
-     `informes:ver estudio.pk`. Sin estudios: «Sin estudios» (texto suave).
+     estudio tiene `Informe` (`{% if estudio.informe %}`), enlace
+     **Ver informe {{ estudio.informe.numero_mostrado }}** → `informes:ver estudio.pk`. Sin estudios: «Sin estudios» (texto suave).
 4. **Paginación**: `ui/paginacion.html` con `parametros` = query string actual sin `page`.
 
 ### Estados vacíos (`ui/estado_vacio.html`)

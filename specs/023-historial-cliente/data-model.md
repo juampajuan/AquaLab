@@ -29,7 +29,8 @@ muestras_del_historial(cliente, desde=None, hasta=None, estado="") -> QuerySet[M
 
 - Cada muestra de la página trae `estudios_historial` (lista, posiblemente vacía sin filtro de
   estado; nunca vacía con filtro de estado).
-- Con informe emitido, `estudio.informe` ya viene cargado (sin consulta extra).
+- Con informe emitido, `estudio.informe` ya viene cargado (sin consulta extra); sin informe, el
+  template lo evalúa como falso, también sin consulta. «Ver informe» depende de eso, no del estado.
 
 ## Formulario: `HistorialClienteForm` (GET)
 

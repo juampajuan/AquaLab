@@ -54,12 +54,15 @@
 ## R5. Informe del estudio
 
 - **Decision**: El `Prefetch` de estudios usa `select_related("informe")` (OneToOne inverso de la
-  US 7.2). En el template, si el estudio tiene informe, «Ver informe {{ informe.numero_mostrado }}»
-  → `informes:ver estudio.pk`. Se detecta con `estudio.estado == "informe_generado"` y se lee el
-  número del informe ya traído.
+  US 7.2). En el template, `{% if estudio.informe %}` → «Ver informe
+  {{ estudio.informe.numero_mostrado }}» → `informes:ver estudio.pk`. Se decide por la existencia
+  del `Informe` ya traído, no por el estado.
 - **Rationale**: Sin consultas extra por estudio y reutiliza la vista del informe emitido, que lo
-  muestra desde su copia (FR-011, principio IV). El estado «Informe generado» solo lo pone
-  `emitir_informe` junto con el `Informe`, así que coinciden.
+  muestra desde su copia (FR-011, principio IV). Con `select_related`, la ausencia de informe queda
+  en caché: el template la resuelve como falsa (`RelatedObjectDoesNotExist` es una falla silenciosa
+  de variable) sin consultar. El estado «Informe generado» y el `Informe` los crea juntos
+  `emitir_informe`, pero decidir por el `Informe` evita un enlace a un 404 si alguna vez no
+  coinciden.
 - **Alternatives considered**: `hasattr(estudio, "informe")` en el template (lanza
   `RelatedObjectDoesNotExist` sin `select_related` y genera una consulta por estudio); enlazar al
   listado de informes de la US 7.3 (todavía en otra rama y obliga a buscar de nuevo).

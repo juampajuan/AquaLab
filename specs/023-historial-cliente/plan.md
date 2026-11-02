@@ -29,14 +29,16 @@ Tailwind CSS 4 y componentes de `templates/ui/` (`encabezado`, `estado`, `estado
 
 **Testing**: pytest 9.1.1 + pytest-django 4.14.0; fixtures de `clientes/tests/conftest.py`
 (`empleado`, `cliente_autenticado`, `cliente_existente`) y helpers nuevos para crear muestras y
-estudios en un estado dado; `django_assert_max_num_queries` para SC-004; ruff 0.17.1.
+estudios en un estado dado; `CaptureQueriesContext` para comparar consultas con 1 y 100 muestras
+(SC-004); ruff 0.17.1.
 
 **Target Platform**: Contenedor Linux (`web`) con Docker Compose; navegador de escritorio.
 
 **Project Type**: Aplicación web Django monolítica con templates en el servidor (sin SPA).
 
 **Performance Goals**: Historial de un cliente con 100 muestras en menos de 2 s (SC-004): cantidad
-de consultas constante por página (sesión, usuario, cliente, `exists`, `count`, muestras, estudios).
+de consultas constante por página (la misma con 1 que con 100 muestras: sin N+1 por muestra,
+estudio ni informe).
 
 **Constraints**: Solo lectura (FR-013); solo muestras del cliente (SC-003); estudios de una muestra
 en la misma página (FR-012); tipo de estudio desde `tipo_nombre_snapshot` (US 5.2); cliente
@@ -93,13 +95,13 @@ datos que se leen en [data-model.md](./data-model.md).
 | US2 Esc. 1, FR-006 — rango de fechas inclusivo; solo desde / solo hasta | `test_filtro_fechas` (parametrizado) | `clientes/tests/test_historial_consulta.py` |
 | US2 Esc. 2, FR-007 — filtro por estado: muestras con algún estudio y solo esos estudios | `test_filtro_estado` | `clientes/tests/test_historial_consulta.py` |
 | US2 Esc. 3 — filtros combinados | `test_filtros_combinados` | `clientes/tests/test_historial_consulta.py` |
-| US2 Esc. 4, FR-006 — desde > hasta, fecha inválida, estado inválido → error junto al campo, sin filtrar | `test_filtros_invalidos` (parametrizado) | `clientes/tests/test_historial.py` |
+| US2 Esc. 4, FR-006 — desde > hasta, fecha inválida, estado inexistente → error junto al campo, sin filtrar, con «Limpiar filtros» | `test_filtros_invalidos` (parametrizado) | `clientes/tests/test_historial.py` |
 | US2 Esc. 5, FR-009 — sin coincidencias: mensaje propio y «Limpiar filtros» | `test_sin_coincidencias` | `clientes/tests/test_historial.py` |
 | US2 Esc. 6, FR-008/012 — paginación de 20 muestras, conserva filtros, estudios no se cortan | `test_paginacion_conserva_filtros` | `clientes/tests/test_historial.py` |
 | US3 Esc. 1–2, FR-010 — enlaces al detalle del estudio y a la ficha de la muestra | `test_enlaces_a_detalles` | `clientes/tests/test_historial.py` |
-| US3 Esc. 3–4, FR-011 — «Ver informe INF-…» solo con informe | `test_ver_informe_solo_con_informe` | `clientes/tests/test_historial.py` |
+| US3 Esc. 3–4, FR-011 — «Ver informe INF-…» solo si el estudio tiene `Informe` | `test_ver_informe_solo_con_informe` | `clientes/tests/test_historial.py` |
 | FR-013 — solo lectura: POST no permitido (405), nada cambia | `test_historial_solo_lectura` | `clientes/tests/test_historial.py` |
-| SC-004 — consultas constantes con 100 muestras | `test_consultas_acotadas` | `clientes/tests/test_historial_consulta.py` |
+| SC-004 — misma cantidad de consultas con 1 y con 100 muestras | `test_consultas_acotadas` | `clientes/tests/test_historial.py` |
 | Diseño — usa los componentes de `templates/ui/` | `test_historial_usa_componentes` | `clientes/tests/test_diseno.py` |
 
 ## Project Structure

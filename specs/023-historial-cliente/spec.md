@@ -42,7 +42,7 @@ Como empleado del laboratorio, en el historial de un cliente con muchas muestras
 1. **Dado** el historial, **cuando** se indica una fecha «desde» y/o «hasta», **entonces** se listan solo las muestras con fecha de ingreso dentro del rango, con los dos extremos incluidos.
 2. **Dado** el historial, **cuando** se elige un estado de estudio, **entonces** se listan solo las muestras con al menos un estudio en ese estado y, de cada una, solo los estudios en ese estado.
 3. **Dados** los dos filtros, **cuando** se aplican juntos, **entonces** se cumplen ambos.
-4. **Dado** un rango con «desde» posterior a «hasta» o una fecha inválida, **cuando** se aplica, **entonces** el sistema lo indica junto al campo y no filtra.
+4. **Dado** un rango con «desde» posterior a «hasta», una fecha inválida o un estado inexistente, **cuando** se aplica, **entonces** el sistema lo indica junto al campo y no filtra.
 5. **Dados** filtros que no dejan ninguna muestra, **cuando** se aplican, **entonces** el sistema indica que ninguna muestra coincide con los filtros (distinto del aviso de cliente sin muestras) y ofrece limpiarlos.
 6. **Dados** filtros aplicados, **cuando** se pasa de página, **entonces** los filtros se conservan.
 
@@ -84,7 +84,7 @@ Como empleado del laboratorio, desde el historial abro el detalle de un estudio 
 - **FR-003**: El historial MUST listar todas las muestras del cliente, y solo las suyas, con N° PI, fecha de ingreso y origen.
 - **FR-004**: Por cada muestra, el historial MUST listar sus estudios con número, tipo de estudio (el guardado al crearlo) y estado actual; una muestra sin estudios MUST indicar «Sin estudios».
 - **FR-005**: Las muestras MUST ordenarse por fecha de ingreso de la más reciente a la más antigua y, a igual fecha, por N° PI descendente; los estudios de cada muestra, del más reciente al más antiguo.
-- **FR-006**: El historial MUST permitir filtrar por rango de fecha de ingreso (desde, hasta, ambos opcionales e inclusivos) y MUST rechazar un rango con «desde» posterior a «hasta» o una fecha inválida, indicándolo sin filtrar.
+- **FR-006**: El historial MUST permitir filtrar por rango de fecha de ingreso (desde, hasta, ambos opcionales e inclusivos) y MUST rechazar un rango con «desde» posterior a «hasta», una fecha inválida o un estado inexistente, indicándolo junto al campo sin filtrar.
 - **FR-007**: El historial MUST permitir filtrar por estado del estudio (Pendiente de análisis, En proceso, Finalizado, Informe generado): quedan las muestras con al menos un estudio en ese estado y, de cada una, solo esos estudios.
 - **FR-008**: Los filtros MUST poder combinarse y limpiarse, y MUST conservarse al paginar.
 - **FR-009**: Si el cliente no tiene muestras, el historial MUST indicar que no tiene muestras registradas; si tiene pero ninguna coincide con los filtros, MUST indicar que ninguna coincide.
