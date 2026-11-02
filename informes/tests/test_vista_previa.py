@@ -50,10 +50,10 @@ def test_vista_previa_muestra_documento(cliente_bioquimico, estudio_listo):
         "Ausente",
         "&lt; 0,1",
         "Fuera de norma",
-        "Responsable técnico",
     ):
         assert texto in html, texto
     assert 'data-evaluacion="fuera_de_norma"' in html
+    assert "Responsable técnico" not in html
 
 
 def test_vista_previa_no_cambia_nada(cliente_bioquimico, estudio_listo):

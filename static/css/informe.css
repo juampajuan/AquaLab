@@ -62,14 +62,18 @@ body {
 }
 .inf-logo {
   width: 12mm;
+}
+/* Recuadro propio de 12 × 12 mm: pintar el td lo estiraba a la altura de la celda. */
+.inf-logo-recuadro {
+  width: 12mm;
   height: 12mm;
   background: #0f2744;
-  color: #0ea5e9;
-  text-align: center;
-  vertical-align: middle;
   border-radius: 2mm;
+  text-align: center;
 }
-.inf-logo svg {
+/* El color de la gota va como atributo en el SVG (documento_impreso.html): WeasyPrint no aplica
+   esta hoja al SVG inline ni resuelve currentColor. */
+.inf-logo-icono {
   width: 7mm;
   height: 7mm;
   margin-top: 2.5mm;

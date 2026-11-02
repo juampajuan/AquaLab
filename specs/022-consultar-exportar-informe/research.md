@@ -33,7 +33,7 @@
     `string-set: numero content()` en el número del informe del membrete, así cada hoja lleva
     «INF-000001 · Página 1 de 2».
   - Membrete al inicio del documento (logo, nombre, dirección, matrícula; número y fecha a la
-    derecha) y pie con responsable técnico y la firma.
+    derecha) y pie con la firma.
   - Tabla de resultados con `thead { display: table-header-group }` (se repite el encabezado en cada
     hoja), `tr { break-inside: avoid }`, y la firma con `break-inside: avoid`.
   - Solo CSS 2.1 + Paged Media: tabla y bloques (sin grid, sin variables CSS ni `oklch` que usa el

@@ -56,7 +56,7 @@ Como empleado del laboratorio, desde un informe emitido elijo «Descargar PDF» 
 **Acceptance Scenarios**:
 
 1. **Dado** un informe emitido, **cuando** el empleado elige «Descargar PDF», **entonces** recibe un archivo PDF en hoja A4 cuyo nombre incluye el número del informe (ej. «INF-000001.pdf»).
-2. **Dado** el PDF, **cuando** se abre, **entonces** contiene exactamente los mismos datos que el informe emitido en pantalla: membrete (nombre del laboratorio, dirección, matrícula, responsable técnico, logo), cliente, muestra, estudio y cada prueba con resultado, unidad, límite, norma y evaluación, con lo fuera de norma resaltado, «< LD» y «Ausente»/«Presente» como en pantalla.
+2. **Dado** el PDF, **cuando** se abre, **entonces** contiene exactamente los mismos datos que el informe emitido en pantalla: membrete (nombre del laboratorio, dirección, matrícula, logo), cliente, muestra, estudio y cada prueba con resultado, unidad, límite, norma y evaluación, con lo fuera de norma resaltado, «< LD» y «Ausente»/«Presente» como en pantalla.
 3. **Dado** un informe emitido con firma, **cuando** se exporta, **entonces** muestra la firma, el nombre y la matrícula de quien lo emitió, la fecha de emisión y el número del informe.
 4. **Dado** un informe emitido antes de esta historia (sin firma guardada), **cuando** se exporta, **entonces** en el lugar de la firma dice «Sin firma registrada» y el resto del documento sale completo.
 5. **Dado** un informe emitido, **cuando** el empleado elige «Imprimir», **entonces** se abre la impresión del navegador con el documento en A4, sin menú, botones ni otros elementos de la pantalla.
@@ -125,7 +125,7 @@ Como laboratorio, quiero que el informe emitido quede registrado tal como se ent
 - **FR-005**: Desde el listado MUST poder abrirse cada informe emitido, que se muestra a partir de la copia guardada (US 7.2), con las acciones «Descargar PDF» e «Imprimir».
 - **FR-006**: «Descargar PDF» MUST entregar un archivo PDF en hoja A4, generado por el sistema a partir de la copia guardada del informe, con el número del informe en el nombre del archivo.
 - **FR-007**: «Imprimir» MUST abrir la impresión del navegador con el documento preparado para hoja A4, mostrando solo el informe (sin menú, botones ni avisos de la pantalla).
-- **FR-008**: El PDF y la impresión MUST reproducir los mismos datos que el informe en pantalla, incluyendo el membrete institucional (nombre, dirección, matrícula, responsable técnico, logo), la firma, el nombre y la matrícula del emisor, la fecha y el número del informe.
+- **FR-008**: El PDF y la impresión MUST reproducir los mismos datos que el informe en pantalla, incluyendo el membrete institucional (nombre, dirección, matrícula, logo), la firma, el nombre y la matrícula del emisor, la fecha y el número del informe.
 - **FR-009**: En informes de más de una hoja, cada hoja MUST llevar el número del informe y el número de página, y las filas de pruebas MUST NOT partirse entre hojas.
 - **FR-010**: Un informe sin firma guardada (emitido antes de esta historia) MUST exportarse e imprimirse con la leyenda «Sin firma registrada» en el lugar de la firma.
 - **FR-011**: El sistema MUST ofrecer la pantalla «Mi firma» solo a usuarios con el permiso «Puede emitir informes», donde dibujan su firma con el mouse o el dedo y cargan su matrícula; MUST permitir borrar el trazo antes de guardar y reemplazar la firma más adelante.
