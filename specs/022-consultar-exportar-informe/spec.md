@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-02
 
-**Status**: Draft
+**Status**: Aprobada (2026-11-02)
 
 **Input**: User description: "SCRUM-59 – US 7.3 Consultar y exportar informe. Como empleado del laboratorio quiero consultar los informes emitidos y exportarlos en el formato que necesite para entregar los resultados al cliente de forma física o digital. Criterios (Jira): (1) Se debe poder buscar y acceder a los informes de estudios finalizados. (2) Se debe poder seleccionar el formato de exportación (PDF o imprimir en hoja A4). (3) El documento exportado debe mantener fidelidad de datos, membrete y firma profesional. (4) El informe emitido debe quedar registrado inalterable para auditorías y consultas posteriores. Alcance: listado de informes emitidos con búsqueda por número, cliente (nombre, razón social o documento) y N° PI y filtro por fechas de emisión, desde el menú, para cualquier empleado con sesión; PDF A4 generado en el servidor (descarga) e impresión A4 desde el navegador, siempre a partir de la copia congelada; membrete con los datos institucionales de la US 7.2; firma profesional dibujada una sola vez por cada usuario con «Puede emitir informes» en la pantalla «Mi firma», junto con su matrícula, guardada como imagen chica; sin firma no puede emitir; al emitir se copian firma, nombre y matrícula en el informe; los informes anteriores sin firma se exportan con «Sin firma registrada»; el informe emitido no se edita ni se borra. Fuera de alcance: envío por correo (SCRUM-39), anular o reemitir informes, firma digital con validez legal, conclusión asistida (US 7.4)."
 
