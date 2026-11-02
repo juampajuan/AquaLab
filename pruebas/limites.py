@@ -31,6 +31,7 @@ class LimitesAplicables:
     maximo: str
     norma: str
     origen: str  # "general" o el tipo de vertido cuyos límites se usaron
+    deteccion: str = ""  # límite de detección de la prueba (los vertidos no tienen uno propio)
 
 
 def leer_limite(texto):
@@ -54,23 +55,50 @@ def limites_aplicables(prueba, tipo_vertido):
     for limite in prueba.limites_vertido.all():
         if limite.tipo_vertido == tipo_vertido:
             return LimitesAplicables(
-                limite.limite_min, limite.limite_max, limite.norma, limite.tipo_vertido
+                limite.limite_min,
+                limite.limite_max,
+                limite.norma,
+                limite.tipo_vertido,
+                prueba.limite_deteccion,
             )
-    return LimitesAplicables(prueba.limite_min, prueba.limite_max, prueba.norma, "general")
+    return LimitesAplicables(
+        prueba.limite_min, prueba.limite_max, prueba.norma, "general", prueba.limite_deteccion
+    )
 
 
 def evaluar(valor, limites):
     """Cumple, fuera de norma o sin límite comparable (FR-007 de la spec 019).
 
-    Compara el valor completo del resultado, no el redondeado que se muestra.
+    Compara el valor completo del resultado, no el redondeado que se muestra. Con «Ausente», un
+    valor por debajo del límite de detección no se distingue de cero y también cumple (US 7.2).
     """
     minimo, maximo = leer_limite(limites.minimo), leer_limite(limites.maximo)
     if NO_COMPARABLE in (minimo, maximo) or (minimo is None and maximo is None):
         return Evaluacion.SIN_LIMITE
     if AUSENTE in (minimo, maximo):
-        return Evaluacion.CUMPLE if valor == 0 else Evaluacion.FUERA_DE_NORMA
+        if valor == 0 or bajo_deteccion(valor, limites):
+            return Evaluacion.CUMPLE
+        return Evaluacion.FUERA_DE_NORMA
     if minimo is not None and valor < minimo:
         return Evaluacion.FUERA_DE_NORMA
     if maximo is not None and valor > maximo:
         return Evaluacion.FUERA_DE_NORMA
     return Evaluacion.CUMPLE
+
+
+def bajo_deteccion(valor, limites):
+    """Si el valor es menor que el límite de detección numérico de la prueba."""
+    deteccion = leer_limite(limites.deteccion)
+    return isinstance(deteccion, Decimal) and valor < deteccion
+
+
+def texto_limite(limites):
+    """El límite como se muestra: «6.4 a 8.5», «máx. 350.0», «mín. 0.1» o vacío."""
+    minimo, maximo = limites.minimo.strip(), limites.maximo.strip()
+    if minimo and maximo:
+        return f"{minimo} a {maximo}"
+    if maximo:
+        return f"máx. {maximo}"
+    if minimo:
+        return f"mín. {minimo}"
+    return ""

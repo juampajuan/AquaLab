@@ -215,3 +215,11 @@ def test_revalidar_conserva_anulada(estudio_ph_cloruro, bioquimico):
     assert validaciones.count() == 2
     assert validaciones.filter(anulada=True).count() == 1
     assert validaciones.filter(anulada=False).count() == 1
+
+
+def test_validar_ausente_bajo_ld_cumple(estudio_de, empleado, bioquimico):
+    """FR-016 de la US 7.2: Sólidos sedimentables 0,05 con límite de detección 0,1 cumple."""
+    estudio = estudio_de("SS10")
+    cargar(estudio, empleado, SS10="0.05")
+    validar(estudio, bioquimico, "SS10")
+    assert asignacion_de(estudio, "SS10").validaciones.get().evaluacion == Evaluacion.CUMPLE

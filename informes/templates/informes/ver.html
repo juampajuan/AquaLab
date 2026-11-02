@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Informe {{ informe.numero_mostrado }} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'informes:control' estudio.pk as url_control %}
+  {% with numero=estudio.pk|stringformat:"s" %}
+    {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Control del estudio "|add:numero anterior_url=url_control titulo="Informe "|add:informe.numero_mostrado miga="Informe" %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-5xl space-y-6">
+    {% include "informes/documento.html" %}
+    <div class="flex flex-wrap gap-3">
+      <a href="{% url 'informes:control' estudio.pk %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver al control
+      </a>
+      <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="eye" clase="size-4" %} Ver detalle del estudio
+      </a>
+    </div>
+  </div>
+{% endblock %}

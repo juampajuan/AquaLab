@@ -1,0 +1,99 @@
+{% load ui %}
+{% comment %}
+  Documento del informe (US 7.2), igual para la vista previa y el emitido. Recibe `contenido`
+  (informes.contenido.armar_contenido o Informe.contenido) y, si está emitido, `informe`.
+{% endcomment %}
+{% with lab=contenido.laboratorio cliente=contenido.cliente muestra=contenido.muestra estudio=contenido.estudio %}
+  <article class="tarjeta space-y-6 p-6 sm:p-8" data-componente="informe">
+    <header class="flex flex-wrap items-start justify-between gap-4 border-b border-borde pb-5">
+      <div class="flex items-start gap-3">
+        {% if lab.logo == "aqualab" %}
+          <span class="flex size-10 items-center justify-center rounded-lg bg-marino text-cian">
+            {% include "ui/icono.html" with nombre="droplet" clase="size-5" %}
+          </span>
+        {% endif %}
+        <div class="leading-tight">
+          <p class="text-base font-bold text-marino">{{ lab.nombre }}</p>
+          <p class="text-xs text-tinta-suave">{{ lab.direccion|default:"—" }}</p>
+          <p class="text-xs text-tinta-suave">{{ lab.matricula|default:"—" }}</p>
+        </div>
+      </div>
+      <div class="text-right">
+        {% if informe %}
+          <p class="text-sm font-semibold text-marino">Informe N° {{ informe.numero_mostrado }}</p>
+          <p class="text-xs text-tinta-suave">{{ informe.fecha_emision|date:"d/m/Y H:i" }}</p>
+        {% else %}
+          <p class="text-sm font-bold tracking-wide text-tinta-suave">BORRADOR</p>
+        {% endif %}
+      </div>
+    </header>
+
+    <section>
+      <h2 class="mb-3 text-sm font-semibold text-marino">Cliente</h2>
+      <dl class="resumen lg:grid-cols-3">
+        <div><dt>Nombre o razón social</dt><dd>{{ cliente.nombre_completo|default:"—" }}</dd></div>
+        <div><dt>Documento</dt><dd>{{ cliente.tipo_documento }} {{ cliente.numero_documento }}</dd></div>
+        <div><dt>Domicilio</dt><dd>{{ cliente.domicilio|default:"—" }}</dd></div>
+        <div><dt>Correo electrónico</dt><dd>{{ cliente.email|default:"—" }}</dd></div>
+      </dl>
+    </section>
+
+    <section>
+      <h2 class="mb-3 text-sm font-semibold text-marino">Muestra</h2>
+      <dl class="resumen lg:grid-cols-3">
+        <div><dt>Muestra</dt><dd>N° PI {{ muestra.numero_pi }}<span class="mt-0.5 block text-xs font-normal text-tinta-suave">{{ muestra.nombre|default:"—" }}</span></dd></div>
+        <div><dt>Origen</dt><dd>{{ muestra.origen|default:"—" }}</dd></div>
+        <div><dt>Tipo de vertido</dt><dd>{{ muestra.tipo_vertido|default:"—" }}</dd></div>
+        <div><dt>Fecha de muestreo</dt><dd>{{ muestra.fecha_muestreo|default:"—" }}</dd></div>
+        <div><dt>Fecha de ingreso</dt><dd>{{ muestra.fecha_ingreso|default:"—" }}</dd></div>
+        <div><dt>Sitio de extracción</dt><dd>{{ muestra.sitio_extraccion|default:"—" }}</dd></div>
+        <div><dt>Responsable del muestreo</dt><dd>{{ muestra.responsable_muestreo|default:"—" }}</dd></div>
+      </dl>
+    </section>
+
+    <section>
+      <h2 class="mb-3 text-sm font-semibold text-marino">Estudio</h2>
+      <dl class="resumen lg:grid-cols-3">
+        <div><dt>N° de estudio</dt><dd>{{ estudio.numero }}</dd></div>
+        <div><dt>Tipo de estudio</dt><dd>{{ estudio.tipo|default:"—" }}</dd></div>
+      </dl>
+    </section>
+
+    <section>
+      <h2 class="mb-3 text-sm font-semibold text-marino">Resultados</h2>
+      <div class="overflow-x-auto">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Prueba</th>
+              <th>Resultado</th>
+              <th>Unidad</th>
+              <th>Límite</th>
+              <th>Norma</th>
+              <th class="text-right">Cumple</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for prueba in contenido.pruebas %}
+              <tr data-evaluacion="{{ prueba.evaluacion }}"{% if prueba.evaluacion == "fuera_de_norma" %} class="bg-peligro-suave"{% endif %}>
+                <td>{{ prueba.nombre }}<span class="block text-xs text-tinta-suave">{{ prueba.codigo }}</span></td>
+                <td class="numeros font-semibold text-tinta">{{ prueba.resultado_texto }}</td>
+                <td>{% if not prueba.unidad|es_presencia %}{{ prueba.unidad|unidad }}{% endif %}</td>
+                <td>{{ prueba.limite_texto|default:"—" }}{% if prueba.origen_limites != "general" %} <span class="text-xs text-tinta-suave">({{ prueba.origen_limites|capfirst }})</span>{% endif %}</td>
+                <td class="text-xs">{{ prueba.norma|default:"—" }}</td>
+                <td class="text-right">{% include "ui/estado.html" with estado=prueba.evaluacion_texto tipo=prueba.evaluacion|tipo_estado %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="space-y-1 border-t border-borde pt-4 text-xs text-tinta-suave">
+      <p>Responsable técnico: {{ lab.responsable_tecnico|default:"—" }}</p>
+      {% if informe %}
+        <p>Emitido por {{ informe.emitido_por.get_full_name|default:informe.emitido_por.email }} el {{ informe.fecha_emision|date:"d/m/Y H:i" }}</p>
+      {% endif %}
+    </footer>
+  </article>
+{% endwith %}

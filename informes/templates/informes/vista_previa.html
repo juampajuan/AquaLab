@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Vista previa del informe · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'informes:control' estudio.pk as url_control %}
+  {% with numero=estudio.pk|stringformat:"s" %}
+    {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Control del estudio "|add:numero anterior_url=url_control titulo="Vista previa del informe" miga="Vista previa" %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-5xl space-y-6">
+    <div class="aviso aviso-advertencia" role="status">
+      {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+      <div class="flex-1">Vista previa: este informe todavía no fue emitido.</div>
+    </div>
+
+    {% include "informes/documento.html" %}
+
+    <div class="flex flex-wrap items-center gap-3" data-componente="acciones-confirmacion">
+      {% if perms.informes.emitir_informes %}
+        {# Evita el doble envío sin deshabilitar el botón: deshabilitado no se envía. #}
+        <form method="post" action="{% url 'informes:generar' estudio.pk %}" onsubmit="if (this.dataset.enviado) return false; this.dataset.enviado = '1';">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primario">
+            {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Emitir informe
+          </button>
+        </form>
+      {% else %}
+        <p class="text-sm text-tinta-suave">Solo un integrante del grupo Bioquímicos puede emitir el informe.</p>
+      {% endif %}
+      <a href="{% url 'informes:control' estudio.pk %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver al control
+      </a>
+    </div>
+  </div>
+{% endblock %}

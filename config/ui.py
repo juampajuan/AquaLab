@@ -18,6 +18,10 @@ TIPOS_DE_ESTADO = {
     "pendiente": "neutral",
     "cargada": "info",
     "completada": "success",
+    # Evaluación de un resultado (US 6.4), en el informe (US 7.2)
+    "cumple": "success",
+    "fuera_de_norma": "danger",
+    "sin_limite": "neutral",
 }
 
 

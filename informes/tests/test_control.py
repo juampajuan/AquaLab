@@ -73,7 +73,7 @@ def test_boton_deshabilitado_con_pruebas_sin_completar(cliente_http, estudio_de,
     html = cliente_http.get(url(estudio)).content.decode()
     assert re.search(r'<button type="button" disabled aria-describedby="motivo-bloqueo"', html)
     assert 'id="motivo-bloqueo"' in html
-    assert reverse("informes:generar", args=[estudio.pk]) not in html
+    assert reverse("informes:vista_previa", args=[estudio.pk]) not in html
 
 
 def test_boton_habilitado_con_todas_completadas(cliente_http, estudio_de, completar):
@@ -81,10 +81,10 @@ def test_boton_habilitado_con_todas_completadas(cliente_http, estudio_de, comple
     completar(estudio)
     html = cliente_http.get(url(estudio)).content.decode()
     assert "El estudio está listo para informar: todas sus pruebas están completadas." in html
-    accion = reverse("informes:generar", args=[estudio.pk])
-    assert re.search(rf'<form method="post" action="{accion}"', html)
-    assert "csrfmiddlewaretoken" in html
-    assert "disabled" not in html.split(accion)[1].split("</form>")[0]
+    # US 7.2: «Generar informe» abre la vista previa; la emisión se confirma ahí.
+    vista_previa = reverse("informes:vista_previa", args=[estudio.pk])
+    assert re.search(rf'<a href="{vista_previa}" class="btn btn-primario">', html)
+    assert "disabled" not in html.split(vista_previa)[1].split("</a>")[0]
 
 
 def test_control_con_informe_emitido(cliente_http, estudio_de, completar, emitir):

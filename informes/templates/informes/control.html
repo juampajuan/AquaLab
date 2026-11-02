@@ -86,12 +86,13 @@
 
     <div class="flex flex-wrap gap-3">
       {% if listo %}
-        <form method="post" action="{% url 'informes:generar' estudio.pk %}">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-primario">
-            {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Generar informe
-          </button>
-        </form>
+        <a href="{% url 'informes:vista_previa' estudio.pk %}" class="btn btn-primario">
+          {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Generar informe
+        </a>
+      {% elif informe %}
+        <a href="{% url 'informes:ver' estudio.pk %}" class="btn btn-primario">
+          {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Ver informe
+        </a>
       {% elif not informe_emitido %}
         <button type="button" disabled aria-describedby="motivo-bloqueo" class="btn btn-primario opacity-50">
           {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Generar informe

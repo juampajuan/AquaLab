@@ -9,7 +9,13 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from muestras.models import Muestra
-from pruebas.limites import Evaluacion, LimitesAplicables, evaluar, limites_aplicables
+from pruebas.limites import (
+    Evaluacion,
+    LimitesAplicables,
+    evaluar,
+    limites_aplicables,
+    texto_limite,
+)
 
 from . import calculo, servicios
 from .busqueda import filtro_busqueda
@@ -445,17 +451,6 @@ def validaciones_vigentes():
 
 def validable(asignacion):
     return asignacion.estado == EstadoPruebaEstudio.CARGADA and calculo.tiene_resultado(asignacion)
-
-
-def texto_limite(limites):
-    minimo, maximo = limites.minimo.strip(), limites.maximo.strip()
-    if minimo and maximo:
-        return f"{minimo} a {maximo}"
-    if maximo:
-        return f"máx. {maximo}"
-    if minimo:
-        return f"mín. {minimo}"
-    return ""
 
 
 def evaluar_asignaciones(estudio, asignaciones):

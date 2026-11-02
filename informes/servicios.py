@@ -1,8 +1,11 @@
-from django.db import transaction
-from django.db.models import Count, F, Q
+from django.db import connection, transaction
+from django.db.models import Count, F, Max, Q
 
 from estudios.busqueda import filtro_busqueda
 from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
+
+from .contenido import armar_contenido
+from .models import Informe
 
 
 class InformeNoDisponible(Exception):
@@ -27,18 +30,69 @@ def motivo_para_no_informar(estudio, asignaciones):
     return None
 
 
-def comprobar_generacion(estudio_pk):
-    """Revalida la regla con el estudio bloqueado y lo devuelve; si no, InformeNoDisponible.
+def estudio_listo_bloqueado(estudio_pk):
+    """Bloquea el estudio y revalida la regla; lo devuelve o lanza InformeNoDisponible.
 
-    US 7.2 debe crear el informe dentro de esta misma transacción, con el estudio bloqueado como
-    en `cargar_mediciones` y `corregir_mediciones`.
+    El llamador debe estar dentro de una transacción (la emisión de la US 7.2 lo usa así).
     """
+    estudio = (
+        Estudio.objects.select_for_update(of=("self",))
+        .select_related("muestra", "muestra__cliente", "muestra__origen")
+        .filter(pk=estudio_pk)
+        .first()
+    )
+    if estudio is None:
+        raise InformeNoDisponible("El estudio no está disponible.")
+    motivo = motivo_para_no_informar(estudio, list(estudio.pruebas_asignadas.all()))
+    if motivo:
+        raise InformeNoDisponible(motivo)
+    return estudio
+
+
+def comprobar_generacion(estudio_pk):
+    """Revalida la regla con el estudio bloqueado y lo devuelve; si no, InformeNoDisponible."""
     with transaction.atomic():
-        estudio = Estudio.objects.select_for_update().get(pk=estudio_pk)
-        motivo = motivo_para_no_informar(estudio, list(estudio.pruebas_asignadas.all()))
-        if motivo:
-            raise InformeNoDisponible(motivo)
-        return estudio
+        return estudio_listo_bloqueado(estudio_pk)
+
+
+class EmitirInformeError(Exception):
+    pass
+
+
+# Clave fija del advisory lock que serializa la numeración de los informes (US 7.2).
+CLAVE_LOCK_NUMERO_INFORME = 7_200_001
+
+
+def siguiente_numero():
+    ultimo = Informe.objects.aggregate(maximo=Max("numero"))["maximo"]
+    return (ultimo or 0) + 1
+
+
+def emitir_informe(estudio_pk, usuario):
+    """Emite el informe del estudio (US 7.2) y lo devuelve.
+
+    En una transacción: bloquea el estudio y revalida la regla de la US 7.1, toma el lock de la
+    numeración (máximo + 1, sin huecos como el N° PI), guarda la copia de `armar_contenido` y pasa
+    el estudio a «Informe generado». Una segunda emisión del mismo estudio espera el bloqueo y
+    recibe el motivo «ya fue generado».
+    """
+    if not usuario.is_authenticated or not usuario.is_active:
+        raise EmitirInformeError("Se requiere una sesión activa.")
+    if not usuario.has_perm("informes.emitir_informes"):
+        raise EmitirInformeError("Se requiere permiso para emitir informes.")
+    with transaction.atomic():
+        estudio = estudio_listo_bloqueado(estudio_pk)
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_xact_lock(%s)", [CLAVE_LOCK_NUMERO_INFORME])
+        informe = Informe.objects.create(
+            numero=siguiente_numero(),
+            estudio=estudio,
+            emitido_por=usuario,
+            contenido=armar_contenido(estudio),
+        )
+        estudio.estado = EstadoEstudio.INFORME_GENERADO
+        estudio.save(update_fields=["estado"])
+    return informe
 
 
 def estudios_para_informar(q, solo_listos):

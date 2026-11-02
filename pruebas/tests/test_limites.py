@@ -105,3 +105,33 @@ def test_limites_aplicables_copia_la_norma_de_la_fila_usada(catalogo):
     prueba = Prueba.objects.get(codigo="PH")
     assert limites_aplicables(prueba, "cloacal").norma == "(AGOSBA) 389/98"
     assert limites_aplicables(prueba, "agua").norma == prueba.norma
+
+
+@pytest.mark.parametrize(
+    ("maximo", "deteccion", "valor", "esperada"),
+    [
+        # FR-016 (US 7.2): con «Ausente», por debajo del límite de detección cuenta como ausente.
+        ("Ausente", "0.1", "0.05", Evaluacion.CUMPLE),
+        ("Ausente", "0.1", "0.1", Evaluacion.FUERA_DE_NORMA),
+        ("Ausente", "0.1", "0", Evaluacion.CUMPLE),
+        ("Ausencia", "1.0", "0.5", Evaluacion.CUMPLE),
+        ("Ausencia", "1.0", "3", Evaluacion.FUERA_DE_NORMA),
+        # E. coli: el límite de detección no es numérico, no aplica.
+        ("Ausente", "Ausente", "1", Evaluacion.FUERA_DE_NORMA),
+        # Con límites numéricos el límite de detección no cambia nada.
+        ("350.0", "0.1", "400", Evaluacion.FUERA_DE_NORMA),
+        ("350.0", "0.1", "0.05", Evaluacion.CUMPLE),
+    ],
+)
+def test_evaluar_ausente_con_deteccion(maximo, deteccion, valor, esperada):
+    limites = LimitesAplicables(
+        minimo="", maximo=maximo, norma="", origen="general", deteccion=deteccion
+    )
+    assert evaluar(Decimal(valor), limites) == esperada
+
+
+@pytest.mark.parametrize("vertido", ["agua", "canal"])
+def test_limites_aplicables_deteccion(catalogo, vertido):
+    """Los límites por vertido no tienen detección propia: siempre la del catálogo."""
+    prueba = Prueba.objects.get(codigo="SS10")
+    assert limites_aplicables(prueba, vertido).deteccion == "0.1"
