@@ -113,7 +113,7 @@ No se agregan entidades ni datos nuevos: la historia solo consulta información 
 
 ## Assumptions
 
-- **Trazabilidad**: US 3.3 – Consultar historial del cliente. Jira: clave a confirmar. Responsable: a definir.
+- **Trazabilidad**: US 3.3 – Consultar historial del cliente. Jira: clave a confirmar (probablemente SCRUM-46: las claves conocidas siguen el orden de `docs/extra/jira-import.csv`, ID 13 + 33). Responsable: Manuelklly.
 - **Dependencias**: Se apoya en la ficha del cliente (US 3.1/3.2), las muestras y orígenes (US 4.1), el detalle del estudio y de la muestra (US 5.2) y el informe emitido (US 7.2, ya en `main`). La búsqueda y exportación de informes es de la US 7.3 (rama `022-consultar-exportar-informe`); acá solo se enlaza al informe emitido.
 - **Rango de fechas**: Se filtra por fecha de ingreso de la muestra, que es la fecha que muestra el listado.
 - **Permisos**: Como la ficha del cliente, cualquier empleado con sesión puede ver el historial.
