@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mi firma · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% include "ui/encabezado.html" with seccion="Informes" titulo="Mi firma" subtitulo="Tu firma y tu matrícula salen en los informes que emitas. Los informes ya emitidos conservan la firma con la que salieron." %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-3xl space-y-6">
+    {% if firma %}
+      <section class="tarjeta p-5 sm:p-6">
+        <h2 class="mb-3 text-sm font-semibold text-marino">Firma actual</h2>
+        <div class="flex flex-wrap items-end gap-6">
+          <img src="{{ firma.data_url }}" alt="Tu firma actual" class="h-20 w-auto max-w-72 rounded-md border border-borde bg-white object-contain p-2">
+          <div class="text-sm">
+            <p class="text-tinta-suave">Matrícula</p>
+            <p class="font-semibold text-tinta">{{ firma.matricula }}</p>
+            <p class="mt-1 text-xs text-tinta-suave">Actualizada el {{ firma.actualizada|date:"d/m/Y H:i" }}</p>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    <form method="post" action="{% url 'informes:mi_firma' %}" class="tarjeta space-y-5 p-5 sm:p-6" data-firma-form novalidate>
+      {% csrf_token %}
+      {% include "ui/errores_form.html" %}
+      <div>
+        <p class="campo-etiqueta">{% if firma %}Dibujar una firma nueva{% else %}Firma{% endif %}</p>
+        <canvas data-firma width="600" height="200"
+                class="block aspect-[3/1] w-full max-w-[600px] cursor-crosshair rounded-lg border-2 border-dashed border-borde-fuerte bg-white"
+                aria-label="Recuadro para dibujar la firma"></canvas>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-tinta-suave max-w-[600px]">
+          <span>Firmá con el mouse o con el dedo.{% if firma %} Si no dibujás nada, se conserva la firma actual.{% endif %}</span>
+          <button type="button" class="btn btn-secundario px-3 py-1.5" data-firma-borrar>
+            {% include "ui/icono.html" with nombre="x" clase="size-4" %} Borrar
+          </button>
+        </div>
+        {{ form.firma }}
+        {% if form.firma.errors %}
+          <div class="campo-error" id="{{ form.firma.auto_id }}_error">
+            {% for error in form.firma.errors %}<div>{{ error }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      {% include "ui/campo.html" with field=form.matricula clase="max-w-xs" %}
+      <div class="flex flex-wrap gap-3">
+        <button type="submit" class="btn btn-primario">
+          {% include "ui/icono.html" with nombre="pen-line" clase="size-4" %} Guardar firma
+        </button>
+        <a href="{% url 'informes:emitidos' %}" class="btn btn-secundario">Volver a informes emitidos</a>
+      </div>
+    </form>
+  </div>
+  <script src="{% static 'informes/firma.js' %}" defer></script>
+{% endblock %}

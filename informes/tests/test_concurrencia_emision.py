@@ -25,11 +25,12 @@ def en_hilo(usuario_id, barrera, estudio_pk):
         connection.close()
 
 
-def test_emisiones_concurrentes(estudio_de, empleado, bioquimico, django_user_model):
+def test_emisiones_concurrentes(estudio_de, empleado, bioquimico, django_user_model, firma_de):
     otro = django_user_model.objects.create_user(
         email="otro-bioquimico-emision@ejemplo.com", password="Clave-Valida-123", is_active=True
     )
     otro.groups.set(bioquimico.groups.all())
+    firma_de(otro)  # desde la US 7.3 no se emite sin firma
     estudio = estudio_de("PH")
     cargar(estudio, empleado, PH="7.4")
     validar(estudio, bioquimico, "PH")

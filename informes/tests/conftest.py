@@ -88,3 +88,48 @@ def estudio_para(empleado, catalogo):
         return crear_estudio(datos, empleado)
 
     return crear
+
+
+@pytest.fixture
+def emitir_de(estudio_para, completar, bioquimico):
+    """Emite el informe de un estudio nuevo con esos códigos en la muestra dada (US 7.3)."""
+    from informes.servicios import emitir_informe
+
+    def crear(muestra, *codigos):
+        estudio = estudio_para(muestra, *(codigos or ("PH",)))
+        completar(estudio)
+        return emitir_informe(estudio.pk, bioquimico)
+
+    return crear
+
+
+@pytest.fixture
+def tres_informes(otra_muestra, emitir_de):
+    """INF-000001 y INF-000003 de «Aguas del Sur SA» (CUIT); INF-000002 de «José Núñez» (DNI)."""
+    sur = otra_muestra(
+        200101, "", "30712345678", tipo_documento="CUIT", razon_social="Aguas del Sur SA"
+    )
+    jose = otra_muestra(200102, "José Núñez", "28444555")
+    sur_2 = otra_muestra(
+        200103, "", "30712345679", tipo_documento="CUIT", razon_social="Aguas del Sur SA"
+    )
+    return emitir_de(sur), emitir_de(jose), emitir_de(sur_2)
+
+
+@pytest.fixture
+def con_fecha():
+    """Cambia la fecha de emisión (hora de Buenos Aires) sin pasar por save()."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from informes.models import Informe
+
+    def cambiar(informe, anio, mes, dia, hora=12, minuto=0):
+        fecha = datetime(
+            anio, mes, dia, hora, minuto, tzinfo=ZoneInfo("America/Argentina/Buenos_Aires")
+        )
+        Informe.objects.filter(pk=informe.pk).update(fecha_emision=fecha)
+        informe.refresh_from_db()
+        return informe
+
+    return cambiar

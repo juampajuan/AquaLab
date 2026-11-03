@@ -9,6 +9,8 @@ from informes.models import Informe
 from informes.servicios import EmitirInformeError, InformeNoDisponible, emitir_informe
 from pruebas.models import LimiteVertido, Prueba
 
+from .utiles import png
+
 pytestmark = pytest.mark.django_db
 
 
@@ -27,7 +29,7 @@ def listo(estudio_de, empleado, bioquimico):
 
 def test_emitir_crea_informe_y_cambia_estado(listo, bioquimico):
     estudio = listo()
-    esperado = armar_contenido(estudio)
+    esperado = armar_contenido(estudio, bioquimico)
     informe = emitir_informe(estudio.pk, bioquimico)
     assert (informe.numero, informe.numero_mostrado) == (1, "INF-000001")
     assert informe.emitido_por == bioquimico
@@ -103,3 +105,39 @@ def test_emision_no_modifica_otros_datos(listo, bioquimico):
     antes = foto()
     emitir_informe(estudio.pk, bioquimico)
     assert foto() == antes
+
+
+SIN_FIRMA = "Cargá tu firma y matrícula en «Mi firma» antes de emitir."
+
+
+def test_emitir_sin_firma_rechaza(estudio_de, completar, bioquimico_sin_firma):
+    estudio = estudio_de("PH")
+    completar(estudio)
+    estado = estudio.estado
+    with pytest.raises(EmitirInformeError) as exc:
+        emitir_informe(estudio.pk, bioquimico_sin_firma)
+    assert str(exc.value) == SIN_FIRMA
+    assert not Informe.objects.exists()
+    estudio.refresh_from_db()
+    assert estudio.estado == estado != EstadoEstudio.INFORME_GENERADO
+
+
+def test_emitir_copia_firma(listo, bioquimico):
+    informe = emitir_informe(listo().pk, bioquimico)
+    firma = bioquimico.firma_profesional
+    assert informe.contenido["firma"] == {
+        "nombre": bioquimico.get_full_name() or bioquimico.email,
+        "matricula": "MP 1234",
+        "imagen": firma.data_url,
+    }
+
+
+def test_cambiar_firma_no_cambia_emitidos(listo, bioquimico):
+    informe = emitir_informe(listo().pk, bioquimico)
+    antes = informe.contenido["firma"]
+    firma = bioquimico.firma_profesional
+    firma.imagen = png(300, 100)
+    firma.matricula = "MP 9999"
+    firma.save()
+    informe.refresh_from_db()
+    assert informe.contenido["firma"] == antes

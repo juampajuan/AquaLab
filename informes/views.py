@@ -1,9 +1,11 @@
+import logging
 from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import permission_required
 from django.core.paginator import Paginator
 from django.db import DatabaseError
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -12,10 +14,14 @@ from estudios.forms import BuscarEstudioForm
 from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
 from estudios.views import RESULTADOS_POR_PAGINA
 
-from . import servicios
+from . import pdf, servicios
+from .busqueda import informes_emitidos
 from .contenido import armar_contenido
-from .models import Informe
+from .forms import BuscarInformeForm, FirmaForm
+from .models import FirmaProfesional, Informe
 from .servicios import EmitirInformeError, InformeNoDisponible
+
+logger = logging.getLogger("informes")
 
 
 def listar(request):
@@ -82,7 +88,14 @@ def vista_previa(request, pk):
     if motivo:
         messages.error(request, motivo)
         return redirect("informes:control", pk=estudio.pk)
-    contexto = {"estudio": estudio, "contenido": armar_contenido(estudio)}
+    puede_emitir = request.user.has_perm("informes.emitir_informes")
+    contexto = {
+        "estudio": estudio,
+        "contenido": armar_contenido(estudio, request.user),
+        "puede_emitir": puede_emitir,
+        "falta_firma": puede_emitir
+        and not FirmaProfesional.objects.filter(usuario=request.user).exists(),
+    }
     return render(request, "informes/vista_previa.html", contexto)
 
 
@@ -112,3 +125,64 @@ def ver(request, pk):
     )
     contexto = {"estudio": informe.estudio, "informe": informe, "contenido": informe.contenido}
     return render(request, "informes/ver.html", contexto)
+
+
+def emitidos(request):
+    """Listado y búsqueda de informes emitidos (US 7.3): cualquier empleado con sesión."""
+    page_obj = None
+    form = BuscarInformeForm(request.GET or None)
+    datos = {"q": "", "desde": None, "hasta": None}
+    if form.is_bound and form.is_valid():
+        datos = form.cleaned_data
+    if not form.is_bound or form.is_valid():
+        qs = informes_emitidos(datos["q"], datos["desde"], datos["hasta"])
+        page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
+    parametros = urlencode(
+        {
+            clave: valor.isoformat() if hasattr(valor, "isoformat") else valor
+            for clave, valor in datos.items()
+            if valor
+        }
+    )
+    return render(
+        request,
+        "informes/emitidos.html",
+        {
+            "form": form,
+            "page_obj": page_obj,
+            "parametros": parametros,
+            "hay_filtros": any(datos.values()),
+        },
+    )
+
+
+def pdf_informe(request, pk):
+    """Descarga del informe emitido en PDF A4 (US 7.3), desde su copia."""
+    informe = get_object_or_404(Informe.objects.select_related("estudio"), estudio__pk=pk)
+    try:
+        contenido = pdf.generar_pdf(informe)
+    except Exception:
+        logger.exception("No se pudo generar el PDF del informe %s", informe.numero_mostrado)
+        messages.error(request, "No se pudo generar el PDF. Intentá nuevamente.")
+        return redirect("informes:ver", pk=pk)
+    respuesta = HttpResponse(contenido, content_type="application/pdf")
+    respuesta["Content-Disposition"] = f'attachment; filename="{informe.numero_mostrado}.pdf"'
+    return respuesta
+
+
+def imprimir(request, pk):
+    """El informe emitido en hoja A4 para imprimir desde el navegador (US 7.3)."""
+    informe = get_object_or_404(Informe.objects.select_related("estudio"), estudio__pk=pk)
+    contexto = {"informe": informe, "contenido": informe.contenido, "pdf": False}
+    return render(request, "informes/impreso.html", contexto)
+
+
+@permission_required("informes.emitir_informes", raise_exception=True)
+def mi_firma(request):
+    """Firma y matrícula de quien emite informes (US 7.3); cada uno edita solo la suya."""
+    form = FirmaForm(request.POST or None, usuario=request.user)
+    if request.method == "POST" and form.is_valid():
+        form.guardar()
+        messages.success(request, "Se guardó tu firma.")
+        return redirect("informes:mi_firma")
+    return render(request, "informes/mi_firma.html", {"form": form, "firma": form.actual})

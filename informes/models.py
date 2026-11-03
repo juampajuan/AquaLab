@@ -1,3 +1,5 @@
+import base64
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -7,7 +9,8 @@ class Informe(models.Model):
     """Informe emitido de un estudio (US 7.2), con la copia de todo lo que se mostró.
 
     `contenido` se arma con `informes.contenido.armar_contenido` y no cambia: el informe emitido
-    se muestra siempre desde esa copia, aunque después se editen el cliente o el catálogo.
+    se muestra siempre desde esa copia, aunque después se editen el cliente o el catálogo. Es
+    inalterable (US 7.3): no está en el admin y `save()`/`delete()` rechazan cambiarlo o borrarlo.
     """
 
     numero = models.PositiveIntegerField("número", unique=True, editable=False)
@@ -35,6 +38,43 @@ class Informe(models.Model):
     def __str__(self):
         return f"{self.numero_mostrado} · {self.estudio}"
 
+    def save(self, *args, **kwargs):
+        """Solo se guarda al emitir: un informe emitido no se modifica (US 7.3, FR-017)."""
+        if not self._state.adding:
+            raise ValueError("Un informe emitido no se puede modificar.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Un informe emitido no se borra (US 7.3, FR-017)."""
+        raise ValueError("Un informe emitido no se puede borrar.")
+
     @property
     def numero_mostrado(self):
         return f"INF-{self.numero:06d}"
+
+
+class FirmaProfesional(models.Model):
+    """Firma manuscrita y matrícula de quien emite informes (US 7.3).
+
+    La imagen es un PNG chico validado por `informes.firmas.leer_firma` y se guarda en la base
+    (Render no conserva los archivos subidos). Al emitir se copia dentro de `Informe.contenido`,
+    así que cambiarla después no modifica los informes ya emitidos.
+    """
+
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="firma_profesional"
+    )
+    imagen = models.BinaryField("imagen")
+    matricula = models.CharField("matrícula", max_length=40)
+    actualizada = models.DateTimeField("actualizada", auto_now=True)
+
+    class Meta:
+        verbose_name = "firma profesional"
+        verbose_name_plural = "firmas profesionales"
+
+    def __str__(self):
+        return f"Firma de {self.usuario}"
+
+    @property
+    def data_url(self):
+        return "data:image/png;base64," + base64.b64encode(bytes(self.imagen)).decode()

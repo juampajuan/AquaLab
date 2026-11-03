@@ -14,6 +14,15 @@
   <div class="max-w-5xl space-y-6">
     {% include "informes/documento.html" %}
     <div class="flex flex-wrap gap-3">
+      <a href="{% url 'informes:pdf' estudio.pk %}" class="btn btn-primario">
+        {% include "ui/icono.html" with nombre="download" clase="size-4" %} Descargar PDF
+      </a>
+      <a href="{% url 'informes:imprimir' estudio.pk %}" class="btn btn-secundario" target="_blank" rel="noopener">
+        {% include "ui/icono.html" with nombre="printer" clase="size-4" %} Imprimir
+      </a>
+      <a href="{% url 'informes:emitidos' %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver a informes emitidos
+      </a>
       <a href="{% url 'informes:control' estudio.pk %}" class="btn btn-secundario">
         {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver al control
       </a>

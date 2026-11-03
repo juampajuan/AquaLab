@@ -1,0 +1,25 @@
+{% load static %}<!DOCTYPE html>
+{% comment %}
+  Informe emitido en hoja A4 (US 7.3). Lo dibujan WeasyPrint (pdf=True: sin <link>, barra ni
+  script; la hoja de estilos la pasa informes/pdf.py) y la impresión del navegador.
+{% endcomment %}
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Informe {{ informe.numero_mostrado }}</title>
+  {% if not pdf %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'css/informe.css' %}">
+    <script src="{% static 'informes/imprimir.js' %}" defer></script>
+  {% endif %}
+</head>
+<body>
+  {% if not pdf %}
+    <div class="inf-barra">
+      <button type="button" data-imprimir>Imprimir</button>
+      <a href="{% url 'informes:ver' informe.estudio_id %}">Volver al informe</a>
+    </div>
+  {% endif %}
+  {% include "informes/documento_impreso.html" %}
+</body>
+</html>

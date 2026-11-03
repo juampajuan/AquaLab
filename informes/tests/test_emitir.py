@@ -67,3 +67,17 @@ def test_error_de_base_al_emitir(cliente_bioquimico, estudio_listo):
     assert respuesta["Location"] == reverse("informes:control", args=[estudio_listo.pk])
     assert mensajes(respuesta) == ["No se pudo emitir el informe. Intentá nuevamente."]
     assert not Informe.objects.exists()
+
+
+def test_generar_sin_firma(estudio_de, completar, bioquimico_sin_firma):
+    from django.test import Client
+
+    estudio = estudio_de("PH")
+    completar(estudio)
+    c = Client()
+    c.force_login(bioquimico_sin_firma)
+    respuesta = emitir(c, estudio)
+    assert respuesta.status_code == 302
+    assert respuesta.url == reverse("informes:control", args=[estudio.pk])
+    assert mensajes(respuesta) == ["Cargá tu firma y matrícula en «Mi firma» antes de emitir."]
+    assert not Informe.objects.exists()

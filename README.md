@@ -8,14 +8,16 @@ proyecto están en la [constitution](.specify/memory/constitution.md).
 
 ## Stack
 
-Python 3.12 · Django 5.2 LTS · PostgreSQL 16 · Docker Compose · Tailwind CSS 4 · pytest-django · ruff
+Python 3.12 · Django 5.2 LTS · PostgreSQL 16 · Docker Compose · Tailwind CSS 4 · WeasyPrint (PDF) ·
+pytest-django · ruff
 
 ## Requisitos
 
 - [Docker](https://docs.docker.com/get-docker/) con Docker Compose.
 - Git.
 
-No hace falta instalar Python ni PostgreSQL en la máquina: todo corre dentro de los contenedores.
+No hace falta instalar Python, PostgreSQL ni las librerías de WeasyPrint (Pango) en la máquina:
+todo corre dentro de los contenedores.
 
 ## Levantar el proyecto desde cero
 

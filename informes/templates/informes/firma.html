@@ -1,0 +1,14 @@
+{% comment %}
+  Firma del informe (US 7.3), compartida por la pantalla y la hoja A4. Recibe `firma`
+  (`contenido.firma`: nombre, matrícula e imagen); los informes anteriores no la tienen.
+  Usa solo clases semánticas: las definen static/src/aqualab.css y static/css/informe.css.
+{% endcomment %}
+<div class="firma" data-componente="firma">
+  {% if firma %}
+    <img class="firma-imagen" src="{{ firma.imagen }}" alt="Firma de {{ firma.nombre }}">
+    <span class="firma-nombre">{{ firma.nombre }}</span>
+    <span class="firma-matricula">Mat. {{ firma.matricula|default:"—" }}</span>
+  {% else %}
+    <span class="firma-ausente">Sin firma registrada</span>
+  {% endif %}
+</div>
