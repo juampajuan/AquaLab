@@ -6,6 +6,7 @@ from django.contrib.auth.forms import (
     UserChangeForm,
 )
 from django.contrib.auth.hashers import check_password, make_password
+from django.core import signing
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.db import DatabaseError
 from django.views.decorators.debug import sensitive_variables
@@ -14,6 +15,42 @@ from .models import Usuario, UsuarioManager
 
 
 class UsuarioChangeForm(UserChangeForm):
+    contexto_administrativo = forms.CharField(widget=forms.HiddenInput)
+
+    def __init__(self, *args, request=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.request = request
+        if request is not None and self.instance.pk:
+            from .confirmaciones_administracion import firmar_ficha
+            from .servicios_administracion import instantanea
+
+            self.original_vigente = instantanea(self.instance)
+            if not self.is_bound:
+                self.initial["contexto_administrativo"] = firmar_ficha(
+                    request, self.original_vigente
+                )
+
+    def clean(self):
+        datos = super().clean()
+        if self.request is None or not self.instance.pk:
+            return datos
+        from .confirmaciones_administracion import leer_ficha
+
+        try:
+            original = leer_ficha(self.request, datos.get("contexto_administrativo", ""))
+        except (signing.BadSignature, KeyError):
+            raise forms.ValidationError(
+                "La confirmación es inválida o venció. Revisá nuevamente la ficha."
+            ) from None
+        if original != self.original_vigente:
+            raise forms.ValidationError("La cuenta cambió. Revisá nuevamente la ficha.")
+        if self.instance.pk == self.request.user.pk and not datos.get("is_active"):
+            raise forms.ValidationError("No podés desactivar tu propia cuenta.")
+        self.original_firmado = original
+        # ModelForm valida constraints después de clean, antes de save_model.
+        self.instance.aprobada = original["aprobada"] or bool(datos.get("is_active"))
+        return datos
+
     class Meta(UserChangeForm.Meta):
         model = Usuario
         fields = "__all__"
@@ -113,6 +150,10 @@ class FormularioInicioSesion(AuthenticationForm):
         encoded = cuenta.password if cuenta is not None else make_password(None)
         coincide = check_password(self.cleaned_data["password"], encoded)
         if coincide and cuenta is not None and not cuenta.is_active:
+            if cuenta.aprobada:
+                return forms.ValidationError(
+                    "Tu cuenta está desactivada", code="cuenta_desactivada"
+                )
             return forms.ValidationError(
                 "Tu cuenta está pendiente de aprobación", code="pendiente_aprobacion"
             )

@@ -30,6 +30,7 @@ def crear_usuario_pendiente(datos):
             email=datos["email"],
             # Ya viene hasheada desde `RegistroForm.datos_para_sesion` (no usar `create_user`).
             password=datos["password"],
+            aprobada=False,
             is_active=False,
         )
 

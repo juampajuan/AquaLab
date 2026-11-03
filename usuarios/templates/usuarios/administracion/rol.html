@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Cambiar rol profesional · AquaLab{% endblock %}
+{% block encabezado %}{% include "ui/encabezado.html" with titulo="Cambiar rol profesional" seccion="Administración" %}{% endblock %}
+{% block content %}
+<section class="tarjeta p-6 max-w-3xl"><h2 class="text-lg font-semibold text-marino">{{ usuario.first_name }} {{ usuario.last_name }}</h2><p>{{ usuario.email }}</p>
+<p class="mt-4">Rol actual: <strong>{{ rol_actual }}</strong></p>
+<form method="post" class="mt-6 space-y-4">{% csrf_token %}{{ form.contexto }}<input type="hidden" name="accion" value="revisar">
+{{ form.non_field_errors }}{% include "ui/campo.html" with field=form.rol %}
+<div class="flex gap-3"><button class="btn btn-primario">Continuar</button><a class="btn btn-secundario" href="{% url 'administracion:usuarios' %}">Cancelar</a></div>
+</form></section>
+{% endblock %}

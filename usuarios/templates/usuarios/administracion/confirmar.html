@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} · AquaLab{% endblock %}
+{% block content %}
+{% include "ui/encabezado.html" with titulo=titulo seccion="Administración" %}
+<section class="tarjeta p-6 max-w-3xl">
+{% if form.errors %}<div role="alert" class="text-peligro">{{ form.non_field_errors }}{{ form.errors }}</div>{% endif %}
+{% if usuario %}
+<h2 class="text-lg font-semibold text-marino">{{ usuario.first_name }} {{ usuario.last_name }}</h2><p>{{ usuario.email }}</p>
+<p class="mt-4">Estado actual: {{ usuario.estado_cuenta.label }}.</p>
+{% if operacion == 'rechazar' %}<p class="mt-4">Si la solicitud es elegible, se eliminará la cuenta, se liberará su correo y se enviará el aviso de rechazo. Si conserva historial protegido o firma profesional, el rechazo se impedirá y se conservarán íntegramente sus datos, sin aviso.</p>
+{% elif operacion == 'aprobar' %}<p class="mt-4">La cuenta quedará Activa y recibirá el aviso de aprobación.</p>
+{% elif operacion == 'estado' %}<p class="mt-4">{{ consecuencia }} Se conservarán su identidad, permisos e historial.</p>
+{% else %}<p class="mt-4">Rol actual: {{ rol_anterior }}. Rol propuesto: {{ rol_propuesto }}. Solo cambia la pertenencia a Bioquímicos; los demás grupos y permisos se conservan.</p>{% endif %}
+{% endif %}
+{% if token %}{% include "ui/acciones_confirmacion.html" with token=token %}{% endif %}
+</section>
+{% endblock %}

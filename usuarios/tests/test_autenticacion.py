@@ -19,14 +19,20 @@ def test_cuenta_aprobada_autentica(client, usuario_aprobado):
     assert client.login(email=usuario_aprobado.email, password=PASSWORD_EXISTENTE) is True
 
 
-def test_cuenta_registrada_y_aprobada_autentica(client, datos_registro, password_registro):
+def test_cuenta_registrada_y_aprobada_autentica(
+    client, cliente_admin, datos_registro, password_registro
+):
     client.post(reverse("usuarios:registro"), datos_registro)
     client.post(reverse("usuarios:registro_confirmar"), {"accion": "confirmar"})
 
     usuario = get_user_model().objects.get(email="ana@lab.com")
     assert authenticate(email="ana@lab.com", password=password_registro) is None
 
-    usuario.is_active = True
-    usuario.save()
+    cliente_admin.post(
+        reverse("admin:usuarios_usuario_changelist"),
+        {"action": "aprobar_cuentas", "_selected_action": [usuario.pk]},
+    )
+    usuario.refresh_from_db()
+    assert usuario.aprobada and usuario.is_active
 
     assert authenticate(email="ana@lab.com", password=password_registro) == usuario

@@ -48,12 +48,15 @@ def test_accion_aprobar_es_idempotente(cliente_admin, usuario_aprobado):
     assert "Se aprobaron 0 cuenta(s)." in respuesta.content.decode()
 
 
-def test_filtro_aprobada_lista_pendientes(cliente_admin, usuario_pendiente, usuario_aprobado):
+def test_filtro_activa_lista_inactivas(
+    cliente_admin, usuario_pendiente, usuario_aprobado, usuario_desactivado
+):
     respuesta = cliente_admin.get(reverse(URL_LISTADO), {"is_active__exact": "0"})
 
     contenido = respuesta.content.decode()
     assert respuesta.status_code == 200
     assert usuario_pendiente.email in contenido
+    assert usuario_desactivado.email in contenido
     assert usuario_aprobado.email not in contenido
-    assert "Aprobada" in contenido
+    assert "Activa" in contenido
     assert "Aprobar cuentas seleccionadas" in contenido

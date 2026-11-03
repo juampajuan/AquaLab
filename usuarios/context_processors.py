@@ -9,4 +9,9 @@ def huella_para(request):
 
 
 def contexto_sesion(request):
-    return {"huella_sesion": huella_para(request)}
+    from .permisos_administracion import tiene_acceso_administracion
+
+    return {
+        "huella_sesion": huella_para(request),
+        "puede_administrar": tiene_acceso_administracion(request.user),
+    }

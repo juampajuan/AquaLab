@@ -96,14 +96,18 @@ def test_correo_normalizado_password_literal(client, usuario_aprobado):
         assert respuesta.status_code == estado
 
 
-def test_unicode_registro_aprobacion_login(client, datos_registro):
+def test_unicode_registro_aprobacion_login(client, cliente_admin, datos_registro):
     email = "ANA@ｅxample.com"
     datos = {**datos_registro, "email": email}
     client.post(reverse("usuarios:registro"), datos)
     client.post(reverse("usuarios:registro_confirmar"), {"accion": "confirmar"})
     usuario = get_user_model().objects.get(email="ana@ｅxample.com")
-    usuario.is_active = True
-    usuario.save()
+    cliente_admin.post(
+        reverse("admin:usuarios_usuario_changelist"),
+        {"action": "aprobar_cuentas", "_selected_action": [usuario.pk]},
+    )
+    usuario.refresh_from_db()
+    assert usuario.aprobada and usuario.is_active
     respuesta = client.post(
         reverse("usuarios:login"),
         {

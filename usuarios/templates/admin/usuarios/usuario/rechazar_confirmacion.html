@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block content %}
-<p>¿Seguro que querés rechazar estas solicitudes? Cada solicitante recibirá un correo avisando que su solicitud no fue aprobada. Esta acción no se puede deshacer.</p>
+<p>¿Seguro que querés rechazar estas solicitudes? Las solicitudes elegibles se eliminarán y recibirán el aviso de rechazo. Las cuentas con historial protegido o firma se conservarán sin aviso y se informará el motivo. Una eliminación efectiva no se puede deshacer.</p>
 
 <ul>
   {% for usuario in pendientes %}
@@ -28,6 +28,7 @@
   <div>
     <input type="hidden" name="action" value="rechazar_solicitudes">
     <input type="hidden" name="confirmar" value="si">
+    <input type="hidden" name="contexto_administrativo" value="{{ contexto_administrativo }}">
     {% for usuario in pendientes %}
       <input type="hidden" name="_selected_action" value="{{ usuario.pk }}">
     {% endfor %}

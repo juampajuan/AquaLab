@@ -106,3 +106,115 @@ def en_revision(client, datos_registro):
 @pytest.fixture
 def cliente_csrf():
     return Client(enforce_csrf_checks=True)
+
+
+@pytest.fixture
+def permiso_administrativo(db):
+    from django.contrib.auth.models import Permission
+    from django.contrib.contenttypes.models import ContentType
+
+    from usuarios.models import Usuario
+
+    return Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Usuario),
+        codename="administrar_panel",
+        defaults={"name": "Puede administrar el panel de AquaLab"},
+    )[0]
+
+
+@pytest.fixture
+def grupo_administradores(permiso_administrativo):
+    from django.contrib.auth.models import Group
+
+    grupo, _ = Group.objects.get_or_create(name="Administradores")
+    grupo.permissions.add(permiso_administrativo)
+    return grupo
+
+
+@pytest.fixture
+def administrador_panel(django_user_model, grupo_administradores):
+    usuario = django_user_model.objects.create_user(
+        email="panel@lab.com", password=PASSWORD_EXISTENTE, first_name="Panel", last_name="Admin"
+    )
+    usuario.groups.add(grupo_administradores)
+    return usuario
+
+
+@pytest.fixture
+def usuario_desactivado(django_user_model):
+    return django_user_model.objects.create_user(
+        email="desactivado@lab.com",
+        password=PASSWORD_EXISTENTE,
+        first_name="Cuenta",
+        last_name="Desactivada",
+        aprobada=True,
+        is_active=False,
+    )
+
+
+@pytest.fixture
+def grupo_bioquimicos(db):
+    from django.contrib.auth.models import Group, Permission
+    from django.contrib.contenttypes.models import ContentType
+
+    from estudios.models import Validacion
+    from informes.models import Informe
+
+    grupo, _ = Group.objects.get_or_create(name="Bioquímicos")
+    for modelo, codigo in [(Validacion, "validar_resultados"), (Informe, "emitir_informes")]:
+        permiso, _ = Permission.objects.get_or_create(
+            content_type=ContentType.objects.get_for_model(modelo),
+            codename=codigo,
+            defaults={"name": codigo},
+        )
+        grupo.permissions.add(permiso)
+    return grupo
+
+
+@pytest.fixture
+def historial_usuario(db):
+    def crear(usuario, relacion):
+        from datetime import date
+
+        from clientes.models import Cliente
+        from informes.models import FirmaProfesional
+        from muestras.models import Muestra, Origen
+
+        if relacion == "firma":
+            return FirmaProfesional.objects.create(
+                usuario=usuario, imagen=b"firma", matricula="MP 1"
+            )
+        cliente = Cliente.objects.create(
+            nombre="Histórico",
+            tipo_documento="DNI",
+            numero_documento="12345678",
+            email="cliente@lab.com",
+        )
+        origen = Origen.objects.create(cliente=cliente, nombre="Pozo")
+        return Muestra.objects.create(
+            numero_pi=200001,
+            nombre="Agua",
+            cliente=cliente,
+            origen=origen,
+            fecha_muestreo=date(2026, 1, 1),
+            fecha_ingreso=date(2026, 1, 1),
+            sitio_extraccion="Pozo",
+            registrada_por=usuario,
+        )
+
+    return crear
+
+
+@pytest.fixture
+def otros_privilegios(db, permiso_administrativo):
+    from django.contrib.auth.models import Group
+
+    grupo, _ = Group.objects.get_or_create(name="Otros privilegios")
+    grupo.permissions.add(permiso_administrativo)
+    return grupo, permiso_administrativo
+
+
+@pytest.fixture
+def cliente_panel(client, administrador_panel):
+    client.force_login(administrador_panel)
+    return client
