@@ -5,8 +5,16 @@ from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_GET
 
-from .forms import CAMPOS_CLIENTE, BuscarClienteForm, EditarClienteForm, RegistroClienteForm
+from .forms import (
+    CAMPOS_CLIENTE,
+    BuscarClienteForm,
+    EditarClienteForm,
+    HistorialClienteForm,
+    RegistroClienteForm,
+)
+from .historial import muestras_del_historial
 from .models import (
     MENSAJE_DOCUMENTO_CON_MUESTRAS,
     Cliente,
@@ -21,6 +29,7 @@ MENSAJE_CANCELADO = "Registro de cliente cancelado."
 MENSAJE_DUPLICADO = "Ya existe un cliente registrado con este tipo y número de documento."
 RESULTADOS_POR_PAGINA = 20
 MENSAJE_NO_DISPONIBLE = "El cliente no está disponible."
+CAMPOS_FILTRO_HISTORIAL = ("desde", "hasta", "estado")
 MENSAJE_ERROR_BD = "No se pudo completar el registro del cliente. Intentá nuevamente."
 MENSAJE_EDICION_EXITO = "Datos del cliente actualizados correctamente."
 MENSAJE_EDICION_CANCELADA = "Edición de cliente cancelada."
@@ -200,6 +209,33 @@ def detalle(request, pk):
         messages.warning(request, MENSAJE_NO_DISPONIBLE)
         return redirect("clientes:buscar")
     return render(request, "clientes/detalle.html", {"cliente": cliente})
+
+
+@require_GET
+def historial(request, pk):
+    """Historial del cliente (US 3.3): sus muestras con estudios e informes. Solo lectura."""
+    cliente = get_object_or_404(Cliente, pk=pk)
+    if not cliente.activo:
+        messages.warning(request, MENSAJE_NO_DISPONIBLE)
+        return redirect("clientes:buscar")
+    form = HistorialClienteForm(request.GET or None)
+    filtros = {}
+    if form.is_bound and form.is_valid():
+        filtros = {campo: form.cleaned_data[campo] for campo in CAMPOS_FILTRO_HISTORIAL}
+    paginador = Paginator(muestras_del_historial(cliente, **filtros), RESULTADOS_POR_PAGINA)
+    page_obj = paginador.get_page(request.GET.get("page"))
+    parametros = request.GET.copy()
+    parametros.pop("page", None)
+    contexto = {
+        "cliente": cliente,
+        "form": form,
+        "page_obj": page_obj,
+        "parametros": parametros.urlencode(),
+        # Según lo recibido, válido o no: un filtro inválido también se puede limpiar.
+        "hay_filtros": any(request.GET.get(c, "").strip() for c in CAMPOS_FILTRO_HISTORIAL),
+        "sin_muestras": not page_obj.object_list and not cliente.muestras.exists(),
+    }
+    return render(request, "clientes/historial.html", contexto)
 
 
 def buscar_clientes(texto=""):

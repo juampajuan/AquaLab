@@ -195,6 +195,20 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Los datos del laboratorio son de ejemplo en `settings.AQUALAB_LABORATORIO`; `logo` es una
   referencia («aqualab» → marca de AquaLab) que se copia al informe.
 
+## Historial del cliente (US 3.3)
+
+- `clientes/historial.py:muestras_del_historial` es la única consulta del historial: pagina muestras
+  (`-fecha_ingreso`, `-numero_pi`) y trae los estudios con `Prefetch` en `estudios_historial`
+  (`-pk`, con `informe` en `select_related`), así los estudios de una muestra no se cortan entre
+  páginas y no hay N+1. El filtro de estado se aplica a las muestras y al prefetch.
+- «Ver informe» se decide con `{% if estudio.informe %}` (el `Informe` ya traído), no por el estado.
+  El tipo se muestra con `tipo_nombre_snapshot`.
+- `clientes:historial` es de solo lectura (`require_GET`) y rechaza clientes inactivos como la ficha.
+  «Limpiar filtros» depende de los parámetros recibidos, válidos o no (`hay_filtros` en la vista).
+- Los imports de `muestras`, `estudios` e `informes` van en `historial.py`, `views.py` y `forms.py`,
+  nunca en `clientes/models.py`. Tests con los fixtures `muestra_de` y `estudio_en`
+  (`clientes/tests/conftest.py`).
+
 ## Consultar y exportar informe (US 7.3)
 
 - `informes/busqueda.py:informes_emitidos` es la única búsqueda de informes (`informes:emitidos`):

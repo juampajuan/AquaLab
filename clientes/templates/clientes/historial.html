@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Historial del cliente · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'clientes:detalle' cliente.pk as url_ficha %}
+  {% with documento=cliente.tipo_documento|add:" "|add:cliente.numero_documento %}
+    {% include "ui/encabezado.html" with seccion="Clientes" anterior_texto="Ficha del cliente" anterior_url=url_ficha miga="Historial" titulo=cliente.nombre_completo subtitulo=documento %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+  {% url 'clientes:historial' cliente.pk as url_historial %}
+  <form method="get" action="{{ url_historial }}" class="tarjeta mb-6 p-5 sm:p-6" novalidate data-filtros-historial>
+    {% include "ui/errores_form.html" %}
+    <div class="grid gap-4 sm:grid-cols-3">
+      {% include "ui/campo.html" with field=form.desde %}
+      {% include "ui/campo.html" with field=form.hasta %}
+      {% include "ui/campo.html" with field=form.estado %}
+    </div>
+    <div class="mt-5 flex flex-wrap gap-3">
+      <button type="submit" class="btn btn-primario">
+        {% include "ui/icono.html" with nombre="search" clase="size-4" %} Filtrar
+      </button>
+      {% if hay_filtros %}
+        <a href="{{ url_historial }}" class="btn btn-secundario">
+          {% include "ui/icono.html" with nombre="x" clase="size-4" %} Limpiar filtros
+        </a>
+      {% endif %}
+    </div>
+  </form>
+
+  <section class="tarjeta overflow-hidden">
+    {% if page_obj.object_list %}
+      <h2 class="px-4 py-4 text-sm font-semibold text-marino sm:px-5">
+        {{ page_obj.paginator.count }} muestra{{ page_obj.paginator.count|pluralize }}
+      </h2>
+      <div class="overflow-x-auto">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>N° PI</th>
+              <th>Fecha de ingreso</th>
+              <th>Origen</th>
+              <th>Estudios</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for muestra in page_obj %}
+              <tr data-muestra="{{ muestra.numero_pi }}">
+                <td class="align-top whitespace-nowrap">
+                  <a href="{% url 'muestras:detalle' muestra.pk %}" class="font-semibold text-cian-texto hover:underline">N° PI {{ muestra.numero_pi }}</a>
+                </td>
+                <td class="align-top whitespace-nowrap text-tinta-suave">{{ muestra.fecha_ingreso|date:"d/m/Y" }}</td>
+                <td class="align-top">{{ muestra.origen.nombre }}</td>
+                <td class="align-top">
+                  {% for estudio in muestra.estudios_historial %}
+                    <div class="flex flex-wrap items-center gap-2 py-1" data-estudio="{{ estudio.pk }}">
+                      <a href="{% url 'estudios:detalle' estudio.pk %}" class="font-medium text-cian-texto hover:underline">Estudio N° {{ estudio.pk }} · {{ estudio.tipo_nombre_snapshot }}</a>
+                      {% include "ui/estado.html" with estado=estudio.get_estado_display tipo=estudio.estado|tipo_estado %}
+                      {% if estudio.informe %}
+                        <a href="{% url 'informes:ver' estudio.pk %}" class="btn btn-secundario btn-chico">
+                          {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Ver informe {{ estudio.informe.numero_mostrado }}
+                        </a>
+                      {% endif %}
+                    </div>
+                  {% empty %}
+                    <span class="text-tinta-suave">Sin estudios</span>
+                  {% endfor %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "ui/paginacion.html" with parametros=parametros %}
+    {% elif sin_muestras %}
+      {% include "ui/estado_vacio.html" with icono="droplet" mensaje="Este cliente no tiene muestras registradas." %}
+    {% else %}
+      {% include "ui/estado_vacio.html" with icono="search" mensaje="Ninguna muestra coincide con los filtros." accion_texto="Limpiar filtros" accion_url=url_historial %}
+    {% endif %}
+  </section>
+{% endblock %}
