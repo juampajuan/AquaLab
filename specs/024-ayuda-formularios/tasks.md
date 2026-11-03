@@ -427,12 +427,12 @@ componente.
   solo muestra cambios ya commiteados o a commitear juntos (como en el CI).
 - [X] T038 [P] `node --test config/tests/js/ayuda.test.cjs usuarios/tests/js/sesion.test.cjs`
   (el de sesión, porque `aqualab.js` se carga en los mismos layouts).
-- [ ] T039 Recorrer [quickstart.md](./quickstart.md) en el navegador (Chrome y el modo táctil de
+- [X] T039 Recorrer [quickstart.md](./quickstart.md) en el navegador (Chrome y el modo táctil de
   sus herramientas, más un lector de pantalla: NVDA u Orca) y anotar en este archivo cada paso.
   Si es necesario, el usuario lo acredita como en US 1.2.
-- [ ] T040 Actualizar `specs/024-ayuda-formularios/checklists/requirements.md` si la prueba manual
+- [X] T040 Actualizar `specs/024-ayuda-formularios/checklists/requirements.md` si la prueba manual
   cambió algún requisito, y la spec antes que el código (principio I).
-- [ ] T041 Correr la **suite completa una sola vez**: `docker compose exec web pytest`. Anotar el
+- [X] T041 Correr la **suite completa una sola vez**: `docker compose exec web pytest`. Anotar el
   resultado real (pasados, fallados y duración). Si falla, corregir y volver a correr solo los
   tests de la app afectada; la suite completa se repite solo si se tocó un archivo compartido
   (`templates/ui/`, `config/`, `static/`).
