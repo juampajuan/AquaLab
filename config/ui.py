@@ -57,6 +57,21 @@ def valor_medicion(valor, unidad):
     return texto_presencia(valor) if es_presencia(unidad) else valor
 
 
+@register.filter
+def describir(field, id_extra):
+    """Dibuja el control sumando id_extra a su aria-describedby (ayuda, error e instrucción).
+
+    Uso: {{ field|describir:"id_pruebas_instruccion" }}. Parte del aria-describedby propio del
+    widget, si lo tiene; si no, del que arma Django (<auto_id>_helptext y <auto_id>_error).
+    """
+    base = field.field.widget.attrs.get("aria-describedby") or field.aria_describedby or ""
+    ids = []
+    for id_ in [*base.split(), *str(id_extra).split()]:
+        if id_ not in ids:
+            ids.append(id_)
+    return field.as_widget(attrs={"aria-describedby": " ".join(ids)})
+
+
 @register.filter(name="es_presencia")
 def es_presencia_filtro(unidad):
     """Si la unidad es «A/P»: el valor ya dice Ausente/Presente y la unidad no se repite."""

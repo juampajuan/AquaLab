@@ -35,6 +35,8 @@ class RegistroClienteForm(forms.ModelForm):
         label="Número de documento",
         max_length=30,
         strip=True,
+        # Campo declarado: Meta.help_texts no se le aplica.
+        help_text="Podés escribirlo con o sin puntos y guiones: se guardan solo los números.",
     )
 
     class Meta:
@@ -48,6 +50,18 @@ class RegistroClienteForm(forms.ModelForm):
             "email": "Correo electrónico",
             "telefono": "Teléfono",
             "domicilio": "Domicilio",
+        }
+        # Ayuda de los campos que no se explican solos (US 9.1). Va en el formulario y no en el
+        # modelo: allí generaría una migración y se vería en el admin.
+        help_texts = {
+            "razon_social": (
+                "Nombre legal de la empresa u organismo. Si el cliente es una persona, "
+                "completá el nombre."
+            ),
+            "tipo_documento": (
+                "DNI para personas; CUIT para empresas, organismos o personas que facturan."
+            ),
+            "email": "A este correo se envían los informes del cliente.",
         }
         # Se dibuja como botones segmentados DNI / CUIT (templates/ui/campo.html).
         widgets = {"tipo_documento": forms.RadioSelect}

@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.conf import settings
 from django.test import Client
@@ -104,8 +106,13 @@ def test_sin_parametro_lista_todos_los_clientes(cliente_autenticado, clientes_bu
     assert respuesta.context["page_obj"].paginator.count == 6
     html = respuesta.content.decode()
     assert "6 clientes registrados" in html
-    assert 'role="tooltip"' in html
-    assert "group-hover:visible" in html
+    # Ayuda de la búsqueda con el componente común ui/ayuda.html (US 9.1).
+    assert "data-ayuda" in html
+    assert re.search(
+        r'<span role="tooltip" id="ayuda-busqueda-cliente"[^>]*>Podés ingresar parte del nombre',
+        html,
+    )
+    assert re.search(r'<input[^>]*name="q"[^>]*aria-describedby="ayuda-busqueda-cliente"', html)
 
 
 @pytest.mark.django_db

@@ -19,7 +19,7 @@
     {% else %}
       <div class="aviso aviso-info mb-6" role="status">
         {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
-        <div>Cambiá el valor de las mediciones con errores del estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}). Los resultados se recalculan al guardar. Para quitar una medición cargada por error, marcá Borrar.</div>
+        <div>Cambiá el valor de las mediciones con errores del estudio {{ estudio.pk }} (muestra PI {{ estudio.muestra.numero_pi }}). Los resultados se recalculan al guardar. Para quitar una medición cargada por error, marcá Borrar. Escribí los decimales con coma o punto, sin separador de miles; en las pruebas Ausente/Presente elegí la opción de la lista.</div>
       </div>
       <form method="post" novalidate>
         {% csrf_token %}
@@ -33,7 +33,7 @@
                   <th>Prueba</th>
                   <th>Unidad</th>
                   <th>Cargada por</th>
-                  <th>Medición</th>
+                  <th><span class="inline-flex items-center gap-1.5">Medición {% include "ui/ayuda.html" with texto="Valor leído en el análisis de cada prueba. A partir de él se calcula el resultado." id="ayuda-medicion" etiqueta="Medición" lado="derecha" posicion="abajo" %}</span></th>
                   <th class="text-center">Borrar</th>
                 </tr>
               </thead>

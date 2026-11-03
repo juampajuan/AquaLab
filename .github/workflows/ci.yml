@@ -73,3 +73,11 @@ jobs:
 
       - name: pytest
         run: pytest
+
+      # node:test viene con Node: sin dependencias ni package.json.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Tests de JavaScript
+        run: node --test usuarios/tests/js config/tests/js

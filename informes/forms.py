@@ -45,6 +45,10 @@ class FirmaForm(forms.Form):
         label="Matrícula",
         max_length=40,
         strip=True,
+        help_text=(
+            "Tu matrícula profesional, por ejemplo «MP 1234». "
+            "Sale junto a tu firma en los informes."
+        ),
         widget=forms.TextInput(attrs={"placeholder": "MP 1234", "class": "form-control"}),
     )
 

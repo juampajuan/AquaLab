@@ -11,7 +11,12 @@ class TipoEstudioForm(forms.Form):
         label="Descripción", required=False, strip=False, widget=forms.Textarea
     )
     pruebas = forms.ModelMultipleChoiceField(
-        label="Pruebas predeterminadas", queryset=Prueba.objects.order_by("codigo", "pk")
+        label="Pruebas predeterminadas",
+        queryset=Prueba.objects.order_by("codigo", "pk"),
+        help_text=(
+            "Pruebas con las que nacen los estudios nuevos de este tipo. Los estudios ya creados "
+            "no cambian."
+        ),
     )
 
     def __init__(self, *args, tipo_id=None, **kwargs):

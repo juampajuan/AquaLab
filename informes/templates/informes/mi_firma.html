@@ -27,8 +27,11 @@
       {% csrf_token %}
       {% include "ui/errores_form.html" %}
       <div>
-        <p class="campo-etiqueta">{% if firma %}Dibujar una firma nueva{% else %}Firma{% endif %}</p>
-        <canvas data-firma width="600" height="200"
+        <div class="campo-cabecera">
+          <p class="campo-etiqueta">{% if firma %}Dibujar una firma nueva{% else %}Firma{% endif %}</p>
+          {% include "ui/ayuda.html" with texto="Dibujá tu firma en el recuadro. Se copia en cada informe que emitas; los ya emitidos no cambian." id="ayuda-firma" etiqueta="Firma" %}
+        </div>
+        <canvas data-firma width="600" height="200" aria-describedby="ayuda-firma"
                 class="block aspect-[3/1] w-full max-w-[600px] cursor-crosshair rounded-lg border-2 border-dashed border-borde-fuerte bg-white"
                 aria-label="Recuadro para dibujar la firma"></canvas>
         <div class="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-tinta-suave max-w-[600px]">
