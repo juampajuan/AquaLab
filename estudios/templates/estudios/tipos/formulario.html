@@ -35,8 +35,7 @@
         <div class="space-y-5">
           {% include "ui/campo.html" with field=form.nombre %}
           {% include "ui/campo.html" with field=form.descripcion %}
-          {% include "ui/campo.html" with field=form.pruebas %}
-          <p class="campo-ayuda -mt-3">Para elegir varias pruebas, mantené apretado Ctrl (o Cmd en Mac) mientras hacés clic.</p>
+          {% include "ui/campo.html" with field=form.pruebas instruccion="Para elegir varias pruebas, mantené apretado Ctrl (o Cmd en Mac) mientras hacés clic." %}
         </div>
       </section>
       <div class="flex flex-wrap justify-end gap-3">

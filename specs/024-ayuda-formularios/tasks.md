@@ -277,7 +277,7 @@ tooltip con su texto y los campos obvios no tienen ícono.
 
 > Escribirlos primero y verificar que fallan antes de T021–T029.
 
-- [ ] T016 [P] [US2] Crear `clientes/tests/test_ayuda.py` (fixture `cliente_autenticado` de
+- [X] T016 [P] [US2] Crear `clientes/tests/test_ayuda.py` (fixture `cliente_autenticado` de
   `clientes/tests/conftest.py`):
   - **Esc. 1**: parametrizado sobre `razon_social`, `tipo_documento`, `numero_documento` y `email`,
     en `clientes:registrar` y en `clientes:editar` (con `cliente_existente`), el HTML tiene
@@ -285,13 +285,13 @@ tooltip con su texto y los campos obvios no tienen ícono.
   - **Esc. 2**: `nombre`, `telefono` y `domicilio` sin ayuda.
   - **Radios**: `tipo_documento` tiene el `aria-describedby` en el `<fieldset>`.
   - **FR-013**: `/admin/clientes/cliente/add/`, con un superusuario, no tiene `data-ayuda`.
-- [ ] T017 [P] [US2] Crear `muestras/tests/test_ayuda.py` (fixtures `cliente_autenticado` y
+- [X] T017 [P] [US2] Crear `muestras/tests/test_ayuda.py` (fixtures `cliente_autenticado` y
   `cliente_a` de `muestras/tests/conftest.py`, GET de `muestras:registrar`):
   - **Esc. 1**: parametrizado sobre `origen`, `origen_nuevo`, `fecha_muestreo`, `fecha_ingreso`,
     `sitio_extraccion`, `tipo_vertido`, `nombre` y `responsable_muestreo` → tooltip con texto.
   - **Esc. 2**: `cliente` sin ayuda.
   - **Esc. 3**: el texto de `nombre` («Muestra 6») está en el tooltip y no en un `div.campo-ayuda`.
-- [ ] T018 [P] [US2] Crear `estudios/tests/test_ayuda.py` (fixtures de `estudios/tests/conftest.py`):
+- [X] T018 [P] [US2] Crear `estudios/tests/test_ayuda.py` (fixtures de `estudios/tests/conftest.py`):
   - **Crear estudio** (`estudios:crear`, `cliente_http`): `tipo` con tooltip; `muestra` sin
     tooltip.
   - **Agregar prueba** (`estudios:agregar_prueba`, `estudio`): `prueba` con tooltip.
@@ -307,9 +307,9 @@ tooltip con su texto y los campos obvios no tienen ícono.
     - el `<th>` «Medición» tiene `ui/ayuda.html` con `id="ayuda-medicion"` y `data-lado="derecha"`;
     - cada control de medición tiene `aria-describedby` que empieza con `ayuda-medicion`, y con un
       valor inválido enviado, `"ayuda-medicion id_<campo>_error"`.
-- [ ] T019 [P] [US2] Actualizar `estudios/tests/test_cargar_mediciones.py:197`: la aserción
+- [X] T019 [P] [US2] Actualizar `estudios/tests/test_cargar_mediciones.py:197`: la aserción
   `aria-describedby="id_{nombre}_error"` pasa a `aria-describedby="ayuda-medicion id_{nombre}_error"`.
-- [ ] T020 [P] [US2] Crear `informes/tests/test_ayuda.py`, con `client.force_login(bioquimico)` y
+- [X] T020 [P] [US2] Crear `informes/tests/test_ayuda.py`, con `client.force_login(bioquimico)` y
   GET de `informes:mi_firma`:
   - `matricula` con tooltip;
   - la etiqueta «Firma» tiene `ui/ayuda.html` con `id="ayuda-firma"`;
@@ -320,7 +320,7 @@ tooltip con su texto y los campos obvios no tienen ícono.
 
 Textos de FR-010: breves, en español, con los términos del Glosario, sin repetir la etiqueta (FR-011).
 
-- [ ] T021 [P] [US2] En `clientes/forms.py`, `RegistroClienteForm.Meta.help_texts` (no en el
+- [X] T021 [P] [US2] En `clientes/forms.py`, `RegistroClienteForm.Meta.help_texts` (no en el
   modelo: generaría una migración):
   - `razon_social`: «Nombre legal de la empresa u organismo. Si el cliente es una persona, completá el nombre.»
   - `tipo_documento`: «DNI para personas; CUIT para empresas, organismos o personas que facturan.»
@@ -329,7 +329,7 @@ Textos de FR-010: breves, en español, con los términos del Glosario, sin repet
 
   Como `numero_documento` es un campo declarado, su `help_text` va en la declaración (los
   `Meta.help_texts` no se aplican a campos declarados).
-- [ ] T022 [P] [US2] En `muestras/forms.py`, `help_text=` en `RegistroMuestraForm`:
+- [X] T022 [P] [US2] En `muestras/forms.py`, `help_text=` en `RegistroMuestraForm`:
   - `origen`: «Fuente de agua de la que se tomó la muestra (pozo, red, efluente). Permite comparar los resultados de un mismo origen a lo largo del tiempo.»
   - `origen_nuevo`: «Si la fuente no está en la lista, escribí su nombre. Si ya existe con otras mayúsculas, se usa la existente.»
   - `fecha_muestreo`: «Día en que se tomó la muestra.»
@@ -338,32 +338,32 @@ Textos de FR-010: breves, en español, con los términos del Glosario, sin repet
   - `tipo_vertido`: «Define con qué límites se evalúan los resultados: los del vertido elegido reemplazan a los generales.»
   - `responsable_muestreo`: «Persona que tomó la muestra.»
   - `nombre`: ya tiene su `help_text`, sin cambios.
-- [ ] T023 [P] [US2] En `estudios/forms.py`:
+- [X] T023 [P] [US2] En `estudios/forms.py`:
   - `CrearEstudioForm.tipo`: `help_text=` «Define las pruebas con las que nace el estudio. Mientras no tenga mediciones se pueden agregar o quitar.»
   - `AgregarPruebaForm.__init__`: `help_text=` en el `ModelChoiceField` de `prueba`: «Solo se listan las pruebas del catálogo que el estudio todavía no tiene.»
   - `campo_medicion`: los dos widgets (`Select` y texto) con `attrs["aria-describedby"] = "ayuda-medicion"`.
   - En `CargarMedicionesForm` (≈ línea 112) y `CorregirMedicionesForm.full_clean` (≈ línea 222), el
     `aria-describedby` de error pasa a `f"ayuda-medicion {self[nombre].auto_id}_error"`.
-- [ ] T024 [P] [US2] En `estudios/forms_tipos.py`, `TipoEstudioForm.pruebas`: `help_text=` «Pruebas
+- [X] T024 [P] [US2] En `estudios/forms_tipos.py`, `TipoEstudioForm.pruebas`: `help_text=` «Pruebas
   con las que nacen los estudios nuevos de este tipo. Los estudios ya creados no cambian.»
-- [ ] T025 [US2] En `estudios/templates/estudios/tipos/formulario.html` (depende de T024):
+- [X] T025 [US2] En `estudios/templates/estudios/tipos/formulario.html` (depende de T024):
   - borrar el `<p class="campo-ayuda -mt-3">` de la línea 39;
   - pasar su texto al include:
     `{% include "ui/campo.html" with field=form.pruebas instruccion="Para elegir varias pruebas, mantené apretado Ctrl (o Cmd en Mac) mientras hacés clic." %}`.
-- [ ] T026 [US2] En `estudios/templates/estudios/cargar_mediciones.html` y
+- [X] T026 [US2] En `estudios/templates/estudios/cargar_mediciones.html` y
   `estudios/templates/estudios/corregir_mediciones.html` (depende de T023):
   - al texto del `aviso aviso-info` sumarle «Escribí los decimales con coma o punto, sin separador
     de miles; en las pruebas Ausente/Presente elegí la opción de la lista.»;
   - el `<th>Medición</th>` pasa a
     `<th><span class="inline-flex items-center gap-1.5">Medición {% include "ui/ayuda.html" with texto="Valor leído en el análisis de cada prueba. A partir de él se calcula el resultado." id="ayuda-medicion" etiqueta="Medición" lado="derecha" %}</span></th>`.
-- [ ] T027 [P] [US2] En `informes/forms.py`, `FirmaForm.matricula`: `help_text=` «Tu matrícula
+- [X] T027 [P] [US2] En `informes/forms.py`, `FirmaForm.matricula`: `help_text=` «Tu matrícula
   profesional, por ejemplo «MP 1234». Sale junto a tu firma en los informes.»
-- [ ] T028 [US2] En `informes/templates/informes/mi_firma.html`:
+- [X] T028 [US2] En `informes/templates/informes/mi_firma.html`:
   - el `<p class="campo-etiqueta">` de la firma va en un `<div class="campo-cabecera">` junto a
     `{% include "ui/ayuda.html" with texto="Dibujá tu firma en el recuadro. Se copia en cada informe que emitas; los ya emitidos no cambian." id="ayuda-firma" etiqueta="Firma" %}`;
   - el `<canvas data-firma>` suma `aria-describedby="ayuda-firma"`;
   - el resto no cambia.
-- [ ] T029 [US2] Recompilar el CSS (mismo comando que T008) por las clases nuevas de T026 y T028.
+- [X] T029 [US2] Recompilar el CSS (mismo comando que T008) por las clases nuevas de T026 y T028.
 
 **Checkpoint**: textos de FR-010 visibles en todas las pantallas de la lista.
 
@@ -374,22 +374,34 @@ Textos de FR-010: breves, en español, con los términos del Glosario, sin repet
 **Purpose**: Los dos tooltips hechos a mano pasan a `ui/ayuda.html`, para que haya un solo
 componente.
 
-- [ ] T030 [P] [US1] Actualizar `clientes/tests/test_busqueda.py:107-108` y
+- [X] T030 [P] [US1] Actualizar `clientes/tests/test_busqueda.py:107-108` y
   `estudios/tests/test_consulta.py:393-394`: en lugar de `group-hover:visible`, comprobar que hay
   `data-ayuda`, `role="tooltip"` con el mismo texto que hoy y el `aria-describedby` del campo de
   búsqueda (`ayuda-busqueda-cliente` y `ayuda-busqueda-estudio`).
-- [ ] T031 [P] [US1] En `clientes/templates/clientes/buscar.html`:
+- [X] T031 [P] [US1] En `clientes/templates/clientes/buscar.html`:
   - reemplazar el `<span class="group relative …" tabindex="0">` (líneas 12–19) por
     `{% include "ui/ayuda.html" with texto="Podés ingresar parte del nombre, de la razón social o del DNI/CUIT (con o sin puntos y guiones)." id="ayuda-busqueda-cliente" etiqueta=form.q.label %}`;
   - mantener el `<div class="mb-1.5 flex items-center gap-1.5">` con la etiqueta;
   - el campo `q` suma `aria-describedby="ayuda-busqueda-cliente"`: en
     `BuscarClienteForm.q.widget.attrs` (`clientes/forms.py`) o con
     `{{ form.q|describir:"ayuda-busqueda-cliente" }}`, según cómo se dibuje hoy.
-- [ ] T032 [P] [US1] En `estudios/templates/estudios/buscar.html`, lo mismo que T031, con el texto
+- [X] T032 [P] [US1] En `estudios/templates/estudios/buscar.html`, lo mismo que T031, con el texto
   actual del tooltip e `id="ayuda-busqueda-estudio"`.
-- [ ] T033 Recompilar el CSS (mismo comando que T008) y correr los tests de la Tanda 2:
+- [X] T033 Recompilar el CSS (mismo comando que T008) y correr los tests de la Tanda 2:
   `docker compose exec web pytest clientes muestras estudios informes`. Anotar el resultado real
   en este archivo. No correr la suite completa.
+
+**Resultado de la Tanda 2 (2026-11-03)**:
+
+- `docker compose exec web pytest clientes muestras estudios informes` → **966 passed** en
+  1099,3 s (18 min 19 s). Durante la corrida `ruff format` reformateó
+  `clientes/tests/test_ayuda.py`, `muestras/tests/test_ayuda.py` e `informes/forms.py` (sin cambiar
+  textos); se volvieron a correr esos tests y `informes/tests/test_mi_firma.py` → **42 passed**.
+- `node --test usuarios/tests/js config/tests/js` → **29 passed, 0 failed**.
+- `ruff check` y `ruff format --check` sobre las cuatro apps: sin errores.
+- `makemigrations --check --dry-run`: sin cambios (los textos están en los formularios).
+- En corregir mediciones, la columna «Medición» no es la última (le sigue «Borrar»); igual se usa
+  `lado="derecha"` porque está en la mitad derecha de la tabla.
 
 **Checkpoint (fin de Tanda 2)**: todas las pantallas con el componente común.
 
