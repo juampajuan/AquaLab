@@ -42,7 +42,7 @@ como `sesion.test.cjs`.
 **Purpose**: Llevar a la spec el pedido nuevo (WCAG 1.4.13) antes del código (principio I) y
 agregar el ícono.
 
-- [ ] T001 Actualizar `specs/024-ayuda-formularios/spec.md` con el pedido del 2026-11-03 sobre
+- [X] T001 Actualizar `specs/024-ayuda-formularios/spec.md` con el pedido del 2026-11-03 sobre
   WCAG 1.4.13 (contenido al pasar el mouse: «se puede recorrer con el mouse»):
   - En `## Clarifications` → `### Session 2026-11-03`, sumar el bullet
     `- Q: ¿La ayuda se cierra si el mouse pasa del ícono al texto? → A: No (WCAG 1.4.13): sigue abierta mientras el mouse esté sobre el ícono o sobre el texto; se cierra al salir de ambos o con Escape.`
@@ -52,7 +52,7 @@ agregar el ícono.
     el mouse siga encima».
   - En FR-003, cambiar «al retirar el mouse» por «al retirar el mouse del ícono y del texto de la
     ayuda (pasar del ícono al texto no la cierra, WCAG 1.4.13)».
-- [ ] T002 Actualizar los documentos de diseño con el mismo pedido y con los tests de JS:
+- [X] T002 Actualizar los documentos de diseño con el mismo pedido y con los tests de JS:
   - `specs/024-ayuda-formularios/contracts/ayuda-ui.md`, sección `ui/ayuda.html`: el texto visible
     recibe eventos del mouse (`pointer-events: auto`, nunca `pointer-events-none`); un puente
     invisible (`.ayuda-texto::before`) cubre el espacio entre el ícono y el texto, y `pointerleave`
@@ -68,7 +68,7 @@ agregar el ícono.
   - `specs/024-ayuda-formularios/quickstart.md`: sumar el paso «pasar el mouse del ícono al texto:
     sigue abierta; salir de ambos: se cierra; Escape con el mouse encima: se cierra» y el comando
     `node --test config/tests/js/ayuda.test.cjs` en Tests automatizados.
-- [ ] T003 [P] Crear `templates/ui/iconos/circle-help.svg` con el mismo formato que
+- [X] T003 [P] Crear `templates/ui/iconos/circle-help.svg` con el mismo formato que
   `templates/ui/iconos/info.svg`: `class="{{ clase|default:'size-5' }}" aria-hidden="true" focusable="false"`,
   `viewBox="0 0 24 24"`, `fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"`
   y los trazos de Lucide `circle-help`: `<circle cx="12" cy="12" r="10" />`,
@@ -83,7 +83,7 @@ agregar el ícono.
 
 **⚠️ CRITICAL**: La Tanda 2 no empieza hasta cerrar esta fase y la Fase 3.
 
-- [ ] T004 Crear `templates/ui/ayuda.html` según [contracts/ayuda-ui.md](./contracts/ayuda-ui.md):
+- [X] T004 Crear `templates/ui/ayuda.html` según [contracts/ayuda-ui.md](./contracts/ayuda-ui.md):
   - Comentario de uso con los parámetros `texto`, `id` y `etiqueta` (obligatorios) y `lado`
     (`izquierda` por defecto, o `derecha`).
   - `<span class="ayuda" data-ayuda data-lado="{{ lado|default:'izquierda' }}">`, con dentro:
@@ -91,7 +91,7 @@ agregar el ícono.
       con `{% include "ui/icono.html" with nombre="circle-help" clase="size-4" %}`;
     - `<span role="tooltip" id="{{ id }}" class="ayuda-texto">{{ texto }}</span>`.
   - Sin espacios en blanco sobrantes dentro del botón.
-- [ ] T005 Agregar el filtro `describir` en `config/ui.py`: `describir(field, id_extra)` devuelve
+- [X] T005 Agregar el filtro `describir` en `config/ui.py`: `describir(field, id_extra)` devuelve
   `field.as_widget(attrs={"aria-describedby": …})`. El valor junta, en este orden y sin
   duplicados:
   1. el `aria-describedby` propio del widget, si lo tiene (`field.field.widget.attrs`); si no, lo
@@ -99,7 +99,7 @@ agregar el ícono.
   2. `id_extra`.
 
   Docstring con el uso: `{{ field|describir:"id_pruebas_instruccion" }}`.
-- [ ] T006 Modificar `templates/ui/campo.html` según el contrato (depende de T004 y T005):
+- [X] T006 Modificar `templates/ui/campo.html` según el contrato (depende de T004 y T005):
   - Actualizar el comentario de uso con `ayuda_visible=True` e `instruccion="…"`, y mantener la
     lista de ganchos estables.
   - Con `field.help_text` y sin `ayuda_visible`:
@@ -119,7 +119,7 @@ agregar el ícono.
     - debajo de los errores va `<p class="campo-ayuda" id="{{ field.auto_id }}_instruccion">{{ instruccion }}</p>`.
   - Sin cambios en el bloque de errores (`<div class="campo-error" id="…_error">`, un `<div>` por
     error).
-- [ ] T007 [P] Agregar en `static/src/aqualab.css`, en la capa de componentes y junto a
+- [X] T007 [P] Agregar en `static/src/aqualab.css`, en la capa de componentes y junto a
   `.campo-ayuda`, con los tokens del tema:
   - `.campo-cabecera` (`mb-1.5 flex items-center gap-1.5`; dentro, la `.campo-etiqueta` va con
     `mb-0`).
@@ -134,9 +134,9 @@ agregar el ícono.
     - puente invisible para WCAG 1.4.13: `.ayuda-texto::before` con `content: ""`, `absolute`,
       `inset-x-0`, `top-full`, `h-2`.
   - Regla de visibilidad:
-    `.ayuda:is(:hover, :focus-within, [data-abierta]):not([data-cerrada]) .ayuda-texto { @apply visible opacity-100; }`.
+    `.ayuda:is(:hover, :has(:focus-visible), [data-abierta]):not([data-cerrada]) .ayuda-texto { @apply visible opacity-100; }`.
   - No usar `pointer-events-none` en `.ayuda-texto`.
-- [ ] T008 Recompilar `static/css/aqualab.css` (depende de T006 y T007; las clases nuevas tienen
+- [X] T008 Recompilar `static/css/aqualab.css` (depende de T006 y T007; las clases nuevas tienen
   que estar en los templates):
   `docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify`.
 
@@ -158,7 +158,7 @@ lee la ayuda; los errores siguen visibles.
 
 > Escribirlos primero y verificar que fallan antes de T013–T015.
 
-- [ ] T009 [P] [US1] Crear `config/tests/test_ayuda.py` con un `forms.Form` de prueba: `origen`
+- [X] T009 [P] [US1] Crear `config/tests/test_ayuda.py` con un `forms.Form` de prueba: `origen`
   (`CharField`, con `help_text="Fuente de agua"`), `telefono` (sin `help_text`), `tipo` (`ChoiceField`
   con `RadioSelect` y `help_text`) y `pruebas` (con `help_text`). Dibujar `ui/campo.html` con
   `render_to_string` y probar:
@@ -179,11 +179,11 @@ lee la ayuda; los errores siguen visibles.
   - **`describir`**: si el widget ya trae `aria-describedby="otro"`, lo conserva y agrega el id sin
     duplicarlo.
   - **`ui/ayuda.html` con `lado="derecha"`**: `data-lado="derecha"`.
-- [ ] T010 [P] [US1] Agregar a `config/tests/test_ayuda.py` un test sobre el CSS compilado
+- [X] T010 [P] [US1] Agregar a `config/tests/test_ayuda.py` un test sobre el CSS compilado
   (`static/css/aqualab.css`, leído con `pathlib`): contiene `.ayuda-texto`, `.ayuda-boton` y
   `data-cerrada`, y no contiene `pointer-events:none` dentro de la regla de `.ayuda-texto`. Tiene
   que fallar si no se recompiló (T008).
-- [ ] T011 [P] [US1] Crear `config/tests/js/ayuda.test.cjs` con `node:test`, siguiendo el esquema
+- [X] T011 [P] [US1] Crear `config/tests/js/ayuda.test.cjs` con `node:test`, siguiendo el esquema
   de `usuarios/tests/js/sesion.test.cjs`:
   - Cargar `static/js/aqualab.js` con `vm.runInNewContext` y un `document` simulado que registre
     los `addEventListener`.
@@ -204,7 +204,7 @@ lee la ayuda; los errores siguen visibles.
     - **US1 esc. 7, FR-006**: abrir la segunda ayuda (clic, `focusin` o `pointerenter`) deja la
       primera con `data-cerrada` y sin `data-abierta`.
     - Los manejadores existentes (`[data-cerrar-mensaje]`, `[data-menu-boton]`) siguen funcionando.
-- [ ] T012 [P] [US1] Crear `usuarios/tests/test_ayuda.py` (`@pytest.mark.django_db`, `client` y
+- [X] T012 [P] [US1] Crear `usuarios/tests/test_ayuda.py` (`@pytest.mark.django_db`, `client` y
   `reverse("usuarios:registro")`):
   - **US2 esc. 5**: los requisitos de contraseña de `password1` se ven en `div.campo-ayuda` con id
     `id_password1_helptext`, sin `data-ayuda`.
@@ -214,7 +214,7 @@ lee la ayuda; los errores siguen visibles.
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Agregar el comportamiento de la ayuda en `static/js/aqualab.js`, con delegación
+- [X] T013 [US1] Agregar el comportamiento de la ayuda en `static/js/aqualab.js`, con delegación
   de eventos sobre `document` y sin dependencias. Una función `cerrarOtras(actual)` que, en
   todas las `[data-ayuda]` distintas de `actual`, quita `data-abierta` y pone `data-cerrada`.
   - `click` en `.ayuda-boton` → alterna `data-abierta` en su `.ayuda`, quita `data-cerrada` y
@@ -230,13 +230,35 @@ lee la ayuda; los errores siguen visibles.
     Pasar del ícono al texto no la cierra (WCAG 1.4.13).
   - `focusout` (con `relatedTarget` fuera de la `.ayuda`) → quita `data-cerrada`.
   - Mantener el comentario de cabecera del archivo y sumar uno por bloque. T011 tiene que pasar.
-- [ ] T014 [US1] Pasar `ayuda_visible=True` a los dos includes de contraseña en
+- [X] T014 [US1] Pasar `ayuda_visible=True` a los dos includes de contraseña en
   `usuarios/templates/usuarios/registro_form.html` (`form.password1` y `form.password2`). Son
   instrucciones y quedan visibles como hoy (aclaración de la spec). T012 tiene que pasar.
-- [ ] T015 [US1] Recompilar el CSS si T013 o T014 sumaron clases (mismo comando que T008) y
+- [X] T015 [US1] Recompilar el CSS si T013 o T014 sumaron clases (mismo comando que T008) y
   correr los tests de la Tanda 1:
   `docker compose exec web pytest config usuarios` y `node --test config/tests/js/ayuda.test.cjs`.
   Anotar en este archivo el resultado real (pasados y fallados). No correr la suite completa.
+
+**Resultado de la Tanda 1 (2026-11-03)**:
+
+- `docker compose exec web pytest config usuarios` → **194 passed** en 121,8 s.
+- `node --test config/tests/js` → **12 passed, 0 failed**.
+- `node --test usuarios/tests/js` → **1 passed, 13 failed** (13 de los 14 tests de `sesion.test.cjs`, con
+  `eventos.blur is not a function`). La falla es anterior a esta feature: el commit `dff6505` sacó
+  el manejador de `blur` de `usuarios/static/usuarios/sesion.js` sin actualizar el test, y estos
+  tests no corrían en el CI. Corregido en `c60327e` (`fix(usuarios)`): el test se actualizó al
+  comportamiento actual, sin tocar `sesion.js`. `node --test usuarios/tests/js config/tests/js`
+  → **29 passed, 0 failed**.
+- `ruff check` y `ruff format --check` sobre `config` y `usuarios`: sin errores.
+
+Ajustes de diseño durante la tanda (ya reflejados en research R3 y en el contrato):
+
+- El CSS muestra la ayuda con `:has(:focus-visible)` y no con `:focus-within`. Un clic del mouse
+  deja el foco en el botón, y con `:focus-within` la ayuda seguiría abierta al retirar el mouse
+  (FR-003). El navegador marca `:focus-visible` solo al llegar con el teclado.
+- `pointerout` cierra la ayuda solo con `pointerType === "mouse"`: al levantar el dedo también hay
+  `pointerout`, y la ayuda abierta con un toque se cerraba sola.
+- El segundo toque en el ícono, además de quitar `data-abierta`, pone `data-cerrada`, porque el
+  hover que emula el navegador táctil la mantendría visible.
 
 **Checkpoint (fin de Tanda 1)**: componente completo y probado; cualquier `help_text` cargado ya
 se ve como tooltip.
@@ -402,6 +424,11 @@ componente.
   resultado real (pasados, fallados y duración). Si falla, corregir y volver a correr solo los
   tests de la app afectada; la suite completa se repite solo si se tocó un archivo compartido
   (`templates/ui/`, `config/`, `static/`).
+
+- [X] T042 [P] Agregar en `.github/workflows/ci.yml` el paso «Tests de JavaScript», después de
+  `pytest`: `actions/setup-node@v4` con `node-version: "20"` (la versión con la que se escribieron
+  los tests) y `node --test usuarios/tests/js config/tests/js`. Se hace en la Tanda 1, a pedido del
+  usuario: los tests de Node de T011 quedan en el CI desde el primer PR.
 
 ---
 

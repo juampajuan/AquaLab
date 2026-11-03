@@ -32,8 +32,12 @@ Marcado resultante:
 - `button type="button"`: nunca envía el formulario.
 - Estados (los pone el JS): `data-abierta` (abierta por clic o toque) y `data-cerrada` (cerrada
   con Escape o porque se abrió otra; tiene prioridad sobre hover y foco).
-- Visible si `.ayuda:is(:hover, :focus-within, [data-abierta]):not([data-cerrada])`.
+- Visible si `.ayuda:is(:hover, :has(:focus-visible), [data-abierta]):not([data-cerrada])`.
 - Oculto con `visibility: hidden` (no `display: none`), con transición de opacidad.
+- WCAG 1.4.13: el texto visible recibe eventos del mouse (`pointer-events: auto`, nunca
+  `pointer-events-none`); un puente invisible (`.ayuda-texto::before`) cubre el espacio entre el
+  ícono y el texto, y la salida del mouse se escucha en `.ayuda` (el contenedor de los dos):
+  pasar del ícono al texto no la cierra.
 
 ## `templates/ui/campo.html` (modificado)
 

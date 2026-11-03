@@ -38,8 +38,11 @@ mano de las búsquedas pasan al componente nuevo.
 
 **Testing**: pytest 9.1.1 + pytest-django 4.14.0. Tests de marcado con `render_to_string` y un
 formulario de prueba para `ui/campo.html` y `ui/ayuda.html` (`config/tests/`), y tests de cada
-pantalla con el cliente de pruebas y los fixtures existentes. Comportamiento en el navegador con
-[quickstart.md](./quickstart.md) (ver [Complexity Tracking](#complexity-tracking)); ruff 0.17.1.
+pantalla con el cliente de pruebas y los fixtures existentes. Comportamiento de `aqualab.js` con
+`node:test` y un DOM simulado (`config/tests/js/ayuda.test.cjs`, como
+`usuarios/tests/js/sesion.test.cjs`), en el CI con `node --test usuarios/tests/js config/tests/js`.
+Navegador real y lector de pantalla con [quickstart.md](./quickstart.md) (ver
+[Complexity Tracking](#complexity-tracking)); ruff 0.17.1.
 
 **Target Platform**: Contenedor Linux (`web`) con Docker Compose; navegador de escritorio y
 pantallas táctiles (tablets del laboratorio).
@@ -98,7 +101,7 @@ registrada abajo.
 ### Comportamiento (CSS + `aqualab.js`)
 
 ```text
-visible  = (:hover | :focus-within | [data-abierta]) y no [data-cerrada]
+visible  = (:hover | :has(:focus-visible) | [data-abierta]) y no [data-cerrada]
 clic en .ayuda-boton      → alterna data-abierta; cierra las demás
 clic/toque fuera          → quita data-abierta
 Escape                    → data-cerrada en la activa (el foco queda en el botón)
@@ -183,7 +186,7 @@ textos y ajusta sus templates; no hay app nueva.
 | US1 esc. 1–2, FR-001, FR-004 | `config/tests/test_ayuda.py`: campo con `help_text` → `button type="button"` con `aria-label="Ayuda: <etiqueta>"` y tooltip `role="tooltip"` `id="id_x_helptext"`; sin `help_text` → sin `data-ayuda`. |
 | US1 esc. 6, FR-005 | Control con `aria-describedby` que incluye `id_x_helptext` (y `id_x_error` con errores); radios → `<fieldset aria-describedby=…>`; ícono fuera del `<label>`/`<legend>`. |
 | US1 esc. 8, FR-012 | Con errores y ayuda: el bloque de error sigue visible y el ícono también. |
-| US1 esc. 3–5 y 7, FR-002/003/006 | Recorrido manual ([quickstart.md](./quickstart.md), pasos 2–6); test de marcado de `data-ayuda` y de que el CSS compilado incluye `.ayuda-texto`. |
+| US1 esc. 3–5, 7 y 9, FR-002/003/006, WCAG 1.4.13 | `config/tests/js/ayuda.test.cjs` (`node:test`, DOM simulado); test de que el CSS compilado incluye `.ayuda-texto` sin `pointer-events:none`; render real en [quickstart.md](./quickstart.md). |
 | US2 esc. 1, FR-010 | Por pantalla (`clientes`, `muestras`, `estudios`, `informes`): parametrizado por campo, el HTML incluye el tooltip con texto no vacío. |
 | US2 esc. 2 | Campos obvios (nombre, correo del registro, teléfono, domicilio) sin `data-ayuda`. |
 | US2 esc. 3 | Registro de muestra: «Nombre de la muestra» con tooltip y sin `div.campo-ayuda` visible. |
@@ -197,4 +200,4 @@ textos y ajusta sus templates; no hay app nueva.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
-| Principio III: la interacción en el navegador (US 1, escenarios 3–5 y 7: hover, Tab/Escape, toque, una sola abierta) se verifica con recorrido manual, no con un test automatizado. | Esa interacción la resuelven el navegador (CSS `:hover`/`:focus-within`) y unas 40 líneas de JS; pytest no ejecuta JS. Como en US 4.1 (`registro_muestra.js`) y US 7.3 (`firma.js`), el marcado que la habilita se prueba con pytest y el resto con [quickstart.md](./quickstart.md) antes del PR. | Agregar Playwright o Node al proyecto y al CI es una dependencia nueva (principio II) para un componente chico; no lo pide ninguna spec. |
+| Principio III: el render del navegador real (CSS `:hover`/`:focus-visible` aplicado) y el anuncio del lector de pantalla se verifican con recorrido manual. | La lógica de JS sí tiene tests (`node:test`); lo que un DOM simulado no reproduce es el CSS aplicado y el lector. Se recorre [quickstart.md](./quickstart.md) antes del PR. | Playwright o un lector automatizado son dependencias nuevas (principio II) para un componente chico; no lo pide ninguna spec. |

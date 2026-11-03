@@ -55,8 +55,11 @@ la imagen `aqualab-web`).
   - el texto `<span role="tooltip" id="<id>" class="ayuda-texto">`.
 - **CSS** (`static/src/aqualab.css`, capa de componentes, con los tokens del tema): el texto está
   oculto con `invisible opacity-0` y se muestra con
-  `.ayuda:is(:hover, :focus-within, [data-abierta]):not([data-cerrada]) .ayuda-texto`. Así,
-  sin JavaScript igual se abre con mouse y teclado (caso borde).
+  `.ayuda:is(:hover, :has(:focus-visible), [data-abierta]):not([data-cerrada]) .ayuda-texto`. Así,
+  sin JavaScript igual se abre con mouse y teclado (caso borde). Se usa `:focus-visible` y no
+  `:focus-within`: un clic del mouse deja el foco en el botón, y con `:focus-within` la ayuda
+  seguiría abierta al retirar el mouse (FR-003); el navegador marca `:focus-visible` solo al
+  llegar con el teclado.
 - **JS** (`static/js/aqualab.js`, que ya cargan los dos layouts, `base.html` y
   `base_acceso.html`), con delegación de eventos como el resto del archivo:
   - clic o toque en `.ayuda-boton` → alterna `data-abierta` (FR-002, táctil);
@@ -65,6 +68,11 @@ la imagen `aqualab-web`).
     `focusout` / `pointerleave` (FR-003);
   - al abrir una ayuda (hover, foco o toque), las demás quedan con `data-cerrada` y sin
     `data-abierta`: nunca hay dos visibles (FR-006).
+- **WCAG 1.4.13 (contenido al pasar el mouse)**: pasar del ícono al texto no cierra la ayuda. El
+  texto visible recibe eventos del mouse (nunca `pointer-events: none`), un puente invisible
+  (`.ayuda-texto::before`) cubre el espacio entre el ícono y el texto, y el cierre por salida del
+  mouse se escucha en `.ayuda`, el contenedor de los dos (`pointerout` con un `relatedTarget`
+  fuera de la misma `.ayuda`). Escape la cierra aunque el mouse siga encima.
 - `aria-expanded` no se usa: es un tooltip (descripción), no un panel que el botón controla.
 - **Rationale**: Sin dependencias (FR-008, principio II); un solo lugar para el comportamiento.
 - **Alternatives considered**: Popover API de HTML (`popover`/`popovertarget`), que no se abre al
@@ -124,9 +132,13 @@ la imagen `aqualab-web`).
 
 - **Decision**: pytest cubre el marcado: ícono solo con ayuda; ids y `aria-describedby` en
   controles, grupos de opciones, la instrucción y la tabla; `button type="button"`; ayuda visible
-  de la contraseña; textos de FR-010 y el aviso de mediciones. El comportamiento con mouse,
-  teclado, toque y lector de pantalla (US 1, escenarios 3 a 7) se verifica a mano con
-  [quickstart.md](./quickstart.md), como `registro_muestra.js` (US 4.1) y `firma.js` (US 7.3).
-- **Rationale**: El proyecto no tiene ejecución de JS en los tests y agregarla (Playwright, Node)
-  sería una dependencia nueva para unas 40 líneas de JS. La excepción al principio III se justifica
-  en [plan.md](./plan.md#complexity-tracking).
+  de la contraseña; textos de FR-010 y el aviso de mediciones. El comportamiento de `aqualab.js`
+  (toque, Escape, una sola abierta, WCAG 1.4.13; US 1, escenarios 3–5, 7 y 9) se prueba con
+  `node:test` y un DOM simulado en `config/tests/js/ayuda.test.cjs`, siguiendo el esquema de
+  `usuarios/tests/js/sesion.test.cjs` (sin dependencias; el CI lo corre con
+  `node --test usuarios/tests/js config/tests/js`). A mano quedan solo el render del navegador
+  real y el lector de pantalla, con [quickstart.md](./quickstart.md).
+- **Rationale**: `node:test` viene con Node y ya se usa en el proyecto: no es una dependencia nueva.
+  Lo que no simula (el CSS aplicado y el lector) se justifica en
+  [plan.md](./plan.md#complexity-tracking).
+- **Alternatives considered**: Playwright (dependencia nueva y navegadores en el CI).

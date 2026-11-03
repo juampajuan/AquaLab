@@ -21,6 +21,9 @@
   valor? → A: Las dos cosas: el aviso de información visible arriba de la tabla suma el formato
   (coma o punto decimal, sin miles; «Ausente»/«Presente» en las pruebas A/P) y la columna
   «Medición» lleva un tooltip que explica qué es la medición (el valor leído, antes del cálculo).
+- Q: ¿La ayuda se cierra si el mouse pasa del ícono al texto? → A: No (WCAG 1.4.13): sigue
+  abierta mientras el mouse esté sobre el ícono o sobre el texto; se cierra al salir de ambos o
+  con Escape.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -59,6 +62,9 @@ llegar al campo.
 8. **Dado** un campo con error y con ayuda, **cuando** se muestra el formulario, **entonces** el
    mensaje de error sigue visible junto al campo como hasta ahora y la ayuda sigue disponible en
    el ícono.
+9. **Dada** una ayuda abierta con el mouse, **cuando** el empleado lleva el mouse del ícono al
+   texto de la ayuda, **entonces** la ayuda sigue visible; **cuando** sale de ambos, **entonces**
+   se oculta; **cuando** aprieta Escape, **entonces** se oculta aunque el mouse siga encima.
 
 ---
 
@@ -127,7 +133,8 @@ lo tienen.
   mostrar un ícono de ayuda junto a su etiqueta; los campos sin texto de ayuda NO DEBEN mostrarlo.
 - **FR-002**: El texto de ayuda DEBE estar oculto por defecto y aparecer al pasar el mouse sobre
   el ícono, al enfocarlo con el teclado o al tocarlo en una pantalla táctil.
-- **FR-003**: La ayuda DEBE ocultarse al retirar el mouse, al quitar el foco, al apretar Escape,
+- **FR-003**: La ayuda DEBE ocultarse al retirar el mouse del ícono y del texto de la ayuda
+  (pasar del ícono al texto no la cierra, WCAG 1.4.13), al quitar el foco, al apretar Escape,
   al volver a tocar el ícono o al tocar fuera de la ayuda.
 - **FR-004**: El ícono DEBE poder alcanzarse con Tab, tener un nombre accesible (por ejemplo,
   «Ayuda: <etiqueta del campo>») y no ser un control que envíe el formulario.
