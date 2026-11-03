@@ -409,7 +409,7 @@ componente.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T034 Agregar en `CLAUDE.md` la sección «Ayuda en formularios (US 9.1)»:
+- [X] T034 Agregar en `CLAUDE.md` la sección «Ayuda en formularios (US 9.1)»:
   - `ui/ayuda.html` es el único componente de ayuda.
   - `ui/campo.html` lo usa con `help_text`. El tooltip lleva el id `<auto_id>_helptext`, al que
     Django ya apunta con `aria-describedby`; en los radios va en el `<fieldset>`.
@@ -419,13 +419,13 @@ componente.
   - Pasar del ícono al texto no cierra la ayuda (WCAG 1.4.13): `pointerout` con `relatedTarget`
     y el puente `::before`.
   - El JS se prueba con `node --test config/tests/js/ayuda.test.cjs`.
-- [ ] T035 [P] Verificar que los `help_text` de los modelos no cambiaron:
+- [X] T035 [P] Verificar que los `help_text` de los modelos no cambiaron:
   `docker compose exec web python manage.py makemigrations --check --dry-run` sin migraciones
   nuevas.
-- [ ] T036 [P] `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .`.
-- [ ] T037 [P] Recompilar el CSS una última vez y comprobar que `git status static/css/aqualab.css`
+- [X] T036 [P] `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .`.
+- [X] T037 [P] Recompilar el CSS una última vez y comprobar que `git status static/css/aqualab.css`
   solo muestra cambios ya commiteados o a commitear juntos (como en el CI).
-- [ ] T038 [P] `node --test config/tests/js/ayuda.test.cjs usuarios/tests/js/sesion.test.cjs`
+- [X] T038 [P] `node --test config/tests/js/ayuda.test.cjs usuarios/tests/js/sesion.test.cjs`
   (el de sesión, porque `aqualab.js` se carga en los mismos layouts).
 - [ ] T039 Recorrer [quickstart.md](./quickstart.md) en el navegador (Chrome y el modo táctil de
   sus herramientas, más un lector de pantalla: NVDA u Orca) y anotar en este archivo cada paso.
@@ -436,6 +436,22 @@ componente.
   resultado real (pasados, fallados y duración). Si falla, corregir y volver a correr solo los
   tests de la app afectada; la suite completa se repite solo si se tocó un archivo compartido
   (`templates/ui/`, `config/`, `static/`).
+
+**Resultado de Polish (2026-11-03)**:
+
+- T034: sección «Ayuda en formularios (US 9.1)» agregada al final de `CLAUDE.md`.
+- T035: `makemigrations --check --dry-run` → «No changes detected».
+- T036: `ruff check .` → sin errores; `ruff format --check .` → 206 archivos ya formateados.
+- T037: CSS recompilado; `git status --porcelain static/css/aqualab.css` sin cambios.
+- T038: `node --test config/tests/js/ayuda.test.cjs usuarios/tests/js/sesion.test.cjs` → **29
+  passed, 0 failed**.
+- T039: **pendiente**, lo hace el usuario en el navegador (quickstart.md).
+- T040: **pendiente**, depende de T039. Contra la spec actual (con el escenario 9 y FR-003 de WCAG
+  1.4.13) la checklist sigue en 16/16, sin cambios.
+- T041: **no se corrió** por decisión del usuario: la suite completa la corre el CI en el PR. Lo
+  que sí se corrió: `pytest config usuarios` (194 passed) y
+  `pytest clientes muestras estudios informes` (966 passed); queda fuera de esas corridas solo la app
+  `pruebas`, que la feature no toca.
 
 - [X] T042 [P] Agregar en `.github/workflows/ci.yml` el paso «Tests de JavaScript», después de
   `pytest`: `actions/setup-node@v4` con `node-version: "20"` (la versión con la que se escribieron
