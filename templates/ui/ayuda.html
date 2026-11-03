@@ -1,0 +1,10 @@
+{% comment %}
+  Ayuda de un campo (US 9.1): ícono con un tooltip accesible.
+  Uso: {% include "ui/ayuda.html" with texto="…" id="id_origen_helptext" etiqueta="Origen" %}
+  - texto, id y etiqueta son obligatorios; el control describido referencia el id con
+    aria-describedby (en ui/campo.html lo hace Django, con <auto_id>_helptext).
+  - lado="derecha" alinea el texto al borde derecho del ícono (por defecto, al izquierdo).
+  Ganchos que usan aqualab.js y los tests (no cambiar): data-ayuda, .ayuda-boton, .ayuda-texto,
+  data-abierta y data-cerrada. El ícono va al lado de <label>/<legend>, nunca adentro.
+{% endcomment %}
+<span class="ayuda" data-ayuda data-lado="{{ lado|default:'izquierda' }}"><button type="button" class="ayuda-boton" aria-label="Ayuda: {{ etiqueta }}" aria-describedby="{{ id }}">{% include "ui/icono.html" with nombre="circle-help" clase="size-4" %}</button><span role="tooltip" id="{{ id }}" class="ayuda-texto">{{ texto }}</span></span>

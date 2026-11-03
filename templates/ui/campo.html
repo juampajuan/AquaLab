@@ -1,15 +1,23 @@
-{% comment %}
+{% load ui %}{% comment %}
   Campo de formulario. Uso: {% include "ui/campo.html" with field=form.email %}
   sin_obligatorio=True oculta el asterisco (por ejemplo, en el login, donde todo es obligatorio).
+  Ayuda (US 9.1): el help_text explica qué significa el campo y se ve como tooltip (ui/ayuda.html)
+  al lado de la etiqueta. Las instrucciones para completarlo bien van visibles debajo:
+  - ayuda_visible=True muestra el help_text como texto, sin ícono (requisitos de contraseña);
+  - instruccion="…" suma un texto visible, asociado al control con el filtro describir.
   Ganchos que usan JS y tests (no cambiar): el bloque de errores con id "<auto_id>_error" y un
-  <div> por error, la ayuda con id "<auto_id>_helptext" y la clase is-invalid en el control.
+  <div> por error, la ayuda con id "<auto_id>_helptext" (el tooltip, o el texto visible con
+  ayuda_visible), la instrucción con id "<auto_id>_instruccion" y la clase is-invalid en el control.
 {% endcomment %}
 <div class="{{ clase|default:'' }}">
   {% if field.widget_type == "radioselect" %}
-    <fieldset>
-      <legend class="campo-etiqueta" data-campo="{{ field.name }}">
+    <fieldset{% if field.aria_describedby %} aria-describedby="{{ field.aria_describedby }}"{% endif %}>
+      <legend class="campo-etiqueta{% if field.help_text and not ayuda_visible %} campo-leyenda{% endif %}" data-campo="{{ field.name }}">
         {{ field.label }}{% if field.field.required and not sin_obligatorio %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
       </legend>
+      {% if field.help_text and not ayuda_visible %}
+        {% include "ui/ayuda.html" with texto=field.help_text|safe id=field.auto_id|add:"_helptext" etiqueta=field.label %}
+      {% endif %}
       <div class="segmentado" id="{{ field.auto_id }}">
         {% for opcion in field %}
           <label for="{{ opcion.id_for_label }}">{{ opcion.tag }} {{ opcion.choice_label }}</label>
@@ -17,17 +25,33 @@
       </div>
     </fieldset>
   {% else %}
-    <label for="{{ field.id_for_label }}" class="campo-etiqueta" data-campo="{{ field.name }}">
-      {{ field.label }}{% if field.field.required and not sin_obligatorio %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
-    </label>
-    {{ field }}
+    {% if field.help_text and not ayuda_visible %}
+      <div class="campo-cabecera">
+        <label for="{{ field.id_for_label }}" class="campo-etiqueta" data-campo="{{ field.name }}">
+          {{ field.label }}{% if field.field.required and not sin_obligatorio %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
+        </label>
+        {% include "ui/ayuda.html" with texto=field.help_text|safe id=field.auto_id|add:"_helptext" etiqueta=field.label %}
+      </div>
+    {% else %}
+      <label for="{{ field.id_for_label }}" class="campo-etiqueta" data-campo="{{ field.name }}">
+        {{ field.label }}{% if field.field.required and not sin_obligatorio %} <span class="text-peligro" data-obligatorio aria-hidden="true">*</span>{% endif %}
+      </label>
+    {% endif %}
+    {% if instruccion %}
+      {% with instruccion_id=field.auto_id|add:"_instruccion" %}{{ field|describir:instruccion_id }}{% endwith %}
+    {% else %}
+      {{ field }}
+    {% endif %}
   {% endif %}
   {% if field.errors %}
     <div class="campo-error" id="{{ field.auto_id }}_error">
       {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
     </div>
   {% endif %}
-  {% if field.help_text %}
+  {% if field.help_text and ayuda_visible %}
     <div class="campo-ayuda" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</div>
+  {% endif %}
+  {% if instruccion %}
+    <p class="campo-ayuda" id="{{ field.auto_id }}_instruccion">{{ instruccion }}</p>
   {% endif %}
 </div>
