@@ -7,7 +7,7 @@ Contrato de los parciales que usan las pantallas y los tests. Los nombres de cla
 
 ```django
 {% include "ui/ayuda.html" with texto="…" id="id_origen_helptext" etiqueta="Origen" %}
-{% include "ui/ayuda.html" with texto="…" id="ayuda-medicion" etiqueta="Medición" lado="derecha" %}
+{% include "ui/ayuda.html" with texto="…" id="ayuda-medicion" etiqueta="Medición" lado="derecha" posicion="abajo" %}
 ```
 
 | Parámetro | Obligatorio | Uso |
@@ -16,11 +16,12 @@ Contrato de los parciales que usan las pantallas y los tests. Los nombres de cla
 | `id` | sí | Id del tooltip; el control (o la tabla) lo referencia con `aria-describedby`. |
 | `etiqueta` | sí | Completa el nombre accesible del botón: «Ayuda: <etiqueta>». |
 | `lado` | no | `izquierda` (por defecto) o `derecha`: borde del ícono al que se alinea el texto. |
+| `posicion` | no | `arriba` (por defecto) o `abajo`: hacia dónde se abre el texto. `abajo` va en los encabezados de tabla, donde el contenedor con desplazamiento recorta lo que sale por arriba; el puente de WCAG 1.4.13 queda del lado de arriba. |
 
 Marcado resultante:
 
 ```html
-<span class="ayuda" data-ayuda data-lado="izquierda">
+<span class="ayuda" data-ayuda data-lado="izquierda" data-posicion="arriba">
   <button type="button" class="ayuda-boton" aria-label="Ayuda: Origen"
           aria-describedby="id_origen_helptext">
     <svg … aria-hidden="true" focusable="false">…circle-help…</svg>
@@ -80,7 +81,7 @@ más el id recibido, separados por espacios y sin duplicados. Si el widget ya tr
 
 - El aviso `aviso-info` de arriba suma una oración con el formato: coma o punto decimal, sin
   separador de miles; en las pruebas Ausente/Presente se elige la opción de la lista.
-- `<th>` «Medición»: texto + `ui/ayuda.html` con `id="ayuda-medicion"`, `lado="derecha"` y el
+- `<th>` «Medición»: texto + `ui/ayuda.html` con `id="ayuda-medicion"`, `lado="derecha"`, `posicion="abajo"` y el
   significado: el valor leído en el análisis, a partir del cual se calcula el resultado.
 - Cada control de la columna: `aria-describedby="ayuda-medicion"` y, con error,
   `"ayuda-medicion <auto_id>_error"`.

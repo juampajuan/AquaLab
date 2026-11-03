@@ -139,9 +139,11 @@ def test_ayuda_alineada_a_la_derecha():
             "id": "ayuda-medicion",
             "etiqueta": "Medición",
             "lado": "derecha",
+            "posicion": "abajo",
         },
     )
     assert 'data-lado="derecha"' in html
+    assert 'data-posicion="abajo"' in html
     assert 'aria-label="Ayuda: Medición"' in html
     assert (
         '<span role="tooltip" id="ayuda-medicion" class="ayuda-texto">Valor leído.</span>' in html
@@ -154,6 +156,7 @@ def test_ayuda_escapa_los_textos_literales():
     )
     assert "&lt;b&gt;x&lt;/b&gt;" in html
     assert 'data-lado="izquierda"' in html
+    assert 'data-posicion="arriba"' in html, "por defecto se sigue abriendo arriba"
 
 
 # --- CSS compilado (FR-002, WCAG 1.4.13) ---
@@ -164,5 +167,6 @@ def test_el_css_compilado_incluye_la_ayuda_y_se_puede_recorrer_con_el_mouse():
     assert ".ayuda-boton" in css
     assert "data-cerrada" in css
     assert ".ayuda-texto:before" in css
+    assert 'data-posicion="abajo"' in css or "data-posicion=abajo" in css
     for regla in re.findall(r"\.ayuda-texto\{[^}]*\}", css):
         assert "pointer-events:none" not in regla

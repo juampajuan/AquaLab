@@ -192,6 +192,14 @@
   .ayuda-texto::before {
     @apply absolute inset-x-0 top-full h-2 content-[''];
   }
+  /* posicion="abajo": el texto se abre debajo del ícono y el puente queda del lado de arriba
+     (encabezados de tabla, donde el contenedor recorta lo que sale por arriba). */
+  .ayuda[data-posicion="abajo"] .ayuda-texto {
+    @apply top-full bottom-auto mt-2 mb-0;
+  }
+  .ayuda[data-posicion="abajo"] .ayuda-texto::before {
+    @apply top-auto bottom-full;
+  }
   .ayuda:is(:hover, :has(:focus-visible), [data-abierta]):not([data-cerrada]) .ayuda-texto {
     @apply visible opacity-100;
   }

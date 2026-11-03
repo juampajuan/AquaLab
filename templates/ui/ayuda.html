@@ -4,7 +4,9 @@
   - texto, id y etiqueta son obligatorios; el control describido referencia el id con
     aria-describedby (en ui/campo.html lo hace Django, con <auto_id>_helptext).
   - lado="derecha" alinea el texto al borde derecho del ícono (por defecto, al izquierdo).
+  - posicion="abajo" abre el texto debajo del ícono (por defecto, arriba): para los encabezados de
+    tabla, donde el contenedor con desplazamiento recortaría el texto de arriba.
   Ganchos que usan aqualab.js y los tests (no cambiar): data-ayuda, .ayuda-boton, .ayuda-texto,
   data-abierta y data-cerrada. El ícono va al lado de <label>/<legend>, nunca adentro.
 {% endcomment %}
-<span class="ayuda" data-ayuda data-lado="{{ lado|default:'izquierda' }}"><button type="button" class="ayuda-boton" aria-label="Ayuda: {{ etiqueta }}" aria-describedby="{{ id }}">{% include "ui/icono.html" with nombre="circle-help" clase="size-4" %}</button><span role="tooltip" id="{{ id }}" class="ayuda-texto">{{ texto }}</span></span>
+<span class="ayuda" data-ayuda data-lado="{{ lado|default:'izquierda' }}" data-posicion="{{ posicion|default:'arriba' }}"><button type="button" class="ayuda-boton" aria-label="Ayuda: {{ etiqueta }}" aria-describedby="{{ id }}">{% include "ui/icono.html" with nombre="circle-help" clase="size-4" %}</button><span role="tooltip" id="{{ id }}" class="ayuda-texto">{{ texto }}</span></span>

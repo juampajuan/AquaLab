@@ -58,6 +58,7 @@ def comprobar_tabla(html):
         assert texto in aviso[1]
     encabezado = next(th for th in re.findall(r"<th>(.*?)</th>", html, re.S) if "Medición" in th)
     assert 'data-lado="derecha"' in encabezado
+    assert 'data-posicion="abajo"' in encabezado, "arriba lo recorta el contenedor de la tabla"
     assert tooltip(encabezado, "ayuda-medicion")
     controles = controles_de_medicion(html)
     assert controles
