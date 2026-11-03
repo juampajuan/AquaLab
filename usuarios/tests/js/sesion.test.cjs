@@ -1,4 +1,7 @@
 // Regresiones de lógica de sesión con APIs estándar de Node; no simulan un navegador real.
+// Desde dff6505 la guardia no oculta al perder el foco (blur) ni exige document.hasFocus():
+// ocultar así dejaba la pantalla en blanco al volver atrás. Se oculta con pagehide,
+// visibilitychange (pestaña oculta) y pageshow persistido.
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -9,14 +12,14 @@ const procesar = () => new Promise((resolve) => setImmediate(resolve));
 
 function entorno() {
   const eventos = {}, clases = new Set(), timers = new Map(), peticiones = [], destinos = [];
-  let id = 0, foco = true;
+  let id = 0;
   const mensaje = { textContent: "" };
   const boton = { disabled: false, addEventListener: (tipo, fn) => eventos["boton:" + tipo] = fn };
   const config = { dataset: {
     huella: "original", verificar: "/usuarios/sesion/", login: "/usuarios/login/",
   } };
   const document = {
-    hidden: false, hasFocus: () => foco,
+    hidden: false,
     documentElement: { classList: { add: (c) => clases.add(c), remove: (c) => clases.delete(c) } },
     querySelector: () => config,
     getElementById: (nombre) => nombre === "sesion-mensaje" ? mensaje : boton,
@@ -38,8 +41,8 @@ function entorno() {
       if (timer.ms === ms) { timers.delete(n); timer.fn(); }
     }
   }
-  function ocultar() { foco = false; eventos.blur(); }
-  function volver() { foco = true; eventos.focus(); ejecutar(0); }
+  function ocultar() { eventos.pagehide(); }
+  function volver() { eventos.focus(); ejecutar(0); }
   return { eventos, clases, timers, peticiones, destinos, document, boton, mensaje,
     ejecutar, ocultar, volver, oculto: () => clases.has("sesion-oculta") };
 }
@@ -101,7 +104,7 @@ test("eventos duplicados se agrupan sin revalidaciones concurrentes", async () =
   assert.equal(e.oculto(), false);
 });
 
-test("oculta o sin foco no acepta respuestas y revalida al volver", async () => {
+test("pestaña oculta no acepta respuestas y revalida al volver", async () => {
   const e = entorno(); e.ocultar(); e.volver();
   e.document.hidden = true; e.eventos.visibilitychange();
   e.peticiones[0].resolve(respuesta(204)); await procesar();
@@ -128,6 +131,30 @@ test("pageshow persistido exige revalidación, carga inicial no", async () => {
   assert.equal(e.peticiones.length, 0);
   e.eventos.pagehide(); e.eventos.pageshow({ persisted: true }); e.ejecutar(0);
   assert.equal(e.oculto(), true); assert.equal(e.peticiones.length, 1);
+  e.peticiones[0].resolve(respuesta(204)); await procesar();
+  assert.equal(e.oculto(), false);
+});
+
+test("perder el foco de la ventana no oculta la página (dff6505)", () => {
+  const e = entorno();
+  assert.equal(e.eventos.blur, undefined);
+  assert.equal(e.oculto(), false);
+});
+
+test("verifica aunque document.hasFocus() sea falso (dff6505)", async () => {
+  const e = entorno();
+  e.document.hasFocus = () => false;
+  e.ocultar(); e.volver();
+  assert.equal(e.peticiones.length, 1);
+  e.peticiones[0].resolve(respuesta(204)); await procesar();
+  assert.equal(e.oculto(), false);
+});
+
+test("pageshow no persistido con una verificación pendiente revalida (dff6505)", async () => {
+  const e = entorno();
+  e.eventos.pagehide();
+  e.eventos.pageshow({ persisted: false }); e.ejecutar(0);
+  assert.equal(e.peticiones.length, 1);
   e.peticiones[0].resolve(respuesta(204)); await procesar();
   assert.equal(e.oculto(), false);
 });
