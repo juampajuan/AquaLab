@@ -56,9 +56,10 @@ def test_sin_permiso_no_emite(estudio_listo, comun):
     assert not Informe.objects.exists()
 
 
-def test_agregado_al_grupo_emite(estudio_listo, comun):
+def test_agregado_al_grupo_emite(estudio_listo, comun, firma_de):
     from informes.servicios import emitir_informe
 
+    firma_de(comun)  # desde la US 7.3 no se emite sin firma
     comun.groups.add(Group.objects.get(name="Bioquímicos"))
     comun = type(comun).objects.get(pk=comun.pk)  # sin la caché de permisos
     assert emitir_informe(estudio_listo.pk, comun).numero == 1

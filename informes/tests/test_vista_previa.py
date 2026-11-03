@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.messages import get_messages
+from django.test import Client
 from django.urls import reverse
 
 from estudios.models import EstadoEstudio, Estudio
@@ -49,10 +50,10 @@ def test_vista_previa_muestra_documento(cliente_bioquimico, estudio_listo):
         "Ausente",
         "&lt; 0,1",
         "Fuera de norma",
-        "Responsable técnico",
     ):
         assert texto in html, texto
     assert 'data-evaluacion="fuera_de_norma"' in html
+    assert "Responsable técnico" not in html
 
 
 def test_vista_previa_no_cambia_nada(cliente_bioquimico, estudio_listo):
@@ -99,3 +100,23 @@ def test_vista_previa_404(cliente_http):
 
 def test_estado_estudio_finalizado_en_la_vista_previa(estudio_listo):
     assert Estudio.objects.get(pk=estudio_listo.pk).estado == EstadoEstudio.FINALIZADO
+
+
+def test_vista_previa_muestra_firma(cliente_bioquimico, estudio_listo, bioquimico):
+    html = cliente_bioquimico.get(url(estudio_listo)).content.decode()
+    assert bioquimico.firma_profesional.data_url in html
+    assert "Mat. MP 1234" in html
+    assert "Emitir informe" in html
+
+
+def test_vista_previa_sin_firma_ofrece_cargarla(estudio_de, completar, bioquimico_sin_firma):
+    estudio = estudio_de("PH")
+    completar(estudio)
+    c = Client()
+    c.force_login(bioquimico_sin_firma)
+    html = c.get(url(estudio)).content.decode()
+    assert "Emitir informe" not in html
+    assert "Para emitir necesitás cargar tu firma y matrícula." in html
+    assert f'href="{reverse("informes:mi_firma")}"' in html
+    assert "Cargar mi firma" in html
+    assert "Sin firma registrada" in html

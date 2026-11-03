@@ -1,3 +1,4 @@
+import json
 from datetime import date
 
 import pytest
@@ -119,3 +120,37 @@ def test_armar_contenido_vacios(estudio_validado):
     contenido = armar_contenido(estudio_validado)
     assert contenido["cliente"]["domicilio"] == ""
     assert contenido["muestra"]["responsable_muestreo"] == ""
+
+
+def test_armar_contenido_con_firmante(estudio_validado, bioquimico):
+    bioquimico.last_name = "Pérez"
+    bioquimico.save(update_fields=["last_name"])
+    contenido = armar_contenido(estudio_validado, bioquimico)
+    firma = bioquimico.firma_profesional
+    assert contenido["firma"] == {
+        "nombre": "Test Pérez",
+        "matricula": "MP 1234",
+        "imagen": firma.data_url,
+    }
+    assert json.loads(json.dumps(contenido)) == contenido
+
+
+def test_nombre_sin_full_name_usa_email(estudio_validado, django_user_model, firma_de):
+    usuario = django_user_model.objects.create_user(
+        email="sin-nombre@ejemplo.com", password="Clave-Valida-123", is_active=True
+    )
+    firma_de(usuario, matricula="MP 9")
+    contenido = armar_contenido(estudio_validado, usuario)
+    assert contenido["firma"]["nombre"] == "sin-nombre@ejemplo.com"
+    assert contenido["firma"]["matricula"] == "MP 9"
+
+
+def test_armar_contenido_firmante_sin_firma(estudio_validado, django_user_model):
+    usuario = django_user_model.objects.create_user(
+        email="sin-firma@ejemplo.com", password="Clave-Valida-123", is_active=True
+    )
+    assert "firma" not in armar_contenido(estudio_validado, usuario)
+
+
+def test_armar_contenido_sin_firmante(estudio_validado):
+    assert "firma" not in armar_contenido(estudio_validado)

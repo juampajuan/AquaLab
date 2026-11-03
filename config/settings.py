@@ -128,6 +128,5 @@ AQUALAB_LABORATORIO = {
     "nombre": "Laboratorio de Análisis de Agua (DEMO)",
     "direccion": "Av. Paseo Colón 850, Ciudad de Buenos Aires (DEMO)",
     "matricula": "Habilitación N° 0000 (DEMO)",
-    "responsable_tecnico": "Bioq. Responsable Técnico (DEMO)",
     "logo": "aqualab",
 }

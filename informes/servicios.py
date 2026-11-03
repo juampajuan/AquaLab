@@ -5,7 +5,7 @@ from estudios.busqueda import filtro_busqueda
 from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
 
 from .contenido import armar_contenido
-from .models import Informe
+from .models import FirmaProfesional, Informe
 
 
 class InformeNoDisponible(Exception):
@@ -73,13 +73,16 @@ def emitir_informe(estudio_pk, usuario):
 
     En una transacción: bloquea el estudio y revalida la regla de la US 7.1, toma el lock de la
     numeración (máximo + 1, sin huecos como el N° PI), guarda la copia de `armar_contenido` y pasa
-    el estudio a «Informe generado». Una segunda emisión del mismo estudio espera el bloqueo y
-    recibe el motivo «ya fue generado».
+    el estudio a «Informe generado». Desde la US 7.3 exige la firma de quien emite y la copia en
+    el contenido (nombre, matrícula e imagen). Una segunda emisión del mismo estudio espera el
+    bloqueo y recibe el motivo «ya fue generado».
     """
     if not usuario.is_authenticated or not usuario.is_active:
         raise EmitirInformeError("Se requiere una sesión activa.")
     if not usuario.has_perm("informes.emitir_informes"):
         raise EmitirInformeError("Se requiere permiso para emitir informes.")
+    if not FirmaProfesional.objects.filter(usuario=usuario).exists():
+        raise EmitirInformeError("Cargá tu firma y matrícula en «Mi firma» antes de emitir.")
     with transaction.atomic():
         estudio = estudio_listo_bloqueado(estudio_pk)
         with connection.cursor() as cursor:
@@ -88,7 +91,7 @@ def emitir_informe(estudio_pk, usuario):
             numero=siguiente_numero(),
             estudio=estudio,
             emitido_por=usuario,
-            contenido=armar_contenido(estudio),
+            contenido=armar_contenido(estudio, usuario),
         )
         estudio.estado = EstadoEstudio.INFORME_GENERADO
         estudio.save(update_fields=["estado"])

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Informes emitidos · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% include "ui/encabezado.html" with seccion="Informes" titulo="Informes emitidos" subtitulo="Buscá un informe para consultarlo, descargarlo en PDF o imprimirlo." %}
+{% endblock %}
+
+{% block content %}
+  <form method="get" action="{% url 'informes:emitidos' %}" class="tarjeta mb-6 p-5 sm:p-6" novalidate>
+    <div class="grid gap-4 lg:grid-cols-[1fr_auto_auto_auto] lg:items-end">
+      <div>
+        <label for="{{ form.q.id_for_label }}" class="campo-etiqueta">{{ form.q.label }}</label>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-tinta-suave">
+            {% include "ui/icono.html" with nombre="search" clase="size-4" %}
+          </span>
+          <input type="text" name="q" id="{{ form.q.id_for_label }}" value="{{ form.q.value|default:'' }}"
+                 placeholder="{{ form.q.field.widget.attrs.placeholder }}" maxlength="100"
+                 class="form-control pl-9{% if form.q.errors %} is-invalid{% endif %}" autofocus>
+        </div>
+      </div>
+      {% for campo in form %}{% if campo.name != "q" %}
+        <div>
+          <label for="{{ campo.id_for_label }}" class="campo-etiqueta">{{ campo.label }}</label>
+          <input type="date" name="{{ campo.html_name }}" id="{{ campo.id_for_label }}" value="{{ campo.value|default:''|stringformat:'s' }}"
+                 class="form-control{% if campo.errors %} is-invalid{% endif %}">
+        </div>
+      {% endif %}{% endfor %}
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primario">
+          {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar
+        </button>
+        {% if hay_filtros or form.errors %}
+          <a href="{% url 'informes:emitidos' %}" class="btn btn-secundario">Limpiar</a>
+        {% endif %}
+      </div>
+    </div>
+    {% for campo in form %}
+      {% for error in campo.errors %}
+        <div class="campo-error">{{ error }}</div>
+      {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+      <div class="campo-error">{{ error }}</div>
+    {% endfor %}
+  </form>
+
+  {% if page_obj is not None %}
+    <section class="tarjeta overflow-hidden">
+      {% if page_obj.paginator.count %}
+        <h2 class="px-4 py-4 text-sm font-semibold text-marino sm:px-5">
+          {{ page_obj.paginator.count }} informe{{ page_obj.paginator.count|pluralize }}
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Informe</th>
+                <th>Emisión</th>
+                <th>Cliente</th>
+                <th>Muestra</th>
+                <th>Estudio</th>
+                <th>Emitido por</th>
+                <th><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for informe in page_obj %}
+                {% with cliente=informe.contenido.cliente estudio=informe.contenido.estudio %}
+                  <tr>
+                    <td class="font-semibold text-marino whitespace-nowrap"><a href="{% url 'informes:ver' informe.estudio_id %}" class="hover:underline">{{ informe.numero_mostrado }}</a></td>
+                    <td class="whitespace-nowrap">{{ informe.fecha_emision|date:"d/m/Y H:i" }}</td>
+                    <td>
+                      <div class="font-medium">{{ cliente.nombre_completo|default:"—" }}</div>
+                      <div class="text-xs text-tinta-suave">{{ cliente.tipo_documento }} {{ cliente.numero_documento }}</div>
+                    </td>
+                    <td class="whitespace-nowrap">N° PI {{ informe.contenido.muestra.numero_pi }}</td>
+                    <td>
+                      <div class="font-semibold">#{{ estudio.numero }}</div>
+                      <div class="text-xs text-tinta-suave">{{ estudio.tipo|default:"—" }}</div>
+                    </td>
+                    <td>{{ informe.contenido.firma.nombre|default:informe.emitido_por.get_full_name|default:informe.emitido_por.email }}</td>
+                    <td class="text-right">
+                      <a href="{% url 'informes:ver' informe.estudio_id %}" class="btn btn-secundario px-3 py-1.5">
+                        {% include "ui/icono.html" with nombre="eye" clase="size-4" %} Ver
+                      </a>
+                    </td>
+                  </tr>
+                {% endwith %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% include "ui/paginacion.html" with parametros=parametros %}
+      {% elif hay_filtros %}
+        {% include "ui/estado_vacio.html" with icono="search" mensaje="No hay informes que coincidan con la búsqueda." %}
+      {% else %}
+        {% include "ui/estado_vacio.html" with icono="file-text" mensaje="Todavía no hay informes emitidos." %}
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}

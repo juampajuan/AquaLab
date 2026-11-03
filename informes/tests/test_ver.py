@@ -62,3 +62,29 @@ def test_control_y_detalle_ofrecen_ver_informe(cliente_http, estudio_listo, bioq
     emitir_informe(estudio_listo.pk, bioquimico)
     assert ver in cliente_http.get(control).content.decode()
     assert ver in cliente_http.get(detalle).content.decode()
+
+
+def test_parcial_firma():
+    from django.template.loader import render_to_string
+
+    firma = {"nombre": "Ana Pérez", "matricula": "MP 1234", "imagen": "data:image/png;base64,AAAA"}
+    html = render_to_string("informes/firma.html", {"firma": firma})
+    assert 'src="data:image/png;base64,AAAA"' in html
+    assert 'alt="Firma de Ana Pérez"' in html
+    assert "Mat. MP 1234" in html
+    assert "Sin firma registrada" not in html
+
+    sin_firma = render_to_string("informes/firma.html", {})
+    assert "Sin firma registrada" in sin_firma
+    assert "<img" not in sin_firma
+
+
+def test_ver_vuelve_a_emitidos(cliente_bioquimico, estudio_listo, bioquimico):
+    emitir_informe(estudio_listo.pk, bioquimico)
+    html = cliente_bioquimico.get(reverse("informes:ver", args=[estudio_listo.pk])).content.decode()
+    assert f'href="{reverse("informes:emitidos")}"' in html
+    assert "Volver a informes emitidos" in html
+
+
+def test_ver_pk_inexistente_404(cliente_http):
+    assert cliente_http.get(reverse("informes:ver", args=[999999])).status_code == 404
