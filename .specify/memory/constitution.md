@@ -1,17 +1,16 @@
 <!--
 Sync Impact Report
 ==================
-Cambio de versión: 1.0.0 → 1.1.0 (MINOR)
-Motivo: la interfaz pasa de Bootstrap 5.3 a Tailwind CSS para implementar el diseño profesional
-generado con Stitch (tarjeta SCRUM-67, spec 013-diseno-ui).
+Cambio de versión: 1.1.0 → 1.2.0 (MINOR)
+Motivo: se amplía la guía de la sección Interfaz (UI) con una regla nueva sobre la ayuda de los
+campos de formulario.
 
 Principios modificados: ninguno.
 
 Secciones modificadas:
-- Stack tecnológico: Bootstrap 5.3 → Tailwind CSS 4 (CLI standalone, sin Node) y Google Stitch
-  como herramienta de diseño.
-- Interfaz (UI): reglas de diseño reescritas (sistema visual único, componentes reutilizables,
-  CSS compilado y versionado en lugar de CDN).
+- Interfaz (UI): nueva regla — los campos cuyo significado no es evidente llevan una ayuda breve
+  (`help_text` de Django) mostrada como tooltip accesible desde `templates/ui/campo.html`; toda
+  pantalla nueva con formularios la incluye.
 
 Secciones agregadas / eliminadas: ninguna.
 
@@ -20,13 +19,11 @@ Plantillas dependientes:
 - .specify/templates/spec-template.md     ✅ sin cambios necesarios
 - .specify/templates/tasks-template.md    ✅ sin cambios necesarios
 
-Pendientes de seguimiento:
-- README.md todavía menciona Bootstrap 5.3 en el stack.
-- Specs 001–008 mencionan Bootstrap en plan/contratos: quedan como registro histórico; la
-  migración de sus templates la cubre la spec 013-diseno-ui.
+Pendientes de seguimiento: ninguno.
 
 Historial:
 - 1.0.0 (2026-10-16): ratificación inicial.
+- 1.1.0 (2026-10-28): Bootstrap 5.3 → Tailwind CSS 4 y diseño con Google Stitch (spec 013).
 -->
 
 # Constitution de AquaLab
@@ -157,6 +154,9 @@ Se agregan **solo cuando lo pida una spec** (semana 5):
 - Toda pantalla nueva sigue el diseño de Stitch; si no tiene diseño propio, se arma con los
   componentes existentes.
 - Formularios con mensajes de error claros junto a cada campo.
+- Los campos de formulario cuyo significado no es evidente llevan una **ayuda breve** (`help_text`
+  de Django), que se muestra como tooltip accesible desde el parcial de campos
+  (`templates/ui/campo.html`). Toda pantalla nueva con formularios la incluye.
 - Las acciones que guardan o eliminan datos piden **confirmación** antes de ejecutarse (patrón común
   para todo el sistema).
 - Mensajes de éxito y error mediante el framework de mensajes de Django.
@@ -192,4 +192,4 @@ Se agregan **solo cuando lo pida una spec** (semana 5):
   correspondiente.
 - En cada revisión de PR se verifica el cumplimiento de estos principios.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-16 | **Last Amended**: 2026-10-28
+**Version**: 1.2.0 | **Ratified**: 2026-10-16 | **Last Amended**: 2026-11-03
