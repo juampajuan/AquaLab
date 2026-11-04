@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Catálogo de pruebas · AquaLab{% endblock %}
+{% block encabezado %}{% include "ui/encabezado.html" with titulo="Catálogo de pruebas" seccion="Administración" subtitulo="Consulta de pruebas activas e inactivas del laboratorio." %}{% endblock %}
+{% block content %}
+<form method="get" class="mb-6 flex flex-wrap items-end gap-3">
+<div><label for="q" class="campo-etiqueta">Código o nombre</label><input type="search" id="q" name="q" value="{{ q }}" class="form-control" placeholder="Buscar una prueba"></div>
+<button class="btn btn-primario">Buscar</button><a class="btn btn-secundario" href="{% url 'administracion:pruebas' %}">Limpiar</a>
+</form>
+<section class="tarjeta overflow-hidden">
+{% if page_obj %}<div class="overflow-x-auto"><table class="tabla">
+<thead><tr><th>Código</th><th>Nombre</th><th>Tipo de cálculo</th><th>Unidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+<tbody>{% for prueba in page_obj %}<tr>
+<td class="font-semibold text-marino">{{ prueba.codigo }}</td><td>{{ prueba.nombre }}</td><td>{{ prueba.get_tipo_calculo_display }}</td><td>{{ prueba.unidad|unidad }}</td>
+<td>{% if prueba.activa %}{% include "ui/estado.html" with estado="Activa" tipo="success" %}{% else %}{% include "ui/estado.html" with estado="Inactiva" tipo="neutral" %}{% endif %}</td>
+<td><a class="text-cian-texto hover:underline" href="{% url 'admin:pruebas_prueba_change' prueba.pk %}">Editar en Django Admin</a></td>
+</tr>{% endfor %}</tbody></table></div>{% include "ui/paginacion.html" %}
+{% else %}{% include "ui/estado_vacio.html" with mensaje="No hay pruebas para esta búsqueda." %}{% endif %}
+</section>
+{% endblock %}

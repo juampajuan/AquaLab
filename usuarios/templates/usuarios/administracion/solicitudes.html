@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Solicitudes de cuenta · AquaLab{% endblock %}
+{% block content %}
+{% include "ui/encabezado.html" with titulo="Solicitudes de cuenta" seccion="Administración" subtitulo="Revisá y resolvé las cuentas pendientes de aprobación." %}
+<section class="tarjeta overflow-hidden">
+{% if page_obj %}
+<div class="overflow-x-auto"><table class="tabla">
+  <thead><tr><th>Nombre</th><th>Apellido</th><th>Correo</th><th>Acciones</th></tr></thead>
+  <tbody>{% for usuario in page_obj %}<tr>
+    <td>{{ usuario.first_name }}</td><td>{{ usuario.last_name }}</td><td>{{ usuario.email }}</td>
+    <td><div class="flex gap-2"><a class="btn btn-primario" href="{% url 'administracion:aprobar' usuario.pk %}">Aprobar</a><a class="btn btn-secundario" href="{% url 'administracion:rechazar' usuario.pk %}">Rechazar</a></div></td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% include "ui/paginacion.html" with parametros="" %}
+{% else %}{% include "ui/estado_vacio.html" with mensaje="No hay solicitudes pendientes." %}{% endif %}
+</section>
+{% endblock %}

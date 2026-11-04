@@ -39,15 +39,18 @@ def nueva_pendiente(email, first_name="Laura", last_name="Díaz"):
     )
 
 
-def datos_ficha(usuario, **cambios):
+def datos_ficha(cliente, usuario, **cambios):
     """Datos completos del formulario de la ficha del usuario en el admin."""
+    ficha = cliente.get(reverse("admin:usuarios_usuario_change", args=[usuario.pk]))
+    token = ficha.context["adminform"].form.initial["contexto_administrativo"]
     fecha_registro = timezone.localtime(usuario.date_joined)
     datos = {
+        "contexto_administrativo": token,
         "email": usuario.email,
         "first_name": usuario.first_name,
         "last_name": usuario.last_name,
         "date_joined_0": fecha_registro.strftime("%Y-%m-%d"),
-        "date_joined_1": fecha_registro.strftime("%H:%M:%S"),
+        "date_joined_1": fecha_registro.strftime("%H:%M:%S.%f"),
         "last_login_0": "",
         "last_login_1": "",
     }
@@ -58,6 +61,13 @@ def datos_ficha(usuario, **cambios):
 
 
 def aplicar_accion(cliente, accion, usuarios, **extra):
+    if accion == "rechazar_solicitudes" and extra.get("confirmar") == "si":
+        previa = cliente.post(
+            reverse(URL_LISTADO), {"action": accion, "_selected_action": [u.pk for u in usuarios]}
+        )
+        if previa.context and "contexto_administrativo" in previa.context:
+            extra["contexto_administrativo"] = previa.context["contexto_administrativo"]
+            usuarios = list(previa.context["pendientes"])
     return cliente.post(
         reverse(URL_LISTADO),
         {"action": accion, "_selected_action": [u.pk for u in usuarios], **extra},
@@ -212,7 +222,7 @@ def test_aprobar_desde_ficha_envia_aviso(
     with django_capture_on_commit_callbacks(execute=True):
         respuesta = cliente_admin.post(
             reverse("admin:usuarios_usuario_change", args=[usuario_pendiente.pk]),
-            datos_ficha(usuario_pendiente, is_active="on"),
+            datos_ficha(cliente_admin, usuario_pendiente, is_active="on"),
         )
 
     assert respuesta.status_code == 302
@@ -249,7 +259,7 @@ def test_guardar_ficha_de_cuenta_aprobada_no_envia_aviso(
     with django_capture_on_commit_callbacks(execute=True):
         respuesta = cliente_admin.post(
             reverse("admin:usuarios_usuario_change", args=[usuario_aprobado.pk]),
-            datos_ficha(usuario_aprobado, first_name="Pedro Pablo"),
+            datos_ficha(cliente_admin, usuario_aprobado, first_name="Pedro Pablo"),
         )
 
     assert respuesta.status_code == 302

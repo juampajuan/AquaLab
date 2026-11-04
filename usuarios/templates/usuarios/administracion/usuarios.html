@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Usuarios y roles · AquaLab{% endblock %}
+{% block encabezado %}{% include "ui/encabezado.html" with titulo="Usuarios y roles" seccion="Administración" subtitulo="Roles profesionales y acceso de las cuentas del laboratorio." %}{% endblock %}
+{% block content %}
+<section class="tarjeta overflow-hidden">
+{% if page_obj %}<div class="overflow-x-auto"><table class="tabla">
+<thead><tr><th>Nombre y apellido</th><th>Correo</th><th>Rol profesional</th><th>Estado</th><th>Acciones</th></tr></thead>
+<tbody>{% for usuario in page_obj %}<tr>
+<td><div>{{ usuario.first_name }} {{ usuario.last_name }}</div>{% if usuario.es_administrador %}<div class="mt-1">{% include "ui/estado.html" with estado="Administrador" tipo="info" %}</div>{% endif %}</td><td class="break-all">{{ usuario.email }}</td>
+<td>{% if usuario.es_bioquimico %}Bioquímico{% else %}Usuario común{% endif %}</td>
+<td>{% include "ui/estado.html" with estado=usuario.estado_cuenta.label tipo="neutral" %}</td>
+<td><div class="flex min-h-12 items-center gap-2">{% if usuario.aprobada %}
+<a class="btn btn-secundario w-28 shrink-0" href="{% url 'administracion:cambiar_rol' usuario.pk %}">Cambiar rol</a>
+{% if usuario.is_active %}{% if usuario.pk != request.user.pk %}<a class="btn btn-secundario w-28 shrink-0" href="{% url 'administracion:desactivar' usuario.pk %}">Desactivar</a>{% endif %}
+{% else %}<a class="btn btn-secundario w-28 shrink-0" href="{% url 'administracion:reactivar' usuario.pk %}">Reactivar</a>{% endif %}
+{% else %}<a class="text-cian-texto hover:underline" href="{% url 'administracion:solicitudes' %}">Ir a Solicitudes de cuenta</a>{% endif %}</div></td>
+</tr>{% endfor %}</tbody></table></div>
+{% include "ui/paginacion.html" with parametros="" %}
+{% else %}{% include "ui/estado_vacio.html" with mensaje="No hay usuarios para mostrar." %}{% endif %}
+</section>
+{% endblock %}

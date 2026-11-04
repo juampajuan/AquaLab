@@ -9,6 +9,7 @@ urlpatterns = [
     path("admin/logout/", CerrarSesionView.as_view()),
     path("admin/", admin.site.urls),
     path("usuarios/", include("usuarios.urls")),
+    path("administracion/", include("usuarios.urls_administracion")),
     path("clientes/", include("clientes.urls")),
     path("muestras/", include("muestras.urls")),
     path("estudios/", include("estudios.urls")),
