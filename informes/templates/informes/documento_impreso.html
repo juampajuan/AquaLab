@@ -1,4 +1,4 @@
-{% load ui %}
+{% load ui static %}
 {% comment %}
   Documento A4 del informe emitido (US 7.3), para el PDF y la impresión. Mismos datos y orden que
   informes/documento.html, siempre desde `contenido` (Informe.contenido). Solo clases inf-* de
@@ -10,9 +10,7 @@
       <tr>
         {% if lab.logo == "aqualab" %}
           <td class="inf-logo">
-            {# Gota de ui/iconos/droplet.svg con el color como atributo: WeasyPrint no aplica el CSS #}
-            {# del documento al SVG inline ni resuelve currentColor. #}
-            <div class="inf-logo-recuadro"><svg class="inf-logo-icono" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg></div>
+            <img src="{% if logo_pdf %}{{ logo_pdf }}{% else %}{% static 'img/marca/aqualab-isotipo.png' %}{% endif %}" alt="AquaLab" class="inf-logo-icono" width="256" height="256">
           </td>
         {% endif %}
         <td class="inf-laboratorio">

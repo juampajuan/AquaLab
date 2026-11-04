@@ -4,6 +4,8 @@ Sale siempre de la copia guardada (`Informe.contenido`, FR-006) con el mismo tem
 impresión del navegador (`informes/impreso.html`) y la hoja `static/css/informe.css`.
 """
 
+from pathlib import Path
+
 import weasyprint
 from django.conf import settings
 from django.contrib.staticfiles import finders
@@ -15,7 +17,13 @@ def documento(informe):
     """El documento de WeasyPrint ya paginado (A4)."""
     html = render_to_string(
         "informes/impreso.html",
-        {"informe": informe, "contenido": informe.contenido, "pdf": True},
+        {
+            "informe": informe,
+            "contenido": informe.contenido,
+            "pdf": True,
+            # WeasyPrint lee el recurso local, sin depender de un servidor HTTP de estáticos.
+            "logo_pdf": Path(finders.find("img/marca/aqualab-isotipo.png")).as_uri(),
+        },
     )
     # Sin FontConfiguration, WeasyPrint ignora los @font-face (la fuente Inter de la hoja).
     fuentes = FontConfiguration()

@@ -12,6 +12,9 @@ frasco azul marino y nombre AquaLab en el mismo azul.
   el encabezado del administrador de Django.
 - Favicon compartido por las pantallas de la app y el administrador.
 - La vista de impresión también usa el favicon, sin incluirlo en la generación del PDF.
+- El membrete del informe muestra el símbolo chico junto al nombre del laboratorio,
+  tanto en la vista previa y el informe emitido como en la impresión y el PDF.
+  WeasyPrint carga el PNG directamente desde los estáticos locales, sin peticiones HTTP.
 - Cada logo enlaza al inicio correspondiente, conserva su proporción y tiene un nombre
   accesible. El símbolo junto al título del administrador es decorativo.
 - No se agregan logos a tarjetas, formularios, botones o pies de página.
@@ -43,3 +46,11 @@ habitual de una spec y una rama numerada por historia.
 No se pudo ejecutar la comprobación completa de Django ni la suite de integración:
 Docker no está disponible y la instalación nativa de Windows carece de las bibliotecas
 GObject/Pango requeridas por WeasyPrint. No se realizó una revisión visual en navegador.
+
+### Ampliación: logo en los informes
+
+Con Docker disponible, se ejecutaron las pruebas de PDF, impresión y vista previa:
+26 pruebas correctas. Se agregó una comprobación para detectar imágenes que WeasyPrint
+no logre cargar, ya que ese fallo no impide generar el PDF. También se generó un informe
+con datos ficticios, se rasterizó con Poppler y se revisó visualmente el membrete:
+logo visible, tamaño discreto y sin solapamientos.
