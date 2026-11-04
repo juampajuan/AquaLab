@@ -8,6 +8,7 @@
   <meta charset="utf-8">
   <title>Informe {{ informe.numero_mostrado }}</title>
   {% if not pdf %}
+    {% include "includes/favicon.html" %}
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{% static 'css/informe.css' %}">
     <script src="{% static 'informes/imprimir.js' %}" defer></script>

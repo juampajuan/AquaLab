@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}AquaLab{% endblock %}</title>
+  {% include "includes/favicon.html" %}
   <link rel="preload" href="{% static 'fuentes/InterVariable.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/aqualab.css' %}">
   {% include "includes/estilo_sesion.html" %}
@@ -29,6 +30,9 @@
         <button type="button" class="rounded-md p-2 text-tinta-suave hover:bg-fondo-hundido lg:hidden" data-menu-boton aria-expanded="false" aria-label="Abrir menú">
           {% include "ui/icono.html" with nombre="menu" clase="size-5" %}
         </button>
+        <a href="{% url 'inicio' %}" class="lg:hidden" aria-label="AquaLab · Ir al inicio">
+          <img src="{% static 'img/marca/aqualab-isotipo.png' %}" alt="AquaLab" width="40" height="40" class="marca-icono">
+        </a>
         <div class="ml-auto flex items-center gap-3 sm:gap-5">
           <span class="flex items-center gap-2.5">
             {% include "ui/iniciales.html" with texto=user.get_full_name|default:user.email clase="bg-marino text-white" %}

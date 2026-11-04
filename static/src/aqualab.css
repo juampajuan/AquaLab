@@ -102,6 +102,33 @@
  * form-control, form-select e is-invalid son nombres heredados: los asignan los forms.py.
  */
 @layer components {
+  /* Marca solo en los encabezados: el archivo horizontal ya incluye el nombre. */
+  .marca {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-width: 0;
+    border-radius: var(--radius-lg);
+  }
+  .marca-imagen {
+    display: block;
+    width: 184px;
+    max-width: 100%;
+    height: auto;
+  }
+  .marca--clara {
+    padding: 8px 12px;
+    background: var(--color-superficie);
+  }
+  .marca--clara .marca-imagen {
+    width: 240px;
+  }
+  .marca-icono {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+  }
+
   /* Botones */
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-60;
