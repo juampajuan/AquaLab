@@ -26,6 +26,10 @@ class CrearEstudioForm(forms.Form):
         queryset=TipoEstudio.objects.filter(activo=True),
         label="Tipo de estudio",
         empty_label="Elegí un tipo",
+        help_text=(
+            "Define las pruebas con las que nace el estudio. Mientras no tenga mediciones se "
+            "pueden agregar o quitar."
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -42,6 +46,7 @@ class AgregarPruebaForm(forms.Form):
             queryset=Prueba.objects.exclude(pk__in=estudio.pruebas_asignadas.values("prueba")),
             label="Prueba",
             empty_label="Elegí una prueba",
+            help_text="Solo se listan las pruebas del catálogo que el estudio todavía no tiene.",
         )
         self.fields["prueba"].widget.attrs["class"] = "form-select"
 
@@ -59,6 +64,10 @@ class AgregarPruebaForm(forms.Form):
             return None
 
 
+# Id de la ayuda del encabezado «Medición» (cargar y corregir mediciones, US 9.1).
+AYUDA_MEDICION = "ayuda-medicion"
+
+
 def campo_medicion(asignacion, **kwargs):
     """Campo de texto para el valor; en las pruebas A/P, un selector Ausente/Presente."""
     if es_presencia(asignacion.prueba.unidad_medicion):
@@ -69,11 +78,16 @@ def campo_medicion(asignacion, **kwargs):
             widget=forms.Select(choices=OPCIONES_PRESENCIA),
             **kwargs,
         )
-        campo.widget.attrs["class"] = "form-select"
+        campo.widget.attrs.update({"class": "form-select", "aria-describedby": AYUDA_MEDICION})
         return campo
     campo = forms.CharField(required=False, max_length=40, label=str(asignacion.prueba), **kwargs)
     campo.widget.attrs.update(
-        {"inputmode": "decimal", "autocomplete": "off", "class": "form-control"}
+        {
+            "inputmode": "decimal",
+            "autocomplete": "off",
+            "class": "form-control",
+            "aria-describedby": AYUDA_MEDICION,
+        }
     )
     return campo
 
@@ -109,7 +123,7 @@ class CargarMedicionesForm(forms.Form):
                 self.add_error(nombre, exc)
                 attrs = self.fields[nombre].widget.attrs
                 attrs["class"] += " is-invalid"
-                attrs["aria-describedby"] = f"{self[nombre].auto_id}_error"
+                attrs["aria-describedby"] = f"{AYUDA_MEDICION} {self[nombre].auto_id}_error"
                 continue
             if valor is not None:
                 self._valores[asignacion.pk] = valor
@@ -219,7 +233,7 @@ class CorregirMedicionesForm(forms.Form):
             if nombre in self.errors:
                 attrs = self.fields[nombre].widget.attrs
                 attrs["class"] += " is-invalid"
-                attrs["aria-describedby"] = f"{self[nombre].auto_id}_error"
+                attrs["aria-describedby"] = f"{AYUDA_MEDICION} {self[nombre].auto_id}_error"
 
     def filas(self):
         return [

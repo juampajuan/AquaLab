@@ -194,7 +194,7 @@ def test_revisar_con_valor_invalido_no_guarda(
         nombre = campo(asignaciones_medicion[codigo])
         bloque = html.split(f'id="id_{nombre}_error"')[1].split("</div></div>")[0]
         assert FORMATO_INVALIDO in bloque
-        assert f'aria-describedby="id_{nombre}_error"' in html
+        assert f'aria-describedby="ayuda-medicion id_{nombre}_error"' in html
     assert html.count("is-invalid") == 2
     assert f'name="{campo(asignaciones_medicion["TEST-PH"])}" value="7,25"' in html
     assert not Medicion.objects.exists()

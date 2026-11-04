@@ -158,6 +158,52 @@
     @apply mt-1.5 text-xs text-tinta-suave;
   }
 
+  /* Ayuda de un campo (US 9.1): ui/ayuda.html al lado de la etiqueta (ui/campo.html). */
+  .campo-cabecera {
+    @apply mb-1.5 flex items-center gap-1.5;
+  }
+  .campo-cabecera .campo-etiqueta {
+    @apply mb-0;
+  }
+  /* En los grupos de opciones el legend flota para que el ícono quede a su lado. */
+  .campo-leyenda {
+    @apply float-left mr-1.5;
+  }
+  .campo-leyenda ~ .ayuda {
+    @apply mb-1.5;
+  }
+  .campo-leyenda ~ .segmentado {
+    @apply clear-left flex w-fit;
+  }
+  .ayuda {
+    @apply relative inline-flex items-center align-middle;
+  }
+  .ayuda-boton {
+    @apply inline-flex cursor-help items-center rounded-full text-tinta-suave transition-colors hover:text-cian-texto focus-visible:text-cian-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cian;
+  }
+  .ayuda-texto {
+    @apply invisible absolute bottom-full left-0 z-20 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-lg bg-marino px-3 py-2 text-left text-xs font-normal leading-relaxed whitespace-normal normal-case tracking-normal text-white opacity-0 shadow-lg transition duration-150;
+  }
+  .ayuda[data-lado="derecha"] .ayuda-texto {
+    @apply right-0 left-auto;
+  }
+  /* Puente invisible entre el texto y el ícono: pasar el mouse de uno al otro no la cierra
+     (WCAG 1.4.13). */
+  .ayuda-texto::before {
+    @apply absolute inset-x-0 top-full h-2 content-[''];
+  }
+  /* posicion="abajo": el texto se abre debajo del ícono y el puente queda del lado de arriba
+     (encabezados de tabla, donde el contenedor recorta lo que sale por arriba). */
+  .ayuda[data-posicion="abajo"] .ayuda-texto {
+    @apply top-full bottom-auto mt-2 mb-0;
+  }
+  .ayuda[data-posicion="abajo"] .ayuda-texto::before {
+    @apply top-auto bottom-full;
+  }
+  .ayuda:is(:hover, :has(:focus-visible), [data-abierta]):not([data-cerrada]) .ayuda-texto {
+    @apply visible opacity-100;
+  }
+
   /* Radios dibujados como botones segmentados (tipo de documento, tipo de vertido). */
   .segmentado {
     @apply inline-flex flex-wrap gap-1 rounded-lg border border-borde bg-fondo-hundido p-1;

@@ -19,8 +19,8 @@
       {% include "ui/campo.html" with field=form.last_name %}
     </div>
     {% include "ui/campo.html" with field=form.email %}
-    {% include "ui/campo.html" with field=form.password1 %}
-    {% include "ui/campo.html" with field=form.password2 %}
+    {% include "ui/campo.html" with field=form.password1 ayuda_visible=True %}
+    {% include "ui/campo.html" with field=form.password2 ayuda_visible=True %}
     <button type="submit" class="btn btn-primario w-full py-3">
       Continuar {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}
     </button>

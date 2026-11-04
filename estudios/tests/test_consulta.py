@@ -1,3 +1,4 @@
+import re
 import uuid
 
 import pytest
@@ -390,8 +391,13 @@ def test_busqueda_sin_parametro_lista_todos_los_estudios(cliente_http, escenario
     ]
     html = resp.content.decode()
     assert "4 estudios registrados" in html
-    assert 'role="tooltip"' in html
-    assert "group-hover:visible" in html
+    # Ayuda de la búsqueda con el componente común ui/ayuda.html (US 9.1).
+    assert "data-ayuda" in html
+    assert re.search(
+        r'<span role="tooltip" id="ayuda-busqueda-estudio"[^>]*>Podés buscar por N° de estudio',
+        html,
+    )
+    assert re.search(r'<input[^>]*name="q"[^>]*aria-describedby="ayuda-busqueda-estudio"', html)
 
 
 def test_busqueda_sin_estudios_registrados_muestra_estado_vacio(cliente_http):

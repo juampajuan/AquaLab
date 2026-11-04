@@ -45,28 +45,49 @@ class RegistroMuestraForm(forms.Form):
         required=False,
         label="Origen",
         empty_label="Elegí un origen",
+        help_text=(
+            "Fuente de agua de la que se tomó la muestra (pozo, red, efluente). Permite comparar "
+            "los resultados de un mismo origen a lo largo del tiempo."
+        ),
     )
     origen_nuevo = forms.CharField(
         label="Origen nuevo",
         max_length=150,
         required=False,
         strip=True,
+        help_text=(
+            "Si la fuente no está en la lista, escribí su nombre. Si ya existe con otras "
+            "mayúsculas, se usa la existente."
+        ),
     )
     fecha_muestreo = forms.DateField(
         label="Fecha de muestreo",
         widget=SelectorFecha(),
         initial=timezone.localdate,
+        help_text="Día en que se tomó la muestra.",
     )
     fecha_ingreso = forms.DateField(
         label="Fecha de ingreso",
         widget=SelectorFecha(),
         initial=timezone.localdate,
+        help_text="Día en que la muestra llegó al laboratorio.",
     )
-    sitio_extraccion = forms.CharField(label="Sitio de extracción", max_length=200, strip=True)
+    sitio_extraccion = forms.CharField(
+        label="Sitio de extracción",
+        max_length=200,
+        strip=True,
+        help_text=(
+            "Punto exacto de donde se tomó, por ejemplo la canilla de la cocina o la boca del pozo."
+        ),
+    )
     tipo_vertido = forms.ChoiceField(
         label="Tipo de vertido",
         choices=TipoVertido.choices,
         initial=TipoVertido.AGUA,
+        help_text=(
+            "Define con qué límites se evalúan los resultados: los del vertido elegido reemplazan "
+            "a los generales."
+        ),
         # Se dibuja como botones segmentados (templates/ui/campo.html).
         widget=forms.RadioSelect,
     )
@@ -82,6 +103,7 @@ class RegistroMuestraForm(forms.Form):
         max_length=150,
         required=False,
         strip=True,
+        help_text="Persona que tomó la muestra.",
     )
 
     def __init__(self, *args, **kwargs):

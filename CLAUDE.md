@@ -228,3 +228,23 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   informes. En los tests, cambiar un informe con `Informe.objects.filter(...).update(...)`.
 - Tests: `bioquimico` ya tiene firma («MP 1234»), `bioquimico_sin_firma` no; `firma_de(usuario)`
   crea una. `informes/tests/utiles.py:png()` arma PNG válidos sin Pillow.
+
+## Ayuda en formularios (US 9.1)
+
+- `templates/ui/ayuda.html` es el único componente de ayuda (ícono + `role="tooltip"`); también lo
+  usan la columna «Medición», Mi firma y las búsquedas. `ui/campo.html` lo dibuja si hay
+  `help_text`, al lado del `<label>`/`<legend>` (nunca adentro).
+- El tooltip lleva el id `<auto_id>_helptext`, al que Django 5.2 ya apunta con `aria-describedby`
+  (junto con `<auto_id>_error`). En los radios Django no lo pone: `ui/campo.html` lo pone en el
+  `<fieldset>`.
+- El tooltip explica qué significa el campo; las instrucciones van visibles: `ayuda_visible=True`
+  (requisitos de contraseña) e `instruccion="…"` (Ctrl/Cmd en tipos de estudio), que el filtro
+  `describir` (`config/ui.py`) suma al `aria-describedby`.
+- Los textos van en los formularios (`help_text=` o `Meta.help_texts`), nunca en los modelos:
+  generan una migración y se verían en el admin, que no cambia.
+- El CSS la muestra con `:hover` y `:has(:focus-visible)` (no `:focus-within`: tras un clic quedaría
+  abierta). `static/js/aqualab.js` suma el toque (`data-abierta`), Escape (`data-cerrada`) y una sola
+  abierta. Pasar del ícono al texto no la cierra (WCAG 1.4.13): `pointerout` con `relatedTarget`
+  dentro de la misma `.ayuda` y el puente `.ayuda-texto::before`; solo el mouse la cierra al salir.
+- El JS se prueba con `node --test usuarios/tests/js config/tests/js` (DOM simulado, sin
+  dependencias), también en el CI.
