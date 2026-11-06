@@ -63,20 +63,11 @@ body {
 .inf-logo {
   width: 12mm;
 }
-/* Recuadro propio de 12 × 12 mm: pintar el td lo estiraba a la altura de la celda. */
-.inf-logo-recuadro {
+/* PNG transparente, con el mismo tamaño reservado para el membrete. */
+.inf-logo-icono {
+  display: block;
   width: 12mm;
   height: 12mm;
-  background: #0f2744;
-  border-radius: 2mm;
-  text-align: center;
-}
-/* El color de la gota va como atributo en el SVG (documento_impreso.html): WeasyPrint no aplica
-   esta hoja al SVG inline ni resuelve currentColor. */
-.inf-logo-icono {
-  width: 7mm;
-  height: 7mm;
-  margin-top: 2.5mm;
 }
 .inf-laboratorio {
   padding-left: 3mm !important;

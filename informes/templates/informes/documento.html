@@ -1,4 +1,4 @@
-{% load ui %}
+{% load ui static %}
 {% comment %}
   Documento del informe (US 7.2), igual para la vista previa y el emitido. Recibe `contenido`
   (informes.contenido.armar_contenido o Informe.contenido) y, si está emitido, `informe`.
@@ -8,9 +8,7 @@
     <header class="flex flex-wrap items-start justify-between gap-4 border-b border-borde pb-5">
       <div class="flex items-start gap-3">
         {% if lab.logo == "aqualab" %}
-          <span class="flex size-10 items-center justify-center rounded-lg bg-marino text-cian">
-            {% include "ui/icono.html" with nombre="droplet" clase="size-5" %}
-          </span>
+          <img src="{% static 'img/marca/aqualab-isotipo.png' %}" alt="AquaLab" width="40" height="40" class="marca-icono">
         {% endif %}
         <div class="leading-tight">
           <p class="text-base font-bold text-marino">{{ lab.nombre }}</p>

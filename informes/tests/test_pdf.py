@@ -45,7 +45,7 @@ def test_exportar_sin_informe_404(cliente_http, estudio_de, nombre):
     assert cliente_http.get(reverse(nombre, args=[999999])).status_code == 404
 
 
-def test_pdf_descarga_a4(cliente_http, informe):
+def test_pdf_descarga_a4(cliente_http, informe, caplog):
     respuesta = cliente_http.get(reverse("informes:pdf", args=[informe.estudio_id]))
     assert respuesta.status_code == 200
     assert respuesta["Content-Type"] == "application/pdf"
@@ -54,6 +54,8 @@ def test_pdf_descarga_a4(cliente_http, informe):
     documento = pdf.documento(informe)
     assert documento.pages
     assert all(es_a4(p) for p in documento.pages)
+    # Un PNG sin resolver no impide generar un PDF: WeasyPrint solo registra el error.
+    assert not any("Failed to load image" in r.getMessage() for r in caplog.records)
 
 
 def test_pdf_sale_de_impreso(informe):

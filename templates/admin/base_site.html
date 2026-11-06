@@ -1,6 +1,8 @@
 {% extends "admin/base.html" %}
+{% load static %}
 {% block title %}{{ title }} · Administración AquaLab{% endblock %}
-{% block branding %}<h1 id="site-name"><a href="{% url 'admin:index' %}">Administración AquaLab</a></h1>{% endblock %}
+{% block branding %}<h1 id="site-name"><a href="{% url 'admin:index' %}"><img src="{% static 'img/marca/aqualab-isotipo.png' %}" alt="" width="36" height="36" style="vertical-align: middle; margin-right: 8px;">Administración AquaLab</a></h1>{% endblock %}
+{% block extrahead %}{{ block.super }}{% include "includes/favicon.html" %}{% endblock %}
 {% block extrastyle %}{{ block.super }}{% include "includes/estilo_sesion.html" %}{% endblock %}
 {% block userlinks %}
   <a href="{% url 'inicio' %}">AquaLab</a> /
