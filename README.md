@@ -70,6 +70,31 @@ Después de traer cambios de `main`: `docker compose up -d --build` si cambió e
 `requirements.txt`, y `docker compose exec web python manage.py migrate` si hay migraciones nuevas.
 
 
+## Datos de demo
+
+Para mostrar o probar la app con datos realistas (seis meses de muestras, estudios en todos los
+estados, informes emitidos, resultados fuera de norma y un desvío en el historial):
+
+1. Tener `AQUALAB_ENTORNO=desarrollo` y `DEBUG=True` en el `.env` (están en `.env.example`; si tu
+   `.env` es anterior, agregá la primera línea a mano).
+2. Cargar la demo (si el catálogo de pruebas está vacío, lo importa):
+
+   ```bash
+   docker compose exec web python manage.py cargar_demo
+   ```
+
+3. Entrar con `tecnico@demo.aqualab` o `bioquimico@demo.aqualab`, contraseña `Demo-1234`. El
+   bioquímico es Bioquímico y Administrador, y ya tiene firma.
+
+**No hace falta borrar la base**: la demo se suma a los datos que ya tengas, sin modificarlos (la
+numeración de muestras e informes sigue desde la última). Después de traer los cambios alcanza con
+`git pull`, agregar la línea al `.env`, `docker compose up -d`, `migrate` y `cargar_demo`.
+
+El comando solo corre en desarrollo y no carga dos veces: si la demo ya está, avisa y no hace nada.
+Solo si querés una base limpia, solo con la demo, recreala (esto **borra todos tus datos locales**):
+`docker compose down -v`, `docker compose up -d`, `migrate` y `cargar_demo`.
+
+
 ## Inicio y cierre de sesión
 
 Las cuentas nuevas se registran en `/usuarios/registro/` y quedan pendientes de aprobación.
