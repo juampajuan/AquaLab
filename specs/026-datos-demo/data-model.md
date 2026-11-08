@@ -34,7 +34,7 @@ DNI `9999999x`).
 | Mes | Estado de los estudios |
 |---|---|
 | −5 a −2 | Informe generado |
-| −1 | Informe generado, salvo: «Escuela N° 12» → **Finalizado sin informe** (alerta) y «Pozo domiciliario» → **En proceso estancado** (mediciones parciales, carga hace > 7 días) |
+| −1 | Informe generado, salvo: «Escuela N° 12» → **Finalizado sin informe** (alerta) y «Pozo domiciliario» → **En proceso estancado** (mediciones parciales; día base 5 y carga recortada a ≤ hoy − 10 días) |
 | 0 (actual) | Pendiente de análisis: Tanque domiciliario, Escuela N° 12 · En proceso: Pozo 2 (desvío sin validar), Salida a colectora (mediciones parciales) · Finalizado: Pozo 1, Tanque elevado (FQ) · Informe generado: Pozo domiciliario, Tanque elevado (Bact.) |
 
 Resultado: ≥ 2 estudios por estado (SC-003); el técnico tiene mediciones por cargar y el
@@ -42,7 +42,7 @@ bioquímico, resultados por validar y estudios listos para emitir (US2).
 
 ## Casos especiales del guion
 
-- **Fuera de norma**: Turbidez 4,2 NTU en Pozo domiciliario (meses −4 y −1); Coliformes totales 12
+- **Fuera de norma**: Turbidez 4,2 NTU en Pozo domiciliario (meses −4 y −2); Coliformes totales 12
   UFC/100 ml en Tanque domiciliario (mes −3); pH 10,6 en Salida a colectora (mes −2, fuera del límite
   cloacal 7,01–10) y DET-SAAM 14 mg/l en Salida a colectora (mes −3, fuera del límite cloacal 10);
   Cloruro de Pozo 2 en meses −1 y 0.
@@ -60,6 +60,8 @@ carga      = ingreso + 2..5 d
 validación = carga + 1..3 d
 emisión    = validación + 0..6 d
 cada fecha ≤ ahora y ≥ la del paso anterior; hora fija 10:00 (America/Argentina/Buenos_Aires)
+estancado (Pozo domiciliario, mes −1): carga ≤ ahora − 10 d
+cada paso se ejecuta dentro de reloj(fecha): las filas nacen con esa fecha (research R2)
 ```
 
 ## Reglas de validación del comando

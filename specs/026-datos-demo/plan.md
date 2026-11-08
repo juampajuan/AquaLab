@@ -12,8 +12,9 @@
 armados con el catálogo real, en los cuatro estados, con informes emitidos y firmados, resultados
 fuera de norma, un «< LD», pruebas Ausente/Presente y un desvío claro de Cloruro en «Pozo 2». Los
 datos se crean con los **servicios reales** (`registrar_muestra`, `crear_estudio`,
-`cargar_mediciones`, `validar_resultados`, `emitir_informe`) y después se **corren las fechas hacia
-atrás** con `QuerySet.update()`, en orden coherente y nunca en el futuro. Los valores salen de un
+`cargar_mediciones`, `validar_resultados`, `emitir_informe`) bajo un **reloj de la demo** que hace
+que cada fila nazca con su fecha del pasado (en orden coherente y nunca en el futuro); nada se
+modifica después de creado. Los valores salen de un
 guion fijo (siempre iguales); las fechas se calculan desde el día de ejecución. Crea un técnico y
 un bioquímico demo (con firma) y reemplaza a `cargar_demo_us51`.
 
@@ -34,7 +35,7 @@ para el entorno; ruff.
 
 **Project Type**: Aplicación web Django monolítica; esta historia agrega un comando de consola.
 
-**Performance Goals**: Demo completa en menos de 1 minuto (SC-001): unos 50 estudios con ~5
+**Performance Goals**: Demo completa en menos de 1 minuto (SC-001): unos 45 estudios con ~5
 pruebas cada uno, consultas acotadas.
 
 **Constraints**: Solo desarrollo (FR-002); atómico (FR-016); mismas reglas que la app (FR-007);
@@ -55,7 +56,7 @@ Decisiones en [research.md](./research.md) (R1–R9). No hay `NEEDS CLARIFICATIO
 | **I. Spec primero (SDD)** | Spec de SCRUM-78 con 3 aclaraciones (2026-11-08). El código espera la aprobación de la spec por el equipo. | ✅ |
 | **II. Simplicidad y Django idiomático** | Un management command delgado y un módulo con el guion; reutiliza los servicios existentes en vez de duplicar reglas; sin modelos, dependencias ni JS. | ✅ |
 | **III. Tests obligatorios** | Cada FR y escenario con test (ver [Mapa de tests](#mapa-de-tests)): entorno, carga completa, estados, desvío, determinismo, idempotencia, conflictos, rollback, catálogo y fechas. | ✅ |
-| **IV. Integridad de datos** | Los datos pasan por los servicios: N° PI e INF sin huecos, cálculos, validaciones e informes con copia. Las fechas se ajustan solo en filas creadas por la demo, dentro de la misma transacción. No se modifica ningún dato existente. | ✅ |
+| **IV. Integridad de datos** | Los datos pasan por los servicios: N° PI e INF sin huecos, cálculos, validaciones e informes con copia. Cada fila nace con su fecha gracias al reloj de la demo (research R2): ningún resultado validado ni informe emitido se modifica después de creado. No se toca ningún dato existente. | ✅ |
 | **V. Seguridad** | Rechaza fuera de desarrollo o sin `DEBUG`; la contraseña conocida solo existe en desarrollo; no toma cuentas ajenas (conflicto de correo → rechazo). | ✅ |
 | **VI. Idioma y consistencia** | `cargar_demo`, `estudios/demo.py`, mensajes en español; ruff. | ✅ |
 
@@ -74,11 +75,10 @@ cargar_demo
        ├─ conflictos: correo de usuario demo o tipo demo con otras pruebas → CommandError
        ├─ catálogo vacío → call_command("importar_catalogo_pruebas")
        ├─ usuarios demo (técnico; bioquímico + grupos + FirmaProfesional) y tipos demo
-       ├─ por cada (origen, mes) del guion:
+       ├─ por cada (origen, mes) del guion, cada paso dentro de reloj(fecha del paso):
        │    registrar_muestra → crear_estudio → cargar_mediciones (técnico)
        │    → validar_resultados / emitir_informe (bioquímico) según el estado destino
-       │    → correr fechas de las filas creadas (Muestra, Estudio, Medicion, Resultado,
-       │      Validacion, Informe) con QuerySet.update()
+       │    (las fechas auto_now_add nacen con la fecha del guion; nada se modifica después)
        └─ resumen: cantidades por estado, informes, usuarios y contraseña
 ```
 
@@ -94,7 +94,7 @@ Detalle del guion y las fechas en [data-model.md](./data-model.md); interfaz del
 | FR-005 — 3 tipos demo con pruebas del catálogo | `test_tipos_demo` | idem |
 | FR-006, SC-003, US1 Esc. 2 — estados (≥ 2 cada uno), meses anteriores con informe | `test_estudios_por_estado` | idem |
 | FR-007, US1 Esc. 3 — informes con copia y firma; N° PI e INF correlativos | `test_informes_firmados_y_numeracion` | idem |
-| FR-008, SC-002 — fechas en orden, nunca futuras, repartidas en 6 meses | `test_fechas_coherentes` | idem |
+| FR-008, SC-002 — fechas en orden, nunca futuras, repartidas en 6 meses | `test_fechas_ordenadas_y_no_futuras`, `test_reloj`, `test_fechas_coherentes` | idem |
 | FR-009 — estancado > 7 días y Finalizado sin informe | `test_alertas_del_dashboard` | idem |
 | FR-010, US1 Esc. 4 — fuera de norma, «< LD», Ausente y Presente | `test_fuera_de_norma_ld_y_presencia` | idem |
 | FR-011, SC-004, US1 Esc. 5–6 — desvío validado ≥ 3× y desvío actual sin validar | `test_desvio_en_pozo_2` | idem |
@@ -134,7 +134,7 @@ specs/026-datos-demo/
 README.md                                      # + «Datos de demo»
 CLAUDE.md                                      # + sección «Datos de demo (SCRUM-78)»
 estudios/
-├── demo.py                                    # nuevo: guion fijo, fechas, cargar_demo()
+├── demo.py                                    # nuevo: guion fijo, fechas, reloj(), cargar_demo()
 ├── management/commands/cargar_demo.py         # nuevo: entorno, transacción, resumen
 ├── management/commands/cargar_demo_us51.py    # se borra
 └── tests/

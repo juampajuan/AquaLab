@@ -32,8 +32,8 @@ y sin duplicar).
 
 - Mensajes del comando en **español**, copiados **literalmente** de `contracts/cargar-demo-cli.md`.
 - Guion, valores y fechas exactamente como `data-model.md` y `research.md` (R3, R4, R8, R9).
-- Los datos se crean **solo** con los servicios reales; las fechas se corren después con
-  `QuerySet.update()` sobre filas creadas por la demo (R2). Nunca `float`: valores como texto de
+- Los datos se crean **solo** con los servicios reales, cada paso dentro de `reloj(fecha)` para que
+  las filas nazcan con su fecha (R2). **Nunca** se modifica una fila después de creada (principio IV). Nunca `float`: valores como texto de
   `Decimal`.
 - Los tests llaman a la función `estudios.demo.cargar_demo(...)` o a
   `call_command("cargar_demo")` con `settings.DEBUG = True` y
@@ -63,11 +63,13 @@ y sin duplicar).
   excepción `DemoError`, `class Fechas` (calcula muestreo, ingreso, estudio, carga, validación y
   emisión de un `(origen, mes)` con los desplazamientos fijos del guion, hora 10:00 de
   `America/Argentina/Buenos_Aires`, cada fecha `≤ ahora` y `≥` la anterior; recibe `ahora` para
-  poder probarla), `clave(origen, mes, paso)` con `uuid5`, y `correr_fechas(...)` que hace
-  `QuerySet.update()` de `Muestra.fecha_registro`, `Estudio.fecha_creacion`, `Medicion.fecha_carga`,
-  `Resultado.fecha_calculo`, `Validacion.fecha_validacion` e `Informe.fecha_emision` de las filas
-  dadas. Agregar en `estudios/tests/test_demo.py` `test_fechas_ordenadas_y_no_futuras` para `Fechas`
-  con un `ahora` de principio de mes (día 2) y otro de fin de mes.
+  poder probarla; el estancado recorta su carga a `ahora − 10 días`), `clave(origen, mes, paso)` con
+  `uuid5`, y el administrador de contexto `reloj(fecha)` que, con `unittest.mock.patch`, hace que
+  `django.utils.timezone.now` devuelva `fecha` mientras dura el bloque. Agregar en
+  `estudios/tests/test_demo.py` `test_fechas_ordenadas_y_no_futuras` (para `Fechas` con un `ahora`
+  de día 2 y otro de fin de mes; el estancado queda ≥ 10 días antes de `ahora`) y `test_reloj` (un
+  `Estudio` creado dentro de `reloj(f)` tiene `fecha_creacion == f`; fuera del bloque se usa la
+  hora real).
 
 ---
 
@@ -91,15 +93,15 @@ muestras por mes, estados, informes, fuera de norma y el desvío (ver `quickstar
 - [ ] T005 [P] [US1] En `estudios/tests/test_demo.py`: `test_fechas_coherentes` (para cada estudio:
   ingreso ≤ creación ≤ carga ≤ validación ≤ emisión ≤ ahora; muestras repartidas en 6 meses
   calendario distintos; al menos 5 meses con informes; tiempos ingreso → emisión distintos entre
-  sí), `test_alertas_del_dashboard` («Pozo domiciliario» mes −1 En proceso con última carga hace
-  > 7 días; «Escuela N° 12» mes −1 Finalizado sin informe), `test_fuera_de_norma_ld_y_presencia`
+  sí), `test_alertas_del_dashboard` (con `ahora` en el día 2 del mes: «Pozo domiciliario» mes −1 En
+  proceso con última carga hace > 7 días; «Escuela N° 12» mes −1 Finalizado sin informe), `test_fuera_de_norma_ld_y_presencia`
   (validaciones fuera de norma en ≥ 3 orígenes; SS10 de «Salida a colectora» con resultado 0.05 y
   texto «< 0,1» en su informe; E. coli Presente en «Tanque domiciliario» mes −3) y
   `test_desvio_en_pozo_2` (Cloruro de «Pozo 2»: validados 118–124 en meses −5 a −2, 415 validado en
   −1 con ≥ 3 × el promedio de los 3 anteriores; mes actual 430 calculado y sin validar).
-- [ ] T006 [P] [US1] En `estudios/tests/test_demo.py`: `test_valores_reproducibles` (resumir clientes,
-  orígenes, valores de medición y evaluaciones, vaciar las tablas de la demo dentro del test con un
-  `transaction.atomic()` + `set_rollback`, volver a cargar y comparar), `test_resumen` (salida con
+- [ ] T006 [P] [US1] En `estudios/tests/test_demo.py`: `test_valores_reproducibles` (cargar dentro de un
+  `transaction.atomic()` que termina con `transaction.set_rollback(True)`, tomar el resumen de
+  clientes, orígenes, valores de medición y evaluaciones; volver a cargar y comparar los resúmenes), `test_resumen` (salida con
   «Demo cargada.», cantidades por estado y los dos usuarios con `Demo-1234`) y
   `test_respeta_datos_existentes` (un cliente, una muestra y un informe previos quedan iguales; los
   N° PI e INF de la demo continúan desde los existentes).
@@ -115,7 +117,7 @@ muestras por mes, estados, informes, fuera de norma y el desvío (ver `quickstar
   `TipoEstudio` + `TipoEstudioPrueba` o reutiliza uno igual) y `cargar_estudio(origen, mes, ...)`:
   `registrar_muestra` → `crear_estudio` → `cargar_mediciones` (técnico; todas o solo algunas según
   el estado destino) → `validar_resultados` con `{pk: str(resultado.valor)}` (bioquímico) →
-  `emitir_informe` (bioquímico) → `correr_fechas`. Hace pasar T004 y T005.
+  `emitir_informe` (bioquímico), cada paso dentro de `reloj(fecha del paso)`. Hace pasar T004 y T005.
 - [ ] T009 [US1] En `estudios/demo.py`, `cargar_demo(stdout)` que recorre el guion en orden de mes
   (del más antiguo al actual) y devuelve el resumen; crear
   `estudios/management/commands/cargar_demo.py` (delgado: entorno, `transaction.atomic()`,
@@ -179,8 +181,8 @@ nada a medias.
 - [ ] T015 [P] `README.md`: sección «Datos de demo» (agregar `AQUALAB_ENTORNO=desarrollo` al `.env`,
   `docker compose exec web python manage.py cargar_demo`, usuarios y contraseña, cómo empezar de
   cero con `docker compose down -v`).
-- [ ] T016 [P] `CLAUDE.md`: sección «Datos de demo (SCRUM-78)» (servicios reales + `update()` de
-  fechas, guion fijo en `estudios/demo.py`, marca `@demo.aqualab`, `AQUALAB_ENTORNO=desarrollo` +
+- [ ] T016 [P] `CLAUDE.md`: sección «Datos de demo (SCRUM-78)» (servicios reales bajo
+  `reloj(fecha)`, nunca `update()` de fechas, guion fijo en `estudios/demo.py`, marca `@demo.aqualab`, `AQUALAB_ENTORNO=desarrollo` +
   `DEBUG`, lock `7_800_001`, desvío de «Pozo 2» que usan 8.1 y 8.2).
 - [ ] T017 Medir la carga en una base nueva (SC-001: < 1 minuto) y ejecutar
   `docker compose exec web ruff check .`, `ruff format --check .` y

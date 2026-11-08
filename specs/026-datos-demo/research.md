@@ -15,27 +15,34 @@ Decisiones técnicas de SCRUM-78. Formato: decisión, motivo y alternativas desc
   app nunca produce, como Finalizado sin `Validacion`); fixtures JSON (se desactualizan con cada
   migración y no calculan resultados).
 
-## R2 – Correr las fechas hacia atrás
+## R2 – Cada fila nace con su fecha (reloj de la demo)
 
-- **Decisión**: después de cada paso, actualizar con `QuerySet.update()` las fechas de las filas
-  recién creadas: `Muestra.fecha_registro`, `Estudio.fecha_creacion`, `Medicion.fecha_carga`,
-  `Resultado.fecha_calculo`, `Validacion.fecha_validacion`, `Informe.fecha_emision`; también
-  `Origen.fecha_alta` y `Usuario.date_joined` al comienzo de la demo.
-- **Motivo**: esos campos son `auto_now_add`/`auto_now` y quedarían todos con la fecha de hoy, sin
-  nada que mostrar por mes o semana (8.3). `update()` no aplica `auto_now` y no pasa por
-  `Informe.save()`, que rechaza cambios sobre un informe existente (CLAUDE.md, US 7.3). Solo se
-  tocan filas creadas por la demo, dentro de la misma transacción. La fecha de emisión no está en
-  `Informe.contenido` (la copia guarda fechas de muestreo e ingreso), así que la copia sigue fiel.
-- **Alternativas**: congelar el reloj con una librería (dependencia nueva, solo para tests);
-  parámetro de fecha en cada servicio (cambia código de producción por una necesidad de demo).
+- **Decisión**: un administrador de contexto `reloj(fecha)` en `estudios/demo.py` hace que
+  `django.utils.timezone.now()` devuelva la fecha del guion mientras se ejecuta cada paso
+  (`registrar_muestra`, `crear_estudio`, `cargar_mediciones`, `validar_resultados`,
+  `emitir_informe`). Los campos `auto_now_add`/`auto_now` (`Muestra.fecha_registro`,
+  `Estudio.fecha_creacion`, `Medicion.fecha_carga`, `Resultado.fecha_calculo`,
+  `Validacion.fecha_validacion`, `Informe.fecha_emision`) toman esa fecha **al crearse**. Usuarios,
+  clientes y orígenes se crean con la fecha del comienzo de la demo pasándola explícitamente.
+- **Motivo**: el principio IV prohíbe modificar un resultado validado o un informe emitido; con el
+  reloj nada se modifica después de creado y se siguen usando los servicios reales (R1). Sin fechas
+  en el pasado, todo quedaría en el día de hoy y el dashboard (8.3) no tendría nada que mostrar por
+  mes o semana. La fecha de emisión no está en `Informe.contenido`, así que la copia no cambia.
+  El reloj solo existe dentro del comando de desarrollo.
+- **Alternativas**: corregir las fechas con `QuerySet.update()` después de emitir (descartada en el
+  análisis: modifica informes emitidos y validaciones, contra el principio IV); una librería para
+  congelar el reloj (dependencia nueva); un parámetro de fecha en cada servicio (cambia código de
+  producción por una necesidad de demo).
 
 ## R3 – Cálculo de fechas
 
 - **Decisión**: para el mes `k` (0 = actual, 5 = hace 5 meses) el muestreo es el día
   `dia_base(origen)` del mes; ingreso = muestreo + 0–1 días; creación del estudio = ingreso;
   carga = ingreso + 2–5 días; validación = carga + 1–3 días; emisión = validación + 0–6 días
-  (desplazamientos fijos del guion, así el tiempo de respuesta varía entre ~3 días y ~3 semanas).
-  Cada fecha se recorta a `ahora` y nunca es anterior a la del paso previo. En el mes actual, si
+  (desplazamientos fijos del guion, así el tiempo de respuesta varía entre ~3 días y ~2 semanas).
+  Cada fecha se recorta a `ahora` y nunca es anterior a la del paso previo. El estudio estancado
+  («Pozo domiciliario», mes −1, día base 5) tiene su carga recortada además a `ahora − 10 días`, así
+  la alerta de más de 7 días sin avanzar aparece aunque la demo se corra a principio de mes. En el mes actual, si
   hoy es muy temprano en el mes, los pasos se comprimen hacia hoy.
 - **Motivo**: FR-008 (orden coherente, nunca futuro) y SC-002 (todos los meses con muestras). Las
   horas se fijan (por ejemplo 10:00 hora local) para que las semanas no dependan de la hora en que
