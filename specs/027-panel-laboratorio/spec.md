@@ -8,6 +8,14 @@
 
 **Input**: User description: "SCRUM-75 – 8.3 Panel del laboratorio. Como responsable del laboratorio quiero ver indicadores del trabajo del laboratorio para seguir el volumen de trabajo y los tiempos de respuesta sin revisar estudio por estudio. Criterios de aceptación: (1) Nueva pantalla «Dashboard» en el menú, visible para Bioquímicos y Administradores. (2) Indicadores del período elegido (este mes, por defecto): muestras ingresadas, estudios creados e informes emitidos, con su variación contra el período anterior. (3) Tiempo de respuesta: días promedio desde el ingreso de la muestra hasta la emisión del informe, con un gráfico de su evolución por mes. (4) Estudios por estado: cuántos hay en cada uno (pendiente, en proceso, finalizado, informe generado). (5) Gráfico de actividad: muestras ingresadas e informes emitidos por semana. (6) Alertas: estudios sin avanzar hace más de 7 días, y estudios finalizados sin informe emitido, con enlace a cada uno. (7) Gráficos con Chart.js guardado en static/, sin CDN."
 
+## Clarifications
+
+### Session 2026-11-08
+
+- Q: ¿Dónde va «Dashboard» en el menú lateral? → A: Enlace propio justo debajo de «Inicio» (Inicio → Dashboard → Clientes → Muestras → Estudios → Informes → Administración), con ícono, visible solo con el permiso y resaltado cuando se está en el panel.
+- Q: Si hay muchos estudios en una alerta, ¿se muestran todos o solo algunos? → A: Todos, en una lista con desplazamiento dentro de la tarjeta de la alerta.
+- Q: ¿De qué color se muestran las variaciones contra el período anterior? → A: El color indica si el cambio es bueno o malo: más muestras, estudios o informes en verde y menos en rojo; en el tiempo de respuesta, al revés (más días en rojo, menos en verde). Siempre con flecha y signo además del color.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Ver el volumen de trabajo del período (Priority: P1)
@@ -20,12 +28,13 @@ Como responsable del laboratorio, abro «Dashboard» desde el menú y veo, para 
 
 **Acceptance Scenarios**:
 
-1. **Dado** un usuario con acceso al dashboard, **cuando** abre el menú, **entonces** ve «Dashboard» y al tocarlo se muestra el panel con el período «Este mes» elegido.
+1. **Dado** un usuario con acceso al dashboard, **cuando** abre el menú, **entonces** ve «Dashboard» justo debajo de «Inicio» y al tocarlo se muestra el panel con el período «Este mes» elegido.
 2. **Dado** el período «Este mes» al día 8, **cuando** se muestra el panel, **entonces** indica las muestras ingresadas (por fecha de ingreso), los estudios creados y los informes emitidos entre el día 1 y el 8, y la variación de cada uno contra el 1 al 8 del mes anterior, en cantidad y porcentaje.
 3. **Dado** el período «Mes anterior», **cuando** se elige, **entonces** los indicadores cubren ese mes completo y se comparan contra el mes previo completo.
 4. **Dados** los períodos «Últimos 3 meses» y «Últimos 6 meses», **cuando** se eligen, **entonces** cubren los últimos 3 o 6 meses calendario (incluido el actual hasta hoy) y se comparan contra el tramo de igual duración inmediatamente anterior.
-5. **Dado** un indicador cuyo período anterior fue 0, **cuando** se muestra la variación, **entonces** muestra la diferencia en cantidad y, en lugar del porcentaje, «sin datos previos».
-6. **Dado** el panel, **cuando** se muestra, **entonces** incluye cuántos estudios hay hoy en cada estado (Pendiente de análisis, En proceso, Finalizado, Informe generado), sin depender del período elegido.
+5. **Dado** un aumento de muestras ingresadas y un aumento del tiempo de respuesta, **cuando** se muestran las variaciones, **entonces** la de muestras se ve en verde con «▲» y la del tiempo de respuesta en rojo con «▲».
+6. **Dado** un indicador cuyo período anterior fue 0, **cuando** se muestra la variación, **entonces** muestra la diferencia en cantidad y, en lugar del porcentaje, «sin datos previos».
+7. **Dado** el panel, **cuando** se muestra, **entonces** incluye cuántos estudios hay hoy en cada estado (Pendiente de análisis, En proceso, Finalizado, Informe generado), sin depender del período elegido.
 
 ---
 
@@ -61,7 +70,7 @@ Como responsable, veo una lista de estudios que no avanzan hace más de 7 días 
 1. **Dado** un estudio Pendiente de análisis o En proceso cuya última actividad (creación, carga, corrección o validación de alguna de sus pruebas) fue hace más de 7 días, **cuando** se muestra el panel, **entonces** aparece en «Estudios sin avanzar» con N° de estudio, N° PI, cliente, estado y días sin actividad, y un enlace a su detalle.
 2. **Dado** un estudio con actividad en los últimos 7 días, **cuando** se muestra el panel, **entonces** no aparece en «Estudios sin avanzar».
 3. **Dado** un estudio Finalizado sin informe emitido, **cuando** se muestra el panel, **entonces** aparece en «Finalizados sin informe» con sus datos, los días desde que quedó Finalizado y un enlace a su detalle, sin importar cuántos días pasaron.
-4. **Dadas** las dos alertas, **cuando** se muestran, **entonces** se ordenan de la más antigua a la más reciente e indican cuántos estudios hay en cada una.
+4. **Dadas** las dos alertas, **cuando** se muestran, **entonces** listan todos sus estudios del más antiguo al más reciente, en una lista con desplazamiento dentro de la tarjeta, e indican cuántos hay en cada una.
 5. **Dado** que no hay estudios en una alerta, **cuando** se muestra, **entonces** indica «No hay estudios en esta situación».
 
 ---
@@ -92,17 +101,19 @@ Como laboratorio, quiero que el dashboard lo vean solo los Bioquímicos y los Ad
 - Estudios de clientes inactivos: se cuentan igual (es trabajo del laboratorio).
 - Fechas: se usa la zona horaria del laboratorio (Argentina) para decidir a qué día, semana y mes pertenece cada registro.
 - Período elegido inválido en la dirección: se usa «Este mes».
+- Alerta con muchos estudios (ej. 200): se listan todos dentro de su tarjeta con desplazamiento; el resto del panel no se corre.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: El sistema MUST ofrecer una pantalla «Dashboard» accesible desde el menú, solo para usuarios con el permiso «Puede ver el dashboard».
+- **FR-001**: El sistema MUST ofrecer una pantalla «Dashboard» accesible desde un enlace propio del menú lateral, ubicado justo debajo de «Inicio» y antes de «Clientes», con ícono, resaltado cuando se está en el panel y visible solo para usuarios con el permiso «Puede ver el dashboard».
 - **FR-002**: El sistema MUST crear, como parte de sus datos iniciales, el permiso «Puede ver el dashboard» y asignarlo a los grupos «Bioquímicos» y «Administradores».
 - **FR-003**: Un usuario sin el permiso MUST NOT ver el enlace y MUST ser rechazado al entrar por la dirección directa, sin ver datos.
 - **FR-004**: El panel MUST permitir elegir el período entre «Este mes» (por defecto), «Mes anterior», «Últimos 3 meses» y «Últimos 6 meses».
 - **FR-005**: Para el período elegido, el panel MUST mostrar: muestras ingresadas (por fecha de ingreso), estudios creados (por fecha de creación) e informes emitidos (por fecha de emisión).
 - **FR-006**: Cada indicador MUST mostrar su variación contra el período anterior, en cantidad y porcentaje. El período anterior de «Este mes» MUST ser el mismo tramo de días del mes anterior (del 1 al día de hoy, o hasta el último día si ese mes es más corto); el de «Mes anterior», el mes completo previo; el de «Últimos N meses», los N meses calendario inmediatamente anteriores, hasta el mismo día relativo. Si el valor anterior es 0, MUST mostrarse la diferencia y «sin datos previos» en lugar del porcentaje.
+- **FR-006a**: Cada variación MUST mostrarse con flecha y signo (ej. «▲ +12 %») y con un color que indique si el cambio es favorable: un aumento de muestras, estudios o informes es favorable (verde) y una baja, desfavorable (rojo); en el tiempo de respuesta es al revés (más días, rojo; menos días, verde). Sin cambio, gris. El color nunca es la única señal.
 - **FR-007**: El panel MUST mostrar el tiempo de respuesta del período: promedio, con un decimal, de días corridos entre la fecha de ingreso de la muestra y la fecha de emisión de cada informe emitido en el período, con su variación contra el período anterior; sin informes, «Sin informes en el período».
 - **FR-008**: El panel MUST mostrar un gráfico con el tiempo de respuesta promedio de cada uno de los últimos 6 meses (incluido el actual), calculado como en FR-007 con los informes emitidos en cada mes.
 - **FR-009**: El panel MUST mostrar cuántos estudios hay hoy en cada estado (Pendiente de análisis, En proceso, Finalizado, Informe generado), independientemente del período.
@@ -111,7 +122,7 @@ Como laboratorio, quiero que el dashboard lo vean solo los Bioquímicos y los Ad
 - **FR-012**: Los datos de cada gráfico MUST poder leerse también como tabla, para quien no puede ver el gráfico.
 - **FR-013**: El panel MUST mostrar la alerta «Estudios sin avanzar»: estudios Pendientes de análisis o En proceso cuya última actividad fue hace más de 7 días. La última actividad MUST ser la fecha más reciente entre la creación del estudio y la carga, corrección o validación de cualquiera de sus pruebas.
 - **FR-014**: El panel MUST mostrar la alerta «Finalizados sin informe»: todos los estudios Finalizados sin informe emitido, con los días desde que quedaron Finalizados (fecha de la última validación).
-- **FR-015**: Cada estudio de una alerta MUST mostrar N° de estudio, N° PI, cliente, estado y días, con un enlace a su detalle; cada alerta MUST indicar cuántos estudios tiene, ordenarlos del más antiguo al más reciente y, si está vacía, decir «No hay estudios en esta situación».
+- **FR-015**: Cada estudio de una alerta MUST mostrar N° de estudio, N° PI, cliente, estado y días, con un enlace a su detalle; cada alerta MUST indicar cuántos estudios tiene, mostrarlos todos (en una lista con desplazamiento dentro de su tarjeta, para que el panel no se alargue), ordenarlos del más antiguo al más reciente y, si está vacía, decir «No hay estudios en esta situación».
 - **FR-016**: Las fechas MUST asignarse a días, semanas y meses según la zona horaria del laboratorio.
 - **FR-017**: Los gráficos MUST funcionar sin conexión a servicios externos (la biblioteca de gráficos se sirve desde la propia aplicación).
 - **FR-018**: El panel es de solo lectura: MUST NOT modificar ningún dato.
