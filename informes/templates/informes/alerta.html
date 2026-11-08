@@ -1,0 +1,37 @@
+{% comment %}
+  Alerta del dashboard (US 8.3). Parámetros: clave, titulo, ayuda, columna_dias y filas
+  (lista de {"estudio", "dias"} de tablero.alertas). Lista completa con desplazamiento.
+{% endcomment %}
+{% load ui %}
+<section class="tarjeta overflow-hidden" data-alerta="{{ clave }}" aria-labelledby="titulo-{{ clave }}">
+  <div class="flex items-start gap-3 border-b border-borde px-5 py-4">
+    <span class="mt-0.5 text-advertencia">{% include "ui/icono.html" with nombre="triangle-alert" clase="size-5" %}</span>
+    <div>
+      <h2 id="titulo-{{ clave }}" class="text-sm font-semibold text-marino">{{ titulo }} ({{ filas|length }})</h2>
+      <p class="text-xs text-tinta-suave">{{ ayuda }}</p>
+    </div>
+  </div>
+  {% if filas %}
+    <div class="max-h-80 overflow-auto">
+      <table class="tabla">
+        <thead>
+          <tr><th>N° estudio</th><th>N° PI</th><th>Cliente</th><th>Estado</th><th>{{ columna_dias }}</th><th><span class="sr-only">Acción</span></th></tr>
+        </thead>
+        <tbody>
+          {% for fila in filas %}
+            <tr>
+              <td class="numeros">{{ fila.estudio.pk }}</td>
+              <td class="numeros">{{ fila.estudio.muestra.numero_pi }}</td>
+              <td>{{ fila.estudio.muestra.cliente.nombre_completo }}</td>
+              <td>{% include "ui/estado.html" with estado=fila.estudio.get_estado_display tipo=fila.estudio.estado|tipo_estado %}</td>
+              <td class="numeros">{{ fila.dias|default_if_none:"—" }}</td>
+              <td><a href="{% url 'estudios:detalle' fila.estudio.pk %}" class="btn btn-secundario btn-chico">Ver estudio</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {% include "ui/estado_vacio.html" with mensaje="No hay estudios en esta situación." icono="circle-check" %}
+  {% endif %}
+</section>

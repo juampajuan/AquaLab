@@ -124,6 +124,7 @@ def en_grupo_bioquimicos(usuario):
     grupo.permissions.add(
         Permission.objects.get(codename="validar_resultados"),
         Permission.objects.get(codename="emitir_informes"),  # US 7.2
+        Permission.objects.get(codename="ver_dashboard"),  # US 8.3
     )
     usuario.groups.add(grupo)
     return usuario

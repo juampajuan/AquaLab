@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-08
 
-**Status**: Borrador
+**Status**: Aprobada (2026-11-08)
 
 **Input**: User description: "SCRUM-75 – 8.3 Panel del laboratorio. Como responsable del laboratorio quiero ver indicadores del trabajo del laboratorio para seguir el volumen de trabajo y los tiempos de respuesta sin revisar estudio por estudio. Criterios de aceptación: (1) Nueva pantalla «Dashboard» en el menú, visible para Bioquímicos y Administradores. (2) Indicadores del período elegido (este mes, por defecto): muestras ingresadas, estudios creados e informes emitidos, con su variación contra el período anterior. (3) Tiempo de respuesta: días promedio desde el ingreso de la muestra hasta la emisión del informe, con un gráfico de su evolución por mes. (4) Estudios por estado: cuántos hay en cada uno (pendiente, en proceso, finalizado, informe generado). (5) Gráfico de actividad: muestras ingresadas e informes emitidos por semana. (6) Alertas: estudios sin avanzar hace más de 7 días, y estudios finalizados sin informe emitido, con enlace a cada uno. (7) Gráficos con Chart.js guardado en static/, sin CDN."
 
@@ -31,7 +31,7 @@ Como responsable del laboratorio, abro «Dashboard» desde el menú y veo, para 
 1. **Dado** un usuario con acceso al dashboard, **cuando** abre el menú, **entonces** ve «Dashboard» justo debajo de «Inicio» y al tocarlo se muestra el panel con el período «Este mes» elegido.
 2. **Dado** el período «Este mes» al día 8, **cuando** se muestra el panel, **entonces** indica las muestras ingresadas (por fecha de ingreso), los estudios creados y los informes emitidos entre el día 1 y el 8, y la variación de cada uno contra el 1 al 8 del mes anterior, en cantidad y porcentaje.
 3. **Dado** el período «Mes anterior», **cuando** se elige, **entonces** los indicadores cubren ese mes completo y se comparan contra el mes previo completo.
-4. **Dados** los períodos «Últimos 3 meses» y «Últimos 6 meses», **cuando** se eligen, **entonces** cubren los últimos 3 o 6 meses calendario (incluido el actual hasta hoy) y se comparan contra el tramo de igual duración inmediatamente anterior.
+4. **Dados** los períodos «Últimos 3 meses» y «Últimos 6 meses», **cuando** se eligen, **entonces** cubren los últimos 3 o 6 meses calendario (incluido el actual hasta hoy) y se comparan contra el mismo tramo corrido 3 o 6 meses hacia atrás (FR-006).
 5. **Dado** un aumento de muestras ingresadas y un aumento del tiempo de respuesta, **cuando** se muestran las variaciones, **entonces** la de muestras se ve en verde con «▲» y la del tiempo de respuesta en rojo con «▲».
 6. **Dado** un indicador cuyo período anterior fue 0, **cuando** se muestra la variación, **entonces** muestra la diferencia en cantidad y, en lugar del porcentaje, «sin datos previos».
 7. **Dado** el panel, **cuando** se muestra, **entonces** incluye cuántos estudios hay hoy en cada estado (Pendiente de análisis, En proceso, Finalizado, Informe generado), sin depender del período elegido.
@@ -150,6 +150,8 @@ Como laboratorio, quiero que el dashboard lo vean solo los Bioquímicos y los Ad
 
 - **Trazabilidad**: SCRUM-75 – 8.3 Panel del laboratorio. Responsable: Delfina. Depende de SCRUM-78 (datos de demo) para probarse; habilita SCRUM-77 (tarjeta «Ver dashboard» en el inicio) y la lista de desvíos de SCRUM-61 (8.2), que se agregará en esa historia.
 - **Decisiones tomadas con la responsable antes de especificar (2026-11-08)**: permiso propio asignado a los dos grupos (el técnico no lo ve); períodos este mes, mes anterior, 3 y 6 meses; «Este mes» se compara con los mismos días del mes anterior; gráficos fijos de 6 meses y 12 semanas que no cambian con el período; última actividad = creación o carga, corrección o validación de alguna prueba; tiempo de respuesta en días corridos por fecha de emisión.
+- **Superusuario**: como en el resto de Django, el superusuario tiene todos los permisos y ve el dashboard aunque no esté en ningún grupo (a diferencia del panel de administración de la 025, que lo excluye a propósito). Es de solo lectura y no da facultades nuevas.
+- **Borrar una medición (US 6.5)**: no deja fecha guardada, así que no cuenta como actividad para «Estudios sin avanzar». Limitación conocida; agregar un campo de última actividad no se justifica por ahora.
 - **Fecha en que un estudio quedó Finalizado**: no se guarda; se toma la de su última validación vigente (es la que lo pasa a Finalizado, US 6.4).
 - **Interfaz**: diseño de SCRUM-67 con los componentes de `templates/ui/`; la biblioteca de gráficos (Chart.js) se guarda en los archivos estáticos del proyecto, sin CDN, como pide el criterio 7.
 - **Datos académicos**: proyecto FIUBA; se prueba con la demo ficticia.

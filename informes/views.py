@@ -7,14 +7,14 @@ from django.core.paginator import Paginator
 from django.db import DatabaseError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from estudios import calculo
 from estudios.forms import BuscarEstudioForm
 from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
 from estudios.views import RESULTADOS_POR_PAGINA
 
-from . import pdf, servicios
+from . import pdf, servicios, tablero
 from .busqueda import informes_emitidos
 from .contenido import armar_contenido
 from .forms import BuscarInformeForm, FirmaForm
@@ -186,3 +186,11 @@ def mi_firma(request):
         messages.success(request, "Se guardó tu firma.")
         return redirect("informes:mi_firma")
     return render(request, "informes/mi_firma.html", {"form": form, "firma": form.actual})
+
+
+@permission_required("informes.ver_dashboard", raise_exception=True)
+@require_GET
+def dashboard(request):
+    """Indicadores del laboratorio (US 8.3): solo con el permiso «Puede ver el dashboard»."""
+    contexto = tablero.armar(request.GET.get("periodo", "este_mes"))
+    return render(request, "informes/dashboard.html", contexto)

@@ -265,3 +265,22 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Casos para el dashboard: desvío de Cloruro en «Pozo 2» (~120 → 415 validado → 430 sin validar, para
   8.1 y 8.2), «Pozo domiciliario» del mes anterior estancado y «Escuela N° 12» Finalizado sin informe
   (alertas de 8.3). Si una historia necesita otro caso, agregarlo al guion y a `test_demo.py`.
+
+## Panel del laboratorio (US 8.3)
+
+- `informes/tablero.py` es la única fuente de los cálculos del dashboard (`informes:dashboard`):
+  `periodo` (este mes, mes anterior, 3 y 6 meses, con su período anterior), `indicadores`,
+  `tiempo_respuesta` (días corridos ingreso → emisión, `Decimal` a 1 decimal), `serie_mensual` (6
+  meses), `serie_semanal` (12 semanas lunes–domingo) y `alertas`. Todas reciben `hoy`/`ahora` y
+  cuentan en la zona del laboratorio (`TruncDate`/`TruncMonth`/`TruncWeek` con `tzinfo`).
+- «Este mes» se compara con los mismos días del mes anterior. `variacion` decide el tono: subir es
+  favorable salvo en el tiempo de respuesta; el template siempre muestra flecha y signo.
+- Alertas: «sin avanzar» = Pendiente de análisis o En proceso cuya última actividad (creación, carga,
+  corrección o validación) tiene más de 7 días; borrar una medición no deja fecha y no cuenta.
+  «Finalizados sin informe» cuenta días desde la última validación vigente.
+- Permiso `informes.ver_dashboard` (migración `informes.0004` → «Bioquímicos» y «Administradores»;
+  el superusuario lo tiene por ser superusuario). El fixture `bioquimico` también lo agrega.
+- Chart.js 4.4.7 está en `static/vendor/chart.umd.min.js` (sin CDN) y se carga solo en el dashboard;
+  `informes/static/informes/dashboard.js` lee `json_script` `datos-dashboard`. Cada gráfico tiene su
+  tabla «Ver datos». La 8.2 agrega acá la lista de desvíos sin revisar.
+
