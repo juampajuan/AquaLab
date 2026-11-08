@@ -47,18 +47,18 @@ y sin duplicar).
 
 ## Phase 1: Setup
 
-- [ ] T001 **Gate de la constitution (principio I)**: confirmar que el equipo aprobó
+- [X] T001 **Gate de la constitution (principio I)**: confirmar que el equipo aprobó
   `specs/026-datos-demo/spec.md` y actualizar su `**Status**` a «Aprobada (fecha)». Confirmar que
   la rama `026-datos-demo` sale de `main` actualizado y que `docker compose exec web pytest` está en
   verde.
-- [ ] T002 [P] Agregar `AQUALAB_ENTORNO=desarrollo` a `.env.example` con un comentario: «Habilita
+- [X] T002 [P] Agregar `AQUALAB_ENTORNO=desarrollo` a `.env.example` con un comentario: «Habilita
   comandos solo de desarrollo, como cargar_demo. No definir en producción.».
 
 ---
 
 ## Phase 2: Foundational (bloquea las tres historias)
 
-- [ ] T003 Crear `estudios/demo.py` con el esqueleto según research R2–R5: constantes
+- [X] T003 Crear `estudios/demo.py` con el esqueleto según research R2–R5: constantes
   `DOMINIO = "demo.aqualab"`, `CONTRASENA = "Demo-1234"`, `CLAVE_LOCK_DEMO = 7_800_001`, la
   excepción `DemoError`, `class Fechas` (calcula muestreo, ingreso, estudio, carga, validación y
   emisión de un `(origen, mes)` con los desplazamientos fijos del guion, hora 10:00 de
@@ -83,14 +83,14 @@ muestras por mes, estados, informes, fuera de norma y el desvío (ver `quickstar
 
 ### Tests (escribir primero; deben fallar)
 
-- [ ] T004 [P] [US1] En `estudios/tests/test_demo.py`: `test_clientes_origenes_y_muestras` (3
+- [X] T004 [P] [US1] En `estudios/tests/test_demo.py`: `test_clientes_origenes_y_muestras` (3
   clientes con correo `@demo.aqualab`, nombres sin «DEMO»; 7 orígenes; por origen una muestra en cada
   uno de los últimos 6 meses, incluido el actual), `test_tipos_demo` (los 3 tipos con exactamente
   las pruebas de research R8), `test_estudios_por_estado` (cada estado con ≥ 2 estudios; estados por
   origen y mes iguales a la tabla «Estado destino por mes» de `data-model.md`) y
   `test_informes_firmados_y_numeracion` (cada informe con `contenido["firma"]` del bioquímico y
   matrícula «MP 0000 (DEMO)»; N° PI e INF correlativos sin huecos).
-- [ ] T005 [P] [US1] En `estudios/tests/test_demo.py`: `test_fechas_coherentes` (para cada estudio:
+- [X] T005 [P] [US1] En `estudios/tests/test_demo.py`: `test_fechas_coherentes` (para cada estudio:
   ingreso ≤ creación ≤ carga ≤ validación ≤ emisión ≤ ahora; muestras repartidas en 6 meses
   calendario distintos; al menos 5 meses con informes; tiempos ingreso → emisión distintos entre
   sí), `test_alertas_del_dashboard` (con `ahora` en el día 2 del mes: «Pozo domiciliario» mes −1 En
@@ -99,7 +99,7 @@ muestras por mes, estados, informes, fuera de norma y el desvío (ver `quickstar
   texto «< 0,1» en su informe; E. coli Presente en «Tanque domiciliario» mes −3) y
   `test_desvio_en_pozo_2` (Cloruro de «Pozo 2»: validados 118–124 en meses −5 a −2, 415 validado en
   −1 con ≥ 3 × el promedio de los 3 anteriores; mes actual 430 calculado y sin validar).
-- [ ] T006 [P] [US1] En `estudios/tests/test_demo.py`: `test_valores_reproducibles` (cargar dentro de un
+- [X] T006 [P] [US1] En `estudios/tests/test_demo.py`: `test_valores_reproducibles` (cargar dentro de un
   `transaction.atomic()` que termina con `transaction.set_rollback(True)`, tomar el resumen de
   clientes, orígenes, valores de medición y evaluaciones; volver a cargar y comparar los resúmenes), `test_resumen` (salida con
   «Demo cargada.», cantidades por estado y los dos usuarios con `Demo-1234`) y
@@ -108,17 +108,17 @@ muestras por mes, estados, informes, fuera de norma y el desvío (ver `quickstar
 
 ### Implementation
 
-- [ ] T007 [US1] En `estudios/demo.py`, el guion fijo de `data-model.md`: clientes (nombre, tipo y
+- [X] T007 [US1] En `estudios/demo.py`, el guion fijo de `data-model.md`: clientes (nombre, tipo y
   número de documento del rango ficticio, correo `@demo.aqualab`), orígenes con su `dia_base`,
   tipo de vertido y tipo(s) de estudio, valores por prueba y mes (texto decimal; A/P como 0/1) y
   estado destino por `(origen, mes)`, incluidos los casos especiales (fuera de norma, SS10 0.05,
   E. coli Presente, desvío R9, estancado y Finalizado sin informe).
-- [ ] T008 [US1] En `estudios/demo.py`, `asegurar_tipos()` (crea los 3 tipos con
+- [X] T008 [US1] En `estudios/demo.py`, `asegurar_tipos()` (crea los 3 tipos con
   `TipoEstudio` + `TipoEstudioPrueba` o reutiliza uno igual) y `cargar_estudio(origen, mes, ...)`:
   `registrar_muestra` → `crear_estudio` → `cargar_mediciones` (técnico; todas o solo algunas según
   el estado destino) → `validar_resultados` con `{pk: str(resultado.valor)}` (bioquímico) →
   `emitir_informe` (bioquímico), cada paso dentro de `reloj(fecha del paso)`. Hace pasar T004 y T005.
-- [ ] T009 [US1] En `estudios/demo.py`, `cargar_demo(stdout)` que recorre el guion en orden de mes
+- [X] T009 [US1] En `estudios/demo.py`, `cargar_demo(stdout)` que recorre el guion en orden de mes
   (del más antiguo al actual) y devuelve el resumen; crear
   `estudios/management/commands/cargar_demo.py` (delgado: entorno, `transaction.atomic()`,
   `pg_advisory_xact_lock(CLAVE_LOCK_DEMO)`, llama a `cargar_demo` e imprime el resumen del
@@ -135,13 +135,13 @@ muestras por mes, estados, informes, fuera de norma y el desvío (ver `quickstar
 **Independent Test**: iniciar sesión con cada uno y verificar permisos, firma y pendientes
 (`quickstart.md` pasos 3 y 6).
 
-- [ ] T010 [P] [US2] En `estudios/tests/test_demo.py`: `test_usuarios_demo` (técnico sin grupos y sin
+- [X] T010 [P] [US2] En `estudios/tests/test_demo.py`: `test_usuarios_demo` (técnico sin grupos y sin
   `validar_resultados`/`emitir_informes`; bioquímico en «Bioquímicos» y «Administradores» con
   `FirmaProfesional` válida para `informes.firmas.leer_firma` y matrícula «MP 0000 (DEMO)»; ambos
   activos, aprobados y con `check_password("Demo-1234")`; mediciones `cargada_por` = técnico,
   validaciones e informes del bioquímico; hay estudios con pruebas Pendientes y Cargadas y
   estudios Finalizados sin informe).
-- [ ] T011 [US2] En `estudios/demo.py`, `crear_usuarios()` según research R7: los dos usuarios con
+- [X] T011 [US2] En `estudios/demo.py`, `crear_usuarios()` según research R7: los dos usuarios con
   `set_password(CONTRASENA)`, grupos, y la firma PNG de 600 × 200 en escala de grises con un trazo
   armada con `zlib`/`struct` (≤ 64 KB); volver a leer el bioquímico de la base antes de usarlo.
   Hace pasar T010.
@@ -155,7 +155,7 @@ nada a medias.
 
 **Independent Test**: los casos de rechazo y repetición del contrato (`quickstart.md` pasos 2, 7 y 8).
 
-- [ ] T012 [P] [US3] En `estudios/tests/test_demo.py`: `test_rechaza_fuera_de_desarrollo`
+- [X] T012 [P] [US3] En `estudios/tests/test_demo.py`: `test_rechaza_fuera_de_desarrollo`
   (parametrizado: sin `AQUALAB_ENTORNO`, con `qa`, con `DEBUG=False` → `CommandError` con el
   mensaje del contrato y sin filas nuevas), `test_segunda_ejecucion_no_duplica` (mensaje «La demo
   ya está cargada…» y mismas cantidades), `test_conflicto_de_usuario`, `test_conflicto_de_tipo`,
@@ -165,12 +165,12 @@ nada a medias.
   llamada → `CommandError` «No se pudo cargar la demo…» y ninguna fila de demo) y
   `test_comando_viejo_eliminado` (`call_command("cargar_demo_us51")` → `CommandError` de comando
   desconocido).
-- [ ] T013 [US3] En `estudios/management/commands/cargar_demo.py` y `estudios/demo.py`: validación
+- [X] T013 [US3] En `estudios/management/commands/cargar_demo.py` y `estudios/demo.py`: validación
   de entorno (`AQUALAB_ENTORNO == "desarrollo"`, `settings.DEBUG`, `connection.vendor ==
   "postgresql"`), demo ya cargada (cliente con correo `@demo.aqualab`), conflictos de usuario y de
   tipo, importación del catálogo si `Prueba` está vacía (`call_command("importar_catalogo_pruebas")`),
   y conversión de cualquier error en `CommandError` con los mensajes del contrato. Hace pasar T012.
-- [ ] T014 [US3] Borrar `estudios/management/commands/cargar_demo_us51.py` y
+- [X] T014 [US3] Borrar `estudios/management/commands/cargar_demo_us51.py` y
   `estudios/tests/test_demo_us51.py`; buscar otras referencias (`grep -rn cargar_demo_us51`) fuera de
   `specs/` y actualizarlas.
 
@@ -178,17 +178,17 @@ nada a medias.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T015 [P] `README.md`: sección «Datos de demo» (agregar `AQUALAB_ENTORNO=desarrollo` al `.env`,
+- [X] T015 [P] `README.md`: sección «Datos de demo» (agregar `AQUALAB_ENTORNO=desarrollo` al `.env`,
   `docker compose exec web python manage.py cargar_demo`, usuarios y contraseña, cómo empezar de
   cero con `docker compose down -v`).
-- [ ] T016 [P] `CLAUDE.md`: sección «Datos de demo (SCRUM-78)» (servicios reales bajo
+- [X] T016 [P] `CLAUDE.md`: sección «Datos de demo (SCRUM-78)» (servicios reales bajo
   `reloj(fecha)`, nunca `update()` de fechas, guion fijo en `estudios/demo.py`, marca `@demo.aqualab`, `AQUALAB_ENTORNO=desarrollo` +
   `DEBUG`, lock `7_800_001`, desvío de «Pozo 2» que usan 8.1 y 8.2).
-- [ ] T017 Medir la carga en una base nueva (SC-001: < 1 minuto) y ejecutar
+- [X] T017 Medir la carga en una base nueva (SC-001: < 1 minuto) y ejecutar
   `docker compose exec web ruff check .`, `ruff format --check .` y
   `python manage.py makemigrations --check --dry-run` (no debe haber migraciones).
-- [ ] T018 Ejecutar la suite completa `docker compose exec web pytest`: todo en verde.
-- [ ] T019 Recorrer `specs/026-datos-demo/quickstart.md` (pasos 1 a 8) y marcar el resultado aquí.
+- [X] T018 Ejecutar la suite completa `docker compose exec web pytest`: todo en verde.
+- [X] T019 Recorrer `specs/026-datos-demo/quickstart.md` (pasos 1 a 8) y marcar el resultado aquí.
 
 ---
 

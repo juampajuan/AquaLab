@@ -53,7 +53,7 @@ Decisiones en [research.md](./research.md) (R1–R9). No hay `NEEDS CLARIFICATIO
 
 | Principio | Cumplimiento | Estado |
 |---|---|---|
-| **I. Spec primero (SDD)** | Spec de SCRUM-78 con 3 aclaraciones (2026-11-08). El código espera la aprobación de la spec por el equipo. | ✅ |
+| **I. Spec primero (SDD)** | Spec de SCRUM-78 con 3 aclaraciones, aprobada por el equipo el 2026-11-08. | ✅ |
 | **II. Simplicidad y Django idiomático** | Un management command delgado y un módulo con el guion; reutiliza los servicios existentes en vez de duplicar reglas; sin modelos, dependencias ni JS. | ✅ |
 | **III. Tests obligatorios** | Cada FR y escenario con test (ver [Mapa de tests](#mapa-de-tests)): entorno, carga completa, estados, desvío, determinismo, idempotencia, conflictos, rollback, catálogo y fechas. | ✅ |
 | **IV. Integridad de datos** | Los datos pasan por los servicios: N° PI e INF sin huecos, cálculos, validaciones e informes con copia. Cada fila nace con su fecha gracias al reloj de la demo (research R2): ningún resultado validado ni informe emitido se modifica después de creado. No se toca ningún dato existente. | ✅ |

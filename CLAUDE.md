@@ -248,3 +248,17 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   dentro de la misma `.ayuda` y el puente `.ayuda-texto::before`; solo el mouse la cierra al salir.
 - El JS se prueba con `node --test usuarios/tests/js config/tests/js` (DOM simulado, sin
   dependencias), también en el CI.
+
+## Datos de demo (SCRUM-78)
+
+- `python manage.py cargar_demo` (solo con `AQUALAB_ENTORNO=desarrollo` y `DEBUG`) carga 6 meses de
+  actividad con los servicios reales; el guion fijo (clientes, orígenes, valores, estado destino) está
+  en `estudios/demo.py`. Reemplazó a `cargar_demo_us51`.
+- Cada paso corre dentro de `demo.reloj(fecha)`, que parchea `timezone.now` para que las fechas
+  automáticas nazcan en el pasado. Nunca corregir fechas con `update()` después de crear: modificaría
+  validaciones e informes emitidos (principio IV).
+- Lo demo se reconoce por el correo `@demo.aqualab`; si ya hay un cliente así, no carga nada. Todo va
+  en una transacción con `pg_advisory_xact_lock(7_800_001)`.
+- Casos para el dashboard: desvío de Cloruro en «Pozo 2» (~120 → 415 validado → 430 sin validar, para
+  8.1 y 8.2), «Pozo domiciliario» del mes anterior estancado y «Escuela N° 12» Finalizado sin informe
+  (alertas de 8.3). Si una historia necesita otro caso, agregarlo al guion y a `test_demo.py`.

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-08
 
-**Status**: Borrador
+**Status**: Aprobada (2026-11-08)
 
 **Input**: User description: "SCRUM-78 – Datos de demo (tarea técnica). Como equipo queremos un comando que cargue datos de ejemplo realistas para poder mostrar y probar el dashboard. Criterios de aceptación: (1) El comando cargar_demo carga clientes ficticios con varios orígenes y muestras de los últimos 6 meses por origen, con estudios en todos los estados e informes emitidos. (2) Incluye resultados fuera de norma y al menos un desvío claro en el historial de algún origen (un valor que se dispara). (3) Crea un técnico y un bioquímico con firma, y usa el catálogo real de pruebas. (4) Solo corre en desarrollo. Reemplaza al viejo cargar_demo_us51. Orden sugerido: datos de demo → 8.3 → 8.1 → 8.2 → 8.4 → 8.5. Los datos van primero porque sin ellos no hay nada que mostrar."
 
