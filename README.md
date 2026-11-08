@@ -86,7 +86,12 @@ estados, informes emitidos, resultados fuera de norma y un desvío en el histori
 3. Entrar con `tecnico@demo.aqualab` o `bioquimico@demo.aqualab`, contraseña `Demo-1234`. El
    bioquímico es Bioquímico y Administrador, y ya tiene firma.
 
-El comando solo corre en desarrollo y no carga dos veces. Para empezar de cero se recrea la base:
+**No hace falta borrar la base**: la demo se suma a los datos que ya tengas, sin modificarlos (la
+numeración de muestras e informes sigue desde la última). Después de traer los cambios alcanza con
+`git pull`, agregar la línea al `.env`, `docker compose up -d`, `migrate` y `cargar_demo`.
+
+El comando solo corre en desarrollo y no carga dos veces: si la demo ya está, avisa y no hace nada.
+Solo si querés una base limpia, solo con la demo, recreala (esto **borra todos tus datos locales**):
 `docker compose down -v`, `docker compose up -d`, `migrate` y `cargar_demo`.
 
 

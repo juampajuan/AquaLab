@@ -260,6 +260,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   validaciones e informes emitidos (principio IV).
 - Lo demo se reconoce por el correo `@demo.aqualab`; si ya hay un cliente así, no carga nada. Todo va
   en una transacción con `pg_advisory_xact_lock(7_800_001)`.
+- Se suma a los datos existentes sin modificarlos: para cargarla no hace falta `docker compose down -v`
+  (borra la base local). Si choca un usuario o un tipo demo, se rechaza sin cambios y lo informa.
 - Casos para el dashboard: desvío de Cloruro en «Pozo 2» (~120 → 415 validado → 430 sin validar, para
   8.1 y 8.2), «Pozo domiciliario» del mes anterior estancado y «Escuela N° 12» Finalizado sin informe
   (alertas de 8.3). Si una historia necesita otro caso, agregarlo al guion y a `test_demo.py`.
