@@ -253,7 +253,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 
 - `python manage.py cargar_demo` (solo con `AQUALAB_ENTORNO=desarrollo` y `DEBUG`) carga 6 meses de
   actividad con los servicios reales; el guion fijo (clientes, orígenes, valores, estado destino) está
-  en `estudios/demo.py`. Reemplazó a `cargar_demo_us51`.
+  en `estudios/demo.py`. Reemplazó a `cargar_demo_us51`; sus tipos de estudio no se llaman igual que los
+  de la demo vieja para no chocar en las bases del equipo.
 - Cada paso corre dentro de `demo.reloj(fecha)`, que parchea `timezone.now` para que las fechas
   automáticas nazcan en el pasado. Nunca corregir fechas con `update()` después de crear: modificaría
   validaciones e informes emitidos (principio IV).

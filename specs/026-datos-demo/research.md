@@ -98,7 +98,8 @@ Decisiones técnicas de SCRUM-78. Formato: decisión, motivo y alternativas desc
 - **Decisión**: si `Prueba` está vacía, `call_command("importar_catalogo_pruebas")` dentro de la
   transacción; si no, no se reimporta. Tipos demo:
   - «Físico-químico básico»: PH, TURBIDEZ, COND, CL-, DUREZA-T, NH4, FE.
-  - «Bacteriológico»: COL-TOT, MESOFILAS, ECOLI, PSEUDO.
+  - «Bacteriológico básico»: COL-TOT, MESOFILAS, ECOLI, PSEUDO. No se llama «Bacteriológico»
+    porque la demo vieja (`cargar_demo_us51`) ya creaba un tipo con ese nombre y otras pruebas.
   - «Vuelco a colectora»: PH, TEMPERATURA, SS10, SSEE, DET-SAAM.
 
   Si existe un tipo con el mismo nombre y exactamente esas pruebas, se reutiliza; con otras

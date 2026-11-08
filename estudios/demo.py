@@ -55,7 +55,7 @@ class DemoError(Exception):
 # --- Guion -----------------------------------------------------------------------------------
 
 FQ = "Físico-químico básico"
-BACT = "Bacteriológico"
+BACT = "Bacteriológico básico"
 VUELCO = "Vuelco a colectora"
 
 TIPOS = {

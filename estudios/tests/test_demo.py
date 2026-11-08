@@ -165,7 +165,7 @@ def test_estudios_por_estado(cargada):
         ],
         EstadoEstudio.INFORME_GENERADO: [
             ("Pozo domiciliario", 0, None),
-            ("Tanque elevado", 0, "Bacteriológico"),
+            ("Tanque elevado", 0, demo.BACT),
             ("Pozo 1", 3, None),
         ],
     }
@@ -407,25 +407,37 @@ def test_conflicto_de_usuario(catalogo, entorno, django_user_model):
 
 
 def test_conflicto_de_tipo(catalogo, entorno):
-    tipo = TipoEstudio.objects.create(nombre="Bacteriológico")
+    tipo = TipoEstudio.objects.create(nombre="Bacteriológico básico")
     TipoEstudioPrueba.objects.create(tipo=tipo, prueba=Prueba.objects.get(codigo="PH"))
     with pytest.raises(CommandError) as error:
         call_command("cargar_demo", stdout=io.StringIO())
     assert str(error.value) == (
-        "Ya existe el tipo de estudio «Bacteriológico» con otras pruebas. No se cargó nada."
+        "Ya existe el tipo de estudio «Bacteriológico básico» con otras pruebas. No se cargó nada."
     )
     assert not Cliente.objects.exists()
 
 
 def test_reutiliza_tipo_igual(catalogo, entorno):
-    tipo = TipoEstudio.objects.create(nombre="Bacteriológico")
-    for codigo in demo.TIPOS["Bacteriológico"]:
+    tipo = TipoEstudio.objects.create(nombre=demo.BACT)
+    for codigo in demo.TIPOS[demo.BACT]:
         TipoEstudioPrueba.objects.create(tipo=tipo, prueba=Prueba.objects.get(codigo=codigo))
     call_command("cargar_demo", stdout=io.StringIO())
-    assert TipoEstudio.objects.filter(nombre__iexact="Bacteriológico").count() == 1
+    assert TipoEstudio.objects.filter(nombre__iexact=demo.BACT).count() == 1
     tipo.refresh_from_db()
     assert tipo.version == 1
     assert Estudio.objects.filter(tipo=tipo).exists()
+
+
+def test_tipos_de_la_demo_vieja_no_bloquean(catalogo, entorno):
+    """La demo vieja (cargar_demo_us51) creaba «Bacteriológico», «Físico-Químico» y «Vuelco a
+    canal» con otras pruebas: no chocan con los nombres de la demo nueva."""
+    ph = Prueba.objects.get(codigo="PH")
+    for nombre in ("Bacteriológico", "Físico-Químico", "Vuelco a canal"):
+        tipo = TipoEstudio.objects.create(nombre=nombre)
+        TipoEstudioPrueba.objects.create(tipo=tipo, prueba=ph)
+    call_command("cargar_demo", stdout=io.StringIO())
+    assert Cliente.objects.filter(email__endswith="@demo.aqualab").count() == 3
+    assert set(TipoEstudio.objects.get(nombre="Bacteriológico").pruebas.all()) == {ph}
 
 
 def test_importa_catalogo_si_falta(entorno):

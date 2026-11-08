@@ -14,7 +14,7 @@
 
 - Q: ¿Cómo se ven los nombres de los clientes y orígenes demo en las pantallas? → A: Nombres realistas y ficticios (ej. «Lácteos del Sur S.A.», «Pozo 2»), sin prefijo visible; lo demo se reconoce por el correo `@demo.aqualab` y por documentos de un rango inventado.
 - Q: ¿Los valores de la demo tienen que salir iguales cada vez que se carga en una base nueva? → A: Sí. Mismas mediciones, mismos fuera de norma y mismo desvío en cada carga; las fechas son relativas al día de ejecución.
-- Q: ¿Qué tipos de estudio usa la demo? → A: La demo crea 3 tipos realistas con pruebas del catálogo real («Físico-químico básico», «Bacteriológico», «Vuelco a colectora»); si ya existe uno con ese nombre, lo reutiliza sin modificarlo.
+- Q: ¿Qué tipos de estudio usa la demo? → A: La demo crea 3 tipos realistas con pruebas del catálogo real («Físico-químico básico», «Bacteriológico básico», «Vuelco a colectora»); si ya existe uno con ese nombre, lo reutiliza sin modificarlo. (Ajuste posterior: «Bacteriológico» pasó a «Bacteriológico básico» porque la demo vieja `cargar_demo_us51` ya creaba un «Bacteriológico» con otras pruebas y la carga se rechazaba en las bases del equipo.)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -92,7 +92,7 @@ Como equipo, quiero que el comando nunca toque una base que no sea de desarrollo
 - **FR-002**: El comando MUST ejecutarse solo en un entorno marcado explícitamente como desarrollo y con modo de depuración; en cualquier otro caso MUST rechazarse sin cambios.
 - **FR-003**: El comando MUST crear al menos 3 clientes ficticios de distinto tipo (empresa, organismo público y particular), cada uno con 2 o 3 orígenes. Los nombres de clientes y orígenes MUST ser realistas y sin prefijo visible; los clientes demo MUST reconocerse por su correo en el dominio `demo.aqualab` y por documentos de un rango ficticio.
 - **FR-004**: Por cada origen MUST crearse una muestra por mes de los últimos 6 meses, incluido el actual, con fechas de muestreo e ingreso dentro del mes y nunca futuras.
-- **FR-005**: Cada muestra MUST tener al menos un estudio de uno de 3 tipos de estudio demo armados con pruebas del catálogo real: «Físico-químico básico», «Bacteriológico» y «Vuelco a colectora». Si ya existe un tipo con ese nombre y las mismas pruebas, MUST reutilizarse sin modificarlo; si existe con otras pruebas, el comando MUST rechazar la carga sin cambios e indicar el conflicto.
+- **FR-005**: Cada muestra MUST tener al menos un estudio de uno de 3 tipos de estudio demo armados con pruebas del catálogo real: «Físico-químico básico», «Bacteriológico básico» y «Vuelco a colectora» (nombres que no chocan con los tipos de la demo vieja `cargar_demo_us51`). Si ya existe un tipo con ese nombre y las mismas pruebas, MUST reutilizarse sin modificarlo; si existe con otras pruebas, el comando MUST rechazar la carga sin cambios e indicar el conflicto.
 - **FR-006**: La demo MUST incluir estudios en los cuatro estados (Pendiente de análisis, En proceso, Finalizado, Informe generado). Los meses anteriores al actual MUST quedar mayormente con informe emitido; los del mes actual, repartidos entre los demás estados.
 - **FR-007**: Los estudios MUST seguir las mismas reglas que si los hubiera cargado una persona: numeración de muestras e informes sin huecos, resultados calculados, validaciones guardadas e informes con la copia de sus datos.
 - **FR-008**: Las fechas de cada paso (ingreso, creación del estudio, carga de mediciones, validación y emisión) MUST quedar repartidas en el pasado de forma coherente (cada paso posterior al anterior), con tiempos de respuesta variables de pocos días a pocas semanas, para que los indicadores por período y por semana tengan valores distintos.
@@ -113,7 +113,7 @@ Como equipo, quiero que el comando nunca toque una base que no sea de desarrollo
 - **Cliente demo**: Cliente ficticio con nombre realista; se reconoce por su correo `@demo.aqualab` y su documento de rango ficticio. Tiene 2 o 3 orígenes.
 - **Origen**: Punto de extracción del cliente (pozo, tanque, salida a canal…); agrupa la serie mensual de muestras sobre la que se ve el historial y el desvío.
 - **Muestra / Estudio / Medición / Resultado / Validación / Informe** (US 4.1 a 7.3): Se crean con las mismas reglas de la aplicación, con fechas repartidas en los últimos 6 meses.
-- **Tipo de estudio demo**: «Físico-químico básico», «Bacteriológico» y «Vuelco a colectora», con pruebas del catálogo real; se reutilizan si ya existen iguales.
+- **Tipo de estudio demo**: «Físico-químico básico», «Bacteriológico básico» y «Vuelco a colectora», con pruebas del catálogo real; se reutilizan si ya existen iguales.
 - **Usuario demo**: Técnico (usuario común) y bioquímico (Bioquímicos y Administradores, con firma profesional).
 
 ## Success Criteria *(mandatory)*

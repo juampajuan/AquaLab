@@ -22,10 +22,10 @@ DNI `9999999x`).
 | Lácteos del Sur S.A. | CUIT | Pozo 1 | agua | Físico-químico básico |
 | | | Pozo 2 (desvío) | agua | Físico-químico básico |
 | | | Salida a colectora | cloacal | Vuelco a colectora |
-| Municipalidad de Villa Verde | CUIT | Tanque elevado | agua | Físico-químico básico + Bacteriológico (meses pares) |
-| | | Escuela N° 12 | agua | Bacteriológico |
+| Municipalidad de Villa Verde | CUIT | Tanque elevado | agua | Físico-químico básico + Bacteriológico básico (meses pares) |
+| | | Escuela N° 12 | agua | Bacteriológico básico |
 | María González | DNI | Pozo domiciliario | agua | Físico-químico básico |
-| | | Tanque domiciliario | agua | Bacteriológico |
+| | | Tanque domiciliario | agua | Bacteriológico básico |
 
 7 orígenes × 6 meses = 42 muestras; con el bacteriológico extra del tanque, unos 45 estudios.
 
