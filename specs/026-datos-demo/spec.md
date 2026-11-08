@@ -8,6 +8,14 @@
 
 **Input**: User description: "SCRUM-78 – Datos de demo (tarea técnica). Como equipo queremos un comando que cargue datos de ejemplo realistas para poder mostrar y probar el dashboard. Criterios de aceptación: (1) El comando cargar_demo carga clientes ficticios con varios orígenes y muestras de los últimos 6 meses por origen, con estudios en todos los estados e informes emitidos. (2) Incluye resultados fuera de norma y al menos un desvío claro en el historial de algún origen (un valor que se dispara). (3) Crea un técnico y un bioquímico con firma, y usa el catálogo real de pruebas. (4) Solo corre en desarrollo. Reemplaza al viejo cargar_demo_us51. Orden sugerido: datos de demo → 8.3 → 8.1 → 8.2 → 8.4 → 8.5. Los datos van primero porque sin ellos no hay nada que mostrar."
 
+## Clarifications
+
+### Session 2026-11-08
+
+- Q: ¿Cómo se ven los nombres de los clientes y orígenes demo en las pantallas? → A: Nombres realistas y ficticios (ej. «Lácteos del Sur S.A.», «Pozo 2»), sin prefijo visible; lo demo se reconoce por el correo `@demo.aqualab` y por documentos de un rango inventado.
+- Q: ¿Los valores de la demo tienen que salir iguales cada vez que se carga en una base nueva? → A: Sí. Mismas mediciones, mismos fuera de norma y mismo desvío en cada carga; las fechas son relativas al día de ejecución.
+- Q: ¿Qué tipos de estudio usa la demo? → A: La demo crea 3 tipos realistas con pruebas del catálogo real («Físico-químico básico», «Bacteriológico», «Vuelco a colectora»); si ya existe uno con ese nombre, lo reutiliza sin modificarlo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cargar una demo completa con un comando (Priority: P1)
@@ -70,6 +78,7 @@ Como equipo, quiero que el comando nunca toque una base que no sea de desarrollo
 - Mes actual recién empezado: las fechas de la demo nunca quedan en el futuro.
 - Ejecutado justo después de otra ejecución que falló: como no quedó nada a medias, se carga completa.
 - Un correo de usuario demo ya existe sin ser de la demo: se rechaza sin cambios e indica el conflicto (no se toma ni se modifica una cuenta ajena).
+- Tipo de estudio con el mismo nombre que uno demo pero con otras pruebas: se rechaza sin cambios e indica el conflicto (no se modifica el tipo existente ni se crea un duplicado).
 - Catálogo modificado a mano: si ya hay catálogo cargado no se reimporta, para no pisar cambios.
 - Pruebas Ausente/Presente (ej. E. coli): reciben valores de Ausente o Presente, no números arbitrarios.
 - Resultados por debajo del límite de detección: al menos uno, para que se vea «< LD» en informes.
@@ -79,10 +88,11 @@ Como equipo, quiero que el comando nunca toque una base que no sea de desarrollo
 ### Functional Requirements
 
 - **FR-001**: El sistema MUST ofrecer un comando `cargar_demo` que cargue, en una sola operación, todos los datos de demo descritos en esta especificación.
+- **FR-001a**: Los valores cargados (clientes, orígenes, mediciones, fuera de norma y desvío) MUST ser los mismos en cada carga sobre una base nueva; solo las fechas cambian, calculadas a partir del día de ejecución.
 - **FR-002**: El comando MUST ejecutarse solo en un entorno marcado explícitamente como desarrollo y con modo de depuración; en cualquier otro caso MUST rechazarse sin cambios.
-- **FR-003**: El comando MUST crear al menos 3 clientes ficticios de distinto tipo (empresa, organismo público y particular), identificables como demo, cada uno con 2 o 3 orígenes.
+- **FR-003**: El comando MUST crear al menos 3 clientes ficticios de distinto tipo (empresa, organismo público y particular), cada uno con 2 o 3 orígenes. Los nombres de clientes y orígenes MUST ser realistas y sin prefijo visible; los clientes demo MUST reconocerse por su correo en el dominio `demo.aqualab` y por documentos de un rango ficticio.
 - **FR-004**: Por cada origen MUST crearse una muestra por mes de los últimos 6 meses, incluido el actual, con fechas de muestreo e ingreso dentro del mes y nunca futuras.
-- **FR-005**: Cada muestra MUST tener al menos un estudio de un tipo de estudio que use el catálogo real de pruebas.
+- **FR-005**: Cada muestra MUST tener al menos un estudio de uno de 3 tipos de estudio demo armados con pruebas del catálogo real: «Físico-químico básico», «Bacteriológico» y «Vuelco a colectora». Si ya existe un tipo con ese nombre y las mismas pruebas, MUST reutilizarse sin modificarlo; si existe con otras pruebas, el comando MUST rechazar la carga sin cambios e indicar el conflicto.
 - **FR-006**: La demo MUST incluir estudios en los cuatro estados (Pendiente de análisis, En proceso, Finalizado, Informe generado). Los meses anteriores al actual MUST quedar mayormente con informe emitido; los del mes actual, repartidos entre los demás estados.
 - **FR-007**: Los estudios MUST seguir las mismas reglas que si los hubiera cargado una persona: numeración de muestras e informes sin huecos, resultados calculados, validaciones guardadas e informes con la copia de sus datos.
 - **FR-008**: Las fechas de cada paso (ingreso, creación del estudio, carga de mediciones, validación y emisión) MUST quedar repartidas en el pasado de forma coherente (cada paso posterior al anterior), con tiempos de respuesta variables de pocos días a pocas semanas, para que los indicadores por período y por semana tengan valores distintos.
@@ -100,9 +110,10 @@ Como equipo, quiero que el comando nunca toque una base que no sea de desarrollo
 
 ### Key Entities *(include if feature involves data)*
 
-- **Cliente demo**: Cliente ficticio identificable como demo; tiene 2 o 3 orígenes.
+- **Cliente demo**: Cliente ficticio con nombre realista; se reconoce por su correo `@demo.aqualab` y su documento de rango ficticio. Tiene 2 o 3 orígenes.
 - **Origen**: Punto de extracción del cliente (pozo, tanque, salida a canal…); agrupa la serie mensual de muestras sobre la que se ve el historial y el desvío.
 - **Muestra / Estudio / Medición / Resultado / Validación / Informe** (US 4.1 a 7.3): Se crean con las mismas reglas de la aplicación, con fechas repartidas en los últimos 6 meses.
+- **Tipo de estudio demo**: «Físico-químico básico», «Bacteriológico» y «Vuelco a colectora», con pruebas del catálogo real; se reutilizan si ya existen iguales.
 - **Usuario demo**: Técnico (usuario común) y bioquímico (Bioquímicos y Administradores, con firma profesional).
 
 ## Success Criteria *(mandatory)*
@@ -113,8 +124,9 @@ Como equipo, quiero que el comando nunca toque una base que no sea de desarrollo
 - **SC-002**: Cada uno de los últimos 6 meses tiene muestras ingresadas en todos los orígenes demo, y al menos 5 de esos meses tienen informes emitidos.
 - **SC-003**: Los cuatro estados de estudio tienen al menos 2 estudios cada uno.
 - **SC-004**: Hay al menos un desvío de 3 veces o más sobre el promedio de los tres resultados validados anteriores de una prueba en un origen.
-- **SC-005**: El 100 % de las ejecuciones fuera de desarrollo, con la demo ya cargada o con un conflicto de usuario terminan sin cambios en la base.
+- **SC-005**: El 100 % de las ejecuciones fuera de desarrollo, con la demo ya cargada o con un conflicto de usuario o de tipo de estudio terminan sin cambios en la base.
 - **SC-006**: Con cada usuario demo, quien presenta encuentra trabajo pendiente acorde a su rol apenas inicia sesión.
+- **SC-007**: Dos cargas en bases nuevas el mismo día producen los mismos clientes, orígenes, valores medidos y evaluaciones.
 
 ## Assumptions
 
@@ -124,5 +136,5 @@ Como equipo, quiero que el comando nunca toque una base que no sea de desarrollo
 - **Contraseña de desarrollo**: Los usuarios demo tienen una contraseña conocida y documentada; es aceptable porque el comando solo corre en desarrollo.
 - **Entorno**: Se reutiliza la marca de entorno de desarrollo que ya usaba `cargar_demo_us51`; `qa` deja de estar permitido porque el criterio pide «solo en desarrollo».
 - **Regla de desvío**: El desvío se diseña para superar con amplitud la regla inicial de SCRUM-61 (más del 30 % contra el promedio de los últimos 3 validados), así sigue siendo claro si el laboratorio ajusta el umbral.
-- **Datos ficticios**: AquaLab es un proyecto FIUBA; nombres, documentos y valores son inventados y marcados como demo.
+- **Datos ficticios**: AquaLab es un proyecto FIUBA; nombres, documentos y valores son inventados. No llevan prefijo visible para que la presentación se vea natural.
 - **Alcance excluido**: El dashboard y sus indicadores (SCRUM-75, 76, 60, 61, 77); recargar o borrar la demo; datos para producción.
