@@ -3,13 +3,17 @@
 import re
 
 import pytest
+from django.test import Client
 from django.urls import reverse
 
 pytestmark = pytest.mark.django_db
 
 
-def test_mi_firma_explica_la_firma_y_la_matricula(cliente_bioquimico):
-    html = cliente_bioquimico.get(reverse("informes:mi_firma")).content.decode()
+def test_mi_firma_explica_la_firma_y_la_matricula(bioquimico_sin_firma):
+    # La matrícula solo se escribe con la primera firma (SCRUM-81): ahí lleva su ayuda.
+    c = Client()
+    c.force_login(bioquimico_sin_firma)
+    html = c.get(reverse("informes:mi_firma")).content.decode()
 
     assert re.search(r'<span role="tooltip" id="id_matricula_helptext"[^>]*>\S', html)
     assert re.search(r'<span role="tooltip" id="ayuda-firma"[^>]*>\S', html)
