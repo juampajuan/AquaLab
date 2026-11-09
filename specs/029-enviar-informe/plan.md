@@ -110,6 +110,8 @@ modelo en [data-model.md](./data-model.md).
 | FR-005 — `EnvioInforme` inalterable | `test_envio_no_se_modifica_ni_borra` | `informes/tests/test_modelos.py` |
 | US3 Esc. 1, FR-008, SC-003 — falla de correo y de PDF: mensaje, «Falló», log, sin 500 | `test_falla_de_correo` , `test_falla_de_pdf` | `informes/tests/test_envios.py` |
 | US3 Esc. 2, FR-009 — sin permiso: 403 en GET y POST, servicio rechaza, nada enviado ni registrado | `test_sin_permiso` (parametrizado), `test_servicio_revalida_permiso` | `informes/tests/test_envios.py` |
+| SC-003 — error de base al registrar: mensaje, sin 500 | `test_error_de_base` | `informes/tests/test_envios.py` |
+| Edge — informe sin firma: se envía igual | `test_informe_sin_firma` | `informes/tests/test_envios.py` |
 | US3 Esc. 3 — estudio sin informe → 404 | `test_sin_informe_404` | `informes/tests/test_envios.py` |
 | US3 Esc. 4, FR-010 — misma clave dos veces → un correo; clave inválida → sin envío | `test_misma_clave_no_reenvia`, `test_clave_invalida` | `informes/tests/test_envios.py` |
 | FR-010 — dos POST simultáneos con la misma clave → un correo, un registro | `test_doble_envio_concurrente` | `informes/tests/test_concurrencia_envios.py` |

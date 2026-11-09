@@ -46,7 +46,18 @@ Todas las rutas requieren sesión (`LoginRequiredMiddleware`). `<pk>` es el del 
 - De: `DEFAULT_FROM_EMAIL`. Para: `Cliente.email` vigente. Adjunto: `{numero}.pdf`
   (`application/pdf`, de `informes.pdf.generar_pdf`).
 - Asunto: «Informe {numero} – AquaLab».
-- Cuerpo (texto plano, español): saludo a `contenido.cliente.nombre_completo`; «Le enviamos el
-  informe {numero} del estudio N° {estudio.numero} ({estudio.tipo}) de la muestra N° PI
-  {muestra.numero_pi} ({muestra.nombre}).»; «El informe está adjunto en PDF.»; firma
-  `contenido.laboratorio.nombre`. Sin enlaces a la aplicación ni contraseñas.
+- Cuerpo (texto plano, español), con los datos de `contenido`:
+
+  ```text
+  Hola, {cliente.nombre_completo}:
+
+  Le enviamos el informe {numero} del estudio N° {estudio.numero} ({estudio.tipo}) de la muestra
+  N° PI {muestra.numero_pi} ({muestra.nombre}).
+
+  El informe está adjunto en PDF.
+
+  Saludos,
+  {laboratorio.nombre}
+  ```
+
+  Sin enlaces a la aplicación ni contraseñas.

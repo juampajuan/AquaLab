@@ -35,7 +35,7 @@ envíos) y US3 (P2, fallas y casos que impiden el envío).
 - Textos y mensajes en **español**, copiados **literalmente** de `contracts/enviar-informe-ui.md`.
 - Diseño de SCRUM-67 con `templates/ui/`; preferir clases ya usadas en
   `estudios/templates/estudios/quitar_prueba_confirmar.html` e `informes/ver.html`; si se agrega
-  alguna, recompilar el CSS (T021).
+  alguna, recompilar el CSS (T022).
 - `Informe` no se modifica nunca (FR-011, US 7.3): solo `select_for_update()` para bloquear su fila.
 - En los tests, parchear `informes.envios.generar_pdf` (con `monkeypatch.setattr`) para no depender
   de WeasyPrint, salvo en `test_adjunto_es_pdf_real`.
@@ -55,7 +55,7 @@ envíos) y US3 (P2, fallas y casos que impiden el envío).
 
 **⚠️ CRITICAL**: ninguna historia empieza antes de terminar esta fase.
 
-- [ ] T002 En `informes/tests/test_modelos.py` agregar `test_envio_no_se_modifica_ni_borra` (FR-005): crear un `EnvioInforme` de un informe emitido (con `estudio_de`, `cargar`, `validar` y `emitir_informe`, como los tests vecinos) y verificar que `envio.save()` lanza `ValueError` con «Un envío de informe no se puede modificar.» y `envio.delete()` con «Un envío de informe no se puede borrar.»; que `EnvioInforme` no está registrado en el admin (`admin.site.is_registered`), y que `clave` es única (`IntegrityError` al repetirla dentro de `transaction.atomic()`).
+- [ ] T002 En `informes/tests/test_modelos.py` agregar `test_envio_no_se_modifica_ni_borra` (FR-005; importar `EnvioInforme` dentro del test, así el archivo se sigue cargando antes de T003 y los tests de `Informe` no se caen): crear un `EnvioInforme` de un informe emitido (con `estudio_de`, `cargar`, `validar` y `emitir_informe`, como los tests vecinos) y verificar que `envio.save()` lanza `ValueError` con «Un envío de informe no se puede modificar.» y `envio.delete()` con «Un envío de informe no se puede borrar.»; que `EnvioInforme` no está registrado en el admin (`admin.site.is_registered`), y que `clave` es única (`IntegrityError` al repetirla dentro de `transaction.atomic()`).
 - [ ] T003 En `informes/models.py` agregar `class ResultadoEnvio(models.TextChoices)` con `ENVIADO = "enviado", "Enviado"` y `FALLIDO = "fallido", "Falló"`, y `class EnvioInforme(models.Model)` con docstring («Cada envío confirmado de un informe por correo (SCRUM-79), exitoso o fallido. Inalterable.»), según `data-model.md`: `informe = ForeignKey(Informe, on_delete=models.PROTECT, related_name="envios", editable=False)`, `enviado_por = ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="envios_de_informes", editable=False)`, `fecha = DateTimeField("fecha", auto_now_add=True)`, `destinatario = EmailField("enviado a", max_length=254)`, `resultado = CharField("resultado", max_length=10, choices=ResultadoEnvio.choices)`, `clave = UUIDField(unique=True, editable=False)`; `Meta`: `verbose_name="envío de informe"`, `verbose_name_plural="envíos de informes"`, `ordering=("-fecha", "-pk")`, `constraints=[CheckConstraint(condition=Q(resultado__in=ResultadoEnvio.values), name="envio_informe_resultado_valido")]`. `save()` lanza `ValueError("Un envío de informe no se puede modificar.")` si `self.pk` ya existe (`not self._state.adding`); `delete()` lanza `ValueError("Un envío de informe no se puede borrar.")`. No registrarlo en `informes/admin.py`.
 - [ ] T004 Generar la migración con `docker compose exec -u "$(id -u):$(id -g)" web python manage.py makemigrations informes --name envioinforme` (debe quedar `informes/migrations/0005_envioinforme.py`), revisarla, aplicar `migrate` y ejecutar `docker compose exec web pytest informes/tests/test_modelos.py`: en verde.
 - [ ] T005 [P] En `config/settings.py` agregar a `LOGGING["loggers"]` la entrada `"informes.envios": {"handlers": ["console"], "level": "INFO"}`.
@@ -82,6 +82,7 @@ envíos) y US3 (P2, fallas y casos que impiden el envío).
   - `test_cliente_inactivo` (Edge): con el cliente `activo=False` (por `update`), la confirmación responde 200 y el envío sale.
   - `test_adjunto_es_pdf_real` (SC-004): sin parchear `generar_pdf`, el adjunto empieza con `b"%PDF"` y su nombre es `f"{informe.numero_mostrado}.pdf"`.
   - `test_confirmacion_usa_componentes` (Diseño): la confirmación tiene `data-componente="resumen"`, `data-componente="acciones-confirmacion"` y el encabezado de `ui/encabezado.html` con «Enviar informe por correo».
+  - `test_informe_sin_firma` (Edge): un informe sin firma registrada (quitar `"firma"` de `contenido` con `Informe.objects.filter(pk=...).update(contenido=...)`) se envía igual: un correo con el adjunto y registro «enviado».
 - [ ] T007 [US1] En `informes/tests/test_ver.py` agregar `test_ver_ofrece_enviar_con_permiso` parametrizado (US1 Esc. 1, FR-001): con `cliente_bioquimico` el HTML de `informes:ver` tiene «Enviar por correo» con enlace a `reverse("informes:enviar", args=[pk])`; con `cliente_http` (sin permiso) no lo tiene.
 - [ ] T008 [US1] Ejecutar `docker compose exec web pytest informes/tests/test_envios.py informes/tests/test_ver.py`: los tests nuevos fallan (todavía no hay vista ni servicio).
 
@@ -141,12 +142,14 @@ envíos) y US3 (P2, fallas y casos que impiden el envío).
   - `test_sin_informe_404` (US3 Esc. 3): un estudio sin informe (`estudio_de("PH")`) → GET y POST dan 404.
   - `test_misma_clave_no_reenvia` (US3 Esc. 4, FR-010): dos POST con la misma clave → un solo correo, un solo registro y el segundo muestra «El informe INF-… ya se había enviado con esta confirmación.».
   - `test_clave_invalida` (FR-010): POST sin `clave` o con `clave="x"` → redirect a `informes:enviar` con «La confirmación no es válida. Volvé a intentarlo.», sin correo ni registro.
-- [ ] T020 [US3] Crear `informes/tests/test_concurrencia_envios.py` con `pytestmark = pytest.mark.django_db(transaction=True)` y `test_doble_envio_concurrente` (FR-010) siguiendo `informes/tests/test_concurrencia_emision.py` (`threading.Barrier(2)`, `ThreadPoolExecutor`, `close_old_connections()` y `connection.close()` en cada hilo): con `generar_pdf` parcheado, dos hilos llaman `enviar_informe(pk, bioquimico, misma_clave)` a la vez → `EnvioInforme.objects.filter(clave=clave).count() == 1`, `len(mailoutbox) == 1` y exactamente un resultado con `duplicado=True`. (Con `transaction=True` la base se vacía: el fixture `bioquimico` crea el grupo si falta, ver `CLAUDE.md`.)
+  - `test_error_de_base` (SC-003): parchear `informes.envios.enviar_informe` para que lance `DatabaseError` → 302 a `informes:ver` con «No se pudo registrar el envío. Intentá nuevamente.», sin página de error.
+- [ ] T020 [P] [US3] Crear `informes/tests/test_concurrencia_envios.py` con `pytestmark = pytest.mark.django_db(transaction=True)` y `test_doble_envio_concurrente` (FR-010) siguiendo `informes/tests/test_concurrencia_emision.py` (`threading.Barrier(2)`, `ThreadPoolExecutor`, `close_old_connections()` y `connection.close()` en cada hilo): con `generar_pdf` parcheado, dos hilos llaman `enviar_informe(pk, bioquimico, misma_clave)` a la vez → `EnvioInforme.objects.filter(clave=clave).count() == 1`, `len(mailoutbox) == 1` y exactamente un resultado con `duplicado=True`. (Con `transaction=True` la base se vacía: el fixture `bioquimico` crea el grupo si falta, ver `CLAUDE.md`.)
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Ajustar `informes/envios.py` e `informes/views.py` hasta que pasen los tests de T019–T020 (lo esencial ya está en T010–T011: revisar que la falla de PDF también quede registrada, que `PermissionDenied` y `Http404` no se capturen en la vista y que el bloqueo `select_for_update` preceda a la búsqueda por clave). Si alguna clase de Tailwind de `enviar_confirmar.html` o `ver.html` es nueva, recompilar con `docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify` y commitear `static/css/aqualab.css`.
-- [ ] T022 [US3] Ejecutar `docker compose exec web pytest informes`: todo en verde.
+- [ ] T021 [US3] Verificar en `informes/envios.py` e `informes/views.py`, con los tests de T019–T020, que: (a) una excepción de `generar_pdf` se registra como `fallido` igual que una de `send` (el `try` cubre las dos llamadas); (b) la vista **no** atrapa `PermissionDenied` ni `Http404` (Django los convierte en 403 y 404); (c) `select_for_update()` del `Informe` va antes de buscar el `EnvioInforme` por `clave`; (d) la vista atrapa `DatabaseError` alrededor de `envios.enviar_informe` con el mensaje del contrato. Corregir lo que falte.
+- [ ] T022 [US3] Recompilar el CSS con `docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify`; si `static/css/aqualab.css` cambia (clases nuevas en `enviar_confirmar.html` o `ver.html`), commitearlo.
+- [ ] T023 [US3] Ejecutar `docker compose exec web pytest informes`: todo en verde.
 
 **Checkpoint**: las tres historias funcionan juntas.
 
@@ -154,9 +157,9 @@ envíos) y US3 (P2, fallas y casos que impiden el envío).
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T023 [P] En `CLAUDE.md`: borrar la línea del pendiente «**Envío de informes (SCRUM-39):** …» (y la sección «Pendientes entre features» queda sin ítems) y agregar la sección «## Envío del informe por correo (SCRUM-79)» con: `informes/envios.py:enviar_informe` es el único envío (lo llama `informes:enviar`); sincrónico, con el PDF de `generar_pdf` adjunto y destino `Cliente.email` vigente; `EnvioInforme` es inalterable (`save`/`delete` lanzan `ValueError`, sin admin; en los tests, cambiarlo con `filter(...).update(...)`); un envío por confirmación con la `clave` oculta, bajo `select_for_update` del `Informe`; una falla de correo o PDF se registra como «fallido» y va al logger `informes.envios`; en los tests, parchear `informes.envios.generar_pdf`; permiso `informes.emitir_informes`.
-- [ ] T024 Ejecutar `docker compose exec web pytest`, `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`: todo en verde, sin migraciones pendientes además de `0005`.
-- [ ] T025 Prueba manual según `specs/029-enviar-informe/quickstart.md` (pasos 1–8, con `cargar_demo`). La acredita el autor.
+- [ ] T024 [P] En `CLAUDE.md`: borrar la línea del pendiente «**Envío de informes (SCRUM-39):** …» (y la sección «Pendientes entre features» queda sin ítems) y agregar la sección «## Envío del informe por correo (SCRUM-79)» con: `informes/envios.py:enviar_informe` es el único envío (lo llama `informes:enviar`); sincrónico, con el PDF de `generar_pdf` adjunto y destino `Cliente.email` vigente; `EnvioInforme` es inalterable (`save`/`delete` lanzan `ValueError`, sin admin; en los tests, cambiarlo con `filter(...).update(...)`); un envío por confirmación con la `clave` oculta, bajo `select_for_update` del `Informe`; una falla de correo o PDF se registra como «fallido» y va al logger `informes.envios`; en los tests, parchear `informes.envios.generar_pdf`; permiso `informes.emitir_informes`.
+- [ ] T025 Ejecutar `docker compose exec web pytest`, `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`: todo en verde, sin migraciones pendientes además de `0005`.
+- [ ] T026 Prueba manual según `specs/029-enviar-informe/quickstart.md` (pasos 1–8, con `cargar_demo`). La acredita el autor.
 
 ---
 
@@ -181,7 +184,7 @@ envíos) y US3 (P2, fallas y casos que impiden el envío).
 - T005 (`config/settings.py`) en paralelo con T002–T004 (archivos distintos).
 - T006 (`test_envios.py`) y T007 (`test_ver.py`) tocan archivos distintos, pero son de la misma historia y conviene escribirlos juntos.
 - T020 (`test_concurrencia_envios.py`) en paralelo con T019 (`test_envios.py`).
-- T023 (`CLAUDE.md`) en paralelo con T024.
+- T024 (`CLAUDE.md`) en paralelo con T025.
 
 ## Implementation Strategy
 
