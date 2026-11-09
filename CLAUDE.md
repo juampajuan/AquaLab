@@ -284,3 +284,15 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   `informes/static/informes/dashboard.js` lee `json_script` `datos-dashboard`. Cada gráfico tiene su
   tabla «Ver datos». La 8.2 agrega acá la lista de desvíos sin revisar.
 
+
+## Filtrar estudios (SCRUM-74)
+
+- `estudios.forms.FiltrosEstudioForm` es la única definición de los filtros `desde`/`hasta`/`estado`
+  (mensajes, regla desde ≤ hasta, `is-invalid`): la heredan `HistorialClienteForm` (solo cambia las
+  etiquetas) y `FiltrarEstudiosForm` de `estudios:buscar`. `BuscarEstudioForm` sigue solo con `q`
+  porque lo usa `informes:listar`.
+- `estudios/busqueda.py:filtro_estado_fechas` cuenta los días de `fecha_creacion` en la zona del
+  laboratorio: `>= inicio_del_dia(desde)` y `< inicio_del_dia(hasta + 1)`. No usar `__date`.
+- Con cualquier valor inválido (también el texto) `estudios:buscar` muestra el error y el listado
+  completo sin filtrar, como el historial. La paginación lleva `parametros` (GET sin `page`) y
+  «Limpiar filtros» depende de los parámetros recibidos (`hay_filtros`), válidos o no.
