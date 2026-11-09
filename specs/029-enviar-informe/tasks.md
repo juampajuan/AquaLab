@@ -159,7 +159,7 @@ envíos) y US3 (P2, fallas y casos que impiden el envío).
 
 - [X] T024 [P] En `CLAUDE.md`: borrar la línea del pendiente «**Envío de informes (SCRUM-39):** …» (y la sección «Pendientes entre features» queda sin ítems) y agregar la sección «## Envío del informe por correo (SCRUM-79)» con: `informes/envios.py:enviar_informe` es el único envío (lo llama `informes:enviar`); sincrónico, con el PDF de `generar_pdf` adjunto y destino `Cliente.email` vigente; `EnvioInforme` es inalterable (`save`/`delete` lanzan `ValueError`, sin admin; en los tests, cambiarlo con `filter(...).update(...)`); un envío por confirmación con la `clave` oculta, bajo `select_for_update` del `Informe`; una falla de correo o PDF se registra como «fallido» y va al logger `informes.envios`; en los tests, parchear `informes.envios.generar_pdf`; permiso `informes.emitir_informes`.
 - [X] T025 Ejecutar `docker compose exec web pytest`, `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`: todo en verde, sin migraciones pendientes además de `0005`.
-- [ ] T026 Prueba manual según `specs/029-enviar-informe/quickstart.md` (pasos 1–8, con `cargar_demo`). La acredita el autor.
+- [X] T026 Prueba manual según `specs/029-enviar-informe/quickstart.md` (pasos 1–8, con `cargar_demo`). La acredita el autor.
 
 ---
 
