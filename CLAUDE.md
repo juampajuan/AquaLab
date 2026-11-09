@@ -20,6 +20,13 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Siempre se agendan con `transaction.on_commit`; una falla de envío solo queda en el log
   `usuarios.notificaciones`. Rechazar elimina la cuenta pendiente para liberar el correo.
 - En los tests: `django_capture_on_commit_callbacks(execute=True)` y `mailoutbox`.
+- Correos con logo: `config/correos.py:armar_correo` arma un `CorreoAquaLab` con el texto plano de
+  siempre y una alternativa HTML (extiende `templates/correos/base.html`, estilos inline) con
+  `static/img/marca/aqualab-horizontal.png` inline por `cid:logo-aqualab` en un
+  `multipart/related`; el logo no entra en `attachments`. Lo usan la aprobación de cuenta, el
+  envío del informe y el aviso de desvíos; las plantillas `*_cuerpo.html` van junto a las `.txt`.
+  En los tests, `config/tests/utiles_correos.py:comprobar_html_con_logo` y, para simular una falla,
+  parchear `config.correos.CorreoAquaLab.send`.
 
 ## Autenticación integrada (US 1.2)
 
@@ -284,7 +291,7 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Chart.js 4.4.7 está en `static/vendor/chart.umd.min.js` (sin CDN) y se carga solo en el dashboard
   y en la comparación histórica (US 8.1);
   `informes/static/informes/dashboard.js` lee `json_script` `datos-dashboard`. Cada gráfico tiene su
-  tabla «Ver datos». La 8.2 agrega acá la lista de desvíos sin revisar.
+  tabla «Ver datos». La sección «Desvíos sin revisar» es de la US 8.2 (ver «Desvíos»).
 
 ## Comparación histórica por origen (US 8.1)
 
@@ -293,7 +300,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Historial = resultados de asignaciones Completadas (⇔ validación vigente) de muestras del origen,
   sin el estudio de referencia, ordenados por `(fecha_muestreo, numero_pi, estudio)`. «Último» = el
   del estudio de referencia (validado o no) o el validado más reciente; «anteriores» = validados de
-  muestras previas a la del último, con la misma unidad (otra unidad: en la tabla, fuera del cálculo).
+  muestras previas a la del último, con la misma unidad (otra unidad: en la tabla, fuera del cálculo);
+  `HistorialPrueba.anteriores` los expone para la US 8.2.
 - Todo en `Decimal` sobre el valor completo; porcentaje a 0,1 `ROUND_HALF_UP`, base 0 → sin
   porcentaje. A/P: cambio de estado y «Presente en X de N», sin números. Sin tono «favorable»: el
   rojo solo marca un último resultado fuera de norma.
@@ -306,6 +314,37 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   puras de `estudios/static/estudios/comparacion.js` y `elegir_origen.js` se prueban con Node.
 - Caso A/P de la demo: Tanque domiciliario (E. Coli Presente en el mes 3). Tests con la fábrica
   `estudio_en_origen` (`estudios/tests/conftest.py`).
+
+## Desvíos (US 8.2)
+
+- `estudios/desvios.py` es la única regla y detección (`regla`, `es_desvio`, `mediana`, `detectar`,
+  `evaluar_estudio`, `pendientes`). El desvío **no se guarda**: se calcula al vuelo sobre los
+  resultados Cargados (detalle, validación y «Desvíos sin revisar»), así una carga o corrección se
+  refleja sola. Es de solo lectura; no crear un modelo de desvíos.
+- Regla: con al menos N anteriores, desvío si el resultado difiere en más del umbral (%) de la
+  **mediana** de los últimos N (no el promedio: un pico aislado no la mueve; ver Detergentes de
+  Colectora en la spec). Comparación sin dividir: exactamente el umbral no es desvío. Umbral y N
+  solo en `settings.AQUALAB_DESVIOS` (un test verifica que nadie más lo lea).
+- Historial = `comparacion.comparar` + `HistorialPrueba.anteriores[-N:]`; diferencia y porcentaje
+  con `comparacion.cambio`. A/P: desvío si los últimos N coinciden y el resultado es el otro estado;
+  la referencia es ese valor común.
+- **Validar es revisar**: no hay pantalla aparte. `ValidarResultadosForm` suma `observacion_<pk>`
+  solo en filas con desvío sin revisar; `validar_resultados(..., observaciones)` reevalúa bajo el
+  bloqueo y guarda `Validacion.observacion`, `desvio_referencia` y `desvio_umbral` (constancia;
+  `CheckConstraint`: ambos o ninguno). Una corrección posterior anula la validación con su
+  constancia y la prueba vuelve a evaluarse.
+- `estudios:desvios` (lista paginada) y la sección del dashboard: permiso `informes.ver_dashboard`;
+  «Validar» solo con `estudios.validar_resultados`. Una evaluación (6 consultas) por estudio con
+  resultados sin validar. Nada de esto va al informe, al PDF ni al correo.
+- Aviso por correo: `estudios/notificaciones.py`. `calculo.recalcular` compara con los valores
+  previos y llama a `avisar_desvios` solo con las pruebas de valor nuevo o distinto (no reenvía);
+  evalúa con `desvios`, agenda `transaction.on_commit` y manda un correo por desvío y por
+  bioquímico activo, cada uno con un solo destinatario en «Para» (nadie ve a los otros; una falla
+  no corta a los demás) (`estudios/correos/desvio_*.txt`). Enlace absoluto con
+  `settings.AQUALAB_URL_BASE` (no hay `request`); fallas al logger `estudios.notificaciones`. La
+  demo también genera estos correos. Tests: `mailoutbox` + `django_capture_on_commit_callbacks`.
+- Demo: Pozo 2 mes 0 (430 contra mediana 124) es el único pendiente; el mes 1 (415) quedó validado
+  con observación (`OBSERVACIONES` en `estudios/demo.py`). Tests: `estudios/tests/test_desvios*.py`.
 
 ## Filtrar estudios (SCRUM-74)
 

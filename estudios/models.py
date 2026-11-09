@@ -224,6 +224,8 @@ class Validacion(models.Model):
 
     Hay a lo sumo una vigente por prueba, y la hay si y solo si la prueba está Completada. Cuando
     deja de estarlo (recálculo o borrado de la medición) se anula y se conserva como historial.
+    Si el resultado tenía desvío (US 8.2), guarda la observación y la constancia de la comparación;
+    nada de eso se modifica después.
     """
 
     asignacion = models.ForeignKey(
@@ -245,6 +247,16 @@ class Validacion(models.Model):
     evaluacion = models.CharField("evaluación", max_length=20, choices=Evaluacion.choices)
     anulada = models.BooleanField("anulada", default=False)
     fecha_anulacion = models.DateTimeField("fecha de anulación", null=True, blank=True)
+    # Revisión del desvío (US 8.2): validar una prueba con desvío lo revisa. La observación es
+    # opcional; la referencia (mediana de los últimos N) y el umbral son la constancia de contra
+    # qué se comparó al validar.
+    observacion = models.CharField("observación", max_length=500, blank=True, default="")
+    desvio_referencia = models.DecimalField(
+        "valor de referencia del desvío", max_digits=28, decimal_places=10, null=True, blank=True
+    )
+    desvio_umbral = models.DecimalField(
+        "umbral del desvío", max_digits=5, decimal_places=2, null=True, blank=True
+    )
 
     class Meta:
         verbose_name = "validación"
@@ -261,11 +273,21 @@ class Validacion(models.Model):
                 | Q(anulada=True, fecha_anulacion__isnull=False),
                 name="validacion_anulacion_completa",
             ),
+            models.CheckConstraint(
+                condition=Q(desvio_referencia__isnull=True, desvio_umbral__isnull=True)
+                | Q(desvio_referencia__isnull=False, desvio_umbral__isnull=False),
+                name="validacion_desvio_completo",
+            ),
         ]
 
     def __str__(self):
         estado = " (anulada)" if self.anulada else ""
         return f"{self.asignacion}: {self.get_evaluacion_display()}{estado}"
+
+    @property
+    def con_desvio(self):
+        """El resultado tenía desvío al validarse (US 8.2): la validación es su revisión."""
+        return self.desvio_umbral is not None
 
 
 def validaciones_vigentes(camino=""):

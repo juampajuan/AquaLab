@@ -520,3 +520,31 @@ def test_presencia_en_comparar(origen, estudio_en_origen):
     assert [p.texto for p in historial.puntos] == ["Ausente", "Presente", "Ausente"]
     assert historial.variacion.cambio_presencia == "Cambió: Presente → Ausente"
     assert historial.variacion.presentes == 1
+
+
+# --- Anteriores para la US 8.2 ---------------------------------------------------------------
+
+
+def test_anteriores_expuestos(origen, estudio_en_origen):
+    for n, valor in enumerate(["5", "6", "10", "11", "12"]):
+        estudio_en_origen(origen, dia(n), 300101 + n, {"CL-": valor})
+    # Otro estudio de la muestra posterior: no es anterior.
+    posterior = estudio_en_origen(origen, dia(9), 300120, {"CL-": "30"})
+    actual = estudio_en_origen(origen, dia(6), 300110, {"CL-": "16"}, validar_todo=False)
+
+    historial = historial_de(comparacion.comparar(origen, estudio=actual), "CL-")
+
+    assert [p.valor for p in historial.anteriores] == [
+        Decimal(v) for v in ("50", "60", "100", "110", "120")
+    ]
+    assert all(p.estudio_pk != posterior.pk for p in historial.anteriores)
+    assert historial.variacion.cantidad_anteriores == len(historial.anteriores)
+
+
+def test_anteriores_vacios_sin_ultimo(origen, estudio_en_origen):
+    estudio_en_origen(origen, dia(0), 300101, {"CL-": "10"})
+    actual = estudio_en_origen(origen, dia(1), 300102, {"CL-": None})
+
+    historial = historial_de(comparacion.comparar(origen, estudio=actual), "CL-")
+
+    assert historial.anteriores == ()

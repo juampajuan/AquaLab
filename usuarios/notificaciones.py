@@ -12,14 +12,26 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.urls import reverse
 
+from config.correos import armar_correo, asunto_de
+
 from .models import Usuario
 
 logger = logging.getLogger("usuarios.notificaciones")
 
 
-def _enviar(tipo, destinatario, plantilla, contexto):
-    """Envía un aviso a un único destinatario. Ante una falla, la registra y no la relanza."""
+def _enviar(tipo, destinatario, plantilla, contexto, *, html=False):
+    """Envía un aviso a un único destinatario. Ante una falla, la registra y no la relanza.
+    Con `html=True` suma la alternativa HTML con el logo (`config/correos.py`)."""
     try:
+        if html:
+            armar_correo(
+                asunto_de(f"usuarios/correos/{plantilla}_asunto.txt", contexto),
+                f"usuarios/correos/{plantilla}_cuerpo.txt",
+                f"usuarios/correos/{plantilla}_cuerpo.html",
+                contexto,
+                to=[destinatario],
+            ).send()
+            return
         asunto = " ".join(
             render_to_string(f"usuarios/correos/{plantilla}_asunto.txt", contexto).split()
         )
@@ -60,6 +72,7 @@ def avisar_aprobacion(request, usuario):
         usuario.email,
         "aprobacion",
         {"usuario": usuario, "enlace_login": enlace_login},
+        html=True,
     )
 
 

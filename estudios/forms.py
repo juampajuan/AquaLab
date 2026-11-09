@@ -361,7 +361,9 @@ class FiltrarEstudiosForm(BuscarEstudioForm, FiltrosEstudioForm):
 
 class ValidarResultadosForm(forms.Form):
     """Por cada prueba con resultado, `validar_<pk>` (marcada al abrir solo si cumple) y
-    `resultado_<pk>` (el valor que se vio, para no validar uno que cambió mientras tanto)."""
+    `resultado_<pk>` (el valor que se vio, para no validar uno que cambió mientras tanto). Las
+    filas con desvío sin revisar (`asignacion.deteccion`, US 8.2) suman `observacion_<pk>`: queda
+    en la validación como revisión del desvío."""
 
     def __init__(self, *args, filas, marcar_todas=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -378,6 +380,17 @@ class ValidarResultadosForm(forms.Form):
                 widget=forms.HiddenInput,
                 initial=str(resultado.valor) if resultado else "",
             )
+            if self.tiene_desvio(asignacion):
+                self.fields[self.observacion(asignacion)] = forms.CharField(
+                    required=False,
+                    max_length=500,
+                    label=f"Observación {asignacion.prueba.codigo}",
+                    help_text=(
+                        "Queda guardada en la validación de esta prueba como revisión del desvío. "
+                        "Solo la ve el laboratorio."
+                    ),
+                    widget=forms.Textarea(attrs={"rows": 2}),
+                )
 
     @staticmethod
     def validar(asignacion):
@@ -387,6 +400,17 @@ class ValidarResultadosForm(forms.Form):
     def resultado(asignacion):
         return f"resultado_{asignacion.pk}"
 
+    @staticmethod
+    def observacion(asignacion):
+        return f"observacion_{asignacion.pk}"
+
+    @staticmethod
+    def tiene_desvio(asignacion):
+        """Desvío sin revisar: los ya revisados traen la constancia en `validacion_desvio`."""
+        return bool(getattr(asignacion, "deteccion", None)) and not getattr(
+            asignacion, "validacion_desvio", None
+        )
+
     def clean(self):
         datos = super().clean()
         if not self.errors and not self.resumen():
@@ -394,7 +418,33 @@ class ValidarResultadosForm(forms.Form):
         return datos
 
     def filas(self):
-        return [(a, self[self.validar(a)], self[self.resultado(a)]) for a in self.asignaciones]
+        return [
+            (
+                a,
+                self[self.validar(a)],
+                self[self.resultado(a)],
+                self[self.observacion(a)] if self.tiene_desvio(a) else None,
+            )
+            for a in self.asignaciones
+        ]
+
+    def con_desvio(self):
+        return [a for a in self.asignaciones if self.tiene_desvio(a)]
+
+    def elegidas_con_desvio(self):
+        """Las marcadas que tienen desvío, con la observación escrita en `observacion_escrita`."""
+        elegidas = [a for a in self.resumen() if self.tiene_desvio(a)]
+        for asignacion in elegidas:
+            asignacion.observacion_escrita = self.cleaned_data.get(self.observacion(asignacion))
+        return elegidas
+
+    def observaciones(self):
+        """`{asignacion_pk: texto}` de las marcadas con desvío, para el servicio."""
+        return {
+            a.pk: self.cleaned_data.get(self.observacion(a), "")
+            for a in self.resumen()
+            if self.tiene_desvio(a)
+        }
 
     def resumen(self):
         """Las asignaciones marcadas para validar."""

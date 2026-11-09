@@ -258,6 +258,12 @@ ESPECIALES = {
     ("colectora", 2, "PH"): "10.6",
     ("colectora", 3, "DET-SAAM"): "14",
 }
+# Observaciones al validar (US 8.2): validar un resultado con desvío lo revisa. El Cloruro de
+# Pozo 2 del mes anterior (415 contra la mediana 121) queda revisado con esta observación; el del
+# mes actual (430, sin validar) queda en «Desvíos sin revisar».
+OBSERVACIONES = {
+    ("pozo-2", 1, "CL-"): "Se repitió la medición: el valor es correcto.",
+}
 # Valores que no varían de un mes a otro (A/P, por debajo del límite de detección, conteos 0).
 FIJOS = {"ECOLI", "PSEUDO", "SS10", "COL-TOT"}
 
@@ -497,11 +503,15 @@ def cargar_estudio(muestra, origen, indice, mes, tipo, fechas, tecnico, bioquimi
         )
     if estado in (PARCIAL, CARGADO):
         return estudio
-    elegidas = {
-        a.pk: str(a.resultado.valor) for a in estudio.pruebas_asignadas.select_related("resultado")
+    asignaciones = estudio.pruebas_asignadas.select_related("prueba", "resultado")
+    elegidas = {a.pk: str(a.resultado.valor) for a in asignaciones}
+    observaciones = {
+        a.pk: texto
+        for a in asignaciones
+        if (texto := OBSERVACIONES.get((origen.clave, mes, a.prueba.codigo)))
     }
     with reloj(fechas.validacion):
-        validar_resultados(estudio.pk, elegidas, bioquimico)
+        validar_resultados(estudio.pk, elegidas, bioquimico, observaciones=observaciones)
     if estado == INFORME:
         with reloj(fechas.emision):
             emitir_informe(estudio.pk, bioquimico)

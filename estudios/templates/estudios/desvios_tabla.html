@@ -1,0 +1,47 @@
+{% comment %}
+  Tabla de «Desvíos sin revisar» (US 8.2), compartida por el dashboard y estudios:desvios.
+  Parámetro: pendientes (lista de desvios.Pendiente). Los desvíos se revisan al validar.
+{% endcomment %}
+{% load ui %}
+{% if pendientes %}
+  <div class="overflow-x-auto">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>N° PI</th>
+          <th>Cliente · Origen</th>
+          <th>Prueba</th>
+          <th>Observado</th>
+          <th>Mediana</th>
+          <th>Variación</th>
+          <th>Calculado</th>
+          <th><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pendiente in pendientes %}
+          <tr data-desvio-fila>
+            <td class="numeros"><a href="{% url 'muestras:detalle' pendiente.muestra.pk %}" class="font-semibold text-cian-texto hover:underline">{{ pendiente.muestra.numero_pi }}</a></td>
+            <td>{{ pendiente.muestra.cliente.nombre_completo }}<span class="block text-xs text-tinta-suave">{{ pendiente.muestra.origen.nombre }}</span></td>
+            <td>{{ pendiente.prueba.nombre }} <span class="text-xs text-tinta-suave">({{ pendiente.prueba.codigo }})</span></td>
+            <td class="numeros">{{ pendiente.deteccion.observado }}</td>
+            <td class="numeros">{{ pendiente.deteccion.referencia_texto }}</td>
+            <td class="numeros"><span class="inline-flex items-center gap-1 text-advertencia">{% include "ui/icono.html" with nombre="triangle-alert" clase="size-4" %}{{ pendiente.deteccion.variacion_texto }}</span></td>
+            <td class="numeros">{{ pendiente.fecha_calculo|date:"d/m/Y" }}</td>
+            <td>
+              <div class="flex flex-wrap justify-end gap-2">
+                <a href="{% url 'estudios:detalle' pendiente.estudio.pk %}" class="btn btn-secundario btn-chico">Ver estudio</a>
+                <a href="{{ pendiente.enlace_comparacion }}" class="btn btn-secundario btn-chico">Comparación histórica</a>
+                {% if perms.estudios.validar_resultados %}
+                  <a href="{% url 'estudios:validar_resultados' pendiente.estudio.pk %}" class="btn btn-primario btn-chico">Validar</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  {% include "ui/estado_vacio.html" with mensaje="No hay desvíos sin revisar" icono="circle-check" %}
+{% endif %}

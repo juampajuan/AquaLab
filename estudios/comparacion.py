@@ -140,6 +140,8 @@ class HistorialPrueba:
     franja: Franja | None = None
     variacion: Variacion | None = None
     fuera_de_franja: bool = False
+    # Validados de muestras previas a la del último, misma unidad, en orden; los usa la US 8.2.
+    anteriores: tuple = ()
 
     @property
     def validados(self):
@@ -363,4 +365,5 @@ def historial_de_prueba(prueba, puntos, asignacion_ref, estudio):
             variacion(ultimo, anteriores, presencia=presencia, unidad=unidad) if ultimo else None
         ),
         fuera_de_franja=ultimo is not None and ultimo.evaluacion == Evaluacion.FUERA_DE_NORMA,
+        anteriores=tuple(anteriores),
     )

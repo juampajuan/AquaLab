@@ -21,6 +21,19 @@
         <div>No cumplen: {% for asignacion in no_cumplen %}{{ asignacion.prueba.codigo }} · {{ asignacion.prueba.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}. Se validarán igual.</div>
       </div>
     {% endif %}
+    {% if elegidas_con_desvio %}
+      <div class="aviso aviso-advertencia mb-6" role="alert" data-desvios-elegidos>
+        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+        <div>
+          <p>{% with n=elegidas_con_desvio|length m=elegidas|length %}{{ n }} de los {{ m }} resultados elegidos {% if n == 1 %}tiene desvío: quedará revisado{% else %}tienen desvío: quedarán revisados{% endif %} al validar.{% endwith %}</p>
+          <ul class="mt-2 space-y-1">
+            {% for asignacion in elegidas_con_desvio %}
+              <li><strong>{{ asignacion.prueba.codigo }} · {{ asignacion.prueba.nombre }}</strong>: observado {{ asignacion.deteccion.observado }}, {{ asignacion.deteccion.etiqueta_referencia|lower }} {{ asignacion.deteccion.referencia_texto }} — {{ asignacion.observacion_escrita|default:"Sin observación" }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
     <div class="tarjeta overflow-hidden">
       <dl class="resumen p-6" data-componente="resumen">
         {% include "ui/dato.html" with etiqueta="Estudio" valor=estudio %}
@@ -55,9 +68,10 @@
       {# Evita el doble envío sin deshabilitar los botones: deshabilitados no envían la acción. #}
       <form method="post" class="flex flex-wrap gap-3" onsubmit="if (this.dataset.enviado) return false; this.dataset.enviado = '1';">
         {% csrf_token %}
-        {% for asignacion, validar, resultado in form.filas %}
+        {% for asignacion, validar, resultado, observacion in form.filas %}
           {% if validar.value %}<input type="hidden" name="{{ validar.html_name }}" value="on">{% endif %}
           <input type="hidden" name="{{ resultado.html_name }}" value="{{ resultado.value }}">
+          {% if observacion %}<input type="hidden" name="{{ observacion.html_name }}" value="{{ observacion.value|default:'' }}">{% endif %}
         {% endfor %}
         <button type="submit" name="accion" value="confirmar" class="btn btn-primario">
           {% include "ui/icono.html" with nombre="check" clase="size-4" %} Validar resultados

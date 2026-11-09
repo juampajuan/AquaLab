@@ -478,3 +478,33 @@ def test_falla_no_deja_nada(catalogo, entorno):
 def test_comando_viejo_eliminado():
     with pytest.raises(CommandError, match="Unknown command"):
         call_command("cargar_demo_us51")
+
+
+# Desvíos sin revisar que deja el guion (US 8.2): solo el Cloruro de Pozo 2 del mes actual. Si un
+# cambio del guion suma otro, actualizar este número y quickstart.md.
+CANTIDAD_PENDIENTES_DEMO = 1
+
+
+def test_desvios_de_la_demo(cargada):
+    """US 8.2: el Cloruro de Pozo 2 del mes actual es un desvío sin revisar y el del mes
+    anterior quedó revisado al validarse, con observación."""
+    from estudios import desvios
+
+    ahora, _ = cargada
+    actual = estudio(ahora, "Pozo 2", 0).pruebas_asignadas.get(prueba__codigo="CL-")
+    pendientes = desvios.pendientes()
+    (pozo_2,) = [p for p in pendientes if p.asignacion.pk == actual.pk]
+    assert pozo_2.deteccion.valor == Decimal(430)
+    assert pozo_2.deteccion.referencia == Decimal(124)
+    assert pozo_2.deteccion.porcentaje == Decimal("246.8")
+
+    anterior = estudio(ahora, "Pozo 2", 1).pruebas_asignadas.get(prueba__codigo="CL-")
+    validacion = anterior.validaciones.get(anulada=False)
+    assert validacion.observacion == "Se repitió la medición: el valor es correcto."
+    assert validacion.desvio_referencia == Decimal(121)
+    assert validacion.desvio_umbral == Decimal(30)
+    assert validacion.validada_por.email == f"bioquimico@{demo.DOMINIO}"
+
+    # Los pendientes son solo de estudios que el guion deja sin validar del todo.
+    assert {p.estudio.estado for p in pendientes} <= {EstadoEstudio.EN_PROCESO}
+    assert len(pendientes) == CANTIDAD_PENDIENTES_DEMO

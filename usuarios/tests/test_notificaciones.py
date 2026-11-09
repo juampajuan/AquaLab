@@ -421,6 +421,7 @@ def envio_falla(monkeypatch):
         raise SMTPException("servidor caído")
 
     monkeypatch.setattr("usuarios.notificaciones.send_mail", falla)
+    monkeypatch.setattr("config.correos.CorreoAquaLab.send", falla)  # aprobación (con HTML)
 
 
 def fallas_registradas(caplog):
@@ -492,3 +493,24 @@ def test_correos_no_incluyen_contrasena_ni_datos_de_terceros(
     for mensaje in mailoutbox:
         if mensaje.to != ["admin@lab.com"]:
             assert "admin@lab.com" not in mensaje.body
+
+
+def test_aprobacion_con_html_y_logo(
+    cliente_admin, usuario_pendiente, django_capture_on_commit_callbacks, mailoutbox
+):
+    from django.template.loader import render_to_string
+
+    from config.tests.utiles_correos import comprobar_html_con_logo
+
+    with django_capture_on_commit_callbacks(execute=True):
+        aplicar_accion(cliente_admin, "aprobar_cuentas", [usuario_pendiente])
+
+    (aviso,) = con_asunto(mailoutbox, ASUNTO_APROBACION)
+    html = comprobar_html_con_logo(aviso)
+    enlace = url_absoluta(reverse("usuarios:login"))
+    assert f'href="{enlace}"' in html
+    usuario_pendiente.refresh_from_db()
+    assert aviso.body == render_to_string(
+        "usuarios/correos/aprobacion_cuerpo.txt",
+        {"usuario": usuario_pendiente, "enlace_login": enlace},
+    )
