@@ -34,7 +34,7 @@ creación) y US3 (P2, combinar, paginar y limpiar).
 - Textos y mensajes en **español**, copiados **literalmente** de `contracts/buscar-estudio-ui.md`.
 - Diseño de SCRUM-67 con `templates/ui/`; preferir clases ya usadas en `clientes/historial.html`
   (`grid gap-4 sm:grid-cols-3`, `btn btn-primario`, `btn btn-secundario`); si se agrega alguna,
-  recompilar el CSS (T016).
+  recompilar el CSS (T017).
 - Pantalla de **solo lectura** (GET). `informes:listar` y `BuscarEstudioForm` **no cambian**.
 - Textos de ayuda en el formulario (`help_text`), nunca en los modelos (US 9.1).
 - Commits en Conventional Commits en español: `feat(estudios): SCRUM-74 – Filtrar estudios por estado y fecha`.
@@ -55,7 +55,7 @@ creación) y US3 (P2, combinar, paginar y limpiar).
 el formulario del historial (research R1); los tests actuales del historial lo cubren.
 
 - [ ] T002 En `estudios/forms.py` agregar, antes de `BuscarEstudioForm`, las constantes `FORMATOS_FECHA = ["%Y-%m-%d", "%d/%m/%Y"]` y `MENSAJE_FECHA_INVALIDA = "Ingresá una fecha válida (dd/mm/aaaa)."` y la clase base `FiltrosEstudioForm(forms.Form)` movida desde `clientes.forms.HistorialClienteForm`, con su docstring adaptado: campos `desde` y `hasta` (`forms.DateField(required=False, input_formats=FORMATOS_FECHA, widget=SelectorFecha(), error_messages={"invalid": MENSAJE_FECHA_INVALIDA})`, `SelectorFecha` importado de `muestras.forms`), `estado` (`forms.ChoiceField(required=False, choices=[("", "Todos"), *EstadoEstudio.choices], error_messages={"invalid_choice": "Elegí un estado de la lista."})`, `EstadoEstudio` de `.models`), etiquetas por defecto «Desde», «Hasta» y «Estado»; el `__init__` que pone `form-select`/`form-control` en `widget.attrs["class"]`, el `full_clean` que suma ` is-invalid` a los campos con error y el `clean` que con `desde > hasta` hace `add_error("desde", "La fecha desde no puede ser posterior a la fecha hasta.")`. Agregar la constante `CAMPOS_FILTRO = ("desde", "hasta", "estado")`.
-- [ ] T003 En `clientes/forms.py` reemplazar el cuerpo de `HistorialClienteForm` por `class HistorialClienteForm(FiltrosEstudioForm)` que solo fija las etiquetas en `__init__` (`self.fields["desde"].label = "Ingreso desde"`, `"hasta"` → «Ingreso hasta», `"estado"` → «Estado del estudio»), conservando el docstring sobre «Limpiar filtros». Importar `FiltrosEstudioForm` desde `estudios.forms`; borrar de `clientes/forms.py` las constantes `FORMATOS_FECHA` y `MENSAJE_FECHA_INVALIDA` y los imports que queden sin uso (`EstadoEstudio`, `SelectorFecha`) solo si ya no se usan en el archivo (verificar con `ruff check`). En `clientes/views.py` reemplazar `CAMPOS_FILTRO_HISTORIAL` por `CAMPOS_FILTRO` importado de `estudios.forms` (o dejar el alias). Verificar que `clientes/historial.html` y los labels no cambian.
+- [ ] T003 En `clientes/forms.py` reemplazar el cuerpo de `HistorialClienteForm` por `class HistorialClienteForm(FiltrosEstudioForm)` que solo fija las etiquetas en `__init__` (`self.fields["desde"].label = "Ingreso desde"`, `"hasta"` → «Ingreso hasta», `"estado"` → «Estado del estudio»), conservando el docstring sobre «Limpiar filtros». Importar `FiltrosEstudioForm` desde `estudios.forms`; borrar de `clientes/forms.py` las constantes `FORMATOS_FECHA` y `MENSAJE_FECHA_INVALIDA` y los imports que queden sin uso (`EstadoEstudio`, `SelectorFecha`) solo si ya no se usan en el archivo (verificar con `ruff check`). En `clientes/views.py` reemplazar `CAMPOS_FILTRO_HISTORIAL` por `CAMPOS_FILTRO` importado de `estudios.forms` y borrar la constante local (sin alias). Verificar que `clientes/historial.html` y los labels no cambian.
 - [ ] T004 Ejecutar `docker compose exec web pytest clientes estudios informes`: todo en verde sin tocar tests (el refactor no cambia comportamiento).
 
 **Checkpoint**: el historial funciona igual con la base compartida.
@@ -79,11 +79,12 @@ el formulario del historial (research R1); los tests actuales del historial lo c
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] En `estudios/busqueda.py` agregar `filtro_estado_fechas(desde=None, hasta=None, estado="")` que devuelve un `Q`: `Q()` vacío sin criterios; con `estado`, `Q(estado=estado)`. (Las fechas se completan en T012.) Docstring: «Filtro por estado actual y días completos de `fecha_creacion` en la zona del laboratorio (SCRUM-74).»
+- [ ] T007 [US1] En `estudios/busqueda.py` agregar `filtro_estado_fechas(desde=None, hasta=None, estado="")` que devuelve un `Q`: `Q()` vacío sin criterios; con `estado`, `Q(estado=estado)`. (Las fechas se completan en T014.) Docstring: «Filtro por estado actual y días completos de `fecha_creacion` en la zona del laboratorio (SCRUM-74).»
 - [ ] T008 [US1] En `estudios/forms.py` agregar `class FiltrarEstudiosForm(BuscarEstudioForm, FiltrosEstudioForm)` con docstring «Búsqueda de estudios con filtros (SCRUM-74): texto (US 5.2), estado y fecha de creación». En `__init__`, después de `super().__init__`, fijar `self.fields["desde"].help_text = self.fields["hasta"].help_text = "Fecha en que se creó el estudio. El día indicado se incluye."`. Verificar que `q` sigue con sus validaciones (`clean_q`) y que `BuscarEstudioForm` no cambió (lo usa `informes:listar`).
-- [ ] T009 [US1] En `estudios/views.py` cambiar `buscar` para usar `FiltrarEstudiosForm(request.GET or None)`: armar `qs` como hoy; si el formulario es válido, filtrar por `filtro_busqueda(q)` (si hay `q`) y por `filtro_estado_fechas(**{c: form.cleaned_data[c] for c in CAMPOS_FILTRO})`; si no es válido, `q = ""` y **no filtrar** (research R3). Siempre paginar (`page_obj` nunca es `None`). Contexto: `form`, `page_obj`, `q`, `parametros` (`request.GET.copy()`, `pop("page", None)`, `urlencode()`), `hay_filtros` (`any(request.GET.get(c, "").strip() for c in ("q", *CAMPOS_FILTRO))`) `filtrado` (formulario válido con `q` o algún valor de `CAMPOS_FILTRO`) y `con_filtros` (formulario válido con algún valor de `CAMPOS_FILTRO`; lo usa el estado vacío de T016). Quitar el import de `BuscarEstudioForm` si queda sin uso.
-- [ ] T010 [US1] En `estudios/templates/estudios/buscar.html`, debajo de la fila de búsqueda, agregar `<div class="mt-4 grid gap-4 sm:grid-cols-3">` con `{% include "ui/campo.html" with field=form.estado %}`, `form.desde` y `form.hasta`. Encabezado del listado: «encontrado(s)» si `filtrado`, «registrado(s)» si no. Paginación: `{% include "ui/paginacion.html" with parametros=parametros %}` (reemplaza el `with qq=q|urlencode`). Mantener el campo `q`, su ayuda y sus errores como están.
-- [ ] T011 [US1] Ejecutar `docker compose exec web pytest estudios/tests/test_filtros.py -k "estado or muestra_los_filtros or invalidos"`: pasan los de estado; los inválidos de fecha pasan por la validación del formulario.
+- [ ] T009 [US1] En `estudios/views.py` cambiar `buscar` para usar `FiltrarEstudiosForm(request.GET or None)`: armar `qs` como hoy; si el formulario es válido, filtrar por `filtro_busqueda(q)` (si hay `q`) y por `filtro_estado_fechas(**{c: form.cleaned_data[c] for c in CAMPOS_FILTRO})`; si no es válido, `q = ""` y **no filtrar** (research R3). Siempre paginar (`page_obj` nunca es `None`). Contexto: `form`, `page_obj`, `q`, `parametros` (`request.GET.copy()`, `pop("page", None)`, `urlencode()`), `hay_filtros` (`any(request.GET.get(c, "").strip() for c in ("q", *CAMPOS_FILTRO))`) `filtrado` (formulario válido con `q` o algún valor de `CAMPOS_FILTRO`) y `con_filtros` (formulario válido con algún valor de `CAMPOS_FILTRO`; lo usa el estado vacío de T017). Quitar el import de `BuscarEstudioForm` si queda sin uso.
+- [ ] T010 [US1] En `estudios/tests/test_consulta.py` ajustar los tres tests de texto inválido (research R3): `test_busqueda_un_caracter_no_numerico_rechazada`, `test_busqueda_numero_invalido_o_fuera_de_rango_muestra_error` y `test_busqueda_supera_longitud_maxima_muestra_error` siguen verificando el mensaje y pasan a verificar `resp.context["page_obj"].paginator.count == 4` (listado completo, sin filtrar) en lugar de `page_obj is None`.
+- [ ] T011 [US1] En `estudios/templates/estudios/buscar.html`, debajo de la fila de búsqueda, agregar `<div class="mt-4 grid gap-4 sm:grid-cols-3">` con `{% include "ui/campo.html" with field=form.estado %}`, `form.desde` y `form.hasta`. Encabezado del listado: «encontrado(s)» si `filtrado`, «registrado(s)» si no. Paginación: `{% include "ui/paginacion.html" with parametros=parametros %}` (reemplaza el `with qq=q|urlencode`). Mantener el campo `q`, su ayuda y sus errores como están.
+- [ ] T012 [US1] Ejecutar `docker compose exec web pytest estudios/tests/test_filtros.py estudios/tests/test_consulta.py -k "estado or muestra_los_filtros or invalidos or busqueda"` y `docker compose exec web pytest estudios/tests/test_consulta.py`: pasan los de estado y la búsqueda de US 5.2 sigue en verde.
 
 **Checkpoint**: US1 funciona sola (MVP).
 
@@ -97,7 +98,7 @@ el formulario del historial (research R1); los tests actuales del historial lo c
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T012 [P] [US2] En `estudios/tests/test_filtros.py` agregar un fixture `estudios_por_fecha` con tres estudios creados (con `estudio_creado(..., creado=...)`) el 1, el 5 y el 10 de noviembre de 2026 a las 12:00 en `zoneinfo.ZoneInfo(settings.TIME_ZONE)`, y los tests:
+- [ ] T013 [US2] En `estudios/tests/test_filtros.py` agregar un fixture `estudios_por_fecha` con tres estudios creados (con `estudio_creado(..., creado=...)`) el 1, el 5 y el 10 de noviembre de 2026 a las 12:00 en `zoneinfo.ZoneInfo(settings.TIME_ZONE)`, y los tests:
   - `test_filtro_fechas` parametrizado (US2 Esc. 1–2, FR-003): `desde=2026-11-05, hasta=2026-11-10` → 5 y 10; solo `desde=2026-11-05` → 5 y 10; solo `hasta=2026-11-05` → 1 y 5; `desde=hasta=2026-11-05` → 5; formato `05/11/2026` también aceptado.
   - `test_bordes_del_dia_en_zona_del_laboratorio` (Edge cases): un estudio creado el 05/11/2026 00:00:00 local y otro el 05/11/2026 23:59:59 local entran con `desde=hasta=2026-11-05`; uno del 04/11 23:59:59 y otro del 06/11 00:00:00 local, no. (23:59 local del 05/11 es 02:59 UTC del 06/11: el test prueba que el día se cuenta en la zona del laboratorio, no en UTC.)
   - `test_filtro_estado_fechas_vacio`: `Estudio.objects.filter(filtro_estado_fechas())` devuelve todos.
@@ -105,8 +106,8 @@ el formulario del historial (research R1); los tests actuales del historial lo c
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] En `estudios/busqueda.py` completar `filtro_estado_fechas` (research R2): con `desde`, `Q(fecha_creacion__gte=inicio_del_dia(desde))`; con `hasta`, `Q(fecha_creacion__lt=inicio_del_dia(hasta + timedelta(days=1)))`, donde `inicio_del_dia(fecha)` es `timezone.make_aware(datetime.combine(fecha, time.min), timezone.get_default_timezone())` (zona `TIME_ZONE` del laboratorio). No usar `__date` ni `float`.
-- [ ] T014 [US2] Ejecutar `docker compose exec web pytest estudios/tests/test_filtros.py`: US1 y US2 en verde.
+- [ ] T014 [US2] En `estudios/busqueda.py` completar `filtro_estado_fechas` (research R2): con `desde`, `Q(fecha_creacion__gte=inicio_del_dia(desde))`; con `hasta`, `Q(fecha_creacion__lt=inicio_del_dia(hasta + timedelta(days=1)))`, donde `inicio_del_dia(fecha)` es `timezone.make_aware(datetime.combine(fecha, time.min), timezone.get_default_timezone())` (zona `TIME_ZONE` del laboratorio). No usar `__date` ni `float`.
+- [ ] T015 [US2] Ejecutar `docker compose exec web pytest estudios/tests/test_filtros.py`: US1 y US2 en verde.
 
 **Checkpoint**: US1 y US2 funcionan juntas e independientes.
 
@@ -120,17 +121,17 @@ el formulario del historial (research R1); los tests actuales del historial lo c
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T015 [P] [US3] En `estudios/tests/test_filtros.py` agregar:
+- [ ] T016 [US3] En `estudios/tests/test_filtros.py` agregar:
   - `test_filtros_combinados_con_texto` (US3 Esc. 1, FR-004): dos muestras de clientes distintos (crear un segundo `Cliente`, `Origen` y `Muestra` con `numero_pi=200002`) y estudios en distintos estados y fechas; `q=<nombre del cliente>` + `estado` + rango → solo el que cumple los tres.
-  - `test_paginacion_conserva_filtros` (US3 Esc. 2, FR-006): 21 estudios «En proceso» creados el 05/11/2026 y 2 «Pendiente de análisis»; con `q="Muestra test"`, `estado=en_proceso`, `desde=2026-11-01`, `hasta=2026-11-30`, el enlace «Siguiente» contiene `q=Muestra+test`, `estado=en_proceso`, `desde=2026-11-01`, `hasta=2026-11-30` y `page=2` sin `page` duplicado; la página 2 tiene 1 estudio y el formulario conserva los valores.
+  - `test_paginacion_conserva_filtros` (US3 Esc. 2, FR-006): 21 estudios «En proceso» creados el 05/11/2026 y 2 «Pendiente de análisis»; con `q="Muestra test"`, `estado=en_proceso`, `desde=2026-11-01`, `hasta=2026-11-30`, el enlace «Siguiente» contiene `q=Muestra+test`, `estado=en_proceso`, `desde=2026-11-01`, `hasta=2026-11-30` y `page=2` sin `page` duplicado; la página 2 tiene 1 estudio y el formulario conserva los valores; con los mismos filtros y `page=99` se muestra la última página (Edge cases).
   - `test_limpiar_filtros` parametrizado (US3 Esc. 3, FR-007): con `{"q": "Muestra"}`, `{"estado": "en_proceso"}`, `{"desde": "2026-11-01"}` y `{"desde": "x"}` (inválido) el HTML tiene un enlace «Limpiar filtros» a `reverse("estudios:buscar")`; sin parámetros (y con `{"q": "  "}`) no lo tiene; en ningún caso aparece «Ver todos».
   - `test_sin_coincidencias_con_filtros` (US3 Esc. 4, FR-008): con estudios pero un rango sin ninguno → «Ningún estudio coincide con la búsqueda y los filtros.» con la acción «Limpiar filtros»; sin estudios y sin parámetros → «Aún no hay estudios registrados.»; solo `q="zzzz"` → «No se encontraron estudios para «zzzz».» (sin cambios).
+  - `test_consultas_no_dependen_de_los_filtros` (SC-003): con 25 estudios, `CaptureQueriesContext(connection)` cuenta las consultas de `GET estudios:buscar` sin parámetros y con `q`, `estado`, `desde` y `hasta`; las dos cuentas son iguales (los filtros no agregan consultas ni N+1).
   - `test_formulario_comparte_reglas_con_historial` (FR-010): `HistorialClienteForm` es subclase de `FiltrosEstudioForm`, y para `{"desde": "2026-11-10", "hasta": "2026-11-01"}` y `{"estado": "otro"}` los dos formularios (`FiltrarEstudiosForm`, `HistorialClienteForm`) dan los mismos mensajes de error.
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] En `estudios/templates/estudios/buscar.html`: reemplazar `{% if q %}…Ver todos…{% endif %}` por `{% if hay_filtros %}<a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">{% include "ui/icono.html" with nombre="x" clase="size-4" %} Limpiar filtros</a>{% endif %}`; en los estados vacíos (`{% url 'estudios:buscar' as url_buscar %}`): si hay resultados → la tabla; si no y `con_filtros` → `{% include "ui/estado_vacio.html" with icono="search" mensaje="Ningún estudio coincide con la búsqueda y los filtros." accion_texto="Limpiar filtros" accion_url=url_buscar %}`; si no y `q` → el mensaje actual «No se encontraron estudios para «…».»; si no → «Aún no hay estudios registrados.». Si alguna clase de Tailwind es nueva, recompilar con `docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify` y commitear `static/css/aqualab.css`.
-- [ ] T017 [US3] En `estudios/tests/test_consulta.py` ajustar los tres tests de texto inválido (research R3): `test_busqueda_un_caracter_no_numerico_rechazada`, `test_busqueda_numero_invalido_o_fuera_de_rango_muestra_error` y `test_busqueda_supera_longitud_maxima_muestra_error` siguen verificando el mensaje y pasan a verificar `resp.context["page_obj"].paginator.count == 4` (listado completo, sin filtrar) en lugar de `page_obj is None`.
+- [ ] T017 [US3] En `estudios/templates/estudios/buscar.html`: reemplazar `{% if q %}…Ver todos…{% endif %}` por `{% if hay_filtros %}<a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">{% include "ui/icono.html" with nombre="x" clase="size-4" %} Limpiar filtros</a>{% endif %}`; en los estados vacíos (`{% url 'estudios:buscar' as url_buscar %}`): si hay resultados → la tabla; si no y `con_filtros` → `{% include "ui/estado_vacio.html" with icono="search" mensaje="Ningún estudio coincide con la búsqueda y los filtros." accion_texto="Limpiar filtros" accion_url=url_buscar %}`; si no y `q` → el mensaje actual «No se encontraron estudios para «…».»; si no → «Aún no hay estudios registrados.». Si alguna clase de Tailwind es nueva, recompilar con `docker compose exec -u "$(id -u):$(id -g)" web tailwindcss -i static/src/aqualab.css -o static/css/aqualab.css --minify` y commitear `static/css/aqualab.css`.
 - [ ] T018 [US3] Ejecutar `docker compose exec web pytest estudios clientes informes`: todo en verde.
 
 **Checkpoint**: las tres historias funcionan juntas; historial e informes sin cambios.
@@ -152,7 +153,7 @@ el formulario del historial (research R1); los tests actuales del historial lo c
 - **Setup (Phase 1)**: sin dependencias.
 - **Foundational (Phase 2)**: depende de T001; bloquea todas las historias (la base `FiltrosEstudioForm`).
 - **US1 (Phase 3)**: depende de la fase 2. Crea el formulario, la vista y la fila de filtros que usan US2 y US3.
-- **US2 (Phase 4)**: depende de US1 (T007–T010: misma función, formulario y vista); solo completa las fechas en `filtro_estado_fechas`.
+- **US2 (Phase 4)**: depende de US1 (T007–T011: misma función, formulario y vista); solo completa las fechas en `filtro_estado_fechas`.
 - **US3 (Phase 5)**: depende de US1 (vista y template); independiente de US2 salvo `test_paginacion_conserva_filtros`, que usa fechas.
 - **Polish (Phase 6)**: después de las historias.
 
@@ -163,15 +164,7 @@ el formulario del historial (research R1); los tests actuales del historial lo c
 
 ### Parallel Opportunities
 
-- T012 (tests de US2) y T015 (tests de US3) se pueden escribir en paralelo una vez terminada US1, aunque comparten `estudios/tests/test_filtros.py` (secciones distintas al final del archivo).
-- T019 (`CLAUDE.md`) en paralelo con T020.
-
-## Parallel Example: después de US1
-
-```text
-Task: "T012 [US2] tests de fechas en estudios/tests/test_filtros.py"
-Task: "T015 [US3] tests de combinar/paginar/limpiar en estudios/tests/test_filtros.py"
-```
+- T013 y T016 comparten `estudios/tests/test_filtros.py`: se escriben en serie. T019 (`CLAUDE.md`) se puede hacer en paralelo con T020.
 
 ## Implementation Strategy
 

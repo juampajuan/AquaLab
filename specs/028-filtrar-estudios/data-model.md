@@ -18,6 +18,6 @@ la búsqueda por texto (`estudios/busqueda.py:filtro_busqueda`) no cambian.
 
 | Formulario | Campos | Reglas |
 |---|---|---|
-| `estudios.forms.FiltrosEstudioForm` (nuevo, base) | `desde`, `hasta` (`DateField`, `AAAA-MM-DD` o `DD/MM/AAAA`, `SelectorFecha`), `estado` (`ChoiceField`: «Todos» + `EstadoEstudio.choices`), todos opcionales | `desde > hasta` → error en `desde`; fecha inválida → «Ingresá una fecha válida (dd/mm/aaaa).»; estado desconocido → «Elegí un estado de la lista.»; campos con error llevan `is-invalid` |
+| `estudios.forms.FiltrosEstudioForm` (nuevo, base) | `desde`, `hasta` (`DateField`, `AAAA-MM-DD` o `DD/MM/AAAA`, `SelectorFecha`), `estado` (`ChoiceField`: «Todos» + `EstadoEstudio.choices`), todos opcionales; etiquetas por defecto «Desde», «Hasta», «Estado» | `desde > hasta` → error en `desde`; fecha inválida → «Ingresá una fecha válida (dd/mm/aaaa).»; estado desconocido → «Elegí un estado de la lista.»; campos con error llevan `is-invalid` |
 | `clientes.forms.HistorialClienteForm` (US 3.3) | hereda la base | solo cambia las etiquetas; comportamiento idéntico |
-| `estudios.forms.FiltrarEstudiosForm` (nuevo) | `BuscarEstudioForm` (`q`) + la base | etiquetas «Desde», «Hasta», «Estado»; ayuda en `desde`/`hasta` |
+| `estudios.forms.FiltrarEstudiosForm` (nuevo) | `BuscarEstudioForm` (`q`) + la base | usa las etiquetas de la base; agrega la ayuda en `desde`/`hasta` |

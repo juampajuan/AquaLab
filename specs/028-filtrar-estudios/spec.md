@@ -57,7 +57,7 @@ Como empleado del laboratorio, combino el estado, el rango de fechas y el texto 
 1. **Dados** el texto, el estado y el rango, **cuando** se aplican juntos, **entonces** se listan solo los estudios que cumplen todos.
 2. **Dados** filtros aplicados con más de una página de resultados, **cuando** se pasa de página, **entonces** los filtros (incluido el texto) se conservan.
 3. **Dado** algún filtro o texto recibido, válido o no, **cuando** se muestra la pantalla, **entonces** ofrece «Limpiar filtros», que vuelve al listado completo sin texto ni filtros; sin filtros ni texto no se ofrece.
-4. **Dados** filtros que no dejan ningún estudio, **cuando** se aplican, **entonces** el sistema indica que ningún estudio coincide con la búsqueda y los filtros (distinto del aviso de que aún no hay estudios registrados) y ofrece limpiarlos.
+4. **Dados** filtros (con estado o fechas) que no dejan ningún estudio, **cuando** se aplican, **entonces** el sistema indica que ningún estudio coincide con la búsqueda y los filtros (distinto del aviso de que aún no hay estudios registrados) y ofrece limpiarlos.
 
 ---
 
@@ -81,7 +81,7 @@ Como empleado del laboratorio, combino el estado, el rango de fechas y el texto 
 - **FR-005**: Una fecha inválida, un «Desde» posterior a «Hasta» o un estado fuera de la lista MUST indicarse junto al campo correspondiente, y con cualquier valor inválido el listado MUST mostrarse sin filtrar (mismo comportamiento que el historial del cliente, US 3.3).
 - **FR-006**: La paginación MUST conservar el texto y todos los filtros al cambiar de página.
 - **FR-007**: Cuando se recibió texto o algún filtro, válido o no, la pantalla MUST ofrecer «Limpiar filtros», que vuelve al listado completo sin texto ni filtros; reemplaza al actual «Ver todos».
-- **FR-008**: Si hay estudios registrados pero ninguno coincide, MUST indicarse que ningún estudio coincide con la búsqueda y los filtros; si no hay estudios registrados, se mantiene el aviso actual.
+- **FR-008**: Si hay algún filtro de estado o fecha aplicado y ningún estudio coincide, MUST indicarse que ningún estudio coincide con la búsqueda y los filtros, con la acción «Limpiar filtros»; con solo texto se mantiene el aviso actual («No se encontraron estudios para «…».»), y si no hay estudios registrados, el aviso actual de que aún no hay estudios.
 - **FR-009**: El orden, las columnas, el tamaño de página (20) y los enlaces del listado MUST mantenerse como hoy (US 5.2).
 - **FR-010**: Los filtros MUST verse y comportarse como los del historial del cliente (US 3.3): mismos campos de fecha, mismos mensajes de error y misma acción «Limpiar filtros».
 

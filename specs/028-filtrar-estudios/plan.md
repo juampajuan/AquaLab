@@ -106,6 +106,7 @@ campos que se leen en [data-model.md](./data-model.md).
 | FR-005 / R3 — texto inválido: mensaje + listado completo | 3 tests ajustados (`page_obj` ya no es `None`) | `estudios/tests/test_consulta.py` |
 | FR-010 — mismos mensajes y comportamiento que el historial; el historial no cambia | `test_formulario_comparte_reglas_con_historial` + tests actuales del historial | `estudios/tests/test_filtros.py`, `clientes/tests/test_historial*.py` |
 | Consulta — `filtro_estado_fechas` sin criterios no restringe | `test_filtro_estado_fechas_vacio` | `estudios/tests/test_filtros.py` |
+| SC-003 — consultas constantes con filtros | `test_consultas_no_dependen_de_los_filtros` | `estudios/tests/test_filtros.py` |
 | US 9.1 — ayuda en Desde/Hasta (`aria-describedby` → `_helptext`) | `test_ayuda_en_fechas` | `estudios/tests/test_filtros.py` |
 | `informes:listar` sin cambios | tests actuales de `informes` | `informes/tests/` |
 
