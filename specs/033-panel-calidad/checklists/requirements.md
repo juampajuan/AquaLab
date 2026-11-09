@@ -36,3 +36,5 @@
 - Decisiones tomadas por defecto (ver Assumptions): fecha de validación vigente para ubicar el
   resultado en el período; «sin límite comparable» fuera del cálculo; variación en puntos
   porcentuales; tope de 10 por lista. Conviene confirmarlas en `/speckit-clarify`.
+- 2026-11-09: el usuario confirmó las decisiones por defecto y ajustó el ranking de pruebas (mínimo
+  de 5 evaluados, constante en un solo lugar; filas «30,0 % (30 de 100)»).

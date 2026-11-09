@@ -6,6 +6,12 @@
 
 **Status**: Draft
 
+## Clarifications
+
+### Session 2026-11-09
+
+- Q: ¿Qué pruebas entran al ranking y cómo se muestra cada fila? → A: Solo las que tienen al menos 5 resultados evaluados en el período (constante definida en un solo lugar); cada fila muestra el porcentaje junto a la cantidad, «30,0 % (30 de 100)». Las demás decisiones por defecto (fecha de validación vigente, «sin límite comparable» fuera del cálculo, variación en puntos porcentuales, tope de 10, cliente inactivo sin enlace) quedan confirmadas.
+
 **Input**: User description: "US 8.4 (SCRUM-76) – Panel de calidad del agua. Como bioquímico quiero ver el nivel de cumplimiento de los resultados para detectar qué pruebas, clientes u orígenes presentan más incumplimientos. Criterios: (1) En el Dashboard, sección «Calidad», para el período elegido (el mismo selector de la 8.3). (2) Porcentaje de resultados fuera de norma sobre el total de resultados validados del período. (3) Pruebas que más fallan: ranking con el porcentaje de incumplimiento de cada una. (4) Cumplimiento por tipo de vertido (agua, cloacal, canal). (5) Clientes y orígenes con más incumplimientos, con enlace al historial del cliente (US 3.3) y a la comparación histórica del origen (US 8.1). (6) Se usa la evaluación guardada en la Validacion vigente («cumple» o «fuera de norma»); no se recalcula. Mismo permiso que el Dashboard. Notas técnicas: reutilizar el período y el patrón de informes/tablero.py y dashboard.js de la 8.3, y Chart.js de static/vendor."
 
 ## User Scenarios & Testing *(mandatory)*
@@ -47,26 +53,33 @@ el porcentaje coincide; cambiar a «Últimos 6 meses» y verificar el nuevo valo
 ### User Story 2 - Pruebas que más fallan (Priority: P1)
 
 Como bioquímico, veo un ranking de las pruebas con incumplimientos en el período, ordenadas por su
-porcentaje de incumplimiento, para saber qué parámetros conviene vigilar.
+porcentaje de incumplimiento, para saber qué parámetros conviene vigilar. Solo entran las pruebas con
+al menos 5 resultados evaluados en el período, para que una prueba con 1 de 1 no encabece el ranking.
 
 **Why this priority**: Es el primer «qué» que pide la historia y el más útil para el laboratorio.
 
 **Independent Test**: Con la demo cargada y «Últimos 6 meses», verificar que cada prueba del ranking
-muestra sus resultados fuera de norma, sus evaluados y el porcentaje contados a mano, y que el orden
-es el de FR-007.
+muestra sus resultados fuera de norma, sus evaluados y el porcentaje contados a mano, que el orden
+es el de FR-007 y que no aparece ninguna prueba con menos de 5 evaluados.
 
 **Acceptance Scenarios**:
 
-1. **Dado** Cloruro con 2 de 10 resultados fuera de norma y E. coli con 1 de 4, **cuando** se
-   muestra el ranking, **entonces** E. coli (25,0 %) aparece antes que Cloruro (20,0 %), cada una con
-   su código, nombre, «fuera de norma / evaluados» y porcentaje.
-2. **Dadas** dos pruebas con el mismo porcentaje, **cuando** se ordenan, **entonces** va primero la
+1. **Dado** Cloruro con 2 de 10 resultados fuera de norma y E. coli con 2 de 8, **cuando** se
+   muestra el ranking, **entonces** E. coli aparece antes que Cloruro, cada una con su código, nombre
+   y el porcentaje junto a la cantidad: «25,0 % (2 de 8)» y «20,0 % (2 de 10)».
+2. **Dada** una prueba con 3 de 4 resultados fuera de norma (menos de 5 evaluados), **cuando** se
+   muestra el ranking, **entonces** no aparece, aunque su porcentaje sea el más alto; con 5 evaluados
+   ya entra.
+3. **Dadas** dos pruebas con el mismo porcentaje, **cuando** se ordenan, **entonces** va primero la
    que tiene más resultados fuera de norma y, si también empatan, por código.
-3. **Dada** una prueba sin resultados fuera de norma en el período, **cuando** se muestra el
+4. **Dada** una prueba sin resultados fuera de norma en el período, **cuando** se muestra el
    ranking, **entonces** no aparece.
-4. **Dadas** más de 10 pruebas con incumplimientos, **cuando** se muestra el ranking, **entonces**
+5. **Dado** que ninguna prueba llega al mínimo de evaluados con algún incumplimiento, **cuando** se
+   muestra el ranking, **entonces** indica «Ninguna prueba con al menos 5 resultados evaluados tuvo
+   incumplimientos en el período».
+6. **Dadas** más de 10 pruebas con incumplimientos, **cuando** se muestra el ranking, **entonces**
    se ven las 10 primeras y se indica cuántas más hay.
-5. **Dado** el ranking, **cuando** se muestra, **entonces** tiene un gráfico de barras y su tabla
+7. **Dado** el ranking, **cuando** se muestra, **entonces** tiene un gráfico de barras y su tabla
    «Ver datos» con los mismos valores.
 
 ---
@@ -118,7 +131,8 @@ comparación histórica de ese origen (US 8.1).
    los orígenes (con su cliente) con al menos un resultado fuera de norma, con el mismo formato y
    orden que los clientes; hasta 10, indicando cuántos más hay.
 5. **Dado** un origen de la lista, **cuando** se toca su enlace, **entonces** se abre la comparación
-   histórica de ese origen (US 8.1).
+   histórica de ese origen (US 8.1); si su cliente está inactivo, aparece marcado como tal y sin
+   enlace (la comparación histórica solo admite clientes activos).
 6. **Dado** que no hay incumplimientos en el período, **cuando** se muestran las listas,
    **entonces** indican «No hubo resultados fuera de norma en el período».
 
@@ -160,9 +174,12 @@ comparación histórica de ese origen (US 8.1).
   8.3), en puntos porcentuales, con flecha, signo y color: una suba es desfavorable (rojo), una baja
   favorable (verde), sin cambio gris. Sin evaluados en alguno de los dos períodos, MUST mostrarse
   «sin datos previos» (anterior) o ningún porcentaje (actual).
-- **FR-006**: La sección MUST mostrar el ranking de pruebas con al menos un resultado fuera de norma
-  en el período, cada una con código, nombre, fuera de norma, evaluados y porcentaje de
-  incumplimiento.
+- **FR-006**: La sección MUST mostrar el ranking de pruebas con al menos 5 resultados evaluados y al
+  menos uno fuera de norma en el período. Cada fila MUST mostrar código, nombre y el porcentaje de
+  incumplimiento junto a la cantidad, con el formato «20,0 % (2 de 10)» (fuera de norma de
+  evaluados).
+- **FR-006a**: El mínimo de resultados evaluados para entrar al ranking (5) MUST definirse en un solo
+  lugar del sistema; ninguna otra parte MUST repetir el valor.
 - **FR-007**: El ranking de pruebas MUST ordenarse por porcentaje de incumplimiento (mayor primero),
   luego por cantidad fuera de norma y luego por código, y MUST mostrar hasta 10 pruebas indicando
   cuántas más hay.
@@ -174,8 +191,8 @@ comparación histórica de ese origen (US 8.1).
   cantidad fuera de norma, luego por porcentaje y luego por nombre, hasta 10 de cada uno indicando
   cuántos más hay. Cada origen MUST mostrar también su cliente.
 - **FR-010**: Cada cliente activo MUST enlazar a su historial (US 3.3); un cliente inactivo MUST
-  aparecer marcado como tal y sin enlace. Cada origen MUST enlazar a su comparación histórica (US
-  8.1).
+  aparecer marcado como tal y sin enlace. Cada origen de un cliente activo MUST enlazar a su
+  comparación histórica (US 8.1); el de un cliente inactivo, marcado y sin enlace.
 - **FR-011**: El ranking de pruebas y el cumplimiento por tipo de vertido MUST tener gráfico y su
   tabla «Ver datos» con los mismos valores, para quien no puede ver el gráfico.
 - **FR-012**: La sección MUST verse solo con el permiso del Dashboard («Puede ver el dashboard»); no
@@ -225,9 +242,12 @@ comparación histórica de ese origen (US 8.1).
   criterio 6 nombra solo «cumple» y «fuera de norma») y se informa aparte para que no se pierda.
 - **Variación contra el período anterior**: se agrega por coherencia con los indicadores de la 8.3;
   en puntos porcentuales porque el indicador ya es un porcentaje.
-- **Ranking de pruebas por porcentaje** (lo pide el criterio 3); **clientes y orígenes por
-  cantidad** («con más incumplimientos», criterio 5). Solo aparecen los que tienen al menos un
-  incumplimiento; tope de 10 por lista para que el panel no se alargue.
+- **Ranking de pruebas por porcentaje** (lo pide el criterio 3), solo con las pruebas que tienen al
+  menos 5 resultados evaluados en el período (ajuste del usuario, 2026-11-09: evita que una prueba
+  con 1 de 1 encabece el ranking); cada fila con porcentaje y cantidad, «20,0 % (2 de 10)».
+  **Clientes y orígenes por cantidad** («con más incumplimientos», criterio 5), sin mínimo. Solo
+  aparecen los que tienen al menos un incumplimiento; tope de 10 por lista para que el panel no se
+  alargue.
 - **Superusuario**: como en la 8.3, ve la sección por tener todos los permisos.
 - **Interfaz**: diseño de SCRUM-67 con los componentes de `templates/ui/`; mismo patrón de tarjetas,
   gráficos y «Ver datos» de la 8.3.
