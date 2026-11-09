@@ -9,7 +9,7 @@ from muestras.models import Muestra
 from pruebas.limites import evaluar, limites_aplicables
 from pruebas.models import Prueba
 
-from . import calculo
+from . import calculo, desvios
 from .catalogo import CatalogoNoDisponible, configuracion_bloqueada
 from .models import (
     EstadoEstudio,
@@ -367,9 +367,10 @@ class ResultadoValidacion:
     validadas: list = field(default_factory=list)  # pruebas
     omitidas: list = field(default_factory=list)  # pares (prueba, motivo)
     finalizado: bool = False
+    con_desvio: list = field(default_factory=list)  # pruebas validadas con desvío (US 8.2)
 
 
-def validar_resultados(estudio_pk, elegidas, usuario):
+def validar_resultados(estudio_pk, elegidas, usuario, observaciones=None):
     """Valida los resultados `{asignacion_pk: valor_visto}` del estudio (US 6.4).
 
     Cada prueba se valida solo si sigue Cargada con el resultado que vio el bioquímico
@@ -377,6 +378,10 @@ def validar_resultados(estudio_pk, elegidas, usuario):
     catálogo para el tipo de vertido de la muestra y la evaluación queda guardada en la
     `Validacion`. Con todas las pruebas Completadas el estudio pasa a Finalizado. Bloquea el
     estudio y después las pruebas, el mismo orden que la carga y la corrección.
+
+    Validar una prueba con desvío lo revisa (US 8.2): bajo el bloqueo se vuelve a evaluar el
+    desvío y, si lo hay, la validación guarda la mediana y el umbral usados (constancia), junto
+    con la observación de `observaciones` (`{asignacion_pk: texto}`, opcional).
     """
     if not usuario.is_authenticated or not usuario.is_active:
         raise ValidarResultadosError("Se requiere una sesión activa.")
@@ -403,6 +408,14 @@ def validar_resultados(estudio_pk, elegidas, usuario):
             .filter(pk__in=elegidas)
             .order_by("prueba__codigo", "pk")
         )
+        asignaciones = list(asignaciones)
+        regla = desvios.regla()
+        evaluacion = desvios.evaluar_estudio(
+            estudio,
+            [a for a in asignaciones if a.estado == EstadoPruebaEstudio.CARGADA],
+            regla,
+        )
+        observaciones = observaciones or {}
         # Los pk que no son del estudio se ignoran.
         for asignacion in asignaciones:
             prueba = asignacion.prueba
@@ -416,6 +429,8 @@ def validar_resultados(estudio_pk, elegidas, usuario):
                 resultado.omitidas.append((prueba, "cambió mientras se revisaba"))
                 continue
             limites = limites_aplicables(prueba, estudio.muestra.tipo_vertido)
+            deteccion = evaluacion.get(asignacion.pk)
+            con_desvio = isinstance(deteccion, desvios.Deteccion)
             Validacion.objects.create(
                 asignacion=asignacion,
                 validada_por=usuario,
@@ -424,7 +439,12 @@ def validar_resultados(estudio_pk, elegidas, usuario):
                 norma=limites.norma,
                 origen_limites=limites.origen,
                 evaluacion=evaluar(asignacion.resultado.valor, limites),
+                observacion=(observaciones.get(asignacion.pk) or "").strip()[:500],
+                desvio_referencia=deteccion.referencia if con_desvio else None,
+                desvio_umbral=regla.umbral if con_desvio else None,
             )
+            if con_desvio:
+                resultado.con_desvio.append(prueba)
             calculo.cambiar_estado(asignacion, EstadoPruebaEstudio.COMPLETADA)
             resultado.validadas.append(prueba)
         if (

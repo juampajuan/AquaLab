@@ -29,6 +29,15 @@
           </div>
         {% endif %}
       {% endwith %}
+      {% if desvios_en_pantalla %}
+        <div class="aviso aviso-advertencia mb-6" role="alert" data-desvios-en-pantalla>
+          {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+          <div class="flex flex-wrap items-center gap-1.5">
+            {% if desvios_en_pantalla == 1 %}1 prueba con desvío{% else %}{{ desvios_en_pantalla }} pruebas con desvío{% endif %}: revisá la medición antes de validarla. Al validarla, el desvío queda revisado con tu observación.
+            {% include "ui/ayuda.html" with texto="Hay desvío si el resultado sin validar difiere en "|add:regla_desvio|add:"." id="ayuda-desvios-validacion" etiqueta="Desvío" %}
+          </div>
+        </div>
+      {% endif %}
       <form method="post" novalidate>
         {% csrf_token %}
         {% include "ui/errores_form.html" %}
@@ -45,15 +54,23 @@
                 </tr>
               </thead>
               <tbody>
-                {% for asignacion, validar, resultado in form.filas %}
-                  <tr>
+                {% for asignacion, validar, resultado, observacion in form.filas %}
+                  <tr{% if observacion %} class="bg-fondo-hundido"{% endif %}>
                     <td class="text-center">
                       {{ validar }}{{ resultado }}
                       <label for="{{ validar.id_for_label }}" class="sr-only">{{ validar.label }}</label>
                     </td>
                     <td class="font-semibold text-marino">{{ asignacion.prueba.codigo }}</td>
                     <td>{{ asignacion.prueba.nombre }}</td>
-                    <td class="numeros font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</td>
+                    <td>
+                      <span class="numeros font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
+                      {% if observacion %}
+                        {% include "estudios/desvio.html" with deteccion=asignacion.deteccion validacion=None codigo=asignacion.prueba.codigo %}
+                        {% include "ui/campo.html" with field=observacion clase="mt-2" %}
+                      {% elif asignacion.historial_insuficiente %}
+                        <span class="block text-xs text-tinta-suave">Historial insuficiente para detectar desvíos</span>
+                      {% endif %}
+                    </td>
                     <td>{% include "estudios/evaluacion.html" %}</td>
                   </tr>
                 {% endfor %}

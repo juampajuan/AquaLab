@@ -48,7 +48,7 @@ def usuario(django_user_model, email, *grupos):
 
 @pytest.fixture
 def origen(cliente_a):
-    return Origen.objects.create(cliente=cliente_a, nombre="Pozo de desvíos")
+    return Origen.objects.create(cliente=cliente_a, nombre="Pozo de control")
 
 
 @pytest.fixture
@@ -230,3 +230,149 @@ def test_consultas_dashboard_y_lista(
     tres = contar()
     # Crece por estudio (una evaluación cada uno), no por prueba.
     assert dos - uno == tres - dos
+
+
+# --- Validación con desvíos (US 3, FR-007 y FR-008) ------------------------------------------
+
+
+def url_validar(estudio):
+    return reverse("estudios:validar_resultados", args=[estudio.pk])
+
+
+@pytest.fixture
+def tres_pruebas(origen, estudio_en_origen):
+    """Sin validar: Cloruro 160 y pH 9,5 con desvío; Conductividad 500 sin desvío."""
+    for n in range(3):
+        estudio_en_origen(origen, dia(n), 300801 + n, {"CL-": "10", "PH": "7.0", "COND": "500"})
+    return estudio_en_origen(
+        origen, dia(3), 300810, {"CL-": "16", "PH": "9.5", "COND": "500"}, validar_todo=False
+    )
+
+
+def envio(estudio, accion, codigos, observaciones=None):
+    datos = {"accion": accion}
+    for codigo in codigos:
+        asignacion = asignacion_de(estudio, codigo)
+        datos[f"validar_{asignacion.pk}"] = "on"
+        datos[f"resultado_{asignacion.pk}"] = str(asignacion.resultado.valor)
+    for codigo, texto in (observaciones or {}).items():
+        datos[f"observacion_{asignacion_de(estudio, codigo).pk}"] = texto
+    return datos
+
+
+def test_validacion_destaca_desvios(con_desvio, cliente_bioquimico):
+    html = html_de(cliente_bioquimico.get(url_validar(con_desvio)))
+    assert "1 prueba con desvío" in html
+    cl = asignacion_de(con_desvio, "CL-")
+    cloruro = fila(html, "CL-")
+    assert 'data-desvio="pendiente"' in cloruro and "Observado 160 mg/l" in cloruro
+    assert "Mediana de los últimos 3: 110 mg/l" in cloruro
+    assert desvios.enlace_comparacion(con_desvio, "CL-") in cloruro
+    assert f'name="observacion_{cl.pk}"' in cloruro
+    assert "Queda guardada en la validación de esta prueba" in cloruro
+    ph = fila(html, "PH")
+    assert "observacion_" not in ph and "data-desvio" not in ph
+
+
+def test_historial_insuficiente_en_validacion(origen, estudio_en_origen, cliente_bioquimico):
+    estudio_en_origen(origen, dia(0), 300801, {"CL-": "10"})
+    estudio_en_origen(origen, dia(1), 300802, {"CL-": "11"})
+    actual = estudio_en_origen(origen, dia(2), 300803, {"CL-": "40"}, validar_todo=False)
+    html = html_de(cliente_bioquimico.get(url_validar(actual)))
+    assert "Historial insuficiente para detectar desvíos" in fila(html, "CL-")
+    assert "prueba con desvío" not in html
+
+
+def test_confirmacion_cuenta_desvios_elegidos(tres_pruebas, cliente_bioquimico):
+    datos = envio(tres_pruebas, "revisar", ["CL-", "PH", "COND"], {"CL-": "Repetida"})
+    html = html_de(cliente_bioquimico.post(url_validar(tres_pruebas), datos))
+    assert "2 de los 3 resultados elegidos tienen desvío: quedarán revisados al validar." in html
+    assert "Repetida" in html and "Sin observación" in html
+    cl = asignacion_de(tres_pruebas, "CL-")
+    assert f'name="observacion_{cl.pk}" value="Repetida"' in html
+
+    una = envio(tres_pruebas, "revisar", ["CL-", "COND"])
+    html = html_de(cliente_bioquimico.post(url_validar(tres_pruebas), una))
+    assert "1 de los 2 resultados elegidos tiene desvío: quedará revisado al validar." in html
+
+
+def test_observacion_larga_no_avanza(con_desvio, cliente_bioquimico):
+    datos = envio(con_desvio, "revisar", ["CL-"], {"CL-": "x" * 501})
+    respuesta = cliente_bioquimico.post(url_validar(con_desvio), datos)
+    assert "estudios/validar_resultados.html" in [t.name for t in respuesta.templates]
+    cl = asignacion_de(con_desvio, "CL-")
+    assert f'id="id_observacion_{cl.pk}_error"' in html_de(respuesta)
+
+
+def test_editar_conserva_observacion(con_desvio, cliente_bioquimico):
+    datos = envio(con_desvio, "editar", ["CL-"], {"CL-": "Repetida"})
+    html = html_de(cliente_bioquimico.post(url_validar(con_desvio), datos))
+    inicio = html.index(f'name="observacion_{asignacion_de(con_desvio, "CL-").pk}"')
+    assert "Repetida" in html[inicio : html.index("</textarea>", inicio)]
+
+
+def test_confirmar_avisa_revisados(con_desvio, cliente_bioquimico):
+    datos = envio(con_desvio, "confirmar", ["CL-", "PH"], {"CL-": "Repetida"})
+    respuesta = cliente_bioquimico.post(url_validar(con_desvio), datos, follow=True)
+    html = html_de(respuesta)
+    assert "Se revisó 1 desvío: CL-." in html
+    validacion = Validacion.objects.get(asignacion=asignacion_de(con_desvio, "CL-"), anulada=False)
+    assert validacion.observacion == "Repetida" and validacion.con_desvio
+    assert 'data-desvio="revisado"' in fila(html, "CL-")
+
+
+def test_permisos(con_desvio, django_user_model):
+    from django.urls import NoReverseMatch
+
+    with pytest.raises(NoReverseMatch):
+        reverse("estudios:revisar_desvio", args=[con_desvio.pk, 1])
+    tecnico = usuario(django_user_model, "tecnico-validar@ejemplo.com")
+    assert tecnico.get(url_validar(con_desvio)).status_code == 403
+
+
+# --- No bloquea ni sale al cliente (US 4, FR-012) --------------------------------------------
+
+
+def test_no_aparece_en_informe_pdf_ni_correo(con_desvio, bioquimico, cliente_bioquimico):
+    from informes.contenido import armar_contenido
+    from informes.envios import mensaje_de_correo
+    from informes.servicios import emitir_informe
+
+    validar_url = url_validar(con_desvio)
+    datos = envio(con_desvio, "confirmar", ["CL-", "PH"], {"CL-": "Observación interna"})
+    # follow=True consume el mensaje «Se revisó 1 desvío» en el detalle del estudio.
+    cliente_bioquimico.post(validar_url, datos, follow=True)
+    con_desvio.refresh_from_db()
+
+    textos = [
+        html_de(cliente_bioquimico.get(reverse("informes:vista_previa", args=[con_desvio.pk]))),
+        html_de(cliente_bioquimico.get(reverse("informes:control", args=[con_desvio.pk]))),
+        str(armar_contenido(con_desvio)),
+    ]
+    informe = emitir_informe(con_desvio.pk, bioquimico)
+    textos += [
+        html_de(cliente_bioquimico.get(reverse("informes:ver", args=[con_desvio.pk]))),
+        html_de(cliente_bioquimico.get(reverse("informes:imprimir", args=[con_desvio.pk]))),
+        mensaje_de_correo(informe, "cliente@ejemplo.com", b"%PDF").body,
+    ]
+    for texto in textos:
+        assert "esvío" not in texto
+        assert "Observación interna" not in texto
+
+
+# --- Regla configurable (US 5) ---------------------------------------------------------------
+
+
+def test_cambio_de_regla_conserva_constancia(con_desvio, cliente_bioquimico, settings):
+    datos = envio(con_desvio, "confirmar", ["CL-"])
+    cliente_bioquimico.post(url_validar(con_desvio), datos)
+    settings.AQUALAB_DESVIOS = {"umbral": "50", "cantidad": 3}
+    html = html_de(cliente_bioquimico.get(reverse("estudios:detalle", args=[con_desvio.pk])))
+    assert "umbral 30 %" in fila(html, "CL-")
+
+
+def test_texto_regla_vigente(con_desvio, cliente_bioquimico, settings):
+    settings.AQUALAB_DESVIOS = {"umbral": "40", "cantidad": 3}
+    regla = "más de un 40 % respecto de la mediana de los últimos 3 resultados validados del origen"
+    for url in (reverse("estudios:desvios"), url_validar(con_desvio)):
+        assert regla in html_de(cliente_bioquimico.get(url))

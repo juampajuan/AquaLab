@@ -288,3 +288,52 @@ def test_consultas_evaluar_estudio(origen, estudio_en_origen):
         return len(consultas.captured_queries)
 
     assert contar(pocos, 300310) == contar(muchos, 300311)
+
+
+# --- Regla configurable (US 5) ---------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_regla_configurable(origen, historia_cloruro, estudio_en_origen, settings):
+    actual = estudio_en_origen(origen, dia(3), 300310, {"CL-": "16"}, validar_todo=False)
+    settings.AQUALAB_DESVIOS = {"umbral": "50", "cantidad": 3}
+    assert evaluacion_de(actual) is None
+    settings.AQUALAB_DESVIOS = {"umbral": "30", "cantidad": 2}
+    deteccion = evaluacion_de(actual)
+    assert deteccion.referencia == Decimal(115) and deteccion.cantidad == 2
+    assert desvios.regla() == Regla(Decimal("30"), 2)
+
+
+@pytest.mark.parametrize(
+    "configuracion",
+    [
+        {"umbral": "0", "cantidad": 3},
+        {"umbral": "-5", "cantidad": 3},
+        {"umbral": "30", "cantidad": 0},
+        {"umbral": "treinta", "cantidad": 3},
+        {"cantidad": 3},
+        {},
+    ],
+)
+def test_regla_invalida(settings, configuracion):
+    from django.core.exceptions import ImproperlyConfigured
+
+    settings.AQUALAB_DESVIOS = configuracion
+    with pytest.raises(ImproperlyConfigured):
+        desvios.regla()
+
+
+def test_regla_en_un_solo_lugar():
+    """Solo `estudios/desvios.py` lee la configuración de la regla (FR-003)."""
+    from pathlib import Path
+
+    raiz = Path(__file__).resolve().parents[2]
+    lectores = sorted(
+        str(ruta.relative_to(raiz))
+        for app in ("estudios", "informes")
+        for ruta in (raiz / app).rglob("*.py")
+        if "tests" not in ruta.parts
+        and "migrations" not in ruta.parts
+        and "AQUALAB_DESVIOS" in ruta.read_text(encoding="utf-8")
+    )
+    assert lectores == ["estudios/desvios.py"]

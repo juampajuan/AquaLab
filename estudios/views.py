@@ -624,6 +624,13 @@ def mensaje_validadas(estudio, validadas):
     return f"Se validaron {len(validadas)} resultados del estudio {estudio.pk}: {codigos}."
 
 
+def mensaje_revisados(pruebas):
+    codigos = ", ".join(p.codigo for p in pruebas)
+    if len(pruebas) == 1:
+        return f"Se revisó 1 desvío: {codigos}."
+    return f"Se revisaron {len(pruebas)} desvíos: {codigos}."
+
+
 @permission_required("estudios.validar_resultados", raise_exception=True)
 def validar_resultados(request, pk):
     estudio = get_object_or_404(Estudio.objects.select_related("muestra"), pk=pk)
@@ -657,22 +664,31 @@ def validar_resultados(request, pk):
         )
     filas = list(asignaciones)
     evaluar_asignaciones(estudio, filas)
+    marcar_desvios(estudio, filas)
     if accion == "marcar_todas":
         form = ValidarResultadosForm(filas=filas, marcar_todas=True)
     else:
         form = ValidarResultadosForm(request.POST or None, filas=filas)
-    contexto = {"estudio": estudio, "form": form}
+    contexto = {
+        "estudio": estudio,
+        "form": form,
+        "desvios_en_pantalla": len(form.con_desvio()),
+        "regla_desvio": desvios.texto_regla(desvios.regla()),
+    }
     if accion in (None, "editar", "marcar_todas") or not form.is_valid():
         return render(request, "estudios/validar_resultados.html", contexto)
     if accion == "revisar":
         elegidas = form.resumen()
         sin_validar = estudio.pruebas_asignadas.exclude(estado=EstadoPruebaEstudio.COMPLETADA)
         contexto["elegidas"] = elegidas
+        contexto["elegidas_con_desvio"] = form.elegidas_con_desvio()
         contexto["no_cumplen"] = [a for a in elegidas if a.evaluacion == Evaluacion.FUERA_DE_NORMA]
         contexto["finalizara"] = sin_validar.count() == len(elegidas)
         return render(request, "estudios/validar_resultados_confirmar.html", contexto)
     try:
-        resultado = servicios.validar_resultados(estudio.pk, form.elegidas(), request.user)
+        resultado = servicios.validar_resultados(
+            estudio.pk, form.elegidas(), request.user, observaciones=form.observaciones()
+        )
     except ValidarResultadosError as exc:
         messages.error(request, str(exc))
     except DatabaseError:
@@ -680,6 +696,8 @@ def validar_resultados(request, pk):
     else:
         if resultado.validadas:
             messages.success(request, mensaje_validadas(estudio, resultado.validadas))
+        if resultado.con_desvio:
+            messages.success(request, mensaje_revisados(resultado.con_desvio))
         if resultado.finalizado:
             messages.success(request, f"El estudio {estudio.pk} quedó Finalizado.")
         for prueba, motivo in resultado.omitidas:

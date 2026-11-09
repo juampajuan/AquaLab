@@ -17,12 +17,14 @@ def cargar(estudio, usuario, valores=None, **por_nombre):
     )
 
 
-def validar(estudio, usuario, *codigos):
-    """Valida por código las pruebas del estudio con el valor de su resultado vigente (US 6.4)."""
+def validar(estudio, usuario, *codigos, observaciones=None):
+    """Valida por código las pruebas del estudio con el valor de su resultado vigente (US 6.4).
+    `observaciones` va por código: `{"CL-": "Repetida"}` (US 8.2)."""
     from estudios.servicios import validar_resultados
 
     elegidas = {}
     for codigo in codigos:
         asignacion = asignacion_de(estudio, codigo)
         elegidas[asignacion.pk] = str(asignacion.resultado.valor)
-    return validar_resultados(estudio.pk, elegidas, usuario)
+    por_pk = {asignacion_de(estudio, c).pk: t for c, t in (observaciones or {}).items()}
+    return validar_resultados(estudio.pk, elegidas, usuario, observaciones=por_pk)

@@ -14,7 +14,7 @@ ningún comando para datos previos: el desvío se calcula al mostrar.
 ## Escenarios
 
 1. **Pendiente en el dashboard** (US 2): `/informes/dashboard/` → «Desvíos sin revisar» muestra el
-   contador e incluye Cloruro de «Pozo 2» (430 mg/l, mediana 124 mg/l, ▲ +246,8 %).
+   contador («1 pendiente»: el guion deja solo este) con Cloruro de «Pozo 2» (430 mg/l, mediana 124 mg/l, ▲ +246,8 %).
    «Comparación histórica» abre la 8.1 de ese estudio con solo Cloruro; «Validar» abre la
    validación del estudio.
 2. **Marca en el estudio** (US 1): «Ver estudio» → la fila de Cloruro tiene la marca «Desvío» (las
