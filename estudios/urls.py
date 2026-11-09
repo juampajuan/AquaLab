@@ -12,6 +12,7 @@ urlpatterns = [
     path("tipos/<int:pk>/editar/", views_tipos.tipos_editar, name="tipos_editar"),
     path("tipos/confirmar/", views_tipos.tipos_confirmar, name="tipos_confirmar"),
     path("buscar/", views.buscar, name="buscar"),
+    path("comparacion/", views.comparacion, name="comparacion"),
     path("crear/", views.crear, name="crear"),
     path("crear/confirmar/", views.confirmar, name="confirmar"),
     path("<int:pk>/", views.detalle, name="detalle"),

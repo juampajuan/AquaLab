@@ -3,10 +3,10 @@ from django.contrib.auth.decorators import permission_required
 from django.core import signing
 from django.core.paginator import Paginator
 from django.db import DatabaseError
-from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
+from django.views.decorators.http import require_GET
 
 from muestras.models import Muestra
 from pruebas.limites import (
@@ -18,6 +18,7 @@ from pruebas.limites import (
 )
 
 from . import calculo, servicios
+from . import comparacion as comparacion_historica
 from .busqueda import filtro_busqueda, filtro_estado_fechas
 from .catalogo import CatalogoNoDisponible
 from .confirmaciones import cargar_token, descartar, pendientes, preparar
@@ -30,7 +31,7 @@ from .forms import (
     FiltrarEstudiosForm,
     ValidarResultadosForm,
 )
-from .models import EstadoPruebaEstudio, Estudio, OrigenLimites, Validacion
+from .models import EstadoPruebaEstudio, Estudio, OrigenLimites, validaciones_vigentes
 from .servicios import (
     CargarMedicionesError,
     CorregirMedicionesError,
@@ -153,6 +154,70 @@ def confirmar(request):
         messages.error(request, "No se pudo crear el estudio. Intentá nuevamente.")
         return resumen(request, b) if b else redirect("estudios:crear")
     return exito(request, estudio)
+
+
+def datos_graficos(historiales):
+    """Datos de los gráficos de la comparación (contracts/comparacion-ui.md): todo como texto,
+    sin `float`; los puntos con otra unidad no se dibujan."""
+
+    def borde(valor):
+        return None if valor is None else str(valor)
+
+    return {
+        "pruebas": [
+            {
+                "codigo": h.prueba.codigo,
+                "nombre": h.prueba.nombre,
+                "unidad": h.unidad,
+                "presencia": h.presencia,
+                "franja": {
+                    "min": borde(h.franja.minimo),
+                    "max": borde(h.franja.maximo),
+                    "comparable": h.franja.comparable,
+                },
+                "puntos": [
+                    {
+                        "etiqueta": f"{p.fecha_muestreo:%d/%m/%Y} · PI {p.numero_pi}",
+                        "valor": str(p.valor),
+                        "texto": p.texto,
+                        "validado": p.validado,
+                        "referencia": p.es_referencia,
+                    }
+                    for p in h.puntos
+                    if not p.otra_unidad
+                ],
+            }
+            for h in historiales
+            if h.tiene_historial
+        ]
+    }
+
+
+@permission_required("informes.ver_dashboard", raise_exception=True)
+@require_GET
+def comparacion(request):
+    """Comparación histórica de un origen (US 8.1), desde un estudio. Solo lectura."""
+    estudio = None
+    origen = None
+    historiales = []
+    if request.GET.get("estudio"):
+        estudio = get_object_or_404(
+            Estudio.objects.select_related("muestra__cliente", "muestra__origen"),
+            pk=request.GET["estudio"] if request.GET["estudio"].isdigit() else None,
+        )
+        origen = estudio.muestra.origen
+        historiales = comparacion_historica.comparar(origen, estudio=estudio)
+    return render(
+        request,
+        "estudios/comparacion.html",
+        {
+            "estudio": estudio,
+            "origen": origen,
+            "cliente": origen.cliente if origen else None,
+            "historiales": historiales,
+            "datos_graficos": datos_graficos(historiales),
+        },
+    )
 
 
 def buscar(request):
@@ -457,14 +522,6 @@ TIPOS_EVALUACION = {
     Evaluacion.FUERA_DE_NORMA: "danger",
     Evaluacion.SIN_LIMITE: "neutral",
 }
-
-
-def validaciones_vigentes():
-    return Prefetch(
-        "validaciones",
-        queryset=Validacion.objects.filter(anulada=False).select_related("validada_por"),
-        to_attr="validaciones_vigentes",
-    )
 
 
 def validable(asignacion):

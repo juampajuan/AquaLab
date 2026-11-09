@@ -1,0 +1,32 @@
+{% load ui %}
+{# Tarjeta de una prueba en la comparación histórica (US 8.1). Parámetros: historial, origen. #}
+{% with prueba=historial.prueba %}
+  <section class="tarjeta p-5" data-prueba="{{ prueba.codigo }}" aria-labelledby="titulo-{{ prueba.codigo }}">
+    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 id="titulo-{{ prueba.codigo }}" class="text-base font-semibold text-marino">{{ prueba.nombre }} ({{ prueba.codigo }})</h2>
+      <p class="text-xs text-tinta-suave">
+        Unidad: {{ historial.unidad|unidad }} · <span data-franja>{{ historial.franja.texto }}</span>
+      </p>
+    </div>
+
+    {% if historial.tiene_historial %}
+      {% include "estudios/variacion_historica.html" %}
+      <div class="relative mt-4 h-64">
+        <canvas id="grafico-{{ prueba.codigo }}" role="img" aria-label="Evolución de {{ prueba.nombre }} en {{ origen.nombre }}"></canvas>
+      </div>
+    {% else %}
+      <div class="rounded-lg border border-borde px-4 py-3 text-sm" data-sin-historial>
+        {% if historial.referencia %}
+          <p>
+            <span class="font-semibold">Este estudio:</span>
+            <span class="numeros">{{ historial.referencia.texto }}</span>{% if not historial.presencia %} {{ historial.unidad|unidad }}{% endif %}
+            ({% if historial.referencia.validado %}Validado{% else %}Sin validar{% endif %})
+          </p>
+        {% elif historial.sin_resultado %}
+          <p>Sin resultado en este estudio</p>
+        {% endif %}
+        <p class="text-tinta-suave">Sin historial para comparar</p>
+      </div>
+    {% endif %}
+  </section>
+{% endwith %}

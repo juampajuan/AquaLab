@@ -2,7 +2,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.db import models
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.db.models.functions import Lower
 
 from pruebas.limites import Evaluacion
@@ -266,3 +266,13 @@ class Validacion(models.Model):
     def __str__(self):
         estado = " (anulada)" if self.anulada else ""
         return f"{self.asignacion}: {self.get_evaluacion_display()}{estado}"
+
+
+def validaciones_vigentes(camino=""):
+    """`Prefetch` de la validación vigente de cada asignación en `validaciones_vigentes` (lista
+    con una o ninguna). `camino` es el prefijo hasta la asignación (p. ej. "asignacion__")."""
+    return Prefetch(
+        f"{camino}validaciones",
+        queryset=Validacion.objects.filter(anulada=False).select_related("validada_por"),
+        to_attr="validaciones_vigentes",
+    )

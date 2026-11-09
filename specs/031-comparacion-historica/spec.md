@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-09
 
-**Status**: Draft
+**Status**: Aprobada (2026-11-09)
 
 **Input**: User description: "SCRUM-60 – 8.1 Comparación histórica por origen. Como bioquímico quiero ver la evolución de los resultados de un mismo origen a lo largo del tiempo para detectar variaciones que requieran revisión. La asociación de la muestra a un origen ya está resuelta (US 4.1). Criterios: (1) Desde el detalle de un estudio, y desde el dashboard eligiendo cliente y origen, se accede a la comparación histórica del origen. (2) Por cada prueba se muestra un gráfico de evolución con los resultados de ese origen, ordenados por fecha de muestreo, con la franja del límite permitido dibujada. (3) Se pueden ver varias pruebas a la vez y elegir cuáles mostrar. (4) Por cada prueba se indica la variación del último resultado contra el anterior y contra el promedio de los anteriores. (5) El historial usa solo resultados validados de la misma prueba; el resultado del estudio actual aparece destacado en el gráfico aunque todavía no esté validado, para poder revisarlo antes de validar; las pruebas sin historial muestran el valor actual sin gráfico. (6) Se indica la variación pero no se valida ni se rechaza ningún resultado automáticamente; es solo para el laboratorio, el cliente no lo ve. Notas técnicas: reutilizar Chart.js de static/vendor y el patrón de dashboard.js de la US 8.3; el cálculo del historial y de la variación debe quedar en una función reutilizable, porque la 8.2 (SCRUM-61, desvíos) lo va a usar. Diferencial pedido por la profesora: no recortar."
 

@@ -302,3 +302,61 @@ def estudio_de(muestra, empleado, catalogo):
         return crear_estudio(datos, empleado)
 
     return crear
+
+
+@pytest.fixture
+def estudio_en_origen(empleado, catalogo):
+    """Estudio con resultados en un origen y fecha de muestreo dados (US 8.1).
+
+    `crear(origen, fecha_muestreo, numero_pi, {"CL-": "40"})` registra la muestra, crea un estudio
+    con esas pruebas, carga las mediciones y, con `validar=True`, valida todas con los servicios
+    reales. El que valida es `usuario` o, por defecto, el mismo `empleado` como bioquímico.
+    """
+    from estudios.models import TipoEstudio
+    from estudios.servicios import crear_estudio
+    from estudios.tests.utiles import cargar, validar
+    from muestras.models import Muestra, TipoVertido
+    from pruebas.models import Prueba
+
+    def crear(
+        origen,
+        fecha_muestreo,
+        numero_pi,
+        valores,
+        *,
+        validar_todo=True,
+        usuario=None,
+        tipo_vertido=TipoVertido.AGUA,
+    ):
+        muestra = Muestra.objects.create(
+            numero_pi=numero_pi,
+            nombre=f"Muestra {numero_pi}",
+            cliente=origen.cliente,
+            origen=origen,
+            fecha_muestreo=fecha_muestreo,
+            fecha_ingreso=fecha_muestreo,
+            sitio_extraccion="Sitio test",
+            tipo_vertido=tipo_vertido,
+            registrada_por=empleado,
+        )
+        tipo = TipoEstudio.objects.create(nombre=f"Tipo de comparación {uuid.uuid4()}")
+        tipo.pruebas.set(Prueba.objects.filter(codigo__in=list(valores)))
+        estudio = crear_estudio(
+            {
+                "clave": str(uuid.uuid4()),
+                "muestra": muestra.pk,
+                "tipo": tipo.pk,
+                "version": tipo.version,
+            },
+            empleado,
+        )
+        medidos = {c: v for c, v in valores.items() if v is not None}
+        if medidos:
+            cargar(estudio, empleado, medidos)
+            if validar_todo:
+                validador = usuario or en_grupo_bioquimicos(empleado)
+                validar(estudio, validador, *medidos)
+        estudio.refresh_from_db()
+        return estudio
+
+    return crear
