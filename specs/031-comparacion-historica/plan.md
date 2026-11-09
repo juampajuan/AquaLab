@@ -28,9 +28,9 @@ dependencias nuevas: ni adaptador de fechas ni plugin de anotaciones, R7).
 **Storage**: PostgreSQL 16. Sin cambios de esquema.
 
 **Testing**: pytest + pytest-django con las fixtures de `estudios/tests/conftest.py`
-(`catalogo`, `estudio_de`, `muestra`, `bioquimico`, `cliente_bioquimico`) más una fixture nueva
-`resultado_en(origen, fecha_muestreo, codigo, valor, validar=True)` que pasa por los servicios
-reales (`cargar_mediciones`, `validar_resultados`), la demo de SCRUM-78
+(`catalogo`, `empleado`, `bioquimico`, `cliente_bioquimico`), los helpers
+`estudios.tests.utiles.cargar` y `validar` (servicios reales) más una fábrica nueva
+`estudio_en_origen(origen, fecha_muestreo, numero_pi, valores, validar=True)`, la demo de SCRUM-78
 (`cargar_demo` con `ahora` fijo) para los casos integrales, `node --test` para la lógica de
 datasets del JS (`estudios/tests/js/`), ruff.
 
