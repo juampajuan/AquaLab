@@ -25,7 +25,7 @@ GRUPO_DESTINATARIOS = "Bioquímicos"
 
 
 def avisar_desvios(estudio, codigos):
-    """Agenda un correo por cada desvío entre las pruebas `codigos` del estudio. El llamador tiene
+    """Agenda los correos de cada desvío entre las pruebas `codigos` del estudio. El llamador tiene
     el estudio bloqueado dentro de su transacción. No escribe nada."""
     asignaciones = list(
         estudio.pruebas_asignadas.select_related("prueba", "resultado").filter(
@@ -64,7 +64,8 @@ def datos_del_aviso(estudio, asignacion, deteccion, regla):
 
 
 def enviar(avisos):
-    """Un correo por aviso a los bioquímicos activos. Nunca relanza una falla."""
+    """Un correo por aviso y por bioquímico activo, cada uno con un solo destinatario en «Para»
+    (nadie ve las direcciones de los otros). Nunca relanza una falla."""
     destinatarios = list(
         get_user_model()
         .objects.filter(is_active=True, groups__name=GRUPO_DESTINATARIOS)
@@ -76,17 +77,20 @@ def enviar(avisos):
         logger.warning("Desvío sin bioquímicos activos para avisar (%d avisos)", len(avisos))
         return
     for aviso in avisos:
-        try:
-            armar_correo(
-                asunto_de("estudios/correos/desvio_asunto.txt", aviso),
-                "estudios/correos/desvio_cuerpo.txt",
-                "estudios/correos/desvio_cuerpo.html",
-                aviso,
-                to=destinatarios,
-            ).send()
-        except Exception:
-            logger.exception(
-                "No se pudo enviar el aviso de desvío de %s (N° PI %s)",
-                aviso["prueba"],
-                aviso["numero_pi"],
-            )
+        asunto = asunto_de("estudios/correos/desvio_asunto.txt", aviso)
+        for destinatario in destinatarios:
+            try:
+                armar_correo(
+                    asunto,
+                    "estudios/correos/desvio_cuerpo.txt",
+                    "estudios/correos/desvio_cuerpo.html",
+                    aviso,
+                    to=[destinatario],
+                ).send()
+            except Exception:
+                logger.exception(
+                    "No se pudo enviar el aviso de desvío de %s (N° PI %s) a %s",
+                    aviso["prueba"],
+                    aviso["numero_pi"],
+                    destinatario,
+                )

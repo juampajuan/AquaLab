@@ -212,7 +212,7 @@ configurable). No hay modelo `Desvio`: el desvío se calcula al vuelo. Dos tanda
 
 **Goal**: cada resultado recién calculado (carga, corrección o dependientes) que queda en desvío genera un correo a los bioquímicos activos, después de guardar.
 
-**Independent Test**: con Cloruro validado 100, 110 y 120, cargar 16 (→ 160) en un estudio nuevo → `mail.outbox` tiene 1 correo dirigido a todos los bioquímicos activos con N° PI, cliente, origen, prueba, valor, mediana, porcentaje y enlace absoluto; corregir a 11,5 → ninguno más.
+**Independent Test**: con Cloruro validado 100, 110 y 120, cargar 16 (→ 160) en un estudio nuevo → `mail.outbox` tiene 1 correo por bioquímico activo (cada uno solo a su dirección) con N° PI, cliente, origen, prueba, valor, mediana, porcentaje y enlace absoluto; corregir a 11,5 → ninguno más.
 
 ### Tests for User Story 6
 

@@ -338,8 +338,9 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   resultados sin validar. Nada de esto va al informe, al PDF ni al correo.
 - Aviso por correo: `estudios/notificaciones.py`. `calculo.recalcular` compara con los valores
   previos y llama a `avisar_desvios` solo con las pruebas de valor nuevo o distinto (no reenvía);
-  evalúa con `desvios`, agenda `transaction.on_commit` y manda un correo por desvío a los
-  bioquímicos activos (`estudios/correos/desvio_*.txt`). Enlace absoluto con
+  evalúa con `desvios`, agenda `transaction.on_commit` y manda un correo por desvío y por
+  bioquímico activo, cada uno con un solo destinatario en «Para» (nadie ve a los otros; una falla
+  no corta a los demás) (`estudios/correos/desvio_*.txt`). Enlace absoluto con
   `settings.AQUALAB_URL_BASE` (no hay `request`); fallas al logger `estudios.notificaciones`. La
   demo también genera estos correos. Tests: `mailoutbox` + `django_capture_on_commit_callbacks`.
 - Demo: Pozo 2 mes 0 (430 contra mediana 124) es el único pendiente; el mes 1 (415) quedó validado

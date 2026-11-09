@@ -65,18 +65,43 @@ def destinatarios(bioquimico, django_user_model):
     return sorted([bioquimico.email, otro.email])
 
 
-def test_uno_por_desvio_a_bioquimicos_activos(
+def test_uno_por_desvio_y_por_bioquimico_activo(
     sin_cargar, empleado, destinatarios, mailoutbox, django_capture_on_commit_callbacks
 ):
     with django_capture_on_commit_callbacks(execute=True):
         cargar(sin_cargar, empleado, {"CL-": "16", "PH": "9.5"})  # los dos en desvío
-    assert len(mailoutbox) == 2
-    assert {m.subject.split(" – ")[0] for m in mailoutbox} == {
-        "Desvío en Cloruro (CL-)",
-        "Desvío en pH (PH)",
-    }
+    assert len(mailoutbox) == 4  # 2 desvíos × 2 bioquímicos activos
+    enviados = sorted((m.subject.split(" – ")[0], *m.to) for m in mailoutbox)
+    assert enviados == sorted(
+        (asunto, email)
+        for asunto in ["Desvío en Cloruro (CL-)", "Desvío en pH (PH)"]
+        for email in destinatarios
+    )
     for mensaje in mailoutbox:
-        assert sorted(mensaje.to) == destinatarios
+        # Cada uno va solo a su destinatario: nadie ve las direcciones de los otros.
+        assert len(mensaje.to) == 1
+        assert mensaje.cc == [] and mensaje.bcc == []
+
+
+def test_falla_con_un_destinatario_no_corta_a_los_otros(
+    sin_cargar, empleado, destinatarios, mailoutbox, caplog, django_capture_on_commit_callbacks
+):
+    from config.correos import CorreoAquaLab
+
+    enviar_real = CorreoAquaLab.send
+
+    def send(mensaje, *args, **kwargs):
+        if mensaje.to == [destinatarios[0]]:
+            raise SMTPException("rechazado")
+        return enviar_real(mensaje, *args, **kwargs)
+
+    with mock.patch("config.correos.CorreoAquaLab.send", autospec=True, side_effect=send):
+        with caplog.at_level(logging.ERROR, logger="estudios.notificaciones"):
+            with django_capture_on_commit_callbacks(execute=True):
+                cargar(sin_cargar, empleado, {"CL-": "16"})
+    assert [m.to for m in mailoutbox] == [[destinatarios[1]]]
+    assert "No se pudo enviar el aviso de desvío de Cloruro (CL-)" in caplog.text
+    assert destinatarios[0] in caplog.text
 
 
 def test_dependiente(

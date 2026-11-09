@@ -25,8 +25,9 @@
    contra 14 / 4,1 / 4,3 da −43,8 % contra el promedio y −2,3 % contra la mediana). En
    Ausente/Presente no cambia nada.
 4. Además del aviso en pantalla, cuando un resultado recién calculado (carga, corrección o
-   recálculo de dependientes) queda en desvío, se envía un correo por cada desvío a todos los
-   usuarios activos del grupo Bioquímicos, con la muestra, el cliente, el origen, la prueba, el
+   recálculo de dependientes) queda en desvío, se envía un correo por cada desvío a cada uno de
+   los usuarios activos del grupo Bioquímicos (uno por destinatario: nadie ve las direcciones de
+   los otros), con la muestra, el cliente, el origen, la prueba, el
    valor observado, la mediana, el porcentaje y un enlace al estudio. No se reenvía si el valor no
    cambió; una falla de envío no afecta la carga.
 
@@ -224,9 +225,10 @@ el enlace absoluto al estudio; corregir a 11,5 (sin desvío) y verificar que no 
 
 1. **Dado** un resultado recién calculado (carga, corrección o recálculo de una prueba que
    depende de otra) que queda en desvío, **cuando** la operación se guarda, **entonces** se envía
-   un correo por ese desvío a todos los usuarios activos del grupo Bioquímicos.
+   un correo por ese desvío a cada usuario activo del grupo Bioquímicos, con él como único
+   destinatario.
 2. **Dada** una carga que deja dos pruebas en desvío, **cuando** se guarda, **entonces** salen dos
-   correos, uno por desvío.
+   correos por bioquímico activo, uno por desvío.
 3. **Dado** el correo, **cuando** se lee, **entonces** incluye N° PI de la muestra, cliente,
    origen, prueba (nombre y código), valor observado, mediana de los últimos N (o el estado de los
    últimos N en Ausente/Presente), porcentaje con signo y un enlace absoluto al detalle del
@@ -339,8 +341,10 @@ el enlace absoluto al estudio; corregir a 11,5 (sin desvío) y verificar que no 
 - **FR-015**: La demo del laboratorio MUST incluir el desvío de Cloruro de «Pozo 2» como pendiente
   y al menos una validación con desvío y observación, para mostrar la historia.
 - **FR-016**: Cuando una carga, corrección o recálculo de dependientes deja un resultado nuevo o
-  con un valor distinto en desvío, el sistema MUST enviar un correo por cada desvío a todos los
-  usuarios activos del grupo Bioquímicos; si el valor no cambió, MUST NOT reenviarlo.
+  con un valor distinto en desvío, el sistema MUST enviar un correo por cada desvío y por cada
+  usuario activo del grupo Bioquímicos, con ese usuario como único destinatario (sin copias ni
+  otras direcciones visibles); si el valor no cambió, MUST NOT reenviarlo. Una falla con un
+  destinatario MUST NOT impedir el envío a los demás.
 - **FR-017**: El correo MUST incluir N° PI, cliente, origen, prueba, valor observado, mediana de
   los últimos N, porcentaje y un enlace absoluto al detalle del estudio, armado con una dirección
   base configurable del sistema.
