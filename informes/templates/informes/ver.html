@@ -17,6 +17,11 @@
       <a href="{% url 'informes:pdf' estudio.pk %}" class="btn btn-primario">
         {% include "ui/icono.html" with nombre="download" clase="size-4" %} Descargar PDF
       </a>
+      {% if perms.informes.emitir_informes %}
+        <a href="{% url 'informes:enviar' estudio.pk %}" class="btn btn-secundario">
+          {% include "ui/icono.html" with nombre="mail" clase="size-4" %} Enviar por correo
+        </a>
+      {% endif %}
       <a href="{% url 'informes:imprimir' estudio.pk %}" class="btn btn-secundario" target="_blank" rel="noopener">
         {% include "ui/icono.html" with nombre="printer" clase="size-4" %} Imprimir
       </a>
@@ -30,5 +35,40 @@
         {% include "ui/icono.html" with nombre="eye" clase="size-4" %} Ver detalle del estudio
       </a>
     </div>
+    <section class="tarjeta overflow-hidden" data-componente="envios">
+      <h2 class="px-4 py-4 text-sm font-semibold text-marino sm:px-5">Envíos por correo</h2>
+      {% if envios %}
+        <div class="overflow-x-auto">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Enviado a</th>
+                <th>Enviado por</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for envio in envios %}
+                <tr>
+                  <td class="whitespace-nowrap text-tinta-suave">{{ envio.fecha|date:"d/m/Y H:i" }}</td>
+                  <td>{{ envio.destinatario }}</td>
+                  <td>{{ envio.enviado_por.get_full_name|default:envio.enviado_por.email }}</td>
+                  <td>
+                    {% if envio.resultado == "enviado" %}
+                      {% include "ui/estado.html" with estado=envio.get_resultado_display tipo="success" %}
+                    {% else %}
+                      {% include "ui/estado.html" with estado=envio.get_resultado_display tipo="danger" %}
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        {% include "ui/estado_vacio.html" with icono="mail" mensaje="Este informe todavía no se envió por correo." %}
+      {% endif %}
+    </section>
   </div>
 {% endblock %}

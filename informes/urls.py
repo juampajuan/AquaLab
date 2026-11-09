@@ -12,6 +12,7 @@ urlpatterns = [
     path("estudios/<int:pk>/vista-previa/", views.vista_previa, name="vista_previa"),
     path("estudios/<int:pk>/generar/", views.generar, name="generar"),
     path("estudios/<int:pk>/informe/", views.ver, name="ver"),
+    path("estudios/<int:pk>/informe/enviar/", views.enviar, name="enviar"),
     path("estudios/<int:pk>/informe/pdf/", views.pdf_informe, name="pdf"),
     path("estudios/<int:pk>/informe/imprimir/", views.imprimir, name="imprimir"),
 ]

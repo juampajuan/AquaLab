@@ -97,3 +97,40 @@ def test_no_se_borran_estudio_muestra_ni_cliente(estudio_de, empleado):
     for objeto in (estudio, muestra, muestra.cliente):
         with pytest.raises(ProtectedError), transaction.atomic():
             objeto.delete()
+
+
+def test_envio_no_se_modifica_ni_borra(estudio_de, empleado):
+    """SCRUM-79 (FR-005): el historial de envíos no se edita ni se borra, y no está en el admin."""
+    import uuid
+
+    from django.contrib import admin
+
+    from informes.models import EnvioInforme, ResultadoEnvio
+
+    informe = crear(estudio_de("PH"), empleado)
+    envio = EnvioInforme.objects.create(
+        informe=informe,
+        enviado_por=empleado,
+        destinatario="cliente@ejemplo.com",
+        resultado=ResultadoEnvio.ENVIADO,
+        clave=uuid.uuid4(),
+    )
+
+    envio.destinatario = "otro@ejemplo.com"
+    with pytest.raises(ValueError, match="Un envío de informe no se puede modificar."):
+        envio.save()
+    with pytest.raises(ValueError, match="Un envío de informe no se puede borrar."):
+        envio.delete()
+    assert EnvioInforme.objects.get(pk=envio.pk).destinatario == "cliente@ejemplo.com"
+    assert not admin.site.is_registered(EnvioInforme)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        EnvioInforme.objects.create(
+            informe=informe,
+            enviado_por=empleado,
+            destinatario="cliente@ejemplo.com",
+            resultado=ResultadoEnvio.FALLIDO,
+            clave=envio.clave,
+        )
+    # Aunque se saltee Informe.delete(), el FK PROTECT impide borrar un informe con envíos.
+    with pytest.raises(ProtectedError):
+        super(Informe, informe).delete()

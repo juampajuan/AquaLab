@@ -2,9 +2,7 @@
 
 ## Pendientes entre features
 
-Cuando una feature resuelva un pendiente, borrar su línea.
-
-- **Envío de informes (SCRUM-39):** el envío de informes por correo usa `Cliente.email`.
+Cuando una feature resuelva un pendiente, borrar su línea. Por ahora no hay pendientes.
 
 ## Mensajes de commit
 
@@ -296,3 +294,18 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Con cualquier valor inválido (también el texto) `estudios:buscar` muestra el error y el listado
   completo sin filtrar, como el historial. La paginación lleva `parametros` (GET sin `page`) y
   «Limpiar filtros» depende de los parámetros recibidos (`hay_filtros`), válidos o no.
+
+## Envío del informe por correo (SCRUM-79)
+
+- `informes/envios.py:enviar_informe` es el único envío (lo llama `informes:enviar` al confirmar):
+  sincrónico, con el PDF de `generar_pdf` adjunto y destino el `Cliente.email` vigente (no la copia
+  de `contenido`). El texto del correo sale de `contenido` (`informes/correos/`), sin enlaces.
+- `EnvioInforme` es inalterable como `Informe` (`save`/`delete` lanzan `ValueError`, sin admin); en
+  los tests, cambiarlo con `filter(...).update(...)`. Se crea una sola vez, con el resultado ya
+  conocido.
+- Un envío por confirmación: la pantalla lleva una `clave` (UUID, `unique`) y el servicio la busca
+  bajo `select_for_update()` del `Informe` (que no se modifica). Una falla de correo o de PDF queda
+  como «fallido» y en el logger `informes.envios`; nunca da una página de error.
+- Permiso `informes.emitir_informes`, en la vista (403) y en el servicio. En los tests, parchear
+  `informes.envios.generar_pdf`; para un empleado sin permiso usar `cliente_comun`
+  (`informes/tests/conftest.py`): el usuario de `cliente_http` es el mismo que `bioquimico`.

@@ -117,6 +117,7 @@ LOGGING = {
     },
     "loggers": {
         "usuarios.notificaciones": {"handlers": ["console"], "level": "INFO"},
+        "informes.envios": {"handlers": ["console"], "level": "INFO"},
     },
 }
 
