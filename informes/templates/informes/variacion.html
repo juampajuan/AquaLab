@@ -1,0 +1,8 @@
+{# Variación contra el período anterior (US 8.3). Parámetro: variacion (tablero.Variacion o None). #}
+{% if variacion %}
+  <span class="mt-1 block text-xs font-semibold {% if variacion.tono == 'exito' %}text-exito{% elif variacion.tono == 'peligro' %}text-peligro{% else %}text-tinta-suave{% endif %}" data-tono="{{ variacion.tono }}">
+    {{ variacion.texto }}<span class="sr-only"> contra el período anterior</span>
+  </span>
+{% else %}
+  <span class="mt-1 block text-xs text-tinta-suave" data-tono="neutro">Sin comparación</span>
+{% endif %}

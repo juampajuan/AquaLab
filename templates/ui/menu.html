@@ -7,6 +7,11 @@
   <a href="{% url 'inicio' %}" class="flex items-center gap-3 rounded-md px-3 py-2 font-medium {% if vista == 'inicio' %}bg-marino text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'inicio' %} aria-current="page"{% endif %}>
     Inicio
   </a>
+  {% if perms.informes.ver_dashboard %}
+    <a href="{% url 'informes:dashboard' %}" class="flex items-center gap-3 rounded-md px-3 py-2 font-medium {% if vista == 'informes:dashboard' %}bg-marino text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'informes:dashboard' %} aria-current="page"{% endif %}>
+      {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Dashboard
+    </a>
+  {% endif %}
 
   <div>
     <p class="mb-1 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-tinta-suave uppercase">

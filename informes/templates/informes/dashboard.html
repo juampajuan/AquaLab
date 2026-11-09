@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load static ui %}
+
+{% block title %}Dashboard · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% include "ui/encabezado.html" with titulo="Dashboard" subtitulo="Indicadores del laboratorio" %}
+{% endblock %}
+
+{% block content %}
+  {# 1. Período #}
+  <form method="get" action="{% url 'informes:dashboard' %}" class="tarjeta mb-6 flex flex-wrap items-end gap-4 p-5">
+    <div>
+      <label for="periodo" class="campo-etiqueta">Período</label>
+      <select name="periodo" id="periodo" class="form-select">
+        {% for clave, etiqueta in periodos.items %}
+          <option value="{{ clave }}"{% if clave == periodo.clave %} selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-secundario">Ver</button>
+    <p class="text-sm text-tinta-suave" data-rango>
+      Del {{ periodo.inicio|date:"d/m/Y" }} al {{ periodo.fin|date:"d/m/Y" }} · comparado con
+      {{ periodo.inicio_anterior|date:"d/m/Y" }} al {{ periodo.fin_anterior|date:"d/m/Y" }}
+    </p>
+  </form>
+
+  {# 2. Indicadores #}
+  <section aria-label="Indicadores del período" class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {% for tarjeta in tarjetas %}
+      <div class="tarjeta flex items-start gap-4 p-5" data-indicador="{{ tarjeta.nombre }}">
+        <span class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-cian-suave text-cian-texto">
+          {% include "ui/icono.html" with nombre=tarjeta.icono clase="size-6" %}
+        </span>
+        <span>
+          <span class="block text-[11px] font-semibold tracking-wide text-tinta-suave uppercase">{{ tarjeta.titulo }}</span>
+          {% if tarjeta.nombre == "respuesta" %}
+            {% if tarjeta.indicador.actual is None %}
+              <span class="block text-base font-semibold text-tinta-suave" data-valor>Sin informes en el período</span>
+            {% else %}
+              <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ tarjeta.indicador.texto }} días</span>
+            {% endif %}
+          {% else %}
+            <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ tarjeta.indicador.actual }}</span>
+          {% endif %}
+          {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion %}
+        </span>
+      </div>
+    {% endfor %}
+  </section>
+
+  {# 3. Estudios por estado #}
+  <section class="tarjeta mb-6 p-5" aria-labelledby="titulo-estados">
+    <h2 id="titulo-estados" class="mb-4 text-sm font-semibold text-marino">Estudios por estado</h2>
+    <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {% for etiqueta, total, valor in estados %}
+        <li class="flex items-center justify-between rounded-lg border border-borde px-4 py-3" data-estado-total="{{ valor }}">
+          {% include "ui/estado.html" with estado=etiqueta tipo=valor|tipo_estado %}
+          <span class="numeros text-2xl font-bold text-marino">{{ total }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <div class="mb-6 grid gap-6 xl:grid-cols-2">
+    {# 4. Tiempo de respuesta por mes #}
+    <section class="tarjeta p-5" aria-labelledby="titulo-respuesta">
+      <h2 id="titulo-respuesta" class="text-sm font-semibold text-marino">Tiempo de respuesta por mes</h2>
+      <p class="mb-4 text-xs text-tinta-suave">Días promedio desde el ingreso de la muestra hasta la emisión del informe · últimos 6 meses</p>
+      <div class="relative h-64">
+        <canvas id="grafico-respuesta" role="img" aria-label="Tiempo de respuesta promedio de los últimos 6 meses"></canvas>
+      </div>
+      <details class="mt-4 text-sm">
+        <summary class="cursor-pointer text-cian-texto">Ver datos</summary>
+        <table class="tabla mt-2" data-tabla="respuesta">
+          <thead><tr><th>Mes</th><th>Días promedio</th></tr></thead>
+          <tbody>
+            {% for mes in serie_mensual %}
+              <tr><td>{{ mes.etiqueta }}</td><td class="numeros">{{ mes.texto }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+    </section>
+
+    {# 5. Actividad semanal #}
+    <section class="tarjeta p-5" aria-labelledby="titulo-actividad">
+      <h2 id="titulo-actividad" class="text-sm font-semibold text-marino">Actividad semanal</h2>
+      <p class="mb-4 text-xs text-tinta-suave">Muestras ingresadas e informes emitidos por semana · últimas 12 semanas</p>
+      <div class="relative h-64">
+        <canvas id="grafico-actividad" role="img" aria-label="Muestras ingresadas e informes emitidos por semana"></canvas>
+      </div>
+      <details class="mt-4 text-sm">
+        <summary class="cursor-pointer text-cian-texto">Ver datos</summary>
+        <table class="tabla mt-2" data-tabla="actividad">
+          <thead><tr><th>Semana del</th><th>Muestras</th><th>Informes</th></tr></thead>
+          <tbody>
+            {% for semana in serie_semanal %}
+              <tr><td>{{ semana.desde|date:"d/m/Y" }}</td><td class="numeros">{{ semana.muestras }}</td><td class="numeros">{{ semana.informes }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+    </section>
+  </div>
+
+  {# 6. Alertas (a lo ancho: la tabla tiene seis columnas) #}
+  <div class="grid gap-6">
+    {% include "informes/alerta.html" with clave="sin_avanzar" titulo="Estudios sin avanzar" ayuda="Pendientes de análisis o en proceso sin actividad hace más de 7 días. «Días»: desde la última actividad." columna_dias="Días" filas=alertas.sin_avanzar %}
+    {% include "informes/alerta.html" with clave="finalizados" titulo="Finalizados sin informe" ayuda="Estudios finalizados que todavía no tienen informe emitido. «Días»: desde la última validación." columna_dias="Días" filas=alertas.finalizados_sin_informe %}
+  </div>
+
+  {{ datos_graficos|json_script:"datos-dashboard" }}
+  <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
+  <script src="{% static 'informes/dashboard.js' %}" defer></script>
+{% endblock %}

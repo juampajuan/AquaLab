@@ -30,7 +30,10 @@ class Informe(models.Model):
         verbose_name = "informe"
         verbose_name_plural = "informes"
         ordering = ("-numero",)
-        permissions = [("emitir_informes", "Puede emitir informes")]
+        permissions = [
+            ("emitir_informes", "Puede emitir informes"),
+            ("ver_dashboard", "Puede ver el dashboard"),
+        ]
         constraints = [
             models.CheckConstraint(condition=Q(numero__gte=1), name="informe_numero_positivo"),
         ]
