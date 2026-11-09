@@ -194,7 +194,17 @@ def test_solo_lectura(cliente_bioquimico, con_demo):
 
 
 def test_cantidad_de_consultas(cliente_bioquimico, con_demo, django_assert_max_num_queries):
-    with django_assert_max_num_queries(25):
+    from estudios.models import EstadoPruebaEstudio, PruebaEstudio
+
+    # «Desvíos sin revisar» (US 8.2) suma una consulta y una evaluación de cantidad fija (6
+    # consultas de la comparación histórica) por estudio con resultados sin validar.
+    con_pendientes = (
+        PruebaEstudio.objects.filter(estado=EstadoPruebaEstudio.CARGADA, resultado__isnull=False)
+        .values("estudio")
+        .distinct()
+        .count()
+    )
+    with django_assert_max_num_queries(25 + 1 + 6 * con_pendientes):
         assert cliente_bioquimico.get(URL).status_code == 200
 
 
@@ -232,3 +242,21 @@ def test_tarjeta_comparacion_historica(cliente_bioquimico, cliente_a):
         r'<script id="origenes-por-cliente" type="application/json">(.*?)</script>', html, re.S
     )
     assert json.loads(datos.group(1)) == {str(cliente_a.pk): [[pozo.pk, "Pozo del dashboard"]]}
+
+
+# --- Desvíos sin revisar (US 8.2) ------------------------------------------------------------
+
+
+def test_seccion_desvios_sin_revisar(cliente_bioquimico, estudio_en_origen, cliente_a):
+    from estudios import desvios
+
+    origen = Origen.objects.create(cliente=cliente_a, nombre="Pozo del dashboard")
+    for n, valor in enumerate(["10", "11", "12"]):
+        estudio_en_origen(origen, dt.date(2026, 3, 1 + n), 300601 + n, {"CL-": valor})
+    estudio_en_origen(origen, dt.date(2026, 3, 5), 300610, {"CL-": "16"}, validar_todo=False)
+
+    html = html_de(cliente_bioquimico.get(URL))
+    assert 'aria-labelledby="titulo-desvios"' in html
+    cantidad = len(desvios.pendientes())
+    assert cantidad == 1
+    assert f"{cantidad} pendiente<" in html

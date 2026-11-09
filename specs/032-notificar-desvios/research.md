@@ -22,8 +22,8 @@ es revisar; el desvío se calcula al vuelo, sin modelo propio). No quedan `NEEDS
   `comparacion.comparar(origen, estudio=estudio, codigos=…)`. A `HistorialPrueba` se le agrega
   `anteriores: tuple[Punto, ...]`, la misma lista que hoy se calcula en `historial_de_prueba` y se
   pasa a `variacion` (validados de muestras previas, misma unidad, en orden). La 8.2 toma
-  `anteriores[-N:]` y llama a `comparacion.variacion(ref, ultimos, ...)` para el promedio y los
-  textos.
+  `anteriores[-N:]`, calcula su mediana (R3) y usa `comparacion.cambio` para la diferencia y el
+  porcentaje.
 - **Rationale**: FR-003 pide una sola definición del historial. `comparar` ya resuelve validación
   vigente, orden por `(fecha_muestreo, numero_pi)`, exclusión de otros estudios de la misma muestra
   y de otra unidad, con cantidad fija de consultas. Exponer `anteriores` es el cambio mínimo y no
@@ -32,10 +32,18 @@ es revisar; el desvío se calcula al vuelo, sin modelo propio). No quedan `NEEDS
   prohibida por FR-003); un parámetro `ultimos=N` en `comparar` (mezcla la regla de la 8.2 en la
   8.1).
 
-## R3. Regla exacta, sin redondeo ni división
+## R3. Referencia: mediana de los últimos N; regla exacta, sin redondeo ni división
 
-- **Decision**: `desvios.es_desvio(valor, promedio, umbral)`:
-  `abs(valor − promedio) * 100 > umbral * abs(promedio)` si `promedio != 0`; con `promedio == 0`,
+- **Decision (referencia)**: `desvios.mediana(valores)` de los últimos N `anteriores` (con N par,
+  el promedio de los dos centrales, en `Decimal`). No se usa `comparacion.variacion`, que promedia.
+- **Rationale (referencia)**: ajuste del usuario. Un pico aislado contamina el promedio: en la
+  demo, Detergentes de «Colectora» da 4,2 contra 14 / 4,1 / 4,3, que es −43,8 % contra el promedio
+  (7,4667, desvío falso) y −2,3 % contra la mediana (4,3, sin desvío). La mediana sigue detectando
+  el pico cuando es el resultado actual.
+- **Alternatives considered (referencia)**: promedio (diseño anterior, sensible a picos); promedio
+  recortado (con N = 3 equivale a la mediana y es más difícil de explicar).
+- **Decision (regla)**: `desvios.es_desvio(valor, referencia, umbral)`:
+  `abs(valor − referencia) * 100 > umbral * abs(referencia)` si `referencia != 0`; con `referencia == 0`,
   desvío si `valor != 0` (FR-014). Todo `Decimal`. El porcentaje que se muestra es el de
   `comparacion.cambio` (0,1 `ROUND_HALF_UP`), solo para mostrar.
 - **Rationale**: FR-002 (exactamente 30 % no es desvío; decide el valor completo). Multiplicar en
@@ -46,10 +54,10 @@ es revisar; el desvío se calcula al vuelo, sin modelo propio). No quedan `NEEDS
 ## R4. Pruebas Ausente/Presente
 
 - **Decision**: con `es_presencia(unidad)`: desvío si los N anteriores tienen todos el mismo valor
-  (0 o 1) y el actual es el otro. El «promedio» es ese valor común (0 o 1, el promedio de valores
+  (0 o 1) y el actual es el otro. La referencia es ese valor común (0 o 1, la mediana de valores
   iguales); no hay porcentaje. El texto es «Presente (los últimos 3: Ausente)».
 - **Rationale**: Edge Case de la spec; la 8.1 ya trata A/P como cambio de estado. Usar el valor
-  común como promedio deja la constancia de la validación (R6) siempre completa.
+  común como referencia deja la constancia de la validación (R6) siempre completa.
 - **Alternatives considered**: tratar 0/1 como números (con historial mixto daría desvíos sin
   sentido); excluir A/P (contra «no recortar»).
 
@@ -59,7 +67,7 @@ es revisar; el desvío se calcula al vuelo, sin modelo propio). No quedan `NEEDS
   `servicios.validar_resultados(estudio_pk, elegidas, usuario, observaciones=None)`: con el estudio
   y las pruebas ya bloqueados, hace una llamada a `desvios.evaluar_estudio(estudio, asignaciones)`
   y, por cada prueba que efectivamente valida, crea la `Validacion` con `observacion` y, si
-  `detectar` dio desvío, `desvio_promedio` y `desvio_umbral`. Las omitidas («ya estaba validada»,
+  `detectar` dio desvío, `desvio_referencia` y `desvio_umbral`. Las omitidas («ya estaba validada»,
   «ya no tenía resultado», «cambió mientras se revisaba») no guardan nada.
 - **Rationale**: FR-009 — la constancia nace en la misma fila y transacción que la validación, así
   que una validación rechazada o fallida no deja nada, y dos validaciones simultáneas dejan una
@@ -73,7 +81,7 @@ es revisar; el desvío se calcula al vuelo, sin modelo propio). No quedan `NEEDS
 
 - **Decision**: migración `estudios.0009_validacion_desvio` que agrega a `Validacion`:
   `observacion = CharField(max_length=500, blank=True, default="")`,
-  `desvio_promedio = DecimalField(max_digits=28, decimal_places=10, null=True, blank=True)` y
+  `desvio_referencia = DecimalField(max_digits=28, decimal_places=10, null=True, blank=True)` y
   `desvio_umbral = DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)`, con
   `CheckConstraint` `validacion_desvio_completo` (ambos nulos o ambos no nulos). «Validada con
   desvío» ⇔ `desvio_umbral IS NOT NULL`. Quién y cuándo: `validada_por`, `fecha_validacion`.
@@ -131,7 +139,7 @@ es revisar; el desvío se calcula al vuelo, sin modelo propio). No quedan `NEEDS
 ## R10. Demo
 
 - **Decision**: con el guion actual, Pozo 2 Cloruro da desvío en el mes 1 (415 contra 121, 124,
-  120 → +241 %) y en el mes 0 (430 contra 124, 120, 415 → +95,8 %). Como la demo valida con el
+  120 → mediana 121, +243,0 %) y en el mes 0 (430 contra 124, 120, 415 → mediana 124, +246,8 %). Como la demo valida con el
   servicio real, la validación del mes 1 guarda la constancia sola; `cargar_estudio` pasa
   `observaciones` para ese Cloruro («Se repitió la medición: el valor es correcto.»). El del mes 0
   (estudio CARGADO) queda pendiente. `test_demo.py` fija los dos casos y la cantidad de pendientes.

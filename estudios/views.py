@@ -17,7 +17,7 @@ from pruebas.limites import (
     texto_limite,
 )
 
-from . import calculo, servicios
+from . import calculo, desvios, servicios
 from . import comparacion as comparacion_historica
 from .busqueda import filtro_busqueda, filtro_estado_fechas
 from .catalogo import CatalogoNoDisponible
@@ -237,6 +237,22 @@ def comparacion(request):
     )
 
 
+@permission_required("informes.ver_dashboard", raise_exception=True)
+@require_GET
+def desvios_pendientes(request):
+    """Lista completa de «Desvíos sin revisar» (US 8.2): resultados sin validar con desvío,
+    calculados al vuelo. Solo lectura; se revisan al validar."""
+    paginador = Paginator(desvios.pendientes(), 25)
+    return render(
+        request,
+        "estudios/desvios.html",
+        {
+            "page_obj": paginador.get_page(request.GET.get("page")),
+            "regla_desvio": desvios.texto_regla(desvios.regla()),
+        },
+    )
+
+
 def buscar(request):
     """Buscar estudio (US 5.2) con filtros de estado y fecha de creación (SCRUM-74).
 
@@ -291,6 +307,7 @@ def detalle(request, pk):
     for asignacion in pruebas_asignadas:
         asignacion.motivo_sin_resultado = calculo.motivo_sin_resultado(asignacion, todas)
     evaluar_asignaciones(estudio, pruebas_asignadas)
+    marcar_desvios(estudio, pruebas_asignadas)
     total_pruebas = len(pruebas_asignadas)
     pruebas_completadas = sum(
         1 for a in pruebas_asignadas if a.estado == EstadoPruebaEstudio.COMPLETADA
@@ -316,6 +333,7 @@ def detalle(request, pk):
                 if a.estado == EstadoPruebaEstudio.PENDIENTE and not a.prueba.es_calculada
             ),
             "hay_para_validar": any(validable(a) for a in pruebas_asignadas),
+            "regla_desvio": desvios.texto_regla(desvios.regla()),
         },
     )
 
@@ -539,6 +557,32 @@ TIPOS_EVALUACION = {
     Evaluacion.FUERA_DE_NORMA: "danger",
     Evaluacion.SIN_LIMITE: "neutral",
 }
+
+
+def marcar_desvios(estudio, asignaciones):
+    """Adjunta `deteccion` (y `validacion_desvio` si ya se revisó) a las asignaciones con desvío
+    (US 8.2): las Cargadas se evalúan al vuelo; las Completadas muestran la constancia guardada en
+    su validación vigente. Espera `evaluar_asignaciones` ya aplicado."""
+    cargadas = [a for a in asignaciones if a.estado == EstadoPruebaEstudio.CARGADA]
+    evaluacion = desvios.evaluar_estudio(estudio, cargadas)
+    for asignacion in asignaciones:
+        asignacion.deteccion = None
+        asignacion.validacion_desvio = None
+        deteccion = evaluacion.get(asignacion.pk)
+        asignacion.historial_insuficiente = deteccion == desvios.HISTORIAL_INSUFICIENTE
+        if isinstance(deteccion, desvios.Deteccion):
+            asignacion.deteccion = deteccion
+        validacion = getattr(asignacion, "validacion", None)
+        if (
+            asignacion.estado == EstadoPruebaEstudio.COMPLETADA
+            and validacion is not None
+            and validacion.con_desvio
+            and calculo.tiene_resultado(asignacion)
+        ):
+            asignacion.deteccion = desvios.constancia(
+                asignacion, validacion, estudio.muestra.tipo_vertido
+            )
+            asignacion.validacion_desvio = validacion
 
 
 def validable(asignacion):

@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from estudios import calculo
+from estudios import calculo, desvios
 from estudios.forms import BuscarEstudioForm, ElegirOrigenForm
 from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
 from estudios.views import RESULTADOS_POR_PAGINA
@@ -248,4 +248,8 @@ def dashboard(request):
     """Indicadores del laboratorio (US 8.3): solo con el permiso «Puede ver el dashboard»."""
     contexto = tablero.armar(request.GET.get("periodo", "este_mes"))
     contexto["form_origen"] = ElegirOrigenForm()  # comparación histórica (US 8.1)
+    pendientes = desvios.pendientes()  # desvíos sin revisar (US 8.2), no dependen del período
+    contexto["desvios_cantidad"] = len(pendientes)
+    contexto["desvios_recientes"] = pendientes[:10]
+    contexto["regla_desvio"] = desvios.texto_regla(desvios.regla())
     return render(request, "informes/dashboard.html", contexto)

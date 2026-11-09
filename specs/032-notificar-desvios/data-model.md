@@ -9,11 +9,11 @@ Campos nuevos:
 | Campo | Tipo | Notas |
 |---|---|---|
 | `observacion` | `CharField(max_length=500, blank=True, default="")` | opcional; la escribe el bioquímico en la pantalla de validación para una prueba con desvío |
-| `desvio_promedio` | `DecimalField(max_digits=28, decimal_places=10, null=True, blank=True)` | promedio de los últimos N con que se comparó si había desvío al validar (en A/P, el valor común 0 o 1) |
+| `desvio_referencia` | `DecimalField(max_digits=28, decimal_places=10, null=True, blank=True)` | mediana de los últimos N con que se comparó si había desvío al validar (en A/P, el valor común 0 o 1) |
 | `desvio_umbral` | `DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)` | umbral (%) aplicado si había desvío al validar |
 
 **Restricción**: `CheckConstraint` `validacion_desvio_completo`:
-`Q(desvio_promedio__isnull=True, desvio_umbral__isnull=True) | Q(desvio_promedio__isnull=False,
+`Q(desvio_referencia__isnull=True, desvio_umbral__isnull=True) | Q(desvio_referencia__isnull=False,
 desvio_umbral__isnull=False)`.
 
 **Propiedades**: `con_desvio` → `desvio_umbral is not None`. Quién revisó = `validada_por`;
@@ -27,8 +27,9 @@ modifican después (una validación se anula, no se edita ni se borra).
 
 - `Regla(umbral: Decimal, cantidad: int)` — de `regla()`, única lectura de
   `settings.AQUALAB_DESVIOS = {"umbral": "30", "cantidad": 3}`.
-- `Deteccion(valor, unidad, promedio, porcentaje, previos, presencia)` — resultado puro de
-  `detectar(historial, regla)` cuando hay desvío; `porcentaje` es `None` con promedio 0 o en A/P;
+- `Deteccion(valor, unidad, referencia, diferencia, porcentaje, previos, presencia)` — resultado puro de
+  `detectar(historial, regla)` cuando hay desvío (`referencia` = mediana de los últimos N, o el valor
+  común en A/P); `porcentaje` es `None` con mediana 0 o en A/P;
   `previos` es la tupla de `Punto` usados.
 - `Evaluacion` de una asignación (dict de `evaluar_estudio`): `Deteccion`, `None` (sin desvío) o
   la marca `HISTORIAL_INSUFICIENTE`.
@@ -51,7 +52,7 @@ resultado calculado (Cargada) ──[se muestra]──► evaluar_estudio → De
         │                                              (al vuelo, sin escribir)
         ├── corrección → nuevo valor → se evalúa de nuevo en la próxima vista
         └── validar_resultados (bloqueo) → evaluar_estudio → Validacion(observacion,
-                                            desvio_promedio, desvio_umbral)  ← constancia
+                                            desvio_referencia, desvio_umbral)  ← constancia
                      │
                      └── corrección posterior → validación anulada (conserva la constancia)
                                               → la prueba vuelve a Cargada y se evalúa de nuevo
@@ -62,5 +63,5 @@ resultado calculado (Cargada) ──[se muestra]──► evaluar_estudio → De
 ```text
 Origen 1─* Muestra 1─* Estudio 1─* PruebaEstudio 1─1 Resultado
                                        └─* Validacion (vigente ⇔ Completada; + observacion,
-                                                       desvio_promedio, desvio_umbral)
+                                                       desvio_referencia, desvio_umbral)
 ```

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Desvíos sin revisar · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'informes:dashboard' as url_dashboard %}
+  {% include "ui/encabezado.html" with seccion="Dashboard" anterior_texto="Dashboard" anterior_url=url_dashboard titulo="Desvíos sin revisar" subtitulo="Resultados sin validar que se alejan del historial de su origen" %}
+{% endblock %}
+
+{% block content %}
+  <section class="tarjeta overflow-hidden" aria-labelledby="titulo-desvios">
+    <div class="flex items-center gap-2 border-b border-borde px-5 py-4">
+      <h2 id="titulo-desvios" class="text-sm font-semibold text-marino">{{ page_obj.paginator.count }} pendiente{{ page_obj.paginator.count|pluralize }}</h2>
+      {% include "ui/ayuda.html" with texto="Hay desvío si el resultado sin validar difiere en "|add:regla_desvio|add:". Se revisan al validar la prueba." id="ayuda-desvios-lista" etiqueta="Desvíos sin revisar" %}
+    </div>
+    {% include "estudios/desvios_tabla.html" with pendientes=page_obj.object_list %}
+    {% include "ui/paginacion.html" with parametros="" %}
+  </section>
+{% endblock %}

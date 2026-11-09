@@ -8,15 +8,15 @@
 
 El desvío **no se guarda**: un módulo nuevo `estudios/desvios.py` lo calcula al vuelo para los
 resultados Cargados y sin validar, con el historial de `comparacion.comparar` (US 8.1, con un campo
-nuevo `HistorialPrueba.anteriores`), el promedio de los últimos N validados de
-`comparacion.variacion` y una comparación `Decimal` exacta contra el umbral de
+nuevo `HistorialPrueba.anteriores`), la mediana de los últimos N validados (no el promedio: un pico
+aislado no la mueve) y una comparación `Decimal` exacta contra el umbral de
 `settings.AQUALAB_DESVIOS` (30 %, N = 3). Se muestra en el detalle del estudio, en la pantalla de
 validación y en una sección «Desvíos sin revisar» del Dashboard con lista completa
 `estudios:desvios`. Una corrección se refleja sola porque se evalúa el resultado vigente; no se
 toca `calculo.py` ni los servicios de carga y corrección. **Validar es revisar**: la validación
 destaca las pruebas con desvío con un campo «Observación», la confirmación cuenta las elegidas con
 desvío y `servicios.validar_resultados` vuelve a evaluar bajo el bloqueo y guarda en la
-`Validacion` la observación y, como constancia, el promedio y el umbral (migración
+`Validacion` la observación y, como constancia, la mediana y el umbral (migración
 `estudios.0009_validacion_desvio`). No bloquea nada ni aparece en el informe. La demo valida con
 observación el desvío de Pozo 2 del mes anterior.
 
@@ -28,7 +28,7 @@ observación el desvío de Pozo 2 del mes anterior.
 y `templates/ui/`. Sin dependencias nuevas ni JavaScript nuevo.
 
 **Storage**: PostgreSQL 16. Migración `estudios.0009_validacion_desvio`: tres columnas nuevas en
-`Validacion` (`observacion`, `desvio_promedio`, `desvio_umbral`) y un `CheckConstraint`. Sin tabla
+`Validacion` (`observacion`, `desvio_referencia`, `desvio_umbral`) y un `CheckConstraint`. Sin tabla
 de desvíos.
 
 **Testing**: pytest + pytest-django con las fixtures de `estudios/tests/conftest.py` (`catalogo`,
@@ -65,11 +65,11 @@ Decisiones en [research.md](./research.md) (R1–R11). No hay `NEEDS CLARIFICATI
 | Principio | Cumplimiento | Estado |
 |---|---|---|
 | **I. Spec primero (SDD)** | Spec de US 8.2 (SCRUM-61) en Draft con los ajustes del usuario; el código espera su aprobación. | ✅ |
-| **II. Simplicidad y Django idiomático** | Sin modelo nuevo: el desvío es derivado; tres campos en `Validacion`; un módulo de reglas de solo lectura; reutiliza `comparar`/`variacion` (sin segunda definición del historial), parciales de UI, paginación y la confirmación existente de la validación; configuración en `settings`; sin señales ni comandos ni dependencias. | ✅ |
-| **III. Tests obligatorios** | Cada escenario y FR mapeado a tests ([Mapa de tests](#mapa-de-tests)); la regla con casos de borde explícitos (30 % exacto, 30,0x %, promedio 0, A/P, últimos 3 de 5). | ✅ |
+| **II. Simplicidad y Django idiomático** | Sin modelo nuevo: el desvío es derivado; tres campos en `Validacion`; un módulo de reglas de solo lectura; reutiliza `comparar`/`cambio` (sin segunda definición del historial), parciales de UI, paginación y la confirmación existente de la validación; configuración en `settings`; sin señales ni comandos ni dependencias. | ✅ |
+| **III. Tests obligatorios** | Cada escenario y FR mapeado a tests ([Mapa de tests](#mapa-de-tests)); la regla con casos de borde explícitos (30 % exacto, 30,0x %, mediana 0, A/P, últimos 3 de 5). | ✅ |
 | **IV. Integridad de datos** | Calcular no escribe; la constancia nace con la validación, en su transacción y bajo el bloqueo del estudio, con la evaluación de ese momento; nunca se modifica (la validación se anula, no se edita); no altera resultados ni estados. | ✅ |
 | **V. Seguridad** | `LoginRequiredMiddleware`; revisar solo ocurre dentro de `validar_resultados`, que ya revalida `estudios.validar_resultados` en vista y servicio; la constancia la calcula el servidor (no viene del formulario); `informes.ver_dashboard` y `require_GET` en la lista. | ✅ |
-| **VI. Idioma y consistencia** | `desvios.py`, `Regla`, `Deteccion`, `Pendiente`, `evaluar_estudio`, `pendientes`, `observacion`, `desvio_promedio`, `desvio_umbral`; interfaz en español; ruff. | ✅ |
+| **VI. Idioma y consistencia** | `desvios.py`, `Regla`, `Deteccion`, `Pendiente`, `evaluar_estudio`, `pendientes`, `observacion`, `desvio_referencia`, `desvio_umbral`; interfaz en español; ruff. | ✅ |
 | **Interfaz (UI)** | Parciales reutilizables (`estudios/desvio.html`, `estudios/desvios_tabla.html`) con `ui/estado.html`, `ui/icono.html`, `ui/ayuda.html`, `ui/campo.html` (`help_text` en la observación), `ui/paginacion.html`; la revisión se guarda con la confirmación existente de la validación, que la anuncia; mensajes de Django; ícono + texto. | ✅ |
 
 **Post-diseño (Phase 1)**: cumple todos los principios, sin excepciones.
@@ -83,12 +83,12 @@ detalle / validación ──► desvios.evaluar_estudio(estudio, asignaciones)  
 dashboard / lista    ──► desvios.pendientes() ─ por estudio ─► evaluar_estudio
                               comparar(origen, estudio=estudio, codigos=…)              (R2)
                               por prueba: detectar(historial, regla())                  (R3, R4)
-                                anteriores[-N:] → variacion() → promedio, textos
-                                es_desvio(valor, promedio, umbral)  (Decimal exacto)
+                                anteriores[-N:] → mediana() → cambio() → textos
+                                es_desvio(valor, mediana, umbral)  (Decimal exacto)
 
 validación: fila destacada + observacion_<pk> → confirmación «N de los M elegidos…»
   servicios.validar_resultados(…, observaciones)  [estudio y pruebas bloqueados]       (R5)
-     evaluar_estudio → Validacion(observacion, desvio_promedio, desvio_umbral)          (R6)
+     evaluar_estudio → Validacion(observacion, desvio_referencia, desvio_umbral)          (R6)
 ```
 
 ### `estudios/desvios.py` (interfaz)
@@ -104,7 +104,7 @@ puras (se prueban sin base).
 config/settings.py                    # + AQUALAB_DESVIOS (R7)
 estudios/
 ├── desvios.py                        # NUEVO: regla, detección al vuelo, pendientes, textos
-├── models.py                         # Validacion: + observacion, desvio_promedio, desvio_umbral (R6)
+├── models.py                         # Validacion: + observacion, desvio_referencia, desvio_umbral (R6)
 ├── migrations/0009_validacion_desvio.py   # NUEVO
 ├── comparacion.py                    # HistorialPrueba.anteriores (R2)
 ├── servicios.py                      # validar_resultados: + observaciones, constancia (R5)
@@ -143,10 +143,10 @@ CLAUDE.md                             # sección «Desvíos (US 8.2)»
 | Requisito / escenario | Test |
 |---|---|
 | FR-002, US1 1–2, SC-001 | `test_desvios.py::test_es_desvio_bordes` (110 → 143 / 77 no; 143,5 / 76,9 sí) |
-| FR-002, US1 4 | `::test_promedio_de_los_ultimos_n` (50, 60, 100, 110, 120 → 110) |
+| FR-002, US1 4 | `::test_mediana_de_los_ultimos_n` (50, 60, 100, 110, 120 → 110), `::test_un_pico_aislado_no_contamina` (14 / 4,1 / 4,3 → 4,2 sin desvío), `::test_mediana_con_cantidad_par`, `::test_mediana` |
 | FR-004, US1 3 | `::test_historial_insuficiente` |
-| FR-014 | `::test_promedio_cero` |
-| FR-013 | `::test_presencia` (3 Ausente + Presente sí, promedio 0; mixto no; textos sin 0/1) |
+| FR-014 | `::test_mediana_cero` |
+| FR-013 | `::test_presencia` (3 Ausente + Presente sí, mediana 0; mixto no; textos sin 0/1) |
 | Edge «historial» | `::test_usa_historial_de_la_comparacion` (cargado, anulado, otro origen, muestra posterior, misma muestra fuera), `::test_estudio_de_muestra_antigua` |
 | FR-001, US1 1, 5 | `::test_evaluar_estudio` (CL- 160 → `Deteccion`; 143 → `None`; 2 previos → insuficiente; sin resultado → ausente), `::test_dependiente` (DIV) |
 | FR-001, US1 6, SC-003 | `::test_correccion_se_refleja` (160 → 115 sin desvío → 200 con desvío; borrar → sin entrada) |

@@ -1,0 +1,27 @@
+{% comment %}
+  Marca de desvío de una prueba (US 8.2). Parámetros: deteccion (desvios.Deteccion), estudio,
+  codigo y, si el desvío ya se revisó al validar, validacion (la vigente, con la constancia).
+  Usa regla_desvio del contexto para la ayuda. El desvío se calcula al vuelo; no se guarda.
+{% endcomment %}
+{% load ui %}
+<div class="aviso {% if validacion %}aviso-info{% else %}aviso-advertencia{% endif %} mt-2 text-xs" data-desvio="{% if validacion %}revisado{% else %}pendiente{% endif %}">
+  <div>
+    <p class="flex items-center gap-1.5 font-semibold">
+      {% if validacion %}
+        {% include "ui/icono.html" with nombre="circle-check" clase="size-4" %} Desvío revisado
+      {% else %}
+        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-4" %} Desvío
+      {% endif %}
+      {% if regla_desvio %}
+        {% include "ui/ayuda.html" with texto="Hay desvío si el resultado sin validar difiere en "|add:regla_desvio|add:". Se revisa al validar la prueba." id="ayuda-desvio-"|add:codigo etiqueta="Desvío" %}
+      {% endif %}
+    </p>
+    <p class="numeros">Observado {{ deteccion.observado }} · {{ deteccion.etiqueta_referencia }}: {{ deteccion.referencia_texto }} · {{ deteccion.variacion_texto }}</p>
+    {% if validacion %}
+      <p>Validado por {{ validacion.validada_por.get_full_name|default:validacion.validada_por.email }} el {{ validacion.fecha_validacion|date:"d/m/Y H:i" }} – {{ validacion.observacion|default:"Sin observación" }} · {% if deteccion.presencia %}referencia{% else %}mediana{% endif %} {{ deteccion.referencia_texto }}, umbral {{ deteccion.umbral_texto }}</p>
+    {% endif %}
+    {% if perms.informes.ver_dashboard %}
+      <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}&amp;pruebas={{ codigo|urlencode }}&amp;elegir=1" class="font-semibold">Comparación histórica</a>
+    {% endif %}
+  </div>
+</div>

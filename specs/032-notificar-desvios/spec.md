@@ -12,44 +12,48 @@
 
 1. Validar una prueba con desvío cuenta como revisarlo; no hay una acción separada de «Marcar como
    revisado». En la pantalla de validación las pruebas con desvío se destacan con el valor, el
-   promedio histórico, un enlace a la comparación de la 8.1 y un campo «Observación» opcional. La
+   mediana histórica, un enlace a la comparación de la 8.1 y un campo «Observación» opcional. La
    confirmación indica cuántos de los resultados elegidos tienen desvío.
 2. El desvío no se guarda: se calcula en el momento, con el historial de la comparación histórica
    (8.1), sobre los resultados calculados y todavía sin validar, cada vez que se muestra el
    detalle del estudio, la pantalla de validación o la lista del dashboard. Al corregir una
    medición, el cálculo usa el valor nuevo sin ningún paso adicional. La revisión queda guardada
-   en la validación: quién y cuándo validó, la observación y, como constancia, el promedio y el
+   en la validación: quién y cuándo validó, la observación y, como constancia, la mediana y el
    umbral contra los que se comparó si había desvío.
+3. La referencia es la **mediana** de los últimos N resultados validados, no el promedio: un pico
+   aislado en el historial contamina el promedio (caso de la demo: Detergentes de «Colectora», 4,2
+   contra 14 / 4,1 / 4,3 da −43,8 % contra el promedio y −2,3 % contra la mediana). En
+   Ausente/Presente no cambia nada.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Ver el desvío en el estudio (Priority: P1)
 
 Como bioquímico, cuando un resultado calculado (al cargar o corregir una medición) se aleja más de
-lo tolerado del promedio de los últimos resultados validados de ese origen, lo veo marcado como
-desvío en el detalle del estudio, con el valor observado, el promedio histórico y la diferencia,
+lo tolerado del mediana de los últimos resultados validados de ese origen, lo veo marcado como
+desvío en el detalle del estudio, con el valor observado, el mediana histórica y la diferencia,
 para revisar la medición antes de validarla.
 
 **Why this priority**: Es el núcleo de la historia: sin la detección y la marca no hay aviso.
 
 **Independent Test**: Con un origen con Cloruro validado 100, 110 y 120 mg/l en tres muestras
 anteriores, cargar en un estudio nuevo de ese origen una medición que dé 160 mg/l y verificar que el
-detalle del estudio marca Cloruro como desvío con «Observado 160 mg/l · Promedio de los últimos 3:
+detalle del estudio marca Cloruro como desvío con «Observado 160 mg/l · Mediana de los últimos 3:
 110 mg/l · ▲ +50 mg/l (+45,5 %)»; corregir la medición para que dé 115 y verificar que la marca
 desaparece.
 
 **Acceptance Scenarios**:
 
 1. **Dado** un origen con al menos 3 resultados validados anteriores de una prueba, **cuando** un
-   estudio de ese origen tiene un resultado calculado sin validar que difiere del promedio de los
+   estudio de ese origen tiene un resultado calculado sin validar que difiere del mediana de los
    últimos 3 en más del umbral (30 %), para arriba o para abajo, **entonces** el detalle del
    estudio muestra la marca «Desvío» en la fila de la prueba.
-2. **Dado** el mismo historial (promedio 110), **cuando** el resultado es 143 (+30,0 %) o 77
+2. **Dado** el mismo historial (mediana 110), **cuando** el resultado es 143 (+30,0 %) o 77
    (−30,0 %), **entonces** no hay desvío (el umbral es «más de»); con 143,5 o 76,9 sí lo hay.
 3. **Dado** un origen con solo 2 resultados validados anteriores de la prueba, **cuando** el
    resultado es muy distinto, **entonces** no hay desvío ni marca.
 4. **Dado** un origen con 5 resultados validados anteriores (50, 60, 100, 110, 120), **cuando** se
-   evalúa un resultado, **entonces** el promedio usado es el de los 3 más recientes por fecha de
+   evalúa un resultado, **entonces** la mediana usada es la de los 3 más recientes por fecha de
    muestreo (110), no el de todos.
 5. **Dada** una prueba calculada que depende de otras (p. ej. un cociente de dos mediciones),
    **cuando** tiene resultado, **entonces** también se evalúa como desvío.
@@ -58,8 +62,8 @@ desaparece.
    resultado que no lo estaba, aparece la marca. Si se borra la medición, no hay resultado ni
    marca.
 7. **Dado** un resultado validado que tenía desvío al validarse, **cuando** se muestra el detalle,
-   **entonces** la fila indica «Desvío revisado» con quién y cuándo lo validó, la observación y el
-   promedio y el umbral con que se comparó.
+   **entonces** la fila indica «Desvío revisado» con quién y cuándo lo validó, la observación y la
+   mediana y el umbral con que se comparó.
 8. **Dado** un desvío, **cuando** se muestra en cualquier pantalla, **entonces** se identifica
    con texto e ícono (no solo con color) y ofrece el enlace «Comparación histórica» a quien tiene
    acceso a ella.
@@ -69,7 +73,7 @@ desaparece.
 ### User Story 2 - Ver los desvíos pendientes en el dashboard (Priority: P1)
 
 Como bioquímico, en el Dashboard veo la lista «Desvíos sin revisar» con cuántos hay pendientes y,
-para cada uno, la muestra, el origen, la prueba, el valor observado y el promedio histórico, con
+para cada uno, la muestra, el origen, la prueba, el valor observado y el mediana histórica, con
 enlaces al estudio, a la comparación histórica y a la validación, para no depender de abrir
 estudio por estudio.
 
@@ -87,7 +91,7 @@ seguir el enlace a la comparación y verificar que abre la de ese estudio.
    resultados calculados y sin validar que tienen desvío en ese momento.
 2. **Dados** desvíos sin revisar, **cuando** se lista la sección, **entonces** cada fila muestra
    el N° PI de la muestra (enlace a la muestra), el cliente y el origen, la prueba, el valor
-   observado con unidad, el promedio histórico con unidad, la diferencia en porcentaje con flecha
+   observado con unidad, el mediana histórica con unidad, la diferencia en porcentaje con flecha
    y signo y la fecha del cálculo del resultado, con enlaces «Ver estudio», «Comparación
    histórica» (la de la US 8.1 con ese estudio como referencia y esa prueba elegida) y, para quien
    puede validar, «Validar» (la pantalla de validación del estudio).
@@ -108,24 +112,24 @@ seguir el enlace a la comparación y verificar que abre la de ese estudio.
 ### User Story 3 - Revisar el desvío al validar (Priority: P1)
 
 Como bioquímico, en la pantalla de validación veo destacadas las pruebas con desvío, con el valor
-observado, el promedio histórico y un enlace a la comparación histórica, y puedo escribir una
+observado, el mediana histórica y un enlace a la comparación histórica, y puedo escribir una
 observación (p. ej. «Se repitió la medición, el valor es correcto»). Al validar una de esas
-pruebas, queda constancia en la validación de quién y cuándo la revisó, la observación y el
-promedio y el umbral con que se comparó, y sale de la lista de pendientes.
+pruebas, queda constancia en la validación de quién y cuándo la revisó, la observación y la
+mediana y el umbral con que se comparó, y sale de la lista de pendientes.
 
 **Why this priority**: Cierra el circuito del aviso (criterio 4) en el momento natural en que el
 bioquímico decide sobre el resultado, sin un paso aparte.
 
 **Independent Test**: Abrir la validación del estudio de «Pozo 2», ver Cloruro destacado con 430
-mg/l y el promedio, escribir una observación, validarlo y confirmar; verificar que el contador del
+mg/l y la mediana, escribir una observación, validarlo y confirmar; verificar que el contador del
 dashboard baja en 1 y que el estudio muestra «Desvío revisado · Validado por Bioquímica Demo el
-09/11/2026 14:30 – Se repitió la medición · promedio 219,6667 mg/l, umbral 30 %».
+09/11/2026 14:30 – Se repitió la medición · mediana 124 mg/l, umbral 30 %».
 
 **Acceptance Scenarios**:
 
 1. **Dado** un estudio con resultados sin validar con desvío, **cuando** se abre la pantalla de
    validación, **entonces** esas pruebas se destacan (texto + ícono) con el valor observado, el
-   promedio de los últimos N, la diferencia (cantidad y porcentaje con flecha y signo), un enlace
+   mediana de los últimos N, la diferencia (cantidad y porcentaje con flecha y signo), un enlace
    «Comparación histórica» y un campo «Observación» opcional; un resumen arriba indica cuántas
    tienen desvío («2 pruebas con desvío»). Las demás no tienen el campo; las que no tienen
    historial suficiente indican «Historial insuficiente para detectar desvíos».
@@ -134,7 +138,7 @@ dashboard baja en 1 y que el estudio muestra «Desvío revisado · Validado por 
    tienen desvío: quedarán revisados al validar»), con la prueba y la observación escrita de cada
    uno.
 3. **Dada** la confirmación, **cuando** se valida, **entonces** cada validación de una prueba con
-   desvío guarda la observación y el promedio y el umbral con que se comparó en ese momento; quién
+   desvío guarda la observación y la mediana y el umbral con que se comparó en ese momento; quién
    y cuándo son los de la validación. Si la validación no se aplica (se omite, se rechaza o
    falla), no queda nada guardado.
 4. **Dada** una prueba con desvío que no se elige para validar, **cuando** se validan las demás,
@@ -193,7 +197,7 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
    evalúan con la regla nueva; las validaciones ya hechas conservan el umbral con que se
    compararon.
 3. **Dado** el texto de ayuda de las pantallas, **cuando** se muestra la regla, **entonces** se lee
-   con los valores vigentes («más de un 30 % respecto del promedio de los últimos 3 resultados
+   con los valores vigentes («más de un 30 % respecto del mediana de los últimos 3 resultados
    validados del origen»).
 
 ---
@@ -212,8 +216,12 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
   validarse.
 - **Estudio de una muestra antigua**: si un estudio es de una muestra anterior a otras ya
   validadas del origen, se compara solo contra las muestras anteriores a la suya.
-- **Promedio 0**: si el promedio de los previos es 0 y el resultado es distinto de 0, hay desvío y
-  se muestra «sin porcentaje (promedio previo 0)»; si el resultado también es 0, no hay desvío.
+- **Pico aislado en el historial**: un valor anómalo entre los últimos N no mueve la referencia
+  (p. ej. 14 / 4,1 / 4,3 → mediana 4,3: un 4,2 no es desvío).
+- **N par**: si la cantidad configurada es par, la mediana es el promedio de los dos valores
+  centrales.
+- **Mediana 0**: si la mediana de los previos es 0 y el resultado es distinto de 0, hay desvío y
+  se muestra «sin porcentaje (mediana previa 0)»; si el resultado también es 0, no hay desvío.
 - **Pruebas Ausente/Presente**: no se usan porcentajes. Hay desvío si el resultado es distinto del
   de los últimos 3 validados cuando estos coinciden entre sí (los 3 Ausente y el actual Presente, o
   al revés); si los 3 no coinciden no hay desvío. Se muestra «Presente (los últimos 3: Ausente)»,
@@ -241,34 +249,34 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
   sin validar (detalle del estudio, pantalla de validación y lista de pendientes), con su valor
   actual; no guarda desvíos. Una carga o corrección se refleja sin pasos adicionales.
 - **FR-002**: Hay desvío si, con al menos N resultados validados anteriores de la prueba en el
-  origen (Edge Cases, «Historial»), el resultado difiere del promedio de los últimos N en más de U
-  por ciento del promedio, en cualquier sentido. Valores iniciales: U = 30 %, N = 3. La comparación
+  origen (Edge Cases, «Historial»), el resultado difiere de la mediana de los últimos N en más de U
+  por ciento de la mediana, en cualquier sentido. Valores iniciales: U = 30 %, N = 3. La comparación
   usa valores completos y aritmética decimal exacta; un porcentaje exactamente igual a U no es
   desvío.
 - **FR-003**: U y N MUST definirse en un único lugar de la configuración del sistema; el historial
-  y el promedio MUST obtenerse con la misma definición de historial y variación de la comparación
-  histórica (US 8.1), sin una segunda implementación.
+  MUST obtenerse con la misma definición de historial de la comparación histórica (US 8.1), sin
+  una segunda implementación; la mediana se calcula sobre los últimos N de ese historial.
 - **FR-004**: Con menos de N resultados previos o sin resultado no hay desvío; la pantalla de
   validación indica «Historial insuficiente para detectar desvíos» cuando falta historial.
 - **FR-005**: El detalle del estudio MUST marcar cada prueba sin validar con desvío (texto +
-  ícono), con el valor observado, el promedio de los últimos N, la diferencia (cantidad y
+  ícono), con el valor observado, el mediana de los últimos N, la diferencia (cantidad y
   porcentaje con flecha y signo) y un enlace a la comparación histórica; y cada prueba validada con
-  desvío como «Desvío revisado», con quién, cuándo, la observación, el promedio y el umbral
+  desvío como «Desvío revisado», con quién, cuándo, la observación, la mediana y el umbral
   guardados.
 - **FR-006**: El Dashboard MUST mostrar la sección «Desvíos sin revisar» con la cantidad total de
   resultados sin validar con desvío y los 10 calculados más recientemente, y un enlace «Ver todos»
   a una lista completa paginada. Ambas MUST mostrar por desvío: N° PI (enlace a la muestra),
-  cliente, origen, prueba, valor observado y promedio con unidad, porcentaje, fecha del cálculo y
+  cliente, origen, prueba, valor observado y mediana con unidad, porcentaje, fecha del cálculo y
   los enlaces «Ver estudio», «Comparación histórica» (estudio de referencia y prueba elegida) y,
   con permiso de validar, «Validar». La lista no depende del período elegido en el Dashboard.
 - **FR-007**: La pantalla de validación MUST destacar cada prueba con desvío con el valor
-  observado, el promedio histórico, la diferencia, un enlace a la comparación histórica y un campo
+  observado, el mediana histórica, la diferencia, un enlace a la comparación histórica y un campo
   «Observación» opcional de hasta 500 caracteres, y MUST resumir cuántas pruebas mostradas tienen
   desvío. No hay otra acción para revisar un desvío.
 - **FR-008**: La confirmación de la validación MUST indicar cuántos de los resultados elegidos
   tienen desvío, con la prueba y la observación de cada uno, sin impedir confirmar.
 - **FR-009**: Al validar una prueba, el sistema MUST volver a evaluar el desvío en la misma
-  operación y, si lo hay, guardar en la validación la observación, el promedio y el umbral usados;
+  operación y, si lo hay, guardar en la validación la observación, la mediana y el umbral usados;
   quién y cuándo revisó son los de la validación. Si la validación de esa prueba se omite, se
   rechaza o falla, no se guarda nada. Lo guardado es inalterable.
 - **FR-010**: Revisar MUST requerir el mismo permiso que validar resultados (grupo Bioquímicos); la
@@ -280,17 +288,17 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
   informe, su PDF, la impresión ni el correo al cliente.
 - **FR-013**: Las pruebas Ausente/Presente MUST evaluarse por cambio de estado (Edge Cases) y
   mostrarse como «Ausente»/«Presente».
-- **FR-014**: Con promedio previo 0 MUST aplicarse la regla de Edge Cases («Promedio 0»).
+- **FR-014**: Con mediana previa 0 MUST aplicarse la regla de Edge Cases («Mediana 0»).
 - **FR-015**: La demo del laboratorio MUST incluir el desvío de Cloruro de «Pozo 2» como pendiente
   y al menos una validación con desvío y observación, para mostrar la historia.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Desvío** (derivado, no se guarda): resultado sin validar, valor observado, promedio de los
+- **Desvío** (derivado, no se guarda): resultado sin validar, valor observado, mediana de los
   últimos N validados, diferencia y porcentaje (o cambio de estado en Ausente/Presente), y los
   resultados previos usados.
 - **Validación** (existente, se amplía): además de quién, cuándo y la evaluación contra límites,
-  guarda la observación opcional y, si había desvío al validar, el promedio y el umbral contra los
+  guarda la observación opcional y, si había desvío al validar, la mediana y el umbral contra los
   que se comparó.
 - **Regla de desvío** (configuración): umbral porcentual y cantidad de resultados previos.
 - Reutiliza **Resultado**, **Muestra** y **Origen**, y el historial y la variación de la
@@ -302,13 +310,13 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
 
 - **SC-001**: El 100 % de los resultados sin validar con al menos N previos que superan el umbral
   se muestran como desvío, y ninguno dentro del umbral (verificado con casos conocidos en los
-  bordes: exactamente 30 %, apenas más, promedio 0, Ausente/Presente).
+  bordes: exactamente 30 %, apenas más, mediana 0, Ausente/Presente).
 - **SC-002**: Desde el Dashboard, un bioquímico llega a la comparación histórica de un desvío
   pendiente en 1 clic y a la validación que lo revisa en 1 clic.
 - **SC-003**: Tras una corrección, el detalle, la validación y la lista reflejan el nuevo resultado
   en la siguiente vista, sin pasos adicionales.
-- **SC-004**: El 100 % de las validaciones de resultados con desvío guardan la observación, el
-  promedio y el umbral, y esa constancia no cambia después.
+- **SC-004**: El 100 % de las validaciones de resultados con desvío guardan la observación, la
+  mediana y el umbral, y esa constancia no cambia después.
 - **SC-005**: Validar y emitir informes funciona igual con o sin desvíos (0 operaciones bloqueadas
   por un desvío) y ningún informe, PDF ni correo menciona desvíos.
 - **SC-006**: Cambiar el umbral requiere modificar un solo valor de configuración.
@@ -322,12 +330,12 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
 - «El desvío se detecta cuando se calcula el resultado» se cumple porque la evaluación usa siempre
   el resultado vigente: aparece en cuanto el resultado existe y se actualiza con cada corrección.
 - Los «últimos 3 resultados validados» se toman del mismo historial que la comparación histórica
-  (US 8.1); el promedio de la 8.2 usa solo los últimos N, mientras que la 8.1 sigue mostrando el de
+  (US 8.1); la mediana de la 8.2 usa solo los últimos N, mientras que la 8.1 sigue mostrando el de
   todos.
-- El porcentaje se calcula sobre el promedio (|resultado − promedio| / promedio) y se muestra con
+- El porcentaje se calcula sobre la mediana (|resultado − mediana| / mediana) y se muestra con
   un decimal, como en la US 8.1; la decisión de desvío usa el valor exacto, no el redondeado.
 - «Marcar como revisado» (criterio 4) se cumple al validar: quien valida una prueba con desvío lo
-  revisó en esa pantalla, donde vio el valor, el promedio y el enlace a la comparación. Por eso la
+  revisó en esa pantalla, donde vio el valor, la mediana y el enlace a la comparación. Por eso la
   revisión usa el permiso de validar; los Administradores con permiso de Dashboard ven la lista
   pero no revisan salvo que también sean Bioquímicos.
 - La «fecha» de un desvío pendiente es la del último cálculo de su resultado.
