@@ -18,15 +18,16 @@ from pruebas.limites import (
 )
 
 from . import calculo, servicios
-from .busqueda import filtro_busqueda
+from .busqueda import filtro_busqueda, filtro_estado_fechas
 from .catalogo import CatalogoNoDisponible
 from .confirmaciones import cargar_token, descartar, pendientes, preparar
 from .forms import (
+    CAMPOS_FILTRO,
     AgregarPruebaForm,
-    BuscarEstudioForm,
     CargarMedicionesForm,
     CorregirMedicionesForm,
     CrearEstudioForm,
+    FiltrarEstudiosForm,
     ValidarResultadosForm,
 )
 from .models import EstadoPruebaEstudio, Estudio, OrigenLimites, Validacion
@@ -155,22 +156,39 @@ def confirmar(request):
 
 
 def buscar(request):
-    page_obj = None
+    """Buscar estudio (US 5.2) con filtros de estado y fecha de creación (SCRUM-74).
+
+    Con algún valor inválido se muestran los errores y el listado completo, sin filtrar, como en
+    el historial del cliente (US 3.3).
+    """
+    form = FiltrarEstudiosForm(request.GET or None)
+    qs = Estudio.objects.select_related("muestra", "muestra__cliente", "muestra__origen").order_by(
+        *Estudio._meta.ordering
+    )
     q = ""
-    form = BuscarEstudioForm(request.GET or None)
-    if not form.is_bound or form.is_valid():
-        q = form.cleaned_data.get("q", "") if form.is_bound else ""
-        qs = Estudio.objects.select_related(
-            "muestra", "muestra__cliente", "muestra__origen"
-        ).order_by(*Estudio._meta.ordering)
+    con_filtros = False
+    if form.is_bound and form.is_valid():
+        q = form.cleaned_data["q"]
+        filtros = {campo: form.cleaned_data[campo] for campo in CAMPOS_FILTRO}
+        con_filtros = any(filtros.values())
         if q:
             qs = qs.filter(filtro_busqueda(q))
-        page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
-    return render(
-        request,
-        "estudios/buscar.html",
-        {"form": form, "page_obj": page_obj, "q": q},
-    )
+        if con_filtros:
+            qs = qs.filter(filtro_estado_fechas(**filtros))
+    page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
+    parametros = request.GET.copy()
+    parametros.pop("page", None)
+    contexto = {
+        "form": form,
+        "page_obj": page_obj,
+        "q": q,
+        "parametros": parametros.urlencode(),
+        # Según lo recibido, válido o no: un filtro inválido también se puede limpiar.
+        "hay_filtros": any(request.GET.get(c, "").strip() for c in ("q", *CAMPOS_FILTRO)),
+        "filtrado": bool(q) or con_filtros,
+        "con_filtros": con_filtros,
+    }
+    return render(request, "estudios/buscar.html", contexto)
 
 
 def detalle(request, pk):

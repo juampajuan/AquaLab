@@ -25,8 +25,10 @@
         <button type="submit" class="btn btn-primario">
           {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar
         </button>
-        {% if q %}
-          <a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">Ver todos</a>
+        {% if hay_filtros %}
+          <a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">
+            {% include "ui/icono.html" with nombre="x" clase="size-4" %} Limpiar filtros
+          </a>
         {% endif %}
       </div>
     </div>
@@ -35,13 +37,18 @@
         {% for error in form.q.errors %}<div>{{ error }}</div>{% endfor %}
       </div>
     {% endif %}
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      {% include "ui/campo.html" with field=form.estado %}
+      {% include "ui/campo.html" with field=form.desde %}
+      {% include "ui/campo.html" with field=form.hasta %}
+    </div>
   </form>
 
   {% if page_obj is not None %}
     <section class="tarjeta overflow-hidden">
       {% if page_obj.paginator.count %}
         <h2 class="px-4 py-4 text-sm font-semibold text-marino sm:px-5">
-          {% if q %}
+          {% if filtrado %}
             {{ page_obj.paginator.count }} estudio{{ page_obj.paginator.count|pluralize }} encontrado{{ page_obj.paginator.count|pluralize }}
           {% else %}
             {{ page_obj.paginator.count }} estudio{{ page_obj.paginator.count|pluralize }} registrado{{ page_obj.paginator.count|pluralize }}
@@ -85,9 +92,10 @@
             </tbody>
           </table>
         </div>
-        {% with qq=q|urlencode %}
-          {% include "ui/paginacion.html" with parametros="q="|add:qq %}
-        {% endwith %}
+        {% include "ui/paginacion.html" with parametros=parametros %}
+      {% elif con_filtros %}
+        {% url 'estudios:buscar' as url_buscar %}
+        {% include "ui/estado_vacio.html" with icono="search" mensaje="Ningún estudio coincide con la búsqueda y los filtros." accion_texto="Limpiar filtros" accion_url=url_buscar %}
       {% elif q %}
         {% include "ui/estado_vacio.html" with icono="search" mensaje="No se encontraron estudios para «"|add:q|add:"»." %}
       {% else %}
