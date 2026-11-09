@@ -142,7 +142,7 @@ el formulario del historial (research R1); los tests actuales del historial lo c
 
 - [X] T019 [P] En `CLAUDE.md` agregar la sección «## Filtrar estudios (SCRUM-74)» con: `estudios.forms.FiltrosEstudioForm` es la única definición de los filtros desde/hasta/estado (la heredan `HistorialClienteForm` y `FiltrarEstudiosForm`; `BuscarEstudioForm` sigue solo con `q` porque lo usa `informes:listar`); `estudios/busqueda.py:filtro_estado_fechas` cuenta los días de `fecha_creacion` en la zona del laboratorio con límites `>= inicio(desde)` y `< inicio(hasta + 1)`; con cualquier valor inválido `estudios:buscar` muestra el listado completo sin filtrar (como el historial); la paginación usa `parametros` (GET sin `page`) y «Limpiar filtros» depende de los parámetros recibidos. Mantener el estilo breve de las otras secciones.
 - [X] T020 Ejecutar `docker compose exec web pytest`, `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .` y `docker compose exec web python manage.py makemigrations --check --dry-run`: todo en verde, sin migraciones.
-- [ ] T021 Prueba manual según `specs/028-filtrar-estudios/quickstart.md` (pasos 1–8, con `cargar_demo`), incluido el historial del cliente como regresión. La acredita el autor.
+- [X] T021 Prueba manual según `specs/028-filtrar-estudios/quickstart.md` (pasos 1–8, con `cargar_demo`), incluido el historial del cliente como regresión. La acredita el autor.
 
 ---
 
