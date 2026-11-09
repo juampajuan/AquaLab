@@ -8,6 +8,13 @@
 
 **Input**: User description: "US 8.2 (SCRUM-61) – Notificar desvíos relevantes. Como bioquímico quiero recibir un aviso cuando un resultado se aleje del historial de su origen para revisar la medición antes de validar. Criterios: (1) El desvío se detecta cuando se calcula el resultado (al cargar o corregir mediciones); queda marcado en el detalle del estudio y en la pantalla de validación, y aparece en la lista «Desvíos sin revisar» del dashboard, que muestra cuántos hay pendientes. (2) Regla inicial: hay desvío si el resultado difiere más de un 30 % del promedio de los últimos 3 resultados validados de ese origen, para arriba o para abajo; hacen falta al menos 3 resultados previos; el umbral se confirma con el laboratorio y queda configurable en un solo lugar. (3) Cada desvío muestra la muestra, el origen, la prueba, el valor observado y el promedio histórico, con enlaces al estudio y a la comparación histórica de la 8.1. (4) Un desvío se puede marcar como revisado; queda guardado quién y cuándo lo revisó. (5) La advertencia no impide validar ni cambia el resultado. Notas técnicas: reutilizar estudios/comparacion.py de la 8.1 (comparar y variacion) para el historial; si una corrección recalcula el resultado, el desvío se vuelve a evaluar. Diferencial pedido por la profesora: no recortar."
 
+**Ajuste posterior (2026-11-09, pedido del usuario)**: validar una prueba con desvío cuenta como
+revisarlo; no hay una acción separada de «Marcar como revisado». En la pantalla de validación las
+pruebas con desvío vigente se destacan con el valor, el promedio histórico, un enlace a la
+comparación de la 8.1 y un campo «Observación» opcional; al validarlas, el desvío queda revisado
+con quién, cuándo y la observación, en la misma operación de la validación. La confirmación de la
+validación indica cuántos de los resultados elegidos tienen desvío.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Enterarse del desvío en el momento de cargar o corregir (Priority: P1)
@@ -42,11 +49,7 @@ desvío con «Observado 160 mg/l · Promedio de los últimos 3: 110 mg/l · +50 
 5. **Dada** una prueba calculada que depende de la medida cargada (p. ej. Cloruro a partir de su
    medición, u otra prueba con fórmula que la referencia), **cuando** el cálculo produce su
    resultado, **entonces** también se evalúa como desvío.
-6. **Dado** un estudio con desvíos, **cuando** se abre la pantalla de validación, **entonces** cada
-   prueba con desvío muestra la advertencia con el valor observado, el promedio histórico, la
-   diferencia y un enlace a la comparación histórica, y un resumen arriba indica cuántos desvíos
-   tiene el estudio («2 pruebas con desvío»).
-7. **Dado** un desvío, **cuando** se muestra en cualquier pantalla, **entonces** se identifica
+6. **Dado** un desvío, **cuando** se muestra en cualquier pantalla, **entonces** se identifica
    con texto e ícono (no solo con color).
 
 ---
@@ -106,8 +109,9 @@ seguir el enlace a la comparación y verificar que abre la de ese estudio.
 2. **Dados** desvíos sin revisar, **cuando** se lista la sección, **entonces** cada fila muestra
    el N° PI de la muestra (enlace a la muestra), el cliente y el origen, la prueba, el valor
    observado con unidad, el promedio histórico con unidad, la diferencia en porcentaje con flecha
-   y signo, la fecha de detección y si el resultado ya fue validado, con enlaces «Ver estudio» y
-   «Comparación histórica» (la de la US 8.1 con ese estudio como referencia y esa prueba elegida).
+   y signo y la fecha de detección, con enlaces «Ver estudio», «Comparación histórica» (la de la
+   US 8.1 con ese estudio como referencia y esa prueba elegida) y, para quien puede validar,
+   «Validar» (la pantalla de validación del estudio).
 3. **Dados** más desvíos pendientes que los que entran en el panel, **cuando** se muestra,
    **entonces** el panel lista los 10 más recientes y ofrece «Ver todos», que abre la lista
    completa paginada con los mismos datos.
@@ -120,65 +124,70 @@ seguir el enlace a la comparación y verificar que abre la de ese estudio.
 
 ---
 
-### User Story 4 - Marcar un desvío como revisado (Priority: P2)
+### User Story 4 - Revisar el desvío al validar (Priority: P1)
 
-Como bioquímico, después de revisar la medición marco el desvío como revisado (con una observación
-opcional, p. ej. «Se repitió la medición, el valor es correcto»); el sistema guarda quién y cuándo
-lo revisó, y el desvío sale de la lista de pendientes.
+Como bioquímico, en la pantalla de validación veo destacadas las pruebas con desvío, con el valor
+observado, el promedio histórico y un enlace a la comparación histórica, y puedo escribir una
+observación (p. ej. «Se repitió la medición, el valor es correcto»). Al validar una de esas
+pruebas, el desvío queda revisado por mí, con la fecha y hora y la observación, y sale de la lista
+de pendientes.
 
-**Why this priority**: Cierra el circuito del aviso (criterio 4) y evita que la lista crezca sin
-control.
+**Why this priority**: Cierra el circuito del aviso (criterio 4) en el momento natural en que el
+bioquímico decide sobre el resultado, sin un paso aparte.
 
-**Independent Test**: Marcar como revisado el desvío de Cloruro de «Pozo 2» con una observación,
-confirmar, y verificar que el contador del dashboard baja en 1 y que el estudio muestra «Revisado
-por Bioquímica Demo el 09/11/2026 14:30 – Se repitió la medición».
+**Independent Test**: Abrir la validación del estudio de «Pozo 2», ver Cloruro destacado con 430
+mg/l y el promedio, escribir una observación, validarlo y confirmar; verificar que el contador del
+dashboard baja en 1 y que el estudio muestra «Revisado por Bioquímica Demo el 09/11/2026 14:30 –
+Se repitió la medición».
 
 **Acceptance Scenarios**:
 
-1. **Dado** un desvío sin revisar, **cuando** un usuario con permiso elige «Marcar como revisado»
-   (desde el detalle del estudio, la pantalla de validación o la lista de desvíos), **entonces** se
-   le pide confirmación mostrando la prueba, el valor observado y el promedio, con un campo de
-   observación opcional.
-2. **Dada** la confirmación, **cuando** se acepta, **entonces** el desvío queda revisado con el
-   usuario, la fecha y hora y la observación; sale de «Desvíos sin revisar» y se muestra un mensaje
-   de éxito.
-3. **Dado** un desvío revisado, **cuando** se muestra en el estudio o en la validación, **entonces**
-   sigue visible como «Desvío revisado» con quién, cuándo y la observación (sin la advertencia
-   destacada).
-4. **Dado** un desvío que ya fue revisado por otra persona o que dejó de estar vigente por una
-   corrección mientras se confirmaba, **cuando** se confirma, **entonces** no se modifica y se
-   informa «El desvío ya estaba revisado» o «El desvío ya no está vigente (el resultado cambió)».
-5. **Dada** una observación de más de 500 caracteres, **cuando** se confirma, **entonces** se
-   muestra el error junto al campo.
-6. **Dado** un usuario sin permiso para revisar, **cuando** ve un desvío, **entonces** no ve la
-   acción «Marcar como revisado» y si envía el pedido igual recibe «sin permiso».
-7. **Dado** un desvío revisado, **cuando** se lo intenta modificar o borrar, **entonces** no es
-   posible: la revisión es inalterable (solo una corrección del resultado genera un desvío nuevo).
+1. **Dado** un estudio con pruebas con desvío vigente sin revisar, **cuando** se abre la pantalla
+   de validación, **entonces** esas pruebas se destacan (texto + ícono) con el valor observado, el
+   promedio de los últimos N, la diferencia (cantidad y porcentaje con flecha y signo), un enlace
+   «Comparación histórica» y un campo «Observación» opcional; un resumen arriba indica cuántas
+   tienen desvío («2 pruebas con desvío»). Las demás no tienen el campo.
+2. **Dados** resultados elegidos para validar, **cuando** se pasa a la confirmación, **entonces**
+   la confirmación indica cuántos de los elegidos tienen desvío («2 de los 5 resultados elegidos
+   tienen desvío: quedarán revisados al validar»), con la prueba y la observación escrita de cada
+   uno.
+3. **Dada** la confirmación, **cuando** se valida, **entonces** cada prueba validada que tenía
+   desvío vigente sin revisar queda con el desvío revisado por quien validó, con la misma fecha y
+   hora de la validación y la observación; si la validación no se aplica (se rechaza o falla),
+   tampoco queda la revisión.
+4. **Dada** una prueba con desvío que no se elige para validar, **cuando** se validan las demás,
+   **entonces** su desvío sigue sin revisar y su observación no se guarda.
+5. **Dada** una prueba con desvío que se omite al confirmar («cambió mientras se revisaba», «ya
+   estaba validada»), **cuando** se valida el resto, **entonces** su desvío no se modifica.
+6. **Dada** una observación de más de 500 caracteres, **cuando** se pasa a la confirmación,
+   **entonces** se muestra el error junto al campo y no se avanza.
+7. **Dado** un desvío revisado, **cuando** se muestra en el detalle del estudio, **entonces** sigue
+   visible como «Desvío revisado» con quién, cuándo y la observación (sin la advertencia
+   destacada), y la revisión no se puede modificar ni borrar.
+8. **Dado** un usuario sin permiso para validar, **cuando** ve un desvío, **entonces** no ve la
+   acción «Validar» en el dashboard y no puede revisarlo.
 
 ---
 
 ### User Story 5 - La advertencia no bloquea (Priority: P2)
 
-Como bioquímico, puedo validar un resultado con desvío (revisado o no) sin que el sistema me lo
-impida ni cambie el valor: el aviso es informativo.
+Como bioquímico, puedo validar un resultado con desvío sin que el sistema me lo impida ni cambie el
+valor: el aviso es informativo y la observación es opcional.
 
 **Why this priority**: Criterio 5; la decisión profesional queda en el bioquímico.
 
-**Independent Test**: Validar Cloruro de «Pozo 2» con el desvío sin revisar y verificar que se
-valida igual, con el mismo valor, y que el desvío sigue en la lista como pendiente.
+**Independent Test**: Validar Cloruro de «Pozo 2» sin escribir observación y verificar que se
+valida igual, con el mismo valor, y que el desvío queda revisado con la observación vacía.
 
 **Acceptance Scenarios**:
 
-1. **Dado** un resultado con desvío sin revisar, **cuando** se valida, **entonces** la validación
-   se registra igual que sin desvío y el resultado no cambia.
-2. **Dado** un resultado con desvío sin revisar, **cuando** se valida, **entonces** el desvío
-   sigue sin revisar (validar no equivale a revisar) y en la lista figura como «Validado».
-3. **Dado** cualquier desvío, **cuando** se registra, revisa o deja de estar vigente, **entonces**
-   no cambia el estado de la prueba, del estudio ni de su validación.
-4. **Dado** un estudio con desvíos, **cuando** se emite el informe, **entonces** el informe, su
-   PDF, la impresión y el correo al cliente no mencionan desvíos.
-5. **Dado** un estudio con desvíos sin revisar, **cuando** se abre el control previo al informe,
-   **entonces** se indica «Tiene N desvíos sin revisar» como aviso, sin impedir emitir.
+1. **Dado** un resultado con desvío, **cuando** se valida sin observación, **entonces** la
+   validación se registra igual que sin desvío, el resultado no cambia y el desvío queda revisado.
+2. **Dado** cualquier desvío, **cuando** se registra, revisa o deja de estar vigente, **entonces**
+   no cambia el valor ni el estado de la prueba, ni el del estudio ni su validación (más allá de la
+   validación que el bioquímico pidió).
+3. **Dado** un estudio con desvíos, **cuando** se emite el informe, **entonces** el informe, su
+   PDF, la impresión y el correo al cliente no mencionan desvíos ni observaciones de revisión.
 
 ---
 
@@ -219,7 +228,6 @@ desvío, mientras que los desvíos registrados antes siguen mostrando «detectad
   validarse.
 - **Estudio de una muestra antigua**: si se carga un estudio de una muestra anterior a otras ya
   validadas del origen, se compara solo contra las muestras anteriores a la suya.
-- **Muestra sin origen**: no se evalúa desvío.
 - **Promedio 0**: si el promedio de los previos es 0 y el resultado es distinto de 0, hay desvío y
   se muestra «sin porcentaje (promedio previo 0)»; si el resultado también es 0, no hay desvío.
 - **Pruebas Ausente/Presente**: no se usan porcentajes. Hay desvío si el resultado es distinto del
@@ -228,18 +236,25 @@ desvío, mientras que los desvíos registrados antes siguen mostrando «detectad
   nunca 0 y 1.
 - **Resultado por debajo del límite de detección**: se compara con su valor completo, como en la
   US 8.1, y se muestra «< LD».
-- **Varias pruebas con desvío en el mismo estudio**: cada una es un desvío propio en la lista.
+- **Varias pruebas con desvío en el mismo estudio**: cada una es un desvío propio en la lista y
+  tiene su propia observación en la validación.
 - **Varios estudios de la misma muestra**: cada estudio se evalúa por separado.
+- **Recálculo con el mismo valor**: si una prueba validada vuelve a Cargada sin cambiar su valor
+  (pierde la validación por un recálculo), su desvío sigue revisado; al volver a validarla no se
+  pide ni guarda otra revisión.
+- **Desvíos pendientes y validación**: como validar revisa, un desvío sin revisar corresponde
+  siempre a un resultado sin validar; un estudio con desvíos sin revisar no puede estar listo para
+  informar (le faltan pruebas por validar).
 - **Estudio con informe emitido**: sus resultados no se recalculan, por lo tanto no se generan ni
-  cambian desvíos; los pendientes se pueden marcar como revisados igual.
+  cambian desvíos.
 - **Historial que cambia después**: si más tarde se validan o anulan otros resultados del origen,
   los desvíos ya registrados no se recalculan; solo se reevalúa cuando cambia el resultado de esa
   prueba en ese estudio.
 - **Resultados anteriores a esta historia**: los resultados sin validar existentes se pueden
   evaluar una vez con una tarea de mantenimiento, que no duplica desvíos al repetirse.
-- **Concurrencia**: dos usuarios que marcan el mismo desvío a la vez dejan una sola revisión; el
-  segundo recibe «El desvío ya estaba revisado».
-- **Cliente u origen inactivo**: los desvíos se siguen mostrando y se pueden revisar (es historia).
+- **Concurrencia**: dos bioquímicos que validan la misma prueba a la vez dejan una sola validación
+  y una sola revisión; el segundo recibe «ya estaba validada» y su observación no se guarda.
+- **Cliente u origen inactivo**: los desvíos se siguen mostrando y se revisan al validar igual.
 - **Usuario sin acceso al dashboard**: no ve la sección ni la lista completa («sin permiso» si
   entra por el enlace); en el estudio igual ve la marca de desvío.
 
@@ -259,9 +274,8 @@ desvío, mientras que los desvíos registrados antes siguen mostrando «detectad
 - **FR-003**: U y N MUST definirse en un único lugar de la configuración del sistema; el historial
   y el promedio MUST obtenerse con la misma definición de historial y variación de la comparación
   histórica (US 8.1), sin una segunda implementación.
-- **FR-004**: Con menos de N resultados previos, sin origen o sin resultado, no se registra desvío;
-  la pantalla de validación indica «Historial insuficiente para detectar desvíos» cuando falta
-  historial.
+- **FR-004**: Con menos de N resultados previos o sin resultado no se registra desvío; la pantalla
+  de validación indica «Historial insuficiente para detectar desvíos» cuando falta historial.
 - **FR-005**: Cada desvío MUST guardar el estudio y la prueba, el valor observado y su unidad, el
   promedio, la diferencia y el porcentaje, los resultados previos usados (N° PI y valor), el umbral
   y la cantidad aplicados y la fecha y hora de detección.
@@ -270,35 +284,37 @@ desvío, mientras que los desvíos registrados antes siguen mostrando «detectad
   del umbral, el anterior deja de estar vigente y se registra uno nuevo sin revisar; si quedó
   dentro del umbral o sin resultado, el anterior deja de estar vigente («Resuelto por corrección» /
   «Sin resultado»). Los desvíos que dejan de estar vigentes no se borran.
-- **FR-007**: El detalle del estudio y la pantalla de validación MUST marcar cada prueba con desvío
-  vigente (texto + ícono), con el valor observado, el promedio de los últimos N, la diferencia
-  (cantidad y porcentaje con flecha y signo), su estado (sin revisar / revisado con quién, cuándo y
-  observación) y un enlace a la comparación histórica; la pantalla de validación además resume
-  cuántos desvíos tiene el estudio.
-- **FR-008**: El detalle del estudio MUST ofrecer el historial de desvíos de la prueba (incluidos
+- **FR-007**: El detalle del estudio MUST marcar cada prueba con desvío vigente (texto + ícono),
+  con el valor observado, el promedio de los últimos N, la diferencia (cantidad y porcentaje con
+  flecha y signo), su estado (sin revisar / revisado con quién, cuándo y observación) y un enlace a
+  la comparación histórica.
+- **FR-008**: El detalle del estudio MUST ofrecer el historial de desvíos de sus pruebas (incluidos
   los no vigentes, con el motivo), para trazabilidad.
 - **FR-009**: El Dashboard MUST mostrar la sección «Desvíos sin revisar» con la cantidad total de
   desvíos vigentes sin revisar y los 10 detectados más recientemente, y un enlace «Ver todos» a una
   lista completa paginada. Ambas MUST mostrar por desvío: N° PI (enlace a la muestra), cliente,
-  origen, prueba, valor observado y promedio con unidad, porcentaje, fecha de detección, si el
-  resultado está validado, y los enlaces «Ver estudio» y «Comparación histórica» (estudio de
-  referencia y prueba elegida). La lista no depende del período elegido en el Dashboard.
-- **FR-010**: Un usuario con permiso MUST poder marcar como revisado un desvío vigente sin revisar,
-  con confirmación previa y una observación opcional de hasta 500 caracteres; el sistema MUST
-  guardar el usuario y la fecha y hora. La revisión MUST ser inalterable y no se puede deshacer ni
+  origen, prueba, valor observado y promedio con unidad, porcentaje, fecha de detección y los
+  enlaces «Ver estudio», «Comparación histórica» (estudio de referencia y prueba elegida) y, con
+  permiso de validar, «Validar». La lista no depende del período elegido en el Dashboard.
+- **FR-010**: La pantalla de validación MUST destacar cada prueba con desvío vigente sin revisar
+  con el valor observado, el promedio histórico, la diferencia, un enlace a la comparación
+  histórica y un campo «Observación» opcional de hasta 500 caracteres, y MUST resumir cuántas
+  pruebas mostradas tienen desvío. No hay otra acción para revisar un desvío.
+- **FR-011**: La confirmación de la validación MUST indicar cuántos de los resultados elegidos
+  tienen desvío vigente sin revisar, con la prueba y la observación de cada uno, sin impedir
+  confirmar.
+- **FR-012**: Al validar una prueba con desvío vigente sin revisar, el sistema MUST marcar el
+  desvío como revisado por quien valida, con la fecha y hora de la validación y la observación, en
+  la misma operación que la validación: si la validación de esa prueba se omite, se rechaza o
+  falla, el desvío no se modifica. La revisión MUST ser inalterable y no se puede deshacer ni
   borrar.
-- **FR-011**: Marcar como revisado MUST revalidar al confirmar: si el desvío ya estaba revisado o
-  dejó de estar vigente, no se modifica y se informa el motivo; dos confirmaciones simultáneas dejan
-  una sola revisión.
-- **FR-012**: El permiso para marcar como revisado MUST ser el mismo que el de validar resultados
-  (grupo Bioquímicos); la sección y la lista completa del Dashboard MUST requerir el permiso del
-  Dashboard. Sin permiso no se muestran las acciones y el pedido responde «sin permiso».
-- **FR-013**: Los desvíos MUST ser solo informativos: no impiden validar ni emitir el informe, no
-  cambian resultados, estados ni validaciones, y validar no los marca como revisados.
-- **FR-014**: El control previo al informe MUST avisar cuántos desvíos sin revisar tiene el
-  estudio, sin impedir la emisión.
-- **FR-015**: Los desvíos MUST ser solo para el laboratorio: no aparecen en el informe, su PDF, la
-  impresión ni el correo al cliente.
+- **FR-013**: Revisar MUST requerir el mismo permiso que validar resultados (grupo Bioquímicos); la
+  sección y la lista completa del Dashboard MUST requerir el permiso del Dashboard. Sin permiso no
+  se muestran las acciones y el pedido responde «sin permiso».
+- **FR-014**: Los desvíos MUST ser solo informativos: no impiden validar ni emitir el informe, la
+  observación es opcional y no cambian resultados, estados ni validaciones.
+- **FR-015**: Los desvíos y sus observaciones MUST ser solo para el laboratorio: no aparecen en el
+  informe, su PDF, la impresión ni el correo al cliente.
 - **FR-016**: Las pruebas Ausente/Presente MUST evaluarse por cambio de estado (Edge Cases) y
   mostrarse como «Ausente»/«Presente».
 - **FR-017**: Con promedio previo 0 MUST aplicarse la regla de Edge Cases («Promedio 0»).
@@ -307,7 +323,7 @@ desvío, mientras que los desvíos registrados antes siguen mostrando «detectad
 - **FR-019**: Cada desvío MUST mostrar el umbral y la cantidad con que se detectó; un cambio de
   configuración no recalcula los desvíos existentes.
 - **FR-020**: La demo del laboratorio MUST incluir el desvío de Cloruro de «Pozo 2» como pendiente
-  y al menos un desvío revisado, para mostrar la historia.
+  y al menos un desvío revisado al validar con observación, para mostrar la historia.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -316,8 +332,8 @@ desvío, mientras que los desvíos registrados antes siguen mostrando «detectad
   y el porcentaje (o el cambio de estado en Ausente/Presente), los resultados previos usados, el
   umbral y la cantidad de la regla, la fecha de detección, si está vigente y, si no, cuándo y por
   qué dejó de estarlo.
-- **Revisión del desvío**: quién, cuándo y con qué observación se revisó un desvío; inalterable,
-  como máximo una por desvío.
+- **Revisión del desvío**: la validación con la que se revisó (quién y cuándo) y la observación;
+  inalterable, como máximo una por desvío.
 - **Regla de desvío** (configuración): umbral porcentual y cantidad de resultados previos.
 - Reutiliza **Resultado**, **Validación**, **Muestra** y **Origen**, y el historial y la variación
   de la comparación histórica (US 8.1).
@@ -331,17 +347,17 @@ desvío, mientras que los desvíos registrados antes siguen mostrando «detectad
   umbral (verificado con casos conocidos en los bordes: exactamente 30 %, apenas más, promedio 0,
   Ausente/Presente).
 - **SC-002**: Desde el Dashboard, un bioquímico llega a la comparación histórica de un desvío
-  pendiente en 1 clic y lo marca como revisado en 2 (acción y confirmación).
+  pendiente en 1 clic y a la validación que lo revisa en 1 clic.
 - **SC-003**: Tras una corrección, la lista de desvíos pendientes refleja el nuevo resultado de
   inmediato: 0 desvíos vigentes con un valor distinto del resultado actual.
-- **SC-004**: El 100 % de los desvíos revisados conserva quién y cuándo los revisó, y ningún desvío
-  se borra.
+- **SC-004**: El 100 % de las pruebas validadas con desvío vigente tienen el desvío revisado con
+  quién y cuándo, ningún desvío revisado pierde su revisión y ningún desvío se borra.
 - **SC-005**: Validar y emitir informes funciona igual con o sin desvíos (0 operaciones bloqueadas
   por un desvío) y ningún informe, PDF ni correo menciona desvíos.
 - **SC-006**: Cambiar el umbral requiere modificar un solo valor de configuración.
-- **SC-007**: La carga o corrección de un estudio de 20 pruebas con 6 meses de historia no tarda
-  perceptiblemente más (menos de 1 segundo adicional) y el Dashboard con la sección se muestra en
-  menos de 2 segundos.
+- **SC-007**: La carga, corrección o validación de un estudio de 20 pruebas con 6 meses de
+  historia no tarda perceptiblemente más (menos de 1 segundo adicional) y el Dashboard con la
+  sección se muestra en menos de 2 segundos.
 
 ## Assumptions
 
@@ -352,13 +368,13 @@ desvío, mientras que los desvíos registrados antes siguen mostrando «detectad
   promedio de la 8.2 usa solo los últimos N, mientras que la 8.1 sigue mostrando el de todos.
 - El porcentaje se calcula sobre el promedio (|resultado − promedio| / promedio) y se muestra con
   un decimal, como en la US 8.1; la decisión de desvío usa el valor exacto, no el redondeado.
-- Revisar es una tarea del bioquímico (mismo permiso que validar); los Administradores con permiso
-  de Dashboard ven la lista pero no revisan salvo que también sean Bioquímicos.
+- «Marcar como revisado» (criterio 4) se cumple al validar: quien valida una prueba con desvío lo
+  revisó en esa pantalla, donde vio el valor, el promedio y el enlace a la comparación. Por eso la
+  revisión usa el permiso de validar y los Administradores con permiso de Dashboard ven la lista
+  pero no revisan salvo que también sean Bioquímicos.
 - El umbral y la cantidad se cambian en la configuración del sistema (no desde una pantalla); el
   laboratorio confirma el 30 % antes de la entrega final.
-- Validar un resultado no implica revisar su desvío; un desvío sin revisar de un resultado ya
-  validado sigue en la lista hasta que alguien lo marque como revisado.
-- La demo de SCRUM-78 se amplía con el caso de desvío revisado (y queda el de «Pozo 2» sin revisar);
-  si el guion genera desvíos en meses anteriores, se marcan como revisados en el guion.
-- Se reutilizan los componentes de pantalla existentes (tablas, badges, confirmación, mensajes,
-  ayuda) y el Dashboard de la US 8.3; no se agregan dependencias.
+- La demo de SCRUM-78 valida con observación el Cloruro de «Pozo 2» del mes anterior (desvío
+  revisado) y deja sin validar el del mes actual (desvío pendiente).
+- Se reutilizan los componentes de pantalla existentes (tablas, badges, mensajes, ayuda) y el
+  Dashboard de la US 8.3; no se agregan dependencias.

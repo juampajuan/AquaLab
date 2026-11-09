@@ -35,5 +35,7 @@
   única definición del historial (FR-003), sin nombrar archivos; el detalle va en `plan.md`.
 - Decisiones tomadas por defecto (revisables en `/speckit-clarify`): aviso solo dentro del sistema
   (sin correo); Ausente/Presente por cambio de estado contra 3 previos coincidentes; promedio 0 →
-  desvío si el resultado ≠ 0; validar no equivale a revisar; corrección con nuevo desvío invalida
-  la revisión anterior; revisar con el permiso de validar resultados; observación opcional.
+  desvío si el resultado ≠ 0; corrección con nuevo desvío invalida la revisión anterior;
+  observación opcional.
+- Ajuste del usuario (2026-11-09): validar una prueba con desvío lo revisa (sin acción separada);
+  la confirmación cuenta los elegidos con desvío; se quitó el caso borde «muestra sin origen».
