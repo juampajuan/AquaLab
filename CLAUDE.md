@@ -219,6 +219,9 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - La firma (`FirmaProfesional`) se guarda en la base como PNG (Render borra los archivos), validado
   solo por `informes/firmas.py:leer_firma` (≤ 64 KB, ≤ 1200 × 400 px). La dibuja `firma.js` (Pointer
   Events, sin librerías) en `informes:mi_firma`, solo con `informes.emitir_informes`.
+- La matrícula se escribe solo con la primera firma (SCRUM-81): después `FirmaForm` deshabilita el
+  campo (ignora lo enviado) y Mi firma la muestra como texto. Se corrige solo en el admin
+  (`informes/admin.py`, que no crea ni borra firmas ni cambia la imagen).
 - `emitir_informe` exige la firma y la copia en `contenido["firma"]` (nombre, matrícula, imagen);
   los informes anteriores no la tienen y salen con «Sin firma registrada». `informes/firma.html`
   es el bloque compartido por pantalla e impreso.
