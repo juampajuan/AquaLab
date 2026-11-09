@@ -38,7 +38,12 @@ class BuscarInformeForm(forms.Form):
 
 
 class FirmaForm(forms.Form):
-    """Firma dibujada y matrícula de quien emite informes (US 7.3)."""
+    """Firma dibujada y matrícula de quien emite informes (US 7.3).
+
+    La matrícula se escribe solo con la primera firma (SCRUM-81): después el campo queda
+    deshabilitado (Django ignora lo enviado y usa la guardada) y solo un administrador la corrige
+    desde el admin. La firma dibujada se puede reemplazar siempre.
+    """
 
     firma = forms.CharField(required=False, widget=forms.HiddenInput)
     matricula = forms.CharField(
@@ -57,6 +62,8 @@ class FirmaForm(forms.Form):
         self.actual = FirmaProfesional.objects.filter(usuario=usuario).first()
         kwargs.setdefault("initial", {"matricula": self.actual.matricula if self.actual else ""})
         super().__init__(*args, **kwargs)
+        if self.actual is not None:
+            self.fields["matricula"].disabled = True
 
     def full_clean(self):
         super().full_clean()
@@ -72,9 +79,14 @@ class FirmaForm(forms.Form):
         return leer_firma(texto)
 
     def guardar(self):
-        """Crea o reemplaza la firma del usuario; sin dibujo nuevo conserva la imagen."""
-        valores = {"matricula": self.cleaned_data["matricula"]}
+        """Crea la firma del usuario o reemplaza su imagen; la matrícula guardada no cambia."""
+        if self.actual is None:
+            return FirmaProfesional.objects.create(
+                usuario=self.usuario,
+                imagen=self.cleaned_data["firma"],
+                matricula=self.cleaned_data["matricula"],
+            )
         if self.cleaned_data["firma"] is not None:
-            valores["imagen"] = self.cleaned_data["firma"]
-        firma, _ = FirmaProfesional.objects.update_or_create(usuario=self.usuario, defaults=valores)
-        return firma
+            self.actual.imagen = self.cleaned_data["firma"]
+            self.actual.save(update_fields=["imagen", "actualizada"])
+        return self.actual

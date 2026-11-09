@@ -17,6 +17,7 @@
           <div class="text-sm">
             <p class="text-tinta-suave">Matrícula</p>
             <p class="font-semibold text-tinta">{{ firma.matricula }}</p>
+            <p class="mt-1 text-xs text-tinta-suave">La matrícula no se puede cambiar desde acá. Si hay que corregirla, pedíselo a un administrador.</p>
             <p class="mt-1 text-xs text-tinta-suave">Actualizada el {{ firma.actualizada|date:"d/m/Y H:i" }}</p>
           </div>
         </div>
@@ -47,7 +48,9 @@
           </div>
         {% endif %}
       </div>
-      {% include "ui/campo.html" with field=form.matricula clase="max-w-xs" %}
+      {% if not firma %}
+        {% include "ui/campo.html" with field=form.matricula clase="max-w-xs" %}
+      {% endif %}
       <div class="flex flex-wrap gap-3">
         <button type="submit" class="btn btn-primario">
           {% include "ui/icono.html" with nombre="pen-line" clase="size-4" %} Guardar firma

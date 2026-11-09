@@ -47,7 +47,13 @@ def test_mi_firma_muestra_formulario_sin_firma(cliente_sin_firma):
 def test_mi_firma_muestra_actual(cliente_bioquimico, bioquimico):
     html = cliente_bioquimico.get(URL).content.decode()
     assert bioquimico.firma_profesional.data_url in html
-    assert 'value="MP 1234"' in html
+    assert "MP 1234" in html
+
+
+def test_con_firma_la_matricula_no_es_editable(cliente_bioquimico):
+    html = cliente_bioquimico.get(URL).content.decode()
+    assert 'name="matricula"' not in html
+    assert "pedíselo a un administrador" in html
 
 
 def test_guarda_firma_y_matricula(cliente_sin_firma, bioquimico_sin_firma):
@@ -102,18 +108,21 @@ def test_rechazo_no_cambia_la_guardada(cliente_bioquimico, bioquimico):
 
 def test_reemplaza_firma(cliente_bioquimico, bioquimico):
     nueva = png(300, 100)
-    cliente_bioquimico.post(URL, {"firma": data_url(nueva), "matricula": "MP 1234"})
-    assert FirmaProfesional.objects.filter(usuario=bioquimico).count() == 1
-    assert bytes(FirmaProfesional.objects.get(usuario=bioquimico).imagen) == nueva
-
-
-def test_solo_matricula_conserva_imagen(cliente_bioquimico, bioquimico):
-    antes = bytes(bioquimico.firma_profesional.imagen)
-    respuesta = cliente_bioquimico.post(URL, {"firma": "", "matricula": "MP 777"})
+    respuesta = cliente_bioquimico.post(URL, {"firma": data_url(nueva)})
     assert respuesta.status_code == 302
+    assert FirmaProfesional.objects.filter(usuario=bioquimico).count() == 1
     firma = FirmaProfesional.objects.get(usuario=bioquimico)
-    assert bytes(firma.imagen) == antes
-    assert firma.matricula == "MP 777"
+    assert bytes(firma.imagen) == nueva
+    assert firma.matricula == "MP 1234"
+
+
+@pytest.mark.parametrize("firma", ["", "nueva"], ids=["sin-dibujo", "con-dibujo"])
+def test_ignora_matricula_enviada_si_ya_hay_firma(cliente_bioquimico, bioquimico, firma):
+    """SCRUM-81: un POST armado a mano no cambia la matrícula guardada."""
+    datos = {"firma": data_url(png(300, 100)) if firma else "", "matricula": "MP 777"}
+    respuesta = cliente_bioquimico.post(URL, datos)
+    assert respuesta.status_code == 302
+    assert FirmaProfesional.objects.get(usuario=bioquimico).matricula == "MP 1234"
 
 
 def test_firma_es_del_usuario(cliente_sin_firma, bioquimico_sin_firma, django_user_model, firma_de):
