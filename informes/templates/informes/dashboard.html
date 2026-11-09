@@ -104,7 +104,14 @@
     </section>
   </div>
 
-  {# 6. Alertas (a lo ancho: la tabla tiene seis columnas) #}
+  {# 6. Comparación histórica de un origen (US 8.1) #}
+  <section class="tarjeta mb-6 p-5" aria-labelledby="titulo-comparacion" data-comparacion-historica>
+    <h2 id="titulo-comparacion" class="text-sm font-semibold text-marino">Comparación histórica</h2>
+    <p class="mb-4 text-xs text-tinta-suave">Evolución de los resultados validados de un origen, prueba por prueba.</p>
+    {% include "estudios/elegir_origen.html" with form=form_origen %}
+  </section>
+
+  {# 7. Alertas (a lo ancho: la tabla tiene seis columnas) #}
   <div class="grid gap-6">
     {% include "informes/alerta.html" with clave="sin_avanzar" titulo="Estudios sin avanzar" ayuda="Pendientes de análisis o en proceso sin actividad hace más de 7 días. «Días»: desde la última actividad." columna_dias="Días" filas=alertas.sin_avanzar %}
     {% include "informes/alerta.html" with clave="finalizados" titulo="Finalizados sin informe" ayuda="Estudios finalizados que todavía no tienen informe emitido. «Días»: desde la última validación." columna_dias="Días" filas=alertas.finalizados_sin_informe %}

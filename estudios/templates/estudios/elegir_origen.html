@@ -1,0 +1,10 @@
+{% load static %}
+{# Selector de cliente y origen de la comparación histórica (US 8.1). Parámetro: form (ElegirOrigenForm). #}
+{# Lo usan la pantalla de comparación (paso 2, errores) y el dashboard. #}
+<form method="get" action="{% url 'estudios:comparacion' %}" class="flex flex-wrap items-end gap-4" data-elegir-origen>
+  {% include "ui/campo.html" with field=form.cliente sin_obligatorio=True clase="min-w-64" %}
+  {% include "ui/campo.html" with field=form.origen sin_obligatorio=True clase="min-w-64" %}
+  <button type="submit" class="btn btn-primario">Ver evolución</button>
+</form>
+{{ form.origenes_por_cliente|json_script:"origenes-por-cliente" }}
+<script src="{% static 'estudios/elegir_origen.js' %}" defer></script>

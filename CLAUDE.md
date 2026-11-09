@@ -247,8 +247,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   abierta). `static/js/aqualab.js` suma el toque (`data-abierta`), Escape (`data-cerrada`) y una sola
   abierta. Pasar del ícono al texto no la cierra (WCAG 1.4.13): `pointerout` con `relatedTarget`
   dentro de la misma `.ayuda` y el puente `.ayuda-texto::before`; solo el mouse la cierra al salir.
-- El JS se prueba con `node --test usuarios/tests/js config/tests/js` (DOM simulado, sin
-  dependencias), también en el CI.
+- El JS se prueba con `node --test usuarios/tests/js config/tests/js estudios/tests/js` (DOM
+  simulado, sin dependencias), también en el CI.
 
 ## Datos de demo (SCRUM-78)
 
@@ -281,10 +281,31 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   «Finalizados sin informe» cuenta días desde la última validación vigente.
 - Permiso `informes.ver_dashboard` (migración `informes.0004` → «Bioquímicos» y «Administradores»;
   el superusuario lo tiene por ser superusuario). El fixture `bioquimico` también lo agrega.
-- Chart.js 4.4.7 está en `static/vendor/chart.umd.min.js` (sin CDN) y se carga solo en el dashboard;
+- Chart.js 4.4.7 está en `static/vendor/chart.umd.min.js` (sin CDN) y se carga solo en el dashboard
+  y en la comparación histórica (US 8.1);
   `informes/static/informes/dashboard.js` lee `json_script` `datos-dashboard`. Cada gráfico tiene su
   tabla «Ver datos». La 8.2 agrega acá la lista de desvíos sin revisar.
 
+## Comparación histórica por origen (US 8.1)
+
+- `estudios/comparacion.py` es la única fuente del historial y de la variación (`comparar`,
+  `variacion`, `franja`, `pruebas_disponibles`); la US 8.2 la reutiliza. No escribe nada.
+- Historial = resultados de asignaciones Completadas (⇔ validación vigente) de muestras del origen,
+  sin el estudio de referencia, ordenados por `(fecha_muestreo, numero_pi, estudio)`. «Último» = el
+  del estudio de referencia (validado o no) o el validado más reciente; «anteriores» = validados de
+  muestras previas a la del último, con la misma unidad (otra unidad: en la tabla, fuera del cálculo).
+- Todo en `Decimal` sobre el valor completo; porcentaje a 0,1 `ROUND_HALF_UP`, base 0 → sin
+  porcentaje. A/P: cambio de estado y «Presente en X de N», sin números. Sin tono «favorable»: el
+  rojo solo marca un último resultado fuera de norma.
+- La franja usa `limites_aplicables` con el vertido de la muestra de referencia; cada punto de la
+  tabla muestra la evaluación de su validación vigente.
+- `estudios:comparacion` es GET de solo lectura con el permiso `informes.ver_dashboard`: `?estudio=`
+  (manda sobre `origen`) o `?cliente=&origen=` (`ElegirOrigenForm`, también en el dashboard), más
+  `pruebas` + `elegir=1` (`ElegirPruebasForm`). Nada de esto va al informe, al PDF ni al correo.
+- Chart.js sin plugins: franja con datasets constantes y `fill`, eje X de categorías. Las funciones
+  puras de `estudios/static/estudios/comparacion.js` y `elegir_origen.js` se prueban con Node.
+- Caso A/P de la demo: Tanque domiciliario (E. Coli Presente en el mes 3). Tests con la fábrica
+  `estudio_en_origen` (`estudios/tests/conftest.py`).
 
 ## Filtrar estudios (SCRUM-74)
 

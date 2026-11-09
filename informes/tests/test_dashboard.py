@@ -13,7 +13,7 @@ from django.utils import timezone
 from estudios import demo
 from estudios.models import Estudio, Medicion, Validacion
 from informes.models import Informe
-from muestras.models import Muestra
+from muestras.models import Muestra, Origen
 
 pytestmark = pytest.mark.django_db
 
@@ -196,3 +196,39 @@ def test_solo_lectura(cliente_bioquimico, con_demo):
 def test_cantidad_de_consultas(cliente_bioquimico, con_demo, django_assert_max_num_queries):
     with django_assert_max_num_queries(25):
         assert cliente_bioquimico.get(URL).status_code == 200
+
+
+def test_tarjeta_comparacion_historica(cliente_bioquimico, cliente_a):
+    """US 8.1: el dashboard elige cliente y origen para la comparación histórica."""
+    import json
+
+    from clientes.models import Cliente
+
+    pozo = Origen.objects.create(cliente=cliente_a, nombre="Pozo del dashboard")
+    inactivo = Cliente.objects.create(
+        nombre="Cliente inactivo",
+        tipo_documento="DNI",
+        numero_documento="30111222",
+        email="inactivo@ejemplo.com",
+        activo=False,
+    )
+    Origen.objects.create(cliente=inactivo, nombre="Origen inactivo")
+
+    html = html_de(cliente_bioquimico.get(URL))
+
+    tarjeta = re.search(r"<section[^>]*data-comparacion-historica.*?</section>", html, re.S)
+    assert tarjeta
+    tarjeta = tarjeta.group(0)
+    assert "Comparación histórica" in tarjeta
+    assert re.search(
+        rf'<form method="get" action="{reverse("estudios:comparacion")}"[^>]*data-elegir-origen',
+        tarjeta,
+    )
+    assert 'name="cliente"' in tarjeta and 'name="origen"' in tarjeta
+    assert f'<optgroup label="{cliente_a.nombre_completo}">' in tarjeta
+    assert "Ver evolución" in tarjeta
+    assert "Origen inactivo" not in tarjeta
+    datos = re.search(
+        r'<script id="origenes-por-cliente" type="application/json">(.*?)</script>', html, re.S
+    )
+    assert json.loads(datos.group(1)) == {str(cliente_a.pk): [[pozo.pk, "Pozo del dashboard"]]}

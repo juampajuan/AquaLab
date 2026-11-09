@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static ui %}
+
+{% block title %}Comparación histórica · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% if estudio %}
+    {% url 'estudios:detalle' estudio.pk as url_estudio %}
+    {% include "ui/encabezado.html" with titulo="Comparación histórica" subtitulo="Evolución de los resultados validados del origen" seccion="Estudios" anterior_texto="Ficha del estudio" anterior_url=url_estudio %}
+  {% else %}
+    {% url 'informes:dashboard' as url_dashboard %}
+    {% include "ui/encabezado.html" with titulo="Comparación histórica" subtitulo="Evolución de los resultados validados del origen" seccion="Dashboard" anterior_texto="Dashboard" anterior_url=url_dashboard %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-6xl space-y-6">
+    {% if origen %}
+      <section class="tarjeta overflow-hidden" aria-labelledby="titulo-origen">
+        <h2 id="titulo-origen" class="flex items-center gap-2.5 border-b border-borde bg-fondo-hundido px-6 py-4 text-sm font-semibold text-marino">
+          {% include "ui/icono.html" with nombre="droplet" clase="size-4 text-cian-texto" %} {{ origen.nombre }}
+        </h2>
+        <dl class="resumen p-6 lg:grid-cols-3">
+          {% include "ui/dato.html" with etiqueta="Cliente" valor=cliente.nombre_completo %}
+          {% include "ui/dato.html" with etiqueta="Origen" valor=origen.nombre %}
+          {% if estudio %}
+            <div>
+              <dt>Estudio de referencia</dt>
+              <dd>
+                <a href="{% url 'estudios:detalle' estudio.pk %}" class="text-cian-texto hover:underline">Estudio #{{ estudio.pk }}</a>
+                · N° PI {{ estudio.muestra.numero_pi }}
+                <span class="mt-0.5 block text-xs font-normal text-tinta-suave">{{ estudio.tipo_nombre_snapshot }} · muestreo {{ estudio.muestra.fecha_muestreo|date:"d/m/Y" }}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Estado</dt>
+              <dd>{% include "ui/estado.html" with estado=estudio.get_estado_display tipo=estudio.estado|tipo_estado %}</dd>
+            </div>
+          {% endif %}
+        </dl>
+      </section>
+
+      <p class="text-sm text-tinta-suave">
+        Solo para el laboratorio. Se comparan los resultados validados de este origen por fecha de muestreo; la comparación no valida ni rechaza ningún resultado.
+      </p>
+
+      {% if sin_validados %}
+        <section class="tarjeta" data-sin-validados>
+          {% include "ui/estado_vacio.html" with mensaje="Este origen todavía no tiene resultados validados" icono="chart-column" %}
+        </section>
+      {% else %}
+        <form method="get" action="{% url 'estudios:comparacion' %}" class="tarjeta p-5" data-elegir-pruebas>
+          {% if estudio %}
+            <input type="hidden" name="estudio" value="{{ estudio.pk }}">
+          {% else %}
+            <input type="hidden" name="cliente" value="{{ cliente.pk }}">
+            <input type="hidden" name="origen" value="{{ origen.pk }}">
+          {% endif %}
+          {{ form_pruebas.elegir }}
+          {% include "ui/campo.html" with field=form_pruebas.pruebas sin_obligatorio=True %}
+          <div class="mt-4 flex flex-wrap gap-3">
+            <button type="submit" class="btn btn-primario">Aplicar</button>
+            <button type="button" class="btn btn-secundario" data-atajo="todas" hidden>Todas</button>
+            <button type="button" class="btn btn-secundario" data-atajo="ninguna" hidden>Ninguna</button>
+          </div>
+        </form>
+
+        {% for historial in historiales %}
+          {% include "estudios/comparacion_prueba.html" %}
+        {% endfor %}
+      {% endif %}
+
+      <div class="flex flex-wrap gap-3">
+        {% if estudio %}
+          <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-secundario">
+            {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver al estudio
+          </a>
+        {% endif %}
+        {% if perms.informes.ver_dashboard %}
+          <a href="{% url 'informes:dashboard' %}" class="btn btn-secundario">
+            {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Volver al dashboard
+          </a>
+        {% endif %}
+      </div>
+
+      {{ datos_graficos|json_script:"datos-comparacion" }}
+      <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
+      <script src="{% static 'estudios/comparacion.js' %}" defer></script>
+    {% else %}
+      <section class="tarjeta p-5" aria-labelledby="titulo-elegir-origen">
+        <h2 id="titulo-elegir-origen" class="mb-4 text-sm font-semibold text-marino">Elegí el cliente y el origen</h2>
+        {% include "estudios/elegir_origen.html" with form=form_origen %}
+      </section>
+      <div>
+        <a href="{% url 'informes:dashboard' %}" class="btn btn-secundario">
+          {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Volver al dashboard
+        </a>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

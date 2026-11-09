@@ -76,3 +76,9 @@ def describir(field, id_extra):
 def es_presencia_filtro(unidad):
     """Si la unidad es «A/P»: el valor ya dice Ausente/Presente y la unidad no se repite."""
     return es_presencia(unidad)
+
+
+@register.filter
+def tipo_evaluacion(evaluacion):
+    """Tipo de etiqueta de una evaluación (US 6.4): cumple, fuera de norma o sin límite."""
+    return {"cumple": "success", "fuera_de_norma": "danger"}.get(str(evaluacion), "neutral")
