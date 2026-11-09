@@ -1,4 +1,7 @@
+from datetime import datetime, time, timedelta
+
 from django.db.models import Q
+from django.utils import timezone
 
 from clientes.models import normalizar_numero_documento
 
@@ -25,3 +28,21 @@ def filtro_busqueda(q):
     if len(q_doc) >= 4 and q_doc.isascii() and q_doc.isdigit():
         filtro |= Q(muestra__cliente__numero_documento__contains=q_doc)
     return filtro
+
+
+def filtro_estado_fechas(desde=None, hasta=None, estado=""):
+    """Filtro por estado actual y días completos de `fecha_creacion` en la zona del laboratorio
+    (SCRUM-74). Sin criterios no restringe."""
+    filtro = Q()
+    if estado:
+        filtro &= Q(estado=estado)
+    if desde:
+        filtro &= Q(fecha_creacion__gte=inicio_del_dia(desde))
+    if hasta:
+        filtro &= Q(fecha_creacion__lt=inicio_del_dia(hasta + timedelta(days=1)))
+    return filtro
+
+
+def inicio_del_dia(fecha):
+    """00:00 de `fecha` en la zona del laboratorio (`TIME_ZONE`), con zona."""
+    return timezone.make_aware(datetime.combine(fecha, time.min), timezone.get_default_timezone())

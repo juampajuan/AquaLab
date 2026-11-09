@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 
+from estudios.forms import CAMPOS_FILTRO
+
 from .forms import (
     CAMPOS_CLIENTE,
     BuscarClienteForm,
@@ -29,7 +31,6 @@ MENSAJE_CANCELADO = "Registro de cliente cancelado."
 MENSAJE_DUPLICADO = "Ya existe un cliente registrado con este tipo y número de documento."
 RESULTADOS_POR_PAGINA = 20
 MENSAJE_NO_DISPONIBLE = "El cliente no está disponible."
-CAMPOS_FILTRO_HISTORIAL = ("desde", "hasta", "estado")
 MENSAJE_ERROR_BD = "No se pudo completar el registro del cliente. Intentá nuevamente."
 MENSAJE_EDICION_EXITO = "Datos del cliente actualizados correctamente."
 MENSAJE_EDICION_CANCELADA = "Edición de cliente cancelada."
@@ -221,7 +222,7 @@ def historial(request, pk):
     form = HistorialClienteForm(request.GET or None)
     filtros = {}
     if form.is_bound and form.is_valid():
-        filtros = {campo: form.cleaned_data[campo] for campo in CAMPOS_FILTRO_HISTORIAL}
+        filtros = {campo: form.cleaned_data[campo] for campo in CAMPOS_FILTRO}
     paginador = Paginator(muestras_del_historial(cliente, **filtros), RESULTADOS_POR_PAGINA)
     page_obj = paginador.get_page(request.GET.get("page"))
     parametros = request.GET.copy()
@@ -232,7 +233,7 @@ def historial(request, pk):
         "page_obj": page_obj,
         "parametros": parametros.urlencode(),
         # Según lo recibido, válido o no: un filtro inválido también se puede limpiar.
-        "hay_filtros": any(request.GET.get(c, "").strip() for c in CAMPOS_FILTRO_HISTORIAL),
+        "hay_filtros": any(request.GET.get(c, "").strip() for c in CAMPOS_FILTRO),
         "sin_muestras": not page_obj.object_list and not cliente.muestras.exists(),
     }
     return render(request, "clientes/historial.html", contexto)

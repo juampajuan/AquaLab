@@ -1,14 +1,18 @@
 from django import forms
 
+from muestras.forms import SelectorFecha
 from muestras.models import Muestra
 from pruebas.limites import Evaluacion
 from pruebas.models import Prueba
 
 from .mediciones import OPCIONES_PRESENCIA, es_presencia, leer_valor, texto_presencia
-from .models import TipoEstudio
+from .models import EstadoEstudio, TipoEstudio
 
 MAX_LONGITUD_BUSQUEDA = 100
 MAX_ENTERO_BUSQUEDA = 9_223_372_036_854_775_807
+FORMATOS_FECHA = ["%Y-%m-%d", "%d/%m/%Y"]
+MENSAJE_FECHA_INVALIDA = "Ingresá una fecha válida (dd/mm/aaaa)."
+CAMPOS_FILTRO = ("desde", "hasta", "estado")
 
 
 class MuestraChoiceField(forms.ModelChoiceField):
@@ -258,6 +262,57 @@ class CorregirMedicionesForm(forms.Form):
         return cambios
 
 
+class FiltrosEstudioForm(forms.Form):
+    """Filtros de estudios por GET (SCRUM-74): rango de fechas y estado, todos opcionales.
+
+    Es la única definición de estos filtros: la heredan el historial del cliente (US 3.3,
+    `HistorialClienteForm`) y «Buscar estudio» (`FiltrarEstudiosForm`). Qué fecha se filtra lo
+    decide cada vista. Mostrar «Limpiar filtros» tampoco se decide acá: las vistas lo hacen con los
+    parámetros recibidos, válidos o no.
+    """
+
+    desde = forms.DateField(
+        label="Desde",
+        required=False,
+        input_formats=FORMATOS_FECHA,
+        widget=SelectorFecha(),
+        error_messages={"invalid": MENSAJE_FECHA_INVALIDA},
+    )
+    hasta = forms.DateField(
+        label="Hasta",
+        required=False,
+        input_formats=FORMATOS_FECHA,
+        widget=SelectorFecha(),
+        error_messages={"invalid": MENSAJE_FECHA_INVALIDA},
+    )
+    estado = forms.ChoiceField(
+        label="Estado",
+        required=False,
+        choices=[("", "Todos"), *EstadoEstudio.choices],
+        error_messages={"invalid_choice": "Elegí un estado de la lista."},
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for nombre in CAMPOS_FILTRO:
+            campo = self.fields[nombre]
+            clase = "form-select" if isinstance(campo.widget, forms.Select) else "form-control"
+            campo.widget.attrs["class"] = clase
+
+    def full_clean(self):
+        super().full_clean()
+        for nombre in self.errors:
+            if nombre in CAMPOS_FILTRO:
+                self.fields[nombre].widget.attrs["class"] += " is-invalid"
+
+    def clean(self):
+        datos = super().clean()
+        desde, hasta = datos.get("desde"), datos.get("hasta")
+        if desde and hasta and desde > hasta:
+            self.add_error("desde", "La fecha desde no puede ser posterior a la fecha hasta.")
+        return datos
+
+
 class BuscarEstudioForm(forms.Form):
     """Texto de búsqueda de estudios (por GET): identificador, muestra, cliente o tipo."""
 
@@ -288,6 +343,19 @@ class BuscarEstudioForm(forms.Form):
         if len(valor) < 2:
             raise forms.ValidationError("Ingresá al menos 2 caracteres para buscar.")
         return valor
+
+
+class FiltrarEstudiosForm(BuscarEstudioForm, FiltrosEstudioForm):
+    """Búsqueda de estudios con filtros (SCRUM-74): texto (US 5.2), estado y fecha de creación.
+
+    `BuscarEstudioForm` queda solo con el texto: lo usa también `informes:listar`.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        ayuda = "Fecha en que se creó el estudio. El día indicado se incluye."
+        self.fields["desde"].help_text = ayuda
+        self.fields["hasta"].help_text = ayuda
 
 
 class ValidarResultadosForm(forms.Form):

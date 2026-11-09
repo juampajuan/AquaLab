@@ -423,7 +423,8 @@ def test_busqueda_vacia_o_espacios_lista_todos_los_estudios(
 def test_busqueda_un_caracter_no_numerico_rechazada(cliente_http, escenario_consulta, texto):
     resp = cliente_http.get(reverse("estudios:buscar"), {"q": texto})
     assert resp.status_code == 200
-    assert resp.context["page_obj"] is None
+    # SCRUM-74: con un valor inválido se ve el listado completo, sin filtrar.
+    assert resp.context["page_obj"].paginator.count == 4
     assert "Ingresá al menos 2 caracteres para buscar." in resp.content.decode()
 
 
@@ -436,7 +437,8 @@ def test_busqueda_numero_invalido_o_fuera_de_rango_muestra_error(
 ):
     resp = cliente_http.get(reverse("estudios:buscar"), {"q": texto})
     assert resp.status_code == 200
-    assert resp.context["page_obj"] is None
+    # SCRUM-74: con un valor inválido se ve el listado completo, sin filtrar.
+    assert resp.context["page_obj"].paginator.count == 4
     assert "Ingresá un número válido para buscar." in resp.content.decode()
 
 
@@ -444,7 +446,8 @@ def test_busqueda_numero_invalido_o_fuera_de_rango_muestra_error(
 def test_busqueda_supera_longitud_maxima_muestra_error(cliente_http, escenario_consulta, texto):
     resp = cliente_http.get(reverse("estudios:buscar"), {"q": texto})
     assert resp.status_code == 200
-    assert resp.context["page_obj"] is None
+    # SCRUM-74: con un valor inválido se ve el listado completo, sin filtrar.
+    assert resp.context["page_obj"].paginator.count == 4
     assert "Ingresá como máximo 100 caracteres para buscar." in resp.content.decode()
 
 
