@@ -203,7 +203,7 @@ configurable). No hay modelo `Desvio`: el desvío se calcula al vuelo. Dos tanda
 - [X] T038 [P] Recompilar el CSS si se usaron clases nuevas en la tanda 2 (comando de `README.md`/`package.json`) y versionar `static/css/aqualab.css`; el CI verifica que esté al día.
 - [X] T039 [P] Actualizar `specs/032-notificar-desvios/quickstart.md` si algún texto o número cambió durante la implementación (p. ej. la cantidad de pendientes de la demo).
 - [X] T040 Verificar que `git diff main -- estudios/calculo.py` está vacío y que no hay modelo `Desvio`, comando `evaluar_desvios` ni URL `revisar_desvio` (`grep -rn "class Desvio\|evaluar_desvios\|revisar_desvio" estudios informes`).
-- [ ] T041 **Prueba en el navegador (la hace el autor; no marcar)**: recorrer `quickstart.md` escenarios 1 a 7 con la demo cargada, incluido el técnico sin permiso de validar.
+- [X] T041 **Prueba en el navegador (la hace el autor; no marcar)**: recorrer `quickstart.md` escenarios 1 a 7 con la demo cargada, incluido el técnico sin permiso de validar.
 - [X] T042 **Cierre de la tanda 2**: ejecutar `docker compose exec web pytest estudios informes`, `node --test usuarios/tests/js config/tests/js estudios/tests/js`, `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .`: en verde. No correr la suite completa (la corre el CI en el PR «SCRUM-61 – 8.2 Notificar desvíos relevantes»).
 
 ---
