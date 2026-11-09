@@ -1,0 +1,26 @@
+{% comment %}
+  Base de la alternativa HTML de los correos (config/correos.py). Estilos inline y tablas: los
+  clientes de correo no cargan CSS externo. El logo va inline con cid:{{ cid_logo }}.
+  Bloques: contenido. Colores de la marca: marino #0f2744, cian #006591, tinta #0b1c30,
+  tinta suave #475569, fondo #f8f9ff, borde #e2e8f0.
+{% endcomment %}<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AquaLab</title></head>
+<body style="margin:0;padding:0;background-color:#f8f9ff;font-family:Arial,Helvetica,sans-serif;color:#0b1c30;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8f9ff;">
+    <tr><td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:8px;">
+        <tr><td style="padding:20px 28px;border-bottom:3px solid #0f2744;">
+          <img src="cid:{{ cid_logo }}" alt="AquaLab" width="180" style="display:block;width:180px;max-width:100%;height:auto;border:0;">
+        </td></tr>
+        <tr><td style="padding:24px 28px;font-size:15px;line-height:1.55;color:#0b1c30;">
+          {% block contenido %}{% endblock %}
+        </td></tr>
+        <tr><td style="padding:14px 28px;border-top:1px solid #e2e8f0;font-size:12px;color:#475569;">
+          {% block pie %}AquaLab{% endblock %}
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

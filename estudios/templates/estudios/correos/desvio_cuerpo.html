@@ -1,0 +1,17 @@
+{% extends "correos/base.html" %}
+{% block contenido %}
+<p style="margin:0 0 12px;">Hola:</p>
+<p style="margin:0 0 16px;">Se calculó un resultado que se aleja del historial de su origen. Revisalo antes de validarlo.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:14px;margin:0 0 16px;">
+  <tr><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#475569;width:45%;">Muestra</td><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">N° PI {{ numero_pi }}</td></tr>
+  <tr><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#475569;">Cliente</td><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">{{ cliente }}</td></tr>
+  <tr><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#475569;">Origen</td><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">{{ origen }}</td></tr>
+  <tr><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#475569;">Prueba</td><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:bold;color:#0f2744;">{{ prueba }}</td></tr>
+  <tr><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#475569;">Valor observado</td><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:bold;">{{ observado }}</td></tr>
+  <tr><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#475569;">{{ etiqueta_referencia }}</td><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">{{ referencia }}</td></tr>
+  <tr><td style="padding:6px 8px;color:#475569;">Variación</td><td style="padding:6px 8px;font-weight:bold;color:#b45309;">{{ variacion }}</td></tr>
+</table>
+<p style="margin:0 0 20px;font-size:13px;color:#475569;">Hay desvío si el resultado difiere en {{ regla }}.</p>
+<p style="margin:0;"><a href="{{ enlace }}" style="display:inline-block;padding:10px 18px;background-color:#0f2744;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;">Ver el estudio</a></p>
+<p style="margin:12px 0 0;font-size:12px;color:#475569;">O copiá este enlace: <a href="{{ enlace }}" style="color:#006591;">{{ enlace }}</a></p>
+{% endblock %}

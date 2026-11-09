@@ -176,9 +176,7 @@ def test_transaccion_fallida_no_envia(
 def test_falla_de_envio_queda_en_log(
     sin_cargar, empleado, bioquimico, mailoutbox, caplog, django_capture_on_commit_callbacks
 ):
-    with mock.patch(
-        "estudios.notificaciones.EmailMessage.send", side_effect=SMTPException("sin servidor")
-    ):
+    with mock.patch("config.correos.CorreoAquaLab.send", side_effect=SMTPException("sin servidor")):
         with caplog.at_level(logging.ERROR, logger="estudios.notificaciones"):
             with django_capture_on_commit_callbacks(execute=True):
                 cargar(sin_cargar, empleado, {"CL-": "16"})
@@ -200,3 +198,21 @@ def test_sin_bioquimicos_activos(
             cargar(sin_cargar, tecnico, {"CL-": "16"})
     assert mailoutbox == []
     assert "sin bioquímicos activos" in caplog.text
+
+
+def test_html_con_logo(
+    sin_cargar, empleado, bioquimico, mailoutbox, settings, django_capture_on_commit_callbacks
+):
+    from config.tests.utiles_correos import comprobar_html_con_logo
+
+    settings.AQUALAB_URL_BASE = "https://aqualab.ejemplo.com"
+    with django_capture_on_commit_callbacks(execute=True):
+        cargar(sin_cargar, empleado, {"CL-": "16"})
+    (mensaje,) = mailoutbox
+    html = comprobar_html_con_logo(mensaje)
+    enlace = "https://aqualab.ejemplo.com" + reverse("estudios:detalle", args=[sin_cargar.pk])
+    assert f'href="{enlace}"' in html
+    assert "Cloruro (CL-)" in html and "160 mg/l" in html and "110 mg/l" in html
+    # El texto plano sigue siendo texto: sin etiquetas HTML.
+    assert "<" not in mensaje.body.replace("<AQUALAB", "")
+    assert mensaje.body.startswith("Hola:\n\nSe calculó un resultado")

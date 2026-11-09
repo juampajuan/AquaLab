@@ -339,3 +339,26 @@ def test_error_de_base(cliente_bioquimico, informe, mailoutbox, monkeypatch):
 
     assert resp.redirect_chain == [(url_ver(informe), 302)]
     assert "No se pudo registrar el envío. Intentá nuevamente." in resp.content.decode()
+
+
+def test_html_con_logo_y_pdf(cliente_bioquimico, informe, mailoutbox, pdf_falso):
+    from django.template.loader import render_to_string
+
+    from config.tests.utiles_correos import comprobar_html_con_logo
+
+    enviar(cliente_bioquimico, informe)
+    (correo,) = mailoutbox
+    html = comprobar_html_con_logo(correo)
+    assert informe.numero_mostrado in html
+    assert informe.contenido["cliente"]["nombre_completo"] in html
+    # El PDF sigue siendo el único adjunto, dentro de un multipart/mixed junto al related.
+    assert correo.attachments == [(f"{informe.numero_mostrado}.pdf", PDF_FALSO, "application/pdf")]
+    raiz = correo.message()
+    assert raiz.get_content_type() == "multipart/mixed"
+    assert [p.get_content_type() for p in raiz.get_payload()] == [
+        "multipart/related",
+        "application/pdf",
+    ]
+    # El texto plano no cambió.
+    contexto = {"numero": informe.numero_mostrado, "contenido": informe.contenido}
+    assert correo.body == render_to_string("informes/correos/informe_cuerpo.txt", contexto)

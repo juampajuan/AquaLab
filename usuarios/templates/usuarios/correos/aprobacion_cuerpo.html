@@ -1,0 +1,7 @@
+{% extends "correos/base.html" %}
+{% block contenido %}
+<p style="margin:0 0 12px;">Hola, {{ usuario.first_name }}:</p>
+<p style="margin:0 0 20px;">Un administrador aprobó tu cuenta en AquaLab. Ya podés iniciar sesión con tu correo y tu contraseña.</p>
+<p style="margin:0;"><a href="{{ enlace_login }}" style="display:inline-block;padding:10px 18px;background-color:#0f2744;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;">Iniciar sesión</a></p>
+<p style="margin:12px 0 0;font-size:12px;color:#475569;">O copiá este enlace: <a href="{{ enlace_login }}" style="color:#006591;">{{ enlace_login }}</a></p>
+{% endblock %}

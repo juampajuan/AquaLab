@@ -8,12 +8,11 @@ de PDF nunca se propaga: se registra como «fallido» y queda en el log `informe
 import logging
 from dataclasses import dataclass
 
-from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.core.mail import EmailMessage
 from django.db import transaction
 from django.http import Http404
-from django.template.loader import render_to_string
+
+from config.correos import armar_correo, asunto_de
 
 from .models import EnvioInforme, Informe, ResultadoEnvio
 from .pdf import generar_pdf
@@ -30,12 +29,15 @@ class ResultadoDelEnvio:
 
 
 def mensaje_de_correo(informe, destinatario, pdf):
-    """El correo al cliente, con el texto armado desde la copia del informe y el PDF adjunto."""
+    """El correo al cliente, con el texto armado desde la copia del informe, su alternativa HTML
+    con el logo y el PDF adjunto."""
     contexto = {"numero": informe.numero_mostrado, "contenido": informe.contenido}
-    asunto = " ".join(render_to_string("informes/correos/informe_asunto.txt", contexto).split())
-    cuerpo = render_to_string("informes/correos/informe_cuerpo.txt", contexto)
-    mensaje = EmailMessage(
-        subject=asunto, body=cuerpo, from_email=settings.DEFAULT_FROM_EMAIL, to=[destinatario]
+    mensaje = armar_correo(
+        asunto_de("informes/correos/informe_asunto.txt", contexto),
+        "informes/correos/informe_cuerpo.txt",
+        "informes/correos/informe_cuerpo.html",
+        contexto,
+        to=[destinatario],
     )
     mensaje.attach(f"{informe.numero_mostrado}.pdf", pdf, "application/pdf")
     return mensaje

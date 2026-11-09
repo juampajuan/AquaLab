@@ -20,6 +20,13 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Siempre se agendan con `transaction.on_commit`; una falla de envío solo queda en el log
   `usuarios.notificaciones`. Rechazar elimina la cuenta pendiente para liberar el correo.
 - En los tests: `django_capture_on_commit_callbacks(execute=True)` y `mailoutbox`.
+- Correos con logo: `config/correos.py:armar_correo` arma un `CorreoAquaLab` con el texto plano de
+  siempre y una alternativa HTML (extiende `templates/correos/base.html`, estilos inline) con
+  `static/img/marca/aqualab-horizontal.png` inline por `cid:logo-aqualab` en un
+  `multipart/related`; el logo no entra en `attachments`. Lo usan la aprobación de cuenta, el
+  envío del informe y el aviso de desvíos; las plantillas `*_cuerpo.html` van junto a las `.txt`.
+  En los tests, `config/tests/utiles_correos.py:comprobar_html_con_logo` y, para simular una falla,
+  parchear `config.correos.CorreoAquaLab.send`.
 
 ## Autenticación integrada (US 1.2)
 

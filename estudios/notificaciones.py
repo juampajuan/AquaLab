@@ -11,10 +11,10 @@ from functools import partial
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import EmailMessage
 from django.db import transaction
-from django.template.loader import render_to_string
 from django.urls import reverse
+
+from config.correos import armar_correo, asunto_de
 
 from . import desvios
 from .models import EstadoPruebaEstudio
@@ -77,12 +77,11 @@ def enviar(avisos):
         return
     for aviso in avisos:
         try:
-            asunto = " ".join(render_to_string("estudios/correos/desvio_asunto.txt", aviso).split())
-            cuerpo = render_to_string("estudios/correos/desvio_cuerpo.txt", aviso)
-            EmailMessage(
-                subject=asunto,
-                body=cuerpo,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+            armar_correo(
+                asunto_de("estudios/correos/desvio_asunto.txt", aviso),
+                "estudios/correos/desvio_cuerpo.txt",
+                "estudios/correos/desvio_cuerpo.html",
+                aviso,
                 to=destinatarios,
             ).send()
         except Exception:
