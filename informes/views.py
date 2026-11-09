@@ -1,4 +1,5 @@
 import logging
+import uuid
 from urllib.parse import urlencode
 
 from django.contrib import messages
@@ -7,18 +8,18 @@ from django.core.paginator import Paginator
 from django.db import DatabaseError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from estudios import calculo
 from estudios.forms import BuscarEstudioForm
 from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
 from estudios.views import RESULTADOS_POR_PAGINA
 
-from . import pdf, servicios, tablero
+from . import envios, pdf, servicios, tablero
 from .busqueda import informes_emitidos
 from .contenido import armar_contenido
 from .forms import BuscarInformeForm, FirmaForm
-from .models import FirmaProfesional, Informe
+from .models import FirmaProfesional, Informe, ResultadoEnvio
 from .servicios import EmitirInformeError, InformeNoDisponible
 
 logger = logging.getLogger("informes")
@@ -123,8 +124,61 @@ def ver(request, pk):
     informe = get_object_or_404(
         Informe.objects.select_related("estudio", "emitido_por"), estudio__pk=pk
     )
-    contexto = {"estudio": informe.estudio, "informe": informe, "contenido": informe.contenido}
+    contexto = {
+        "estudio": informe.estudio,
+        "informe": informe,
+        "contenido": informe.contenido,
+        "envios": list(informe.envios.select_related("enviado_por")),
+    }
     return render(request, "informes/ver.html", contexto)
+
+
+@permission_required("informes.emitir_informes", raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def enviar(request, pk):
+    """Envío del informe al correo del cliente (SCRUM-79): confirmación (GET) y envío (POST).
+
+    `PermissionDenied` y `Http404` del servicio no se atrapan: Django responde 403 y 404.
+    """
+    informe = get_object_or_404(
+        Informe.objects.select_related("estudio__muestra__cliente"), estudio__pk=pk
+    )
+    if request.method == "GET":
+        contexto = {
+            "estudio": informe.estudio,
+            "informe": informe,
+            "cliente": informe.estudio.muestra.cliente,
+            "ultimo": envios.ultimo_envio_exitoso(informe),
+            "clave": uuid.uuid4(),
+        }
+        return render(request, "informes/enviar_confirmar.html", contexto)
+    try:
+        clave = uuid.UUID(request.POST.get("clave", ""))
+    except ValueError:
+        messages.error(request, "La confirmación no es válida. Volvé a intentarlo.")
+        return redirect("informes:enviar", pk=pk)
+    try:
+        resultado = envios.enviar_informe(pk, request.user, clave)
+    except DatabaseError:
+        logger.exception("No se pudo registrar el envío del informe %s", informe.numero_mostrado)
+        messages.error(request, "No se pudo registrar el envío. Intentá nuevamente.")
+        return redirect("informes:ver", pk=pk)
+    envio = resultado.envio
+    if resultado.duplicado:
+        messages.info(
+            request,
+            f"El informe {informe.numero_mostrado} ya se había enviado con esta confirmación.",
+        )
+    elif envio.resultado == ResultadoEnvio.ENVIADO:
+        messages.success(
+            request, f"Se envió el informe {informe.numero_mostrado} a {envio.destinatario}."
+        )
+    else:
+        messages.error(
+            request,
+            f"No se pudo enviar el informe a {envio.destinatario}. Intentá nuevamente.",
+        )
+    return redirect("informes:ver", pk=pk)
 
 
 def emitidos(request):

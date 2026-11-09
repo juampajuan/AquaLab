@@ -133,3 +133,20 @@ def con_fecha():
         return informe
 
     return cambiar
+
+
+@pytest.fixture
+def cliente_comun(django_user_model):
+    """Cliente HTTP de un empleado sin `informes.emitir_informes` (SCRUM-79).
+
+    `cliente_http` no sirve para esto: su usuario es el mismo `empleado` que `bioquimico` suma al
+    grupo «Bioquímicos».
+    """
+    from django.test import Client
+
+    usuario = django_user_model.objects.create_user(
+        email="comun-envios@ejemplo.com", password="Clave-Valida-123", is_active=True
+    )
+    cliente = Client()
+    cliente.force_login(usuario)
+    return cliente
