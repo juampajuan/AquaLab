@@ -24,7 +24,21 @@
   `con_desvio: list[Prueba]` para el mensaje de éxito.
 
 No hay URL, vista, formulario ni pantalla para «Marcar como revisado». No se modifican
-`calculo.py`, `cargar_mediciones` ni `corregir_mediciones`.
+`cargar_mediciones` ni `corregir_mediciones`.
+
+## Aviso por correo (`estudios/notificaciones.py`, tanda 3)
+
+| Función | Contrato |
+|---|---|
+| `avisar_desvios(estudio, codigos)` | La llama solo `calculo.recalcular`, con el estudio bloqueado, para los códigos con resultado nuevo o de valor distinto. Evalúa con `desvios.evaluar_estudio`; por cada `Deteccion` agenda `transaction.on_commit`. No escribe nada. |
+| `enviar(avisos)` | Un `EmailMessage` por aviso a los usuarios activos del grupo «Bioquímicos» (`to`). Cualquier excepción → `logger.exception` en `estudios.notificaciones`; sin destinatarios → `logger.warning`. Nunca relanza. |
+
+Correo (`estudios/correos/desvio_asunto.txt` y `desvio_cuerpo.txt`, texto plano):
+
+- Asunto: «Desvío en Cloruro (CL-) – muestra N° PI 300310».
+- Cuerpo: N° PI, cliente, origen, prueba, «Valor observado: 160 mg/l», «Mediana de los últimos 3:
+  110 mg/l» (A/P: «Últimos 3: Ausente»), «Variación: ▲ +50 mg/l (+45,5 %)», la regla vigente y
+  «Ver el estudio: <AQUALAB_URL_BASE>/estudios/<pk>/». Sin observaciones ni datos de otros estudios.
 
 ## Pantallas
 

@@ -1,0 +1,18 @@
+{% autoescape off %}Hola:
+
+Se calculó un resultado que se aleja del historial de su origen. Revisalo antes de validarlo.
+
+Muestra: N° PI {{ numero_pi }}
+Cliente: {{ cliente }}
+Origen: {{ origen }}
+Prueba: {{ prueba }}
+Valor observado: {{ observado }}
+{{ etiqueta_referencia }}: {{ referencia }}
+Variación: {{ variacion }}
+
+Hay desvío si el resultado difiere en {{ regla }}.
+
+Ver el estudio: {{ enlace }}
+
+AquaLab
+{% endautoescape %}

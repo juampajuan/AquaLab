@@ -34,6 +34,9 @@ configurable). No hay modelo `Desvio`: el desvío se calcula al vuelo. Dos tanda
   dashboard y lista «Desvíos sin revisar». Cierra el MVP (US1 + US2).
 - **Tanda 2** (Fases 5 a 8 — `T023` a `T042`): revisión al validar (formulario, servicio,
   pantallas, concurrencia), no bloqueo, regla configurable, demo, CLAUDE.md.
+- **Tanda 3** (Fase 9 — `T043` a `T050`, US6 agregada después): aviso por correo de cada desvío
+  recién calculado a los bioquímicos activos (`estudios/notificaciones.py`, enganche en
+  `calculo.recalcular`, `transaction.on_commit`).
 - **Tests de cada tanda** (solo las apps tocadas): `docker compose exec web pytest estudios
   informes`, `node --test usuarios/tests/js config/tests/js estudios/tests/js`, `docker compose
   exec web ruff check .` y `docker compose exec web ruff format --check .`.
@@ -205,6 +208,31 @@ configurable). No hay modelo `Desvio`: el desvío se calcula al vuelo. Dos tanda
 
 ---
 
+## Phase 9: User Story 6 — Recibir el aviso por correo (Priority: P2) (Tanda 3)
+
+**Goal**: cada resultado recién calculado (carga, corrección o dependientes) que queda en desvío genera un correo a los bioquímicos activos, después de guardar.
+
+**Independent Test**: con Cloruro validado 100, 110 y 120, cargar 16 (→ 160) en un estudio nuevo → `mail.outbox` tiene 1 correo dirigido a todos los bioquímicos activos con N° PI, cliente, origen, prueba, valor, mediana, porcentaje y enlace absoluto; corregir a 11,5 → ninguno más.
+
+### Tests for User Story 6
+
+- [X] T043 [P] [US6] Crear `estudios/tests/test_desvios_correo.py` (con `mailoutbox` y `django_capture_on_commit_callbacks(execute=True)`, como CLAUDE.md «Avisos por correo»): `test_uno_por_desvio_a_bioquimicos_activos` (dos pruebas en desvío en la misma carga → 2 correos; destinatarios = bioquímicos activos, sin el inactivo ni un usuario de otro grupo), `test_dependiente` (`pruebas_division`: DIV en desvío al cargar DIV-A/DIV-B → un correo de DIV), `test_correccion_sigue_en_desvio` (160 → 200 → un correo nuevo con 200), `test_sin_desvio_no_envia` (143 y con historial insuficiente → 0), `test_mismo_valor_no_reenvia` (`calculo.recalcular` sobre la misma asignación sin cambiar la medición → 0; validar → 0), `test_contenido_y_enlace_absoluto` (asunto «Desvío en Cloruro (CL-) – muestra N° PI …»; cuerpo con N° PI, cliente, origen, «Valor observado: 160 mg/l», «Mediana de los últimos 3: 110 mg/l», «+45,5 %», `settings.AQUALAB_URL_BASE + reverse("estudios:detalle", …)`; sin observación), `test_transaccion_fallida_no_envia` (`cargar_mediciones` dentro de un `transaction.atomic()` que lanza después → 0 correos y sin resultado), `test_falla_de_envio_queda_en_log` (`mock.patch` de `EmailMessage.send` que lanza → `caplog` en `estudios.notificaciones` y la medición y el resultado quedan guardados), `test_sin_bioquimicos_activos` (todos inactivos → 0 correos y advertencia en el log).
+
+### Implementation for User Story 6
+
+- [X] T044 [US6] En `config/settings.py` agregar `AQUALAB_URL_BASE = os.environ.get("AQUALAB_URL_BASE", "http://localhost:8000")` (comentario: base de los enlaces absolutos de correos generados fuera de un pedido web, US 8.2) y el logger `estudios.notificaciones` en `LOGGING` como `usuarios.notificaciones`; documentar la variable en `.env.example`.
+- [X] T045 [US6] Crear `estudios/templates/estudios/correos/desvio_asunto.txt` y `desvio_cuerpo.txt` (texto plano, `{% autoescape off %}`, patrón de `informes/correos/`) con los datos del contrato.
+- [X] T046 [US6] Crear `estudios/notificaciones.py` (docstring: aviso por correo de desvíos; se agenda con `transaction.on_commit`; una falla queda en el log): `avisar_desvios(estudio, codigos)` (relee las asignaciones Cargadas de esos códigos con `select_related("prueba", "resultado")`, `desvios.evaluar_estudio`, arma por cada `Deteccion` un dict de textos y enlace, y agenda `transaction.on_commit(partial(enviar, avisos))`) y `enviar(avisos)` (usuarios `is_active=True` del grupo «Bioquímicos»; un `EmailMessage` por aviso; `logger.exception` por falla; `logger.warning` sin destinatarios).
+- [X] T047 [US6] En `estudios/calculo.py:recalcular` guardar `antes = dict(valores)` y, después del bucle, `codigos = [c for c in orden if c in valores and valores[c] != antes.get(c)]`; si hay, `notificaciones.avisar_desvios(estudio, codigos)` (import local). Actualizar el docstring. No cambiar el valor de retorno.
+- [X] T048 [P] [US6] Actualizar `CLAUDE.md` (sección «Desvíos»: el aviso por correo vive en `estudios/notificaciones.py`, se engancha en `recalcular` solo para valores cambiados, `AQUALAB_URL_BASE`, tests con `mailoutbox`; quitar «no tocar `calculo.py`») y, si cambió algún texto, `specs/032-notificar-desvios/quickstart.md`.
+
+### Cierre de la Tanda 3
+
+- [X] T049 Ejecutar `docker compose exec web pytest estudios informes`, `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .`: en verde. No correr la suite completa.
+- [X] T050 Commit `feat(estudios): US 8.2 – Notificar desvíos relevantes (aviso por correo)`.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -216,6 +244,7 @@ configurable). No hay modelo `Desvio`: el desvío se calcula al vuelo. Dos tanda
 - **US3 (Fase 5)**: depende de US1 (T011, T012); independiente de US2 salvo `test_no_elegida_no_guarda`, que usa `pendientes()` (T017). T026 → T027 → T028 → T029.
 - **US4 (Fase 6)**: depende de US3 (valida con desvío).
 - **US5 (Fase 7)**: depende de US1, US2 y US3 (textos de la regla en sus pantallas).
+- **US6 (Fase 9, tanda 3)**: depende de US1 (`evaluar_estudio`); T044 → T045 → T046 → T047.
 - **Polish (Fase 8)**: T036 depende de US3 (`observaciones`); T041 y T042 al final.
 
 ### Within Each User Story

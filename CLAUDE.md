@@ -313,7 +313,7 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - `estudios/desvios.py` es la única regla y detección (`regla`, `es_desvio`, `mediana`, `detectar`,
   `evaluar_estudio`, `pendientes`). El desvío **no se guarda**: se calcula al vuelo sobre los
   resultados Cargados (detalle, validación y «Desvíos sin revisar»), así una carga o corrección se
-  refleja sola. Es de solo lectura; no tocar `calculo.py` ni crear un modelo de desvíos.
+  refleja sola. Es de solo lectura; no crear un modelo de desvíos.
 - Regla: con al menos N anteriores, desvío si el resultado difiere en más del umbral (%) de la
   **mediana** de los últimos N (no el promedio: un pico aislado no la mueve; ver Detergentes de
   Colectora en la spec). Comparación sin dividir: exactamente el umbral no es desvío. Umbral y N
@@ -329,6 +329,12 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - `estudios:desvios` (lista paginada) y la sección del dashboard: permiso `informes.ver_dashboard`;
   «Validar» solo con `estudios.validar_resultados`. Una evaluación (6 consultas) por estudio con
   resultados sin validar. Nada de esto va al informe, al PDF ni al correo.
+- Aviso por correo: `estudios/notificaciones.py`. `calculo.recalcular` compara con los valores
+  previos y llama a `avisar_desvios` solo con las pruebas de valor nuevo o distinto (no reenvía);
+  evalúa con `desvios`, agenda `transaction.on_commit` y manda un correo por desvío a los
+  bioquímicos activos (`estudios/correos/desvio_*.txt`). Enlace absoluto con
+  `settings.AQUALAB_URL_BASE` (no hay `request`); fallas al logger `estudios.notificaciones`. La
+  demo también genera estos correos. Tests: `mailoutbox` + `django_capture_on_commit_callbacks`.
 - Demo: Pozo 2 mes 0 (430 contra mediana 124) es el único pendiente; el mes 1 (415) quedó validado
   con observación (`OBSERVACIONES` en `estudios/demo.py`). Tests: `estudios/tests/test_desvios*.py`.
 

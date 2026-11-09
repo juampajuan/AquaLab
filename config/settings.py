@@ -117,6 +117,7 @@ LOGGING = {
     },
     "loggers": {
         "usuarios.notificaciones": {"handlers": ["console"], "level": "INFO"},
+        "estudios.notificaciones": {"handlers": ["console"], "level": "INFO"},
         "informes.envios": {"handlers": ["console"], "level": "INFO"},
     },
 }
@@ -137,3 +138,7 @@ AQUALAB_LABORATORIO = {
 # confirmar con el laboratorio, y este es el único lugar donde se define (la lee
 # estudios/desvios.py).
 AQUALAB_DESVIOS = {"umbral": "30", "cantidad": 3}
+
+# Base de los enlaces absolutos de los correos que se generan fuera de un pedido web (aviso de
+# desvíos, US 8.2). En Render se configura con la URL pública del sitio.
+AQUALAB_URL_BASE = os.environ.get("AQUALAB_URL_BASE", "http://localhost:8000")

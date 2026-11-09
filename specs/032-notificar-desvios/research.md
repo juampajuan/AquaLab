@@ -7,8 +7,8 @@ es revisar; el desvío se calcula al vuelo, sin modelo propio). No quedan `NEEDS
 
 - **Decision**: no hay modelo `Desvio`. `estudios/desvios.py` evalúa el desvío de los resultados
   Cargados y sin validar cada vez que se muestran: detalle del estudio, pantalla de validación y
-  lista «Desvíos sin revisar». No se toca `calculo.recalcular` ni los servicios de carga y
-  corrección.
+  lista «Desvíos sin revisar». Los servicios de carga y corrección no cambian; `calculo.recalcular`
+  solo suma el aviso por correo de R12 (tanda 3), que no guarda nada.
 - **Rationale**: pedido del usuario. El resultado vigente es la única fuente: una carga o una
   corrección se refleja sola (FR-001, SC-003), no hay estado que pueda quedar desincronizado ni
   transiciones que mantener, y no hace falta un comando para datos previos.
@@ -153,3 +153,28 @@ es revisar; el desvío se calcula al vuelo, sin modelo propio). No quedan `NEEDS
 - Corrección de un resultado validado: el recálculo anula la validación (US 6.3); la prueba vuelve
   a Cargada y se evalúa de nuevo con el valor nuevo. La validación anulada conserva su constancia.
 - No se agrega admin; la constancia se ve en el detalle del estudio.
+
+## R12. Aviso por correo al calcular (tanda 3)
+
+- **Decision**: módulo `estudios/notificaciones.py` (como `usuarios/notificaciones.py`).
+  `calculo.recalcular` guarda los valores previos y, al terminar, llama a
+  `notificaciones.avisar_desvios(estudio, codigos)` con los códigos cuyo resultado es nuevo o
+  cambió de valor. Esa función relee esas asignaciones Cargadas, las evalúa con
+  `desvios.evaluar_estudio` (dentro de la transacción y con el estudio bloqueado por el llamador),
+  arma los datos de cada `Deteccion` como textos y agenda `transaction.on_commit(enviar)`. `enviar`
+  busca los usuarios activos del grupo «Bioquímicos» y manda un `EmailMessage` por desvío
+  (destinatarios en `to`), con asunto y cuerpo de `estudios/correos/desvio_asunto.txt` y
+  `desvio_cuerpo.txt` (patrón de `informes/envios.py`). Cada falla queda en el logger
+  `estudios.notificaciones` y no se propaga; sin bioquímicos activos, una advertencia.
+- **Enlace absoluto**: `settings.AQUALAB_URL_BASE` (variable de entorno, por defecto
+  `http://localhost:8000`) + `reverse("estudios:detalle")`; en Render se configura con la URL
+  pública. El cálculo no tiene `request`, así que no se usa `build_absolute_uri`.
+- **Rationale**: pedido del usuario (ajuste 4). Enganchar en `recalcular` cubre carga, corrección
+  y dependientes en un solo lugar; comparar con los valores previos evita reenviar un recálculo con
+  el mismo valor (FR-016); `on_commit` garantiza que una operación deshecha no avise (FR-018) y que
+  el envío no frene ni rompa la carga (FR-019). `desvios.py` sigue siendo de solo lectura.
+- **Alternatives considered**: enviar desde cada servicio (tres lugares); señales de `Resultado`
+  (no ven el valor previo y el proyecto evita señales, US 1.3); enviar sincrónico dentro de la
+  transacción (una falla o un servidor lento afectaría la carga).
+- **Nota**: la demo usa los servicios reales, así que también genera los correos de sus desvíos
+  (en desarrollo salen por la consola). La validación no recalcula: no envía correos.

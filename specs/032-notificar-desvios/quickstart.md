@@ -39,6 +39,11 @@ ningún comando para datos previos: el desvío se calcula al mostrar.
    reiniciar → un pendiente de +45 % deja de figurar; las validaciones con desvío anteriores siguen
    diciendo «umbral 30 %».
 
+8. **Aviso por correo** (US 6): con `docker compose logs -f web` abierto, corregir el Cloruro de
+   Pozo 2 a 50,0 (500 mg/l) → en la consola sale un correo por ese desvío a los bioquímicos
+   activos, con N° PI, cliente, origen, prueba, valor, mediana, porcentaje y el enlace absoluto al
+   estudio. Volver a guardar la misma corrección no envía otro.
+
 ## Tests
 
 ```bash

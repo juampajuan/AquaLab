@@ -24,6 +24,11 @@
    aislado en el historial contamina el promedio (caso de la demo: Detergentes de «Colectora», 4,2
    contra 14 / 4,1 / 4,3 da −43,8 % contra el promedio y −2,3 % contra la mediana). En
    Ausente/Presente no cambia nada.
+4. Además del aviso en pantalla, cuando un resultado recién calculado (carga, corrección o
+   recálculo de dependientes) queda en desvío, se envía un correo por cada desvío a todos los
+   usuarios activos del grupo Bioquímicos, con la muestra, el cliente, el origen, la prueba, el
+   valor observado, la mediana, el porcentaje y un enlace al estudio. No se reenvía si el valor no
+   cambió; una falla de envío no afecta la carga.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -202,6 +207,44 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
 
 ---
 
+### User Story 6 - Recibir el aviso por correo (Priority: P2)
+
+Como bioquímico, cuando se calcula un resultado que queda en desvío recibo un correo con los datos
+del desvío y un enlace al estudio, para enterarme aunque no esté mirando el dashboard.
+
+**Why this priority**: Es la «notificación» fuera de la pantalla; el aviso en el sistema (US 1 a
+US 3) ya cubre la revisión.
+
+**Independent Test**: Con Cloruro validado 100, 110 y 120 mg/l en el origen, cargar 16 (→ 160) en
+un estudio nuevo y verificar que cada bioquímico activo recibe un correo con N° PI, cliente,
+origen, «Cloruro (CL-)», «Observado: 160 mg/l», «Mediana de los últimos 3: 110 mg/l», «+45,5 %» y
+el enlace absoluto al estudio; corregir a 11,5 (sin desvío) y verificar que no llega otro.
+
+**Acceptance Scenarios**:
+
+1. **Dado** un resultado recién calculado (carga, corrección o recálculo de una prueba que
+   depende de otra) que queda en desvío, **cuando** la operación se guarda, **entonces** se envía
+   un correo por ese desvío a todos los usuarios activos del grupo Bioquímicos.
+2. **Dada** una carga que deja dos pruebas en desvío, **cuando** se guarda, **entonces** salen dos
+   correos, uno por desvío.
+3. **Dado** el correo, **cuando** se lee, **entonces** incluye N° PI de la muestra, cliente,
+   origen, prueba (nombre y código), valor observado, mediana de los últimos N (o el estado de los
+   últimos N en Ausente/Presente), porcentaje con signo y un enlace absoluto al detalle del
+   estudio, y no incluye la observación ni datos de otros estudios.
+4. **Dado** un resultado sin desvío, con historial insuficiente o cuyo valor no cambió en el
+   recálculo, **cuando** se guarda, **entonces** no se envía correo.
+5. **Dada** una corrección que cambia el valor y sigue en desvío, **cuando** se guarda,
+   **entonces** se envía un correo nuevo con el valor nuevo.
+6. **Dada** una operación que se rechaza o falla después de calcular, **cuando** se deshace,
+   **entonces** no se envía ningún correo.
+7. **Dado** un error del servidor de correo, **cuando** se intenta enviar, **entonces** la falla
+   queda registrada en el log y la carga o corrección queda guardada igual, sin mensaje de error.
+8. **Dados** bioquímicos inactivos o usuarios de otros grupos, **cuando** se envía el aviso,
+   **entonces** no lo reciben; sin ningún bioquímico activo, no se envía y queda una advertencia
+   en el log.
+
+---
+
 ### Edge Cases
 
 - **Historial**: «resultados validados anteriores» son los del historial de la comparación
@@ -238,6 +281,10 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
   el segundo recibe «ya estaba validada» y su observación no se guarda.
 - **Estudio con informe emitido**: todas sus pruebas están validadas; no tiene pendientes.
 - **Cliente u origen inactivo**: los desvíos se siguen mostrando y se revisan al validar igual.
+- **Correo y validación**: validar no recalcula el resultado, así que no envía correos; el aviso es
+  solo para resultados recién calculados.
+- **Demo**: la carga de la demo usa los servicios reales, así que también genera los correos de
+  sus desvíos (en desarrollo salen por la consola).
 - **Usuario sin acceso al dashboard**: no ve la sección ni la lista completa («sin permiso» si
   entra por el enlace); en el estudio igual ve la marca de desvío.
 
@@ -291,6 +338,18 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
 - **FR-014**: Con mediana previa 0 MUST aplicarse la regla de Edge Cases («Mediana 0»).
 - **FR-015**: La demo del laboratorio MUST incluir el desvío de Cloruro de «Pozo 2» como pendiente
   y al menos una validación con desvío y observación, para mostrar la historia.
+- **FR-016**: Cuando una carga, corrección o recálculo de dependientes deja un resultado nuevo o
+  con un valor distinto en desvío, el sistema MUST enviar un correo por cada desvío a todos los
+  usuarios activos del grupo Bioquímicos; si el valor no cambió, MUST NOT reenviarlo.
+- **FR-017**: El correo MUST incluir N° PI, cliente, origen, prueba, valor observado, mediana de
+  los últimos N, porcentaje y un enlace absoluto al detalle del estudio, armado con una dirección
+  base configurable del sistema.
+- **FR-018**: El correo MUST enviarse solo después de que la operación quede guardada; si la
+  operación se deshace, MUST NOT enviarse.
+- **FR-019**: Una falla de envío MUST quedar registrada en el log y MUST NOT afectar la operación
+  ni mostrar un error al usuario.
+- **FR-020**: Los correos de desvíos MUST ir solo a usuarios del laboratorio (grupo Bioquímicos),
+  nunca al cliente.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -322,11 +381,17 @@ deja de figurar como desvío, mientras que una validación hecha antes con desv�
 - **SC-006**: Cambiar el umbral requiere modificar un solo valor de configuración.
 - **SC-007**: El detalle y la validación de un estudio de 20 pruebas con 6 meses de historia, y el
   Dashboard con la sección de desvíos, se muestran en menos de 2 segundos.
+- **SC-008**: El 100 % de los resultados recién calculados en desvío generan exactamente un correo
+  por desvío a cada bioquímico activo, y ninguna operación deshecha ni recálculo con el mismo valor
+  genera correos.
 
 ## Assumptions
 
-- «Notificar» significa avisar dentro del sistema (marca en el estudio, en la validación y lista
-  del Dashboard); no se envían correos ni notificaciones fuera de AquaLab.
+- «Notificar» es avisar dentro del sistema (marca en el estudio, en la validación y lista del
+  Dashboard) y, desde el ajuste 4, por correo a los bioquímicos activos al calcularse un resultado
+  en desvío. El correo no reemplaza la revisión: el desvío se revisa al validar.
+- La dirección base de los enlaces del correo se configura en el sistema (en desarrollo,
+  `http://localhost:8000`), porque el cálculo no ocurre dentro de un pedido web.
 - «El desvío se detecta cuando se calcula el resultado» se cumple porque la evaluación usa siempre
   el resultado vigente: aparece en cuanto el resultado existe y se actualiza con cada corrección.
 - Los «últimos 3 resultados validados» se toman del mismo historial que la comparación histórica

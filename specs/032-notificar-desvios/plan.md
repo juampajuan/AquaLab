@@ -12,8 +12,11 @@ nuevo `HistorialPrueba.anteriores`), la mediana de los últimos N validados (no 
 aislado no la mueve) y una comparación `Decimal` exacta contra el umbral de
 `settings.AQUALAB_DESVIOS` (30 %, N = 3). Se muestra en el detalle del estudio, en la pantalla de
 validación y en una sección «Desvíos sin revisar» del Dashboard con lista completa
-`estudios:desvios`. Una corrección se refleja sola porque se evalúa el resultado vigente; no se
-toca `calculo.py` ni los servicios de carga y corrección. **Validar es revisar**: la validación
+`estudios:desvios`. Una corrección se refleja sola porque se evalúa el resultado vigente; los
+servicios de carga y corrección no cambian. **Aviso por correo (tanda 3)**: al final de
+`calculo.recalcular`, `estudios/notificaciones.py` evalúa las pruebas cuyo valor cambió y, por cada
+desvío, agenda con `transaction.on_commit` un correo a los bioquímicos activos (plantillas de texto
+como `informes/envios.py`; enlace absoluto con `settings.AQUALAB_URL_BASE`; fallas al log). **Validar es revisar**: la validación
 destaca las pruebas con desvío con un campo «Observación», la confirmación cuenta las elegidas con
 desvío y `servicios.validar_resultados` vuelve a evaluar bajo el bloqueo y guarda en la
 `Validacion` la observación y, como constancia, la mediana y el umbral (migración
@@ -56,7 +59,7 @@ en `comparacion.py`, cambios en `servicios.validar_resultados` y `ValidarResulta
 1 URL (`estudios:desvios`), parciales y cambios en `detalle.html`, `validar_resultados*.html` e
 `informes/dashboard.html`; demo; tests; CLAUDE.md.
 
-Decisiones en [research.md](./research.md) (R1–R11). No hay `NEEDS CLARIFICATION` pendientes.
+Decisiones en [research.md](./research.md) (R1–R12). No hay `NEEDS CLARIFICATION` pendientes.
 
 ## Constitution Check
 
@@ -77,7 +80,10 @@ Decisiones en [research.md](./research.md) (R1–R11). No hay `NEEDS CLARIFICATI
 ## Diseño
 
 ```text
-carga / corrección ──► Resultado (Cargada)        (sin cambios: calculo.py intacto)
+carga / corrección / dependientes ──► calculo.recalcular ──► Resultado (Cargada)
+     └─ al final: cambiadas (valor nuevo o distinto) ──► notificaciones.avisar_desvios    (R12)
+           evaluar_estudio → por Deteccion: transaction.on_commit(enviar) → correo a
+           Bioquímicos activos (estudios/correos/desvio_*.txt); falla → log
 
 detalle / validación ──► desvios.evaluar_estudio(estudio, asignaciones)               (R1)
 dashboard / lista    ──► desvios.pendientes() ─ por estudio ─► evaluar_estudio
@@ -112,6 +118,9 @@ estudios/
 ├── views.py                          # detalle y validar_resultados: desvíos; + desvios_pendientes
 ├── urls.py                           # + desvios/
 ├── demo.py                           # observación al validar Pozo 2 mes 1 (R10)
+├── notificaciones.py                 # NUEVO (tanda 3): aviso por correo de desvíos (R12)
+├── calculo.py                        # recalcular → notificaciones.avisar_desvios (tanda 3)
+├── templates/estudios/correos/desvio_asunto.txt, desvio_cuerpo.txt   # NUEVO (tanda 3)
 ├── templates/estudios/
 │   ├── desvio.html                   # NUEVO: marca pendiente / revisado (parcial)
 │   ├── desvios_tabla.html            # NUEVO: tabla de pendientes (dashboard y lista)
@@ -124,6 +133,7 @@ estudios/
     ├── test_desvios_validacion.py    # NUEVO: constancia al validar (servicio)
     ├── test_desvios_vista.py         # NUEVO: detalle, validación, dashboard, lista, permisos, informe
     ├── test_desvios_concurrencia.py  # NUEVO: validaciones simultáneas / corrección vs validación
+    ├── test_desvios_correo.py        # NUEVO (tanda 3): aviso por correo con mail.outbox
     ├── test_comparacion.py           # + anteriores
     └── test_demo.py                  # + desvíos de la demo
 informes/
@@ -165,6 +175,10 @@ CLAUDE.md                             # sección «Desvíos (US 8.2)»
 | FR-010, US3 8 | `::test_permisos` (lista sin `ver_dashboard` 403; «Validar» oculto sin permiso; no existe URL de revisión) |
 | FR-012, US4 3 | `::test_no_aparece_en_informe_pdf_ni_correo` |
 | SC-007 | `::test_consultas_dashboard_y_lista` (por estudio, no por prueba), `test_desvios.py::test_consultas_evaluar_estudio` |
+| FR-016, US6 1–2, 4–5, SC-008 | `test_desvios_correo.py::test_uno_por_desvio_a_bioquimicos_activos`, `::test_dependiente`, `::test_correccion_sigue_en_desvio`, `::test_sin_desvio_no_envia`, `::test_mismo_valor_no_reenvia` |
+| FR-017, FR-020, US6 3 | `::test_contenido_y_enlace_absoluto` |
+| FR-018, US6 6 | `::test_transaccion_fallida_no_envia` |
+| FR-019, US6 7–8 | `::test_falla_de_envio_queda_en_log`, `::test_sin_bioquimicos_activos` |
 | FR-015, SC-002 | `test_demo.py::test_desvios_de_la_demo` |
 
 ## Complexity Tracking

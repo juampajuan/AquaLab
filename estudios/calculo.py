@@ -120,9 +120,15 @@ def recalcular(estudio, asignaciones):
     estudio bloqueado (select_for_update) dentro de su transacción. Devuelve las pruebas cuya
     fórmula no se pudo evaluar, como pares (prueba, motivo); las que solo esperan otros
     resultados no se informan.
+
+    Al terminar, avisa por correo los desvíos de los resultados nuevos o con otro valor (US 8.2;
+    el envío se agenda para después del commit).
     """
+    from . import notificaciones
+
     todas = por_codigo(estudio)
     valores = {c: a.resultado.valor for c, a in todas.items() if tiene_resultado(a)}
+    antes = dict(valores)
     orden, ciclo = en_orden(afectadas(todas, {a.prueba.codigo for a in asignaciones}), todas)
     fallas = []
     for codigo in orden + ciclo:
@@ -149,6 +155,9 @@ def recalcular(estudio, asignaciones):
         # Un resultado recalculado pierde la validación (excepción al principio IV, plan.md).
         if asignacion.estado != EstadoPruebaEstudio.CARGADA:
             cambiar_estado(asignacion, EstadoPruebaEstudio.CARGADA)
+    cambiadas = [c for c in orden if c in valores and valores[c] != antes.get(c)]
+    if cambiadas:
+        notificaciones.avisar_desvios(estudio, cambiadas)
     return fallas
 
 
