@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Enviar informe por correo · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'informes:ver' estudio.pk as url_informe %}
+  {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Informe "|add:informe.numero_mostrado anterior_url=url_informe miga="Enviar por correo" titulo="Enviar informe por correo" %}
+{% endblock %}
+
+{% block content %}
+  {% url 'informes:ver' estudio.pk as url_informe %}
+  <div class="max-w-3xl">
+    <div class="aviso aviso-advertencia mb-6" role="alert">
+      {% include "ui/icono.html" with nombre="mail" clase="size-5 shrink-0" %}
+      <div>Se enviará el informe {{ informe.numero_mostrado }} por correo a {{ cliente.email }}, con el PDF adjunto.</div>
+    </div>
+    <div class="tarjeta p-6 sm:p-7">
+      <dl class="resumen" data-componente="resumen">
+        {% include "ui/dato.html" with etiqueta="Informe" valor=informe.numero_mostrado %}
+        {% include "ui/dato.html" with etiqueta="Cliente" valor=cliente.nombre_completo %}
+        {% include "ui/dato.html" with etiqueta="Correo" valor=cliente.email %}
+        {% if ultimo %}
+          {% with fecha=ultimo.fecha|date:"d/m/Y H:i" %}
+            {% include "ui/dato.html" with etiqueta="Último envío" valor=fecha|add:" a "|add:ultimo.destinatario %}
+          {% endwith %}
+        {% else %}
+          {% include "ui/dato.html" with etiqueta="Último envío" valor="Nunca se envió" %}
+        {% endif %}
+      </dl>
+    </div>
+    <div class="mt-6 flex flex-wrap items-center gap-3" data-componente="acciones-confirmacion">
+      <form method="post" onsubmit="this.querySelector('button').disabled = true;">
+        {% csrf_token %}
+        <input type="hidden" name="clave" value="{{ clave }}">
+        <button type="submit" class="btn btn-primario">
+          {% include "ui/icono.html" with nombre="mail" clase="size-4" %} Enviar informe
+        </button>
+      </form>
+      <a href="{{ url_informe }}" class="btn btn-secundario">Cancelar</a>
+    </div>
+  </div>
+{% endblock %}

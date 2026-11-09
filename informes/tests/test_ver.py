@@ -88,3 +88,78 @@ def test_ver_vuelve_a_emitidos(cliente_bioquimico, estudio_listo, bioquimico):
 
 def test_ver_pk_inexistente_404(cliente_http):
     assert cliente_http.get(reverse("informes:ver", args=[999999])).status_code == 404
+
+
+@pytest.mark.parametrize(
+    ("usuario", "ofrece"), [("cliente_bioquimico", True), ("cliente_comun", False)]
+)
+def test_ver_ofrece_enviar_con_permiso(request, estudio_listo, bioquimico, usuario, ofrece):
+    """SCRUM-79 (FR-001): «Enviar por correo» solo para quien puede emitir informes."""
+    emitir_informe(estudio_listo.pk, bioquimico)
+    cliente = request.getfixturevalue(usuario)
+
+    html = cliente.get(reverse("informes:ver", args=[estudio_listo.pk])).content.decode()
+
+    enlace = f'href="{reverse("informes:enviar", args=[estudio_listo.pk])}"'
+    assert (enlace in html) is ofrece
+    assert ("Enviar por correo" in html) is ofrece
+
+
+@pytest.mark.parametrize("usuario", ["cliente_bioquimico", "cliente_comun"])
+def test_historial_vacio(request, estudio_listo, bioquimico, usuario):
+    """SCRUM-79 (US2 Esc. 1): un informe sin envíos lo indica, para cualquier empleado."""
+    emitir_informe(estudio_listo.pk, bioquimico)
+    cliente = request.getfixturevalue(usuario)
+
+    html = cliente.get(reverse("informes:ver", args=[estudio_listo.pk])).content.decode()
+
+    assert "Envíos por correo" in html
+    assert "Este informe todavía no se envió por correo." in html
+
+
+def test_historial_ordenado(cliente_comun, estudio_listo, bioquimico):
+    """SCRUM-79 (US2 Esc. 3, FR-006): todos los envíos, del más reciente al más antiguo."""
+    import re
+    import uuid
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from django.conf import settings
+
+    from informes.models import EnvioInforme, ResultadoEnvio
+
+    informe = emitir_informe(estudio_listo.pk, bioquimico)
+    bioquimico.first_name, bioquimico.last_name = "Ana", "Pérez"
+    bioquimico.save()
+    zona = ZoneInfo(settings.TIME_ZONE)
+    datos = [
+        (datetime(2026, 11, 2, 9, 0, tzinfo=zona), "a@ejemplo.com", ResultadoEnvio.ENVIADO),
+        (datetime(2026, 11, 4, 15, 30, tzinfo=zona), "b@ejemplo.com", ResultadoEnvio.FALLIDO),
+        (datetime(2026, 11, 3, 10, 15, tzinfo=zona), "c@ejemplo.com", ResultadoEnvio.ENVIADO),
+    ]
+    for fecha, destinatario, resultado in datos:
+        envio = EnvioInforme.objects.create(
+            informe=informe,
+            enviado_por=bioquimico,
+            destinatario=destinatario,
+            resultado=resultado,
+            clave=uuid.uuid4(),
+        )
+        EnvioInforme.objects.filter(pk=envio.pk).update(fecha=fecha)
+
+    html = cliente_comun.get(reverse("informes:ver", args=[estudio_listo.pk])).content.decode()
+    seccion = html[html.index('data-componente="envios"') :]
+    filas = re.findall(r"<tr>(.*?)</tr>", seccion, re.S)[1:]  # sin el encabezado
+
+    assert len(filas) == 3
+    esperado = [
+        ("04/11/2026 15:30", "b@ejemplo.com", "danger", "Falló"),
+        ("03/11/2026 10:15", "c@ejemplo.com", "success", "Enviado"),
+        ("02/11/2026 09:00", "a@ejemplo.com", "success", "Enviado"),
+    ]
+    for fila, (fecha, destinatario, tipo, texto) in zip(filas, esperado, strict=True):
+        assert fecha in fila
+        assert destinatario in fila
+        assert "Ana Pérez" in fila
+        assert f'data-estado="{tipo}">{texto}<' in fila
+    assert "Este informe todavía no se envió por correo." not in html

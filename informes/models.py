@@ -81,3 +81,56 @@ class FirmaProfesional(models.Model):
     @property
     def data_url(self):
         return "data:image/png;base64," + base64.b64encode(bytes(self.imagen)).decode()
+
+
+class ResultadoEnvio(models.TextChoices):
+    ENVIADO = "enviado", "Enviado"
+    FALLIDO = "fallido", "Falló"
+
+
+class EnvioInforme(models.Model):
+    """Cada envío confirmado de un informe por correo (SCRUM-79), exitoso o fallido. Inalterable.
+
+    Lo crea solo `informes.envios.enviar_informe`, con el resultado ya conocido. `clave` es la de
+    la pantalla de confirmación: un envío por confirmación aunque el formulario llegue dos veces.
+    """
+
+    informe = models.ForeignKey(
+        Informe, on_delete=models.PROTECT, related_name="envios", editable=False
+    )
+    enviado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="envios_de_informes",
+        editable=False,
+    )
+    fecha = models.DateTimeField("fecha", auto_now_add=True)
+    destinatario = models.EmailField("enviado a", max_length=254)
+    resultado = models.CharField("resultado", max_length=10, choices=ResultadoEnvio.choices)
+    clave = models.UUIDField(unique=True, editable=False)
+
+    class Meta:
+        verbose_name = "envío de informe"
+        verbose_name_plural = "envíos de informes"
+        ordering = ("-fecha", "-pk")
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(resultado__in=ResultadoEnvio.values),
+                name="envio_informe_resultado_valido",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.informe.numero_mostrado} → {self.destinatario} ({self.get_resultado_display()})"
+        )
+
+    def save(self, *args, **kwargs):
+        """Solo se guarda al registrar el envío: el historial no se modifica (FR-005)."""
+        if not self._state.adding:
+            raise ValueError("Un envío de informe no se puede modificar.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """El historial de envíos no se borra (FR-005)."""
+        raise ValueError("Un envío de informe no se puede borrar.")
