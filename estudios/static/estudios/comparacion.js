@@ -183,8 +183,9 @@
               labels: {
                 filter: function (item, datos) {
                   var ds = datos.datasets[item.datasetIndex];
-                  // De la franja con dos bordes se muestra una sola entrada.
-                  return !(ds.franja && ds.fill === false && prueba.franja.min !== null);
+                  // De la franja con dos bordes (mín. y máx., o Ausente/Presente) se muestra una
+                  // sola entrada: el borde de abajo es el único con fill === false.
+                  return !(ds.franja && ds.fill === false);
                 },
               },
             },
