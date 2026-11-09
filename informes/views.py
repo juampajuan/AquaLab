@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from estudios import calculo
-from estudios.forms import BuscarEstudioForm
+from estudios.forms import BuscarEstudioForm, ElegirOrigenForm
 from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
 from estudios.views import RESULTADOS_POR_PAGINA
 
@@ -247,4 +247,5 @@ def mi_firma(request):
 def dashboard(request):
     """Indicadores del laboratorio (US 8.3): solo con el permiso «Puede ver el dashboard»."""
     contexto = tablero.armar(request.GET.get("periodo", "este_mes"))
+    contexto["form_origen"] = ElegirOrigenForm()  # comparación histórica (US 8.1)
     return render(request, "informes/dashboard.html", contexto)

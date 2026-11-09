@@ -14,6 +14,32 @@
       <div class="relative mt-4 h-64">
         <canvas id="grafico-{{ prueba.codigo }}" role="img" aria-label="Evolución de {{ prueba.nombre }} en {{ origen.nombre }}"></canvas>
       </div>
+      <details class="mt-4 text-sm">
+        <summary class="cursor-pointer text-cian-texto">Ver datos</summary>
+        <div class="mt-2 overflow-x-auto">
+          <table class="tabla" data-tabla="{{ prueba.codigo }}">
+            <thead><tr><th>Fecha de muestreo</th><th>N° PI</th><th>Resultado</th><th>Evaluación</th><th>Estado</th></tr></thead>
+            <tbody>
+              {% for punto in historial.puntos %}
+                <tr data-punto{% if punto.es_referencia %} data-referencia{% endif %}>
+                  <td>{{ punto.fecha_muestreo|date:"d/m/Y" }}</td>
+                  <td><a href="{% url 'muestras:detalle' punto.muestra_pk %}" class="text-cian-texto hover:underline">PI {{ punto.numero_pi }}</a></td>
+                  <td class="numeros">
+                    {{ punto.texto }}{% if not historial.presencia %} {{ punto.unidad|unidad }}{% endif %}
+                    {% if punto.otra_unidad %}<span class="block text-xs text-tinta-suave">Otra unidad ({{ punto.unidad|unidad }}), no se compara</span>{% endif %}
+                  </td>
+                  <td>{% include "ui/estado.html" with estado=punto.evaluacion.label tipo=punto.evaluacion|tipo_evaluacion %}</td>
+                  <td>
+                    {% if punto.validado %}Validado{% else %}Sin validar{% endif %}
+                    {% if punto.es_referencia %}<span class="block text-xs font-semibold text-cian-texto">Este estudio</span>{% endif %}
+                    <a href="{% url 'estudios:detalle' punto.estudio_pk %}" class="block text-xs text-cian-texto hover:underline">Estudio #{{ punto.estudio_pk }}</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
     {% else %}
       <div class="rounded-lg border border-borde px-4 py-3 text-sm" data-sin-historial>
         {% if historial.referencia %}

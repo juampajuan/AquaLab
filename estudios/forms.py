@@ -1,7 +1,8 @@
 from django import forms
 
+from clientes.models import Cliente
 from muestras.forms import SelectorFecha
-from muestras.models import Muestra
+from muestras.models import Muestra, Origen
 from pruebas.limites import Evaluacion
 from pruebas.models import Prueba
 
@@ -405,3 +406,110 @@ class ValidarResultadosForm(forms.Form):
 
     def fuera_de_norma(self):
         return [a for a in self.asignaciones if a.evaluacion == Evaluacion.FUERA_DE_NORMA]
+
+
+class ElegirPruebasForm(forms.Form):
+    """Pruebas que se muestran en la comparación histórica (US 8.1). Va por GET, así el enlace
+    conserva la selección. Sin `elegir` (primera visita) se muestran todas."""
+
+    pruebas = forms.MultipleChoiceField(
+        label="Pruebas a mostrar",
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text=(
+            "Las pruebas cuya evolución se dibuja. El enlace de la página guarda la selección."
+        ),
+    )
+    elegir = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    def __init__(self, datos=None, *, disponibles):
+        self.codigos = [p.codigo for p in disponibles]
+        if datos is not None and datos.get("elegir"):
+            # Un código que no está entre las opciones (enlace viejo o armado a mano) se ignora.
+            datos = datos.copy()
+            datos.setlist("pruebas", [c for c in datos.getlist("pruebas") if c in self.codigos])
+            super().__init__(datos)
+        else:
+            super().__init__(initial={"pruebas": self.codigos, "elegir": "1"})
+        self.fields["pruebas"].choices = [
+            (p.codigo, f"{p.nombre} ({p.codigo})") for p in disponibles
+        ]
+
+    def clean(self):
+        datos = super().clean()
+        if not datos.get("pruebas"):
+            self.add_error("pruebas", "Elegí al menos una prueba para ver su evolución.")
+        return datos
+
+    def elegidas(self):
+        """Los códigos a mostrar: todos sin selección; ninguno si la selección es inválida."""
+        if not self.is_bound:
+            return list(self.codigos)
+        return self.cleaned_data["pruebas"] if self.is_valid() else []
+
+
+class ClienteChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.nombre_completo
+
+
+class ElegirOrigenForm(forms.Form):
+    """Cliente y origen para la comparación histórica desde el dashboard (US 8.1).
+
+    Sin JavaScript, los orígenes van agrupados por cliente; con solo el cliente elegido (paso 2),
+    se ofrecen solo los suyos. `elegir_origen.js` filtra la lista al cambiar el cliente.
+    """
+
+    cliente = ClienteChoiceField(
+        queryset=Cliente.objects.filter(activo=True),
+        label="Cliente",
+        empty_label="Elegí un cliente",
+        help_text="El cliente dueño del punto de muestreo. Solo se listan los clientes activos.",
+    )
+    origen = forms.ModelChoiceField(
+        queryset=Origen.objects.filter(cliente__activo=True).select_related("cliente"),
+        label="Origen",
+        empty_label="Elegí un origen",
+        help_text="El punto de muestreo cuya evolución se quiere ver.",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        clientes = sorted(
+            self.fields["cliente"].queryset, key=lambda c: (c.nombre_completo.casefold(), c.pk)
+        )
+        self.fields["cliente"].choices = [("", "Elegí un cliente")] + [
+            (c.pk, c.nombre_completo) for c in clientes
+        ]
+        self.por_cliente = {
+            c.pk: sorted(
+                (o for o in self.fields["origen"].queryset if o.cliente_id == c.pk),
+                key=lambda o: o.nombre.casefold(),
+            )
+            for c in clientes
+        }
+        elegido = self.data.get("cliente") if self.is_bound else None
+        elegido = int(elegido) if elegido and str(elegido).isdigit() else None
+        if elegido in self.por_cliente:
+            opciones = [(o.pk, o.nombre) for o in self.por_cliente[elegido]]
+        else:
+            opciones = [
+                (c.nombre_completo, [(o.pk, o.nombre) for o in self.por_cliente[c.pk]])
+                for c in clientes
+                if self.por_cliente[c.pk]
+            ]
+        self.fields["origen"].choices = [("", "Elegí un origen"), *opciones]
+
+    def clean(self):
+        datos = super().clean()
+        cliente, origen = datos.get("cliente"), datos.get("origen")
+        if cliente and origen and origen.cliente_id != cliente.pk:
+            self.add_error("origen", "El origen no pertenece al cliente elegido.")
+        return datos
+
+    def origenes_por_cliente(self):
+        """Para `json_script`: `{cliente_pk: [[origen_pk, nombre], …]}`."""
+        return {
+            str(pk): [[o.pk, o.nombre] for o in origenes]
+            for pk, origenes in self.por_cliente.items()
+        }

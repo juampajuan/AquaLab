@@ -44,13 +44,31 @@
         Solo para el laboratorio. Se comparan los resultados validados de este origen por fecha de muestreo; la comparación no valida ni rechaza ningún resultado.
       </p>
 
-      {% for historial in historiales %}
-        {% include "estudios/comparacion_prueba.html" %}
-      {% empty %}
-        <section class="tarjeta">
+      {% if sin_validados %}
+        <section class="tarjeta" data-sin-validados>
           {% include "ui/estado_vacio.html" with mensaje="Este origen todavía no tiene resultados validados" icono="chart-column" %}
         </section>
-      {% endfor %}
+      {% else %}
+        <form method="get" action="{% url 'estudios:comparacion' %}" class="tarjeta p-5" data-elegir-pruebas>
+          {% if estudio %}
+            <input type="hidden" name="estudio" value="{{ estudio.pk }}">
+          {% else %}
+            <input type="hidden" name="cliente" value="{{ cliente.pk }}">
+            <input type="hidden" name="origen" value="{{ origen.pk }}">
+          {% endif %}
+          {{ form_pruebas.elegir }}
+          {% include "ui/campo.html" with field=form_pruebas.pruebas sin_obligatorio=True %}
+          <div class="mt-4 flex flex-wrap gap-3">
+            <button type="submit" class="btn btn-primario">Aplicar</button>
+            <button type="button" class="btn btn-secundario" data-atajo="todas" hidden>Todas</button>
+            <button type="button" class="btn btn-secundario" data-atajo="ninguna" hidden>Ninguna</button>
+          </div>
+        </form>
+
+        {% for historial in historiales %}
+          {% include "estudios/comparacion_prueba.html" %}
+        {% endfor %}
+      {% endif %}
 
       <div class="flex flex-wrap gap-3">
         {% if estudio %}
@@ -69,10 +87,15 @@
       <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
       <script src="{% static 'estudios/comparacion.js' %}" defer></script>
     {% else %}
-      <section class="tarjeta">
-        {% url 'informes:dashboard' as url_dashboard %}
-        {% include "ui/estado_vacio.html" with mensaje="Elegí un cliente y un origen desde el dashboard para ver su evolución." icono="chart-column" accion_texto="Volver al dashboard" accion_url=url_dashboard %}
+      <section class="tarjeta p-5" aria-labelledby="titulo-elegir-origen">
+        <h2 id="titulo-elegir-origen" class="mb-4 text-sm font-semibold text-marino">Elegí el cliente y el origen</h2>
+        {% include "estudios/elegir_origen.html" with form=form_origen %}
       </section>
+      <div>
+        <a href="{% url 'informes:dashboard' %}" class="btn btn-secundario">
+          {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Volver al dashboard
+        </a>
+      </div>
     {% endif %}
   </div>
 {% endblock %}

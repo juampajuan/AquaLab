@@ -28,6 +28,8 @@ from .forms import (
     CargarMedicionesForm,
     CorregirMedicionesForm,
     CrearEstudioForm,
+    ElegirOrigenForm,
+    ElegirPruebasForm,
     FiltrarEstudiosForm,
     ValidarResultadosForm,
 )
@@ -196,17 +198,29 @@ def datos_graficos(historiales):
 @permission_required("informes.ver_dashboard", raise_exception=True)
 @require_GET
 def comparacion(request):
-    """Comparación histórica de un origen (US 8.1), desde un estudio. Solo lectura."""
-    estudio = None
-    origen = None
+    """Comparación histórica de un origen (US 8.1): desde un estudio (`?estudio=`, que manda
+    sobre `origen`) o desde el dashboard (`?cliente=&origen=`). Solo lectura."""
+    estudio = origen = form_origen = form_pruebas = None
     historiales = []
+    disponibles = []
     if request.GET.get("estudio"):
+        valor = request.GET["estudio"]
         estudio = get_object_or_404(
             Estudio.objects.select_related("muestra__cliente", "muestra__origen"),
-            pk=request.GET["estudio"] if request.GET["estudio"].isdigit() else None,
+            pk=valor if valor.isdigit() else None,
         )
         origen = estudio.muestra.origen
-        historiales = comparacion_historica.comparar(origen, estudio=estudio)
+    else:
+        hay_datos = "cliente" in request.GET or "origen" in request.GET
+        form_origen = ElegirOrigenForm(request.GET if hay_datos else None)
+        if form_origen.is_valid():
+            origen = form_origen.cleaned_data["origen"]
+    if origen is not None:
+        disponibles = comparacion_historica.pruebas_disponibles(origen, estudio)
+        form_pruebas = ElegirPruebasForm(request.GET, disponibles=disponibles)
+        codigos = form_pruebas.elegidas()
+        if codigos:
+            historiales = comparacion_historica.comparar(origen, estudio=estudio, codigos=codigos)
     return render(
         request,
         "estudios/comparacion.html",
@@ -214,6 +228,9 @@ def comparacion(request):
             "estudio": estudio,
             "origen": origen,
             "cliente": origen.cliente if origen else None,
+            "form_origen": form_origen,
+            "form_pruebas": form_pruebas,
+            "sin_validados": origen is not None and not disponibles,
             "historiales": historiales,
             "datos_graficos": datos_graficos(historiales),
         },

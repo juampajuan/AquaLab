@@ -138,3 +138,40 @@ test("tooltip: valor con unidad y estado; en A/P sin unidad", () => {
     "Presente · Validado",
   );
 });
+
+// DOM mínimo para los atajos: un formulario con casillas y dos botones.
+function formularioConCasillas(cantidad) {
+  const casillas = Array.from({ length: cantidad }, () => ({ checked: false }));
+  const formulario = {
+    querySelectorAll: (selector) => (selector === 'input[type="checkbox"]' ? casillas : []),
+  };
+  function boton(atajo) {
+    const escuchas = {};
+    return {
+      hidden: true,
+      getAttribute: (nombre) => (nombre === "data-atajo" ? atajo : null),
+      closest: (selector) => (selector === "form" ? formulario : null),
+      addEventListener: (evento, funcion) => {
+        escuchas[evento] = funcion;
+      },
+      click: () => escuchas.click(),
+    };
+  }
+  const todas = boton("todas");
+  const ninguna = boton("ninguna");
+  const raiz = { querySelectorAll: (selector) => (selector === "[data-atajo]" ? [todas, ninguna] : []) };
+  return { casillas, todas, ninguna, raiz };
+}
+
+test("atajos Todas y Ninguna: se muestran con JS y marcan o desmarcan todas las casillas", () => {
+  const { casillas, todas, ninguna, raiz } = formularioConCasillas(3);
+
+  comparacion.activarAtajos(raiz);
+  assert.equal(todas.hidden, false);
+  assert.equal(ninguna.hidden, false);
+
+  todas.click();
+  assert.ok(casillas.every((c) => c.checked));
+  ninguna.click();
+  assert.ok(casillas.every((c) => !c.checked));
+});

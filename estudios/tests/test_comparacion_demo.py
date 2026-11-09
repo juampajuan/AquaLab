@@ -5,6 +5,7 @@ Si un cambio del guion de la demo elimina alguno de estos casos, agregarlo de nu
 (`estudios/demo.py`) y a `test_demo.py` (CLAUDE.md, SCRUM-78).
 """
 
+import re
 from decimal import Decimal
 
 import pytest
@@ -114,3 +115,36 @@ def test_comparar_no_modifica(cargada):
 
     assert estado() == antes
     assert PruebaEstudio.objects.filter(estado=EstadoPruebaEstudio.CARGADA).exists()
+
+
+def test_vista_tanque_domiciliario(cargada, cliente_bioquimico):
+    from django.urls import reverse
+
+    origen = Origen.objects.get(nombre="Tanque domiciliario")
+    url = f"{reverse('estudios:comparacion')}?cliente={origen.cliente_id}&origen={origen.pk}"
+
+    html = cliente_bioquimico.get(url).content.decode()
+
+    inicio = html.index('data-prueba="ECOLI"')
+    ecoli = html[inicio : html.find("data-prueba=", inicio + 1)]
+    assert "Sin cambios (Ausente)" in ecoli
+    assert "Presente en 1 de 4" in ecoli
+    tabla = ecoli[ecoli.index("<table") : ecoli.index("</table>")]
+    resultados = re.findall(r'<td class="numeros">\s*(.*?)\s*</td>', tabla, re.S)
+    celdas = [c.split()[0] for c in resultados]
+    # Nunca 0 ni 1: Ausente/Presente, meses 5 a 1.
+    assert celdas == ["Ausente", "Ausente", "Presente", "Ausente", "Ausente"]
+
+
+def test_vista_pozo_2(cargada, cliente_bioquimico):
+    from django.urls import reverse
+
+    actual = estudio(cargada, "Pozo 2", 0)
+
+    html = cliente_bioquimico.get(
+        f"{reverse('estudios:comparacion')}?estudio={actual.pk}"
+    ).content.decode()
+
+    assert "▲ +15 mg/l (+3,6 %)" in html
+    assert "Contra el promedio de 5 anteriores (179,6 mg/l)" in html
+    assert "▲ +250,4 mg/l (+139,4 %)" in html

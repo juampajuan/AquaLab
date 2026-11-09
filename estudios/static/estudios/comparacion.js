@@ -131,7 +131,7 @@
       boton.hidden = false;
       boton.addEventListener("click", function () {
         var marcar = boton.getAttribute("data-atajo") === "todas";
-        var grupo = boton.closest("fieldset") || raiz;
+        var grupo = boton.closest("form") || raiz;
         Array.prototype.forEach.call(
           grupo.querySelectorAll('input[type="checkbox"]'),
           function (casilla) {
