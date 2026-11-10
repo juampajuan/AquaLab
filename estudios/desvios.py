@@ -142,11 +142,16 @@ class Deteccion:
         return f"{con_signo(str(self.porcentaje).replace('.', ','))} %"
 
     @property
+    def diferencia_texto(self):
+        """La diferencia contra la referencia con signo y unidad («+346 mg/l»)."""
+        return con_unidad(con_signo(numero(self.diferencia)), self.unidad)
+
+    @property
     def variacion_texto(self):
         if self.presencia:
             antes = f"los últimos {self.cantidad}" if self.cantidad else "antes"
             return f"{self.texto} ({antes}: {texto_presencia(self.referencia)})"
-        cantidad = con_unidad(con_signo(numero(self.diferencia)), self.unidad)
+        cantidad = self.diferencia_texto
         if self.porcentaje is None:
             return f"{self.flecha} {cantidad}, sin porcentaje (mediana previa 0)"
         return f"{self.flecha} {cantidad} ({self.porcentaje_texto})"
