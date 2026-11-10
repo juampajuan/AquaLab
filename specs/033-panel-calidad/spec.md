@@ -14,7 +14,7 @@
 
 ### Session 2026-11-10
 
-- Q: ¿Qué cuenta la parte por tipo de vertido? → A: Pruebas, no muestras: cada prueba validada en el período suma una (una muestra con 7 pruebas aporta 7). Para que se entienda, se titula «Pruebas validadas por tipo de vertido», con el subtítulo «Cada prueba validada en el período suma una: una muestra con 7 pruebas aporta 7.», columnas «Pruebas evaluadas», «Pruebas que cumplen» y «Pruebas fuera de norma» y la misma leyenda en el gráfico, con la nota «No se cuentan las pruebas sin límite para comparar.» debajo de la tabla. No se agregan columnas por muestra.
+- Q: ¿Qué cuenta la parte por tipo de vertido? → A: Pruebas, no muestras: cada prueba evaluada en el período suma una (una muestra con 7 pruebas aporta 7). Para que se entienda, se titula «Pruebas evaluadas por tipo de vertido», con el subtítulo «Cada prueba evaluada en el período suma una: una muestra con 7 pruebas aporta 7.», columnas «Pruebas evaluadas», «Pruebas que cumplen» y «Pruebas fuera de norma» y la misma leyenda en el gráfico, con la nota «No se cuentan las pruebas sin límite para comparar.» debajo de la tabla. No se agregan columnas por muestra.
 
 **Input**: User description: "US 8.4 (SCRUM-76) – Panel de calidad del agua. Como bioquímico quiero ver el nivel de cumplimiento de los resultados para detectar qué pruebas, clientes u orígenes presentan más incumplimientos. Criterios: (1) En el Dashboard, sección «Calidad», para el período elegido (el mismo selector de la 8.3). (2) Porcentaje de resultados fuera de norma sobre el total de resultados validados del período. (3) Pruebas que más fallan: ranking con el porcentaje de incumplimiento de cada una. (4) Cumplimiento por tipo de vertido (agua, cloacal, canal). (5) Clientes y orígenes con más incumplimientos, con enlace al historial del cliente (US 3.3) y a la comparación histórica del origen (US 8.1). (6) Se usa la evaluación guardada en la Validacion vigente («cumple» o «fuera de norma»); no se recalcula. Mismo permiso que el Dashboard. Notas técnicas: reutilizar el período y el patrón de informes/tablero.py y dashboard.js de la 8.3, y Chart.js de static/vendor."
 
@@ -100,7 +100,7 @@ cada tipo de vertido (según el vertido de la muestra) y compararlos con el grá
 
 **Acceptance Scenarios**:
 
-1. **Dado** el período, **cuando** se muestra «Pruebas validadas por tipo de vertido», **entonces**
+1. **Dado** el período, **cuando** se muestra «Pruebas evaluadas por tipo de vertido», **entonces**
    para Agua, Cloacal y Canal (siempre los tres, en ese orden) indica «Pruebas evaluadas», «Pruebas
    que cumplen», «Pruebas fuera de norma» y el porcentaje de cumplimiento, con el aviso de que cada
    prueba validada suma una (una muestra con 7 pruebas aporta 7).
@@ -188,10 +188,10 @@ comparación histórica de ese origen (US 8.1).
 - **FR-007**: El ranking de pruebas MUST ordenarse por porcentaje de incumplimiento (mayor primero),
   luego por cantidad fuera de norma y luego por código, y MUST mostrar hasta 10 pruebas indicando
   cuántas más hay.
-- **FR-008**: La sección MUST mostrar, bajo «Pruebas validadas por tipo de vertido», para Agua,
+- **FR-008**: La sección MUST mostrar, bajo «Pruebas evaluadas por tipo de vertido», para Agua,
   Cloacal y Canal (siempre los tres, en ese orden), pruebas evaluadas, pruebas que
   cumplen, pruebas fuera de norma y porcentaje de cumplimiento, según el tipo de vertido de la
-  muestra; MUST aclarar que se cuentan pruebas y no muestras («Cada prueba validada en el período
+  muestra; MUST aclarar que se cuentan pruebas y no muestras («Cada prueba evaluada en el período
   suma una: una muestra con 7 pruebas aporta 7.») y que no se cuentan las pruebas sin límite para
   comparar; un tipo sin evaluados MUST indicar
   «Sin resultados».

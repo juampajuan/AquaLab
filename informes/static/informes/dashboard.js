@@ -71,6 +71,14 @@
     // Calidad (US 8.4): pruebas que más fallan, en % fuera de norma.
     var calidadPruebas = document.getElementById("grafico-calidad-pruebas");
     if (calidadPruebas && datos.calidad_pruebas) {
+      // Los porcentajes llegan como texto ("20.0").
+      var porcentajes = datos.calidad_pruebas.porcentajes.map(Number);
+      // El eje llega hasta el máximo del ranking redondeado a la decena (entre 10 y 100), así
+      // las barras usan el ancho del gráfico.
+      var tope = Math.min(
+        100,
+        Math.max(10, Math.ceil(Math.max.apply(null, porcentajes.concat(0)) / 10) * 10)
+      );
       new window.Chart(calidadPruebas, {
         type: "bar",
         data: {
@@ -78,8 +86,7 @@
           datasets: [
             {
               label: "% fuera de norma",
-              // Los porcentajes llegan como texto ("20.0").
-              data: datos.calidad_pruebas.porcentajes.map(Number),
+              data: porcentajes,
               backgroundColor: color("--color-peligro", "#dc2626"),
             },
           ],
@@ -89,7 +96,7 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { min: 0, max: 100, title: { display: true, text: "% fuera de norma" } },
+            x: { min: 0, max: tope, title: { display: true, text: "% fuera de norma" } },
           },
         },
       });

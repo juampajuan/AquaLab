@@ -404,9 +404,9 @@ def test_vertidos_en_pantalla(cliente_bioquimico, evaluadas):
 
     html = html_de(cliente_bioquimico.get(URL))
     vertidos = bloque(seccion_calidad(html), "data-vertidos")
-    assert "Pruebas validadas por tipo de vertido" in vertidos
+    assert "Pruebas evaluadas por tipo de vertido" in vertidos
     assert (
-        "Cada prueba validada en el período suma una: una muestra con 7 pruebas aporta 7."
+        "Cada prueba evaluada en el período suma una: una muestra con 7 pruebas aporta 7."
         in vertidos
     )
     assert 'aria-label="Pruebas que cumplen y fuera de norma por tipo de vertido"' in vertidos

@@ -25,7 +25,7 @@ Entre «Actividad semanal» y «Comparación histórica». Parcial `informes/cal
    aria-label="Porcentaje de incumplimiento por prueba">` + `<details>` «Ver datos»: tabla Prueba
    (código · nombre) / Incumplimiento («25,0 % (2 de 8)»). «Y N pruebas más» si `restantes`. Vacío:
    «Ninguna prueba con al menos 5 resultados evaluados tuvo incumplimientos en el período.»
-4. **Pruebas validadas por tipo de vertido** (`data-vertidos`): subtítulo «Cada prueba validada en
+4. **Pruebas evaluadas por tipo de vertido** (`data-vertidos`): subtítulo «Cada prueba evaluada en
    el período suma una: una muestra con 7 pruebas aporta 7.» `<canvas id="grafico-calidad-vertidos"
    role="img" aria-label="Pruebas que cumplen y fuera de norma por tipo de vertido">` (leyenda
    «Pruebas que cumplen» y «Pruebas fuera de norma») + tabla Tipo / Pruebas evaluadas / Pruebas que

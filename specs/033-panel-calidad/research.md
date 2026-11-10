@@ -90,7 +90,7 @@ Decisiones técnicas de la US 8.4. Formato: decisión, motivo y alternativas des
 - **Decisión**: dos gráficos más en `informes/static/informes/dashboard.js`, con los datos en el
   mismo `json_script` `datos-dashboard` (claves `calidad_pruebas` y `calidad_vertidos`):
   - ranking de pruebas: barras horizontales (`indexAxis: "y"`) del porcentaje de incumplimiento,
-    color `--color-peligro`; eje 0–100;
+    color `--color-peligro`; eje de 0 al máximo del ranking redondeado a la decena (entre 10 y 100);
   - por tipo de vertido: barras apiladas «Cumple» (`--color-exito`) y «Fuera de norma»
     (`--color-peligro`) por tipo, en cantidades.
   Porcentajes como texto (`"20.0"`) para no pasar por `float` en Python. Cada gráfico con su tabla
