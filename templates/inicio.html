@@ -73,7 +73,7 @@
               <th>Cliente</th>
               <th>Origen</th>
               <th>Fecha de ingreso</th>
-              <th class="text-right">Estado</th>
+              <th class="text-right">Estudios</th>
             </tr>
           </thead>
           <tbody>
@@ -86,10 +86,10 @@
                 <td class="text-tinta-suave">{{ muestra.origen.nombre }}</td>
                 <td class="whitespace-nowrap text-tinta-suave">{{ muestra.fecha_ingreso|date:"d/m/Y" }}</td>
                 <td class="text-right">
-                  {% if muestra.estado == "ingresada" %}
-                    {% include "ui/estado.html" with estado=muestra.get_estado_display tipo="info" %}
+                  {% if muestra.cantidad_estudios %}
+                    <span class="numeros text-tinta-suave" data-estudios="{{ muestra.cantidad_estudios }}">{{ muestra.cantidad_estudios }} estudio{{ muestra.cantidad_estudios|pluralize }}</span>
                   {% else %}
-                    {% include "ui/estado.html" with estado=muestra.get_estado_display tipo="neutral" %}
+                    {% include "ui/estado.html" with estado="Sin estudio" tipo="warning" %}
                   {% endif %}
                 </td>
               </tr>

@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 
+from django.db.models import Count
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -43,8 +44,8 @@ def inicio(request):
         )
     contexto = {
         "indicadores": indicadores,
-        "ultimas_muestras": Muestra.objects.select_related("cliente", "origen").order_by(
-            "-numero_pi"
-        )[:5],
+        "ultimas_muestras": Muestra.objects.select_related("cliente", "origen")
+        .annotate(cantidad_estudios=Count("estudios"))
+        .order_by("-numero_pi")[:5],
     }
     return render(request, "inicio.html", contexto)

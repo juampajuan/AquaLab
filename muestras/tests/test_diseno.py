@@ -28,4 +28,4 @@ def test_confirmacion_usa_los_componentes_comunes(cliente_autenticado, datos_mue
     html = cliente_autenticado.get(respuesta.url).content.decode()
 
     assert tiene_componentes_de_confirmacion(html)
-    assert 'data-estado="info">Ingresada' in html
+    assert "Ingresada" not in html

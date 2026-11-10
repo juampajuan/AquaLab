@@ -10,10 +10,7 @@
       {% include "ui/icono.html" with nombre="chevron-right" clase="size-3.5" %}
       <span class="text-tinta" aria-current="page">Ficha de la muestra</span>
     </nav>
-    <div class="flex flex-wrap items-center gap-3">
-      <h1 class="text-2xl font-semibold tracking-tight text-marino">Muestra N° PI {{ muestra.numero_pi }}</h1>
-      {% include "ui/estado.html" with estado=muestra.get_estado_display tipo=muestra.estado|tipo_estado %}
-    </div>
+    <h1 class="text-2xl font-semibold tracking-tight text-marino">Muestra N° PI {{ muestra.numero_pi }}</h1>
   </header>
 {% endblock %}
 
@@ -26,7 +23,6 @@
       <dl class="resumen p-6 lg:grid-cols-3">
         {% include "ui/dato.html" with etiqueta="N° PI" valor=muestra.numero_pi %}
         {% include "ui/dato.html" with etiqueta="Nombre" valor=muestra.nombre %}
-        {% include "ui/dato.html" with etiqueta="Estado" valor=muestra.get_estado_display %}
         <div class="lg:col-span-2">
           <dt>Cliente</dt>
           <dd>
