@@ -91,13 +91,12 @@ def vista_previa(request, pk):
     # Se llega desde «Informes por emitir» (?desde=listos) o desde la ficha del estudio: «Volver»
     # lleva a donde se estaba (SCRUM-82). Cualquier otro valor vuelve al estudio.
     if request.GET.get("desde") == "listos":
-        volver = (reverse("informes:listar"), "Volver a informes por emitir")
+        volver_url = reverse("informes:listar")
     else:
-        volver = (reverse("estudios:detalle", args=[estudio.pk]), "Volver al estudio")
+        volver_url = reverse("estudios:detalle", args=[estudio.pk])
     contexto = {
         "estudio": estudio,
-        "volver_url": volver[0],
-        "volver_texto": volver[1],
+        "volver_url": volver_url,
         "contenido": armar_contenido(estudio, request.user),
         "puede_emitir": puede_emitir,
         "falta_firma": puede_emitir

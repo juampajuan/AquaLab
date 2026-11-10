@@ -16,7 +16,11 @@
 
     {% include "informes/documento.html" %}
 
-    <div class="flex flex-wrap items-center gap-3" data-componente="acciones-confirmacion">
+    {# Volver a la izquierda y la acción principal a la derecha (SCRUM-82). #}
+    <div class="flex flex-wrap items-center justify-between gap-3" data-componente="acciones-confirmacion">
+      <a href="{{ volver_url }}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver
+      </a>
       {% if falta_firma %}
         <div class="aviso aviso-advertencia" role="status">
           {% include "ui/icono.html" with nombre="pen-line" clase="size-5 shrink-0" %}
@@ -33,9 +37,6 @@
       {% else %}
         <p class="text-sm text-tinta-suave">Solo un integrante del grupo Bioquímicos puede emitir el informe.</p>
       {% endif %}
-      <a href="{{ volver_url }}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} {{ volver_texto }}
-      </a>
     </div>
   </div>
 {% endblock %}
