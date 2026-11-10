@@ -1,0 +1,9 @@
+{% comment %}
+  Ícono de evaluación con un cartelito al pasar el mouse o enfocarlo (SCRUM-82).
+  Uso: {% include "ui/marca_evaluacion.html" with icono="check" color="text-exito" texto="Cumple" %}
+  El cartelito se abre a la derecha del ícono, así no lo recorta el contenedor de la tabla.
+{% endcomment %}
+<span class="group relative inline-flex" tabindex="0" aria-label="{{ texto }}">
+  {% include "ui/icono.html" with nombre=icono clase="size-4 "|add:color %}
+  <span role="tooltip" class="pointer-events-none invisible absolute top-1/2 left-full z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-marino px-2 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">{{ texto }}</span>
+</span>
