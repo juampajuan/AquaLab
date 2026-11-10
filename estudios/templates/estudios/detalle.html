@@ -21,7 +21,7 @@
 {% endblock %}
 
 {% block content %}
-  <div class="max-w-5xl space-y-6">
+  <div class="space-y-6">
     <section class="tarjeta overflow-hidden">
       <h2 class="flex items-center gap-2.5 border-b border-borde bg-fondo-hundido px-6 py-4 text-sm font-semibold text-marino">
         {% include "ui/icono.html" with nombre="microscope" clase="size-4 text-cian-texto" %} Datos del estudio
@@ -122,11 +122,13 @@
                 <td>
                   {% if asignacion.medicion %}
                     <span class="numeros block font-semibold text-tinta">{{ asignacion.medicion.valor_ingresado|valor_medicion:asignacion.medicion.unidad }}{% if not asignacion.medicion.unidad|es_presencia %} {{ asignacion.medicion.unidad|unidad }}{% endif %}</span>
-                    <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.cargada_por.get_full_name|default:asignacion.medicion.cargada_por.email }}</span>
-                    <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.fecha_carga|date:"d/m/Y H:i" }}</span>
+                    {# Quién la cargó por última vez: si se corrigió, quien la corrigió. #}
                     {% if asignacion.medicion.corregida_por %}
-                      <span class="mt-1 block text-xs text-tinta-suave">Corregida por {{ asignacion.medicion.corregida_por.get_full_name|default:asignacion.medicion.corregida_por.email }}</span>
+                      <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.corregida_por.get_full_name|default:asignacion.medicion.corregida_por.email }}</span>
                       <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.fecha_correccion|date:"d/m/Y H:i" }}</span>
+                    {% else %}
+                      <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.cargada_por.get_full_name|default:asignacion.medicion.cargada_por.email }}</span>
+                      <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.fecha_carga|date:"d/m/Y H:i" }}</span>
                     {% endif %}
                   {% elif asignacion.prueba.es_calculada %}
                     <span class="block text-xs text-tinta-suave">Se calcula</span>
