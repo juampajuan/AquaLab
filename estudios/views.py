@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import permission_required
 from django.core import signing
 from django.core.paginator import Paginator
 from django.db import DatabaseError
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
@@ -33,7 +34,18 @@ from .forms import (
     FiltrarEstudiosForm,
     ValidarResultadosForm,
 )
-from .models import EstadoPruebaEstudio, Estudio, OrigenLimites, validaciones_vigentes
+from .models import (
+    EstadoPruebaEstudio,
+    Estudio,
+    OrigenLimites,
+    PruebaEstudio,
+    validaciones_vigentes,
+)
+from .pendientes import (
+    estudios_con_mediciones_pendientes,
+    estudios_con_resultados_pendientes,
+    resultados_por_validar,
+)
 from .servicios import (
     CargarMedicionesError,
     CorregirMedicionesError,
@@ -265,6 +277,7 @@ def buscar(request):
     )
     q = ""
     con_filtros = False
+    pendiente = ""
     if form.is_bound and form.is_valid():
         q = form.cleaned_data["q"]
         filtros = {campo: form.cleaned_data[campo] for campo in CAMPOS_FILTRO}
@@ -273,6 +286,12 @@ def buscar(request):
             qs = qs.filter(filtro_busqueda(q))
         if con_filtros:
             qs = qs.filter(filtro_estado_fechas(**filtros))
+        pendiente = form.cleaned_data["pendiente"]
+        if pendiente == "mediciones":
+            qs = estudios_con_mediciones_pendientes(qs)
+        elif pendiente == "validaciones":
+            qs = estudios_con_resultados_pendientes(qs)
+        con_filtros = con_filtros or bool(pendiente)
     page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
     parametros = request.GET.copy()
     parametros.pop("page", None)
@@ -280,12 +299,28 @@ def buscar(request):
         "form": form,
         "page_obj": page_obj,
         "q": q,
+        "pendiente": pendiente,
         "parametros": parametros.urlencode(),
         # Según lo recibido, válido o no: un filtro inválido también se puede limpiar.
-        "hay_filtros": any(request.GET.get(c, "").strip() for c in ("q", *CAMPOS_FILTRO)),
+        "hay_filtros": any(
+            request.GET.get(c, "").strip() for c in ("q", *CAMPOS_FILTRO, "pendiente")
+        ),
         "filtrado": bool(q) or con_filtros,
         "con_filtros": con_filtros,
     }
+    if pendiente == "validaciones":
+        contexto["total_resultados"] = (
+            resultados_por_validar().filter(asignacion__estudio__in=qs).count()
+        )
+        page_obj.object_list = page_obj.object_list.prefetch_related(
+            Prefetch(
+                "pruebas_asignadas",
+                queryset=PruebaEstudio.objects.filter(resultado__in=resultados_por_validar())
+                .select_related("prueba", "resultado")
+                .order_by("prueba__codigo", "pk"),
+                to_attr="resultados_pendientes",
+            )
+        )
     return render(request, "estudios/buscar.html", contexto)
 
 
@@ -407,10 +442,11 @@ def quitar_prueba(request, pk, asignacion_pk):
 
 
 def asignaciones_para_medir(estudio):
+    from .pendientes import asignaciones_con_mediciones_pendientes
+
     return (
-        estudio.pruebas_asignadas.filter(
-            estado=EstadoPruebaEstudio.PENDIENTE, prueba__es_calculada=False
-        )
+        asignaciones_con_mediciones_pendientes()
+        .filter(estudio=estudio)
         .select_related("prueba")
         .order_by("prueba__codigo", "pk")
     )
