@@ -412,7 +412,13 @@ class ValidarResultadosForm(forms.Form):
                         "Queda guardada en la validación de esta prueba como revisión del desvío. "
                         "Solo la ve el laboratorio."
                     ),
-                    widget=forms.Textarea(attrs={"rows": 2}),
+                    widget=forms.Textarea(
+                        attrs={
+                            "rows": 2,
+                            "class": "form-control",
+                            "placeholder": "Ej.: se repitió la medición y el valor es correcto.",
+                        }
+                    ),
                 )
 
     @staticmethod
