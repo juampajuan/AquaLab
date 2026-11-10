@@ -111,7 +111,7 @@ def test_uuid_obligatorio_y_identificador_propio(muestra, tipo, empleado):
     assert campo_prueba.default == "pendiente"
     assert list(campo_prueba.choices) == [
         ("pendiente", "Pendiente"),
-        ("cargada", "Cargada"),
+        ("cargada", "Por validar"),
         ("completada", "Completada"),
     ]
     assert list(e.pruebas_asignadas.values_list("estado", flat=True)) == ["pendiente", "pendiente"]

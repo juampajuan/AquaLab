@@ -48,7 +48,7 @@ def test_control_marca_incompletas_y_sin_validar(cliente_http, empleado, estudio
     assert "Incompleta" in fila(html, "PH")
     assert "Pendiente" in fila(html, "PH")
     assert "Sin validar" in fila(html, "CL-")
-    assert "Cargada" in fila(html, "CL-")
+    assert "Por validar" in fila(html, "CL-")
     assert "Incompleta" not in fila(html, "CA") and "Sin validar" not in fila(html, "CA")
     assert "Hay 2 pruebas sin completar." in html
 

@@ -60,7 +60,7 @@ class EstadoEstudio(models.TextChoices):
 
 class EstadoPruebaEstudio(models.TextChoices):
     PENDIENTE = "pendiente", "Pendiente"
-    CARGADA = "cargada", "Cargada"
+    CARGADA = "cargada", "Por validar"
     COMPLETADA = "completada", "Completada"
 
 

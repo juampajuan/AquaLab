@@ -344,7 +344,7 @@ def test_detalle_estudio_cabecera_avance_y_pruebas_ordenadas(
     codigos = [a.prueba.codigo for a in resp.context["pruebas_asignadas"]]
     assert codigos == ["ALC", "NO3", "PH"]
     estados = [a.get_estado_display() for a in resp.context["pruebas_asignadas"]]
-    assert estados == ["Cargada", "Completada", "Pendiente"]
+    assert estados == ["Por validar", "Completada", "Pendiente"]
     assert "Alcalinidad total" in html
     assert "Nitratos" in html
     assert "Potencial de hidrógeno" in html
