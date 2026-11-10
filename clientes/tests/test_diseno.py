@@ -3,7 +3,6 @@
 import re
 
 import pytest
-from django.template.loader import render_to_string
 from django.urls import reverse
 
 from clientes.models import Cliente
@@ -82,24 +81,15 @@ def test_busqueda_sin_resultados_muestra_el_estado_vacio(cliente_autenticado, cl
     assert "No se encontraron clientes para «zzzz»." in vacio.group(0)
 
 
-def test_ficha_tiene_encabezado_con_nombre_y_estado(cliente_autenticado, cliente_existente):
+def test_ficha_tiene_encabezado_con_nombre_sin_estado(cliente_autenticado, cliente_existente):
     html = cliente_autenticado.get(
         reverse("clientes:detalle", args=[cliente_existente.pk])
     ).content.decode()
 
     encabezado = re.search(r"<h1[^>]*>(.*?)</h1>(.*?)</header>", html, re.S)
     assert "Aguas del Sur S.A." in encabezado.group(1)
-    assert 'data-estado="success">Activo' in encabezado.group(2)
-
-
-def test_ficha_de_cliente_inactivo_muestra_la_etiqueta_neutral(cliente_existente):
-    # La vista no abre la ficha de un cliente inactivo (redirige a la búsqueda), pero el
-    # template debe mostrar el estado correcto si se usa con uno (FR-009).
-    cliente_existente.activo = False
-
-    html = render_to_string("clientes/detalle.html", {"cliente": cliente_existente})
-
-    assert 'data-estado="neutral">Inactivo' in html
+    # SCRUM-82: la ficha de un cliente inactivo no se abre; «Activo» no aporta.
+    assert "data-estado" not in encabezado.group(2)
 
 
 def test_ficha_muestra_raya_en_los_datos_vacios_y_sus_acciones(

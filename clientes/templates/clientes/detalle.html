@@ -4,28 +4,22 @@
 
 {% block encabezado %}
   {% url 'clientes:buscar' as url_buscar %}
-  {% if cliente.activo %}
-    {% include "ui/encabezado.html" with seccion="Clientes" anterior_texto="Buscar cliente" anterior_url=url_buscar miga="Ficha del cliente" titulo=cliente.nombre_completo estado="Activo" estado_tipo="success" %}
-  {% else %}
-    {% include "ui/encabezado.html" with seccion="Clientes" anterior_texto="Buscar cliente" anterior_url=url_buscar miga="Ficha del cliente" titulo=cliente.nombre_completo estado="Inactivo" estado_tipo="neutral" %}
-  {% endif %}
+  {# Sin etiqueta de estado: la ficha de un cliente inactivo no se abre (SCRUM-82). #}
+  {% include "ui/encabezado.html" with seccion="Clientes" anterior_texto="Buscar cliente" anterior_url=url_buscar miga="Ficha del cliente" titulo=cliente.nombre_completo %}
 {% endblock %}
 
 {% block content %}
-  <div class="max-w-4xl">
-    <div class="mb-5 flex flex-wrap gap-3">
-      <a href="{% url 'clientes:editar' cliente.pk %}" class="btn btn-primario">
-        {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Editar cliente
-      </a>
-      <a href="{% url 'clientes:historial' cliente.pk %}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="clock" clase="size-4" %} Historial
-      </a>
-    </div>
-
+  <div class="max-w-4xl space-y-6">
+    {# Cada acción va en la tarjeta de lo que afecta: editar en los datos, historial en su resumen. #}
     <section class="tarjeta overflow-hidden">
-      <h2 class="flex items-center gap-2.5 border-b border-borde bg-fondo-hundido px-6 py-4 text-sm font-semibold text-marino">
-        {% include "ui/icono.html" with nombre="id-card" clase="size-4 text-cian-texto" %} Datos generales
-      </h2>
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-borde bg-fondo-hundido px-6 py-3">
+        <h2 class="flex items-center gap-2.5 text-sm font-semibold text-marino">
+          {% include "ui/icono.html" with nombre="id-card" clase="size-4 text-cian-texto" %} Datos generales
+        </h2>
+        <a href="{% url 'clientes:editar' cliente.pk %}" class="btn btn-secundario btn-chico">
+          {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Editar cliente
+        </a>
+      </div>
       <dl class="resumen p-6 sm:grid-cols-3">
         {% include "ui/dato.html" with etiqueta="Nombre" valor=cliente.nombre %}
         {% include "ui/dato.html" with etiqueta="Razón social" valor=cliente.razon_social %}
@@ -34,6 +28,22 @@
         {% include "ui/dato.html" with etiqueta="Correo electrónico" valor=cliente.email %}
         {% include "ui/dato.html" with etiqueta="Teléfono" valor=cliente.telefono %}
         {% include "ui/dato.html" with etiqueta="Domicilio" valor=cliente.domicilio clase="sm:col-span-3" %}
+      </dl>
+    </section>
+
+    <section class="tarjeta overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-borde bg-fondo-hundido px-6 py-3">
+        <h2 class="flex items-center gap-2.5 text-sm font-semibold text-marino">
+          {% include "ui/icono.html" with nombre="clock" clase="size-4 text-cian-texto" %} Historial
+        </h2>
+        <a href="{% url 'clientes:historial' cliente.pk %}" class="btn btn-secundario btn-chico">
+          Ver historial {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}
+        </a>
+      </div>
+      <dl class="resumen p-6 sm:grid-cols-3" data-componente="resumen-historial">
+        {% include "ui/dato.html" with etiqueta="Muestras" valor=resumen.muestras %}
+        {% include "ui/dato.html" with etiqueta="Estudios" valor=resumen.estudios %}
+        {% include "ui/dato.html" with etiqueta="Último ingreso" valor=resumen.ultimo_ingreso|date:"d/m/Y" %}
       </dl>
     </section>
   </div>

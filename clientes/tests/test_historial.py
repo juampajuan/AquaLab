@@ -56,7 +56,9 @@ def test_ficha_ofrece_historial(cliente_autenticado, cliente_existente):
         reverse("clientes:detalle", args=[cliente_existente.pk])
     ).content.decode()
 
-    assert re.search(rf'href="{re.escape(url(cliente_existente))}"[^>]*>.*?Historial', html, re.S)
+    assert re.search(
+        rf'href="{re.escape(url(cliente_existente))}"[^>]*>.*?Ver historial', html, re.S
+    )
 
 
 def test_lista_muestras_del_cliente(
