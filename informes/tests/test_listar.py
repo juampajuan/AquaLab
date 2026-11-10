@@ -31,26 +31,23 @@ def tres_estudios(muestra, otra_muestra, estudio_para, completar, emitir):
     return listo, en_curso, emitido
 
 
-def test_listado_muestra_estado_y_avance(cliente_http, tres_estudios):
+def test_listado_solo_muestra_los_listos(cliente_http, tres_estudios):
+    """SCRUM-82: sin iniciar, en proceso o con informe emitido no se listan."""
     listo, en_curso, emitido = tres_estudios
     respuesta = cliente_http.get(URL)
     assert respuesta.status_code == 200
     html = respuesta.content.decode()
-    assert "Seleccionar estudio a informar" in html
-    for estudio in tres_estudios:
-        assert f"N° PI {estudio.muestra.numero_pi}" in html
-        assert estudio.tipo_nombre_snapshot in html
-        assert reverse("informes:control", args=[estudio.pk]) in html
-    assert "Cliente de test" in html
-    assert "3 de 3 pruebas completadas" in html
-    assert "1 de 4 pruebas completadas" in html
-    assert "1 de 1 prueba completada" in html
-    assert 'data-estado="success">Informe generado' in html
-    assert "Seleccionar</a>" in html
+    assert "Estudios listos para informar" in html
+    assert filas(respuesta) == [listo.pk]
+    assert reverse("informes:vista_previa", args=[listo.pk]) in html
+    assert "Generar informe</a>" in html
+    assert 'name="listos"' not in html
 
 
-def test_listado_ordenado_y_paginado(cliente_http, estudio_de):
+def test_listado_ordenado_y_paginado(cliente_http, estudio_de, completar):
     estudios = [estudio_de("CL-") for _ in range(21)]
+    for estudio in estudios:
+        completar(estudio)
     pks = sorted((e.pk for e in estudios), reverse=True)
     primera = cliente_http.get(URL)
     assert filas(primera) == pks[:20]
@@ -58,33 +55,26 @@ def test_listado_ordenado_y_paginado(cliente_http, estudio_de):
     assert filas(segunda) == pks[20:]
 
 
-@pytest.mark.parametrize(
-    "busqueda",
-    [
-        "200002",  # N° PI
-        "estudio",  # número de estudio (se reemplaza por el pk)
-        "Ana Pérez",  # nombre del cliente
-        "Aguas del Sur",  # razón social
-        "40111222",  # documento del cliente
-        "Pozo norte",  # nombre de la muestra
-        "tipo",  # nombre del tipo (se reemplaza por el snapshot)
-    ],
-)
+@pytest.mark.parametrize("busqueda", ["200001", "estudio", "Cliente de test", "tipo"])
 def test_busqueda_por_numero_pi_cliente_y_tipo(cliente_http, tres_estudios, busqueda):
     listo, en_curso, emitido = tres_estudios
-    esperado = emitido if busqueda == "Aguas del Sur" else en_curso
     if busqueda == "estudio":
-        busqueda = str(en_curso.pk)
+        busqueda = str(listo.pk)
     elif busqueda == "tipo":
-        busqueda = en_curso.tipo_nombre_snapshot
+        busqueda = listo.tipo_nombre_snapshot
     respuesta = cliente_http.get(URL, {"q": busqueda})
-    assert filas(respuesta) == [esperado.pk]
+    assert filas(respuesta) == [listo.pk]
+
+
+def test_busqueda_no_encuentra_los_no_listos(cliente_http, tres_estudios):
+    assert filas(cliente_http.get(URL, {"q": "200002"})) == []
+    assert filas(cliente_http.get(URL, {"q": "Aguas del Sur"})) == []
 
 
 def test_busqueda_sin_resultados(cliente_http, tres_estudios):
     respuesta = cliente_http.get(URL, {"q": "zzz"})
     assert filas(respuesta) == []
-    assert "No se encontraron estudios" in respuesta.content.decode()
+    assert "No hay estudios listos para informar" in respuesta.content.decode()
 
 
 def test_busqueda_demasiado_larga(cliente_http, tres_estudios):
@@ -92,20 +82,12 @@ def test_busqueda_demasiado_larga(cliente_http, tres_estudios):
     assert "Ingresá como máximo 100 caracteres para buscar." in respuesta.content.decode()
 
 
-def test_filtro_solo_listos(cliente_http, tres_estudios):
-    listo, en_curso, emitido = tres_estudios
-    respuesta = cliente_http.get(URL, {"listos": "1"})
-    assert filas(respuesta) == [listo.pk]
-    html = respuesta.content.decode()
-    assert re.search(r'name="listos" value="1"[^>]*checked', html)
-
-
-def test_filtro_listos_se_conserva_al_paginar(cliente_http, estudio_de, completar):
+def test_busqueda_se_conserva_al_paginar(cliente_http, estudio_de, completar):
     for _ in range(21):
         completar(estudio_de("CL-"))
-    html = cliente_http.get(URL, {"listos": "1", "q": "Muestra"}).content.decode()
-    assert "?q=Muestra&amp;listos=1&page=2" in html
-    segunda = cliente_http.get(URL, {"listos": "1", "q": "Muestra", "page": 2})
+    html = cliente_http.get(URL, {"q": "Muestra"}).content.decode()
+    assert "?q=Muestra&page=2" in html
+    segunda = cliente_http.get(URL, {"q": "Muestra", "page": 2})
     assert len(filas(segunda)) == 1
 
 
@@ -123,10 +105,10 @@ def test_listado_requiere_sesion(db):
     assert reverse("usuarios:login") in respuesta["Location"]
 
 
-def test_seleccionar_abre_control(cliente_http, estudio_de):
+def test_generar_informe_abre_la_vista_previa(cliente_http, estudio_de, completar):
     estudio = estudio_de("CL-")
+    completar(estudio)
     html = cliente_http.get(URL).content.decode()
-    enlace = re.search(r'href="([^"]+)"[^>]*>Seleccionar</a>', html).group(1)
-    respuesta = cliente_http.get(enlace)
-    assert respuesta.status_code == 200
-    assert f"Controlar pruebas del estudio {estudio.pk}" in respuesta.content.decode()
+    enlace = re.search(r'href="([^"]+)"[^>]*>Generar informe</a>', html).group(1)
+    assert enlace == reverse("informes:vista_previa", args=[estudio.pk])
+    assert cliente_http.get(enlace).status_code == 200

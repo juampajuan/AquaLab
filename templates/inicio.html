@@ -49,7 +49,7 @@
 
     {% include "ui/modulo_inicio.html" with nombre="Informes" icono="file-text" color="bg-cian-texto" %}
       {% url 'informes:listar' as url %}
-      {% include "ui/accion_inicio.html" with url=url titulo="Seleccionar estudio" icono="clipboard-list" descripcion="Controlá que las pruebas de un estudio estén completas antes de emitir su informe." %}
+      {% include "ui/accion_inicio.html" with url=url titulo="Listos para informar" icono="clipboard-list" descripcion="Estudios con todas sus pruebas validadas, listos para generar el informe." %}
       {% url 'informes:emitidos' as url %}
       {% include "ui/accion_inicio.html" with url=url titulo="Informes emitidos" icono="file-text" descripcion="Buscá un informe emitido, descargá el PDF o imprimilo." %}
       {% if perms.informes.ver_dashboard %}

@@ -26,25 +26,22 @@ logger = logging.getLogger("informes")
 
 
 def listar(request):
+    """Estudios listos para informar (SCRUM-82): solo los que se pueden informar ya.
+
+    Los que están sin iniciar o en proceso no se pueden informar, y los que ya tienen informe se
+    buscan en «Informes emitidos»; por eso no se listan.
+    """
     page_obj = None
     q = ""
-    solo_listos = request.GET.get("listos") == "1"
     form = BuscarEstudioForm(request.GET or None)
     if not form.is_bound or form.is_valid():
         q = form.cleaned_data.get("q", "") if form.is_bound else ""
-        qs = servicios.estudios_para_informar(q, solo_listos)
+        qs = servicios.estudios_para_informar(q, solo_listos=True)
         page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
-    parametros = urlencode({"q": q} | ({"listos": "1"} if solo_listos else {}))
     return render(
         request,
         "informes/listar.html",
-        {
-            "form": form,
-            "page_obj": page_obj,
-            "q": q,
-            "solo_listos": solo_listos,
-            "parametros": parametros,
-        },
+        {"form": form, "page_obj": page_obj, "q": q, "parametros": urlencode({"q": q})},
     )
 
 

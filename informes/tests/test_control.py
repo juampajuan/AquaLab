@@ -156,8 +156,8 @@ def test_flujo_con_validacion_real(cliente_http, bioquimico, estudio_de):
     assert Estudio.objects.get(pk=estudio.pk).estado == EstadoEstudio.FINALIZADO
     html = cliente_http.get(url(estudio)).content.decode()
     assert "El estudio está listo para informar" in html
-    listos = cliente_http.get(reverse("informes:listar"), {"listos": "1"}).content.decode()
-    assert url(estudio) in listos
+    listos = cliente_http.get(reverse("informes:listar")).content.decode()
+    assert reverse("informes:vista_previa", args=[estudio.pk]) in listos
 
     ph = asignacion_de(estudio, "PH")
     original = Decimal(ph.medicion.valor_ingresado)  # el que vio el formulario (US 6.3)

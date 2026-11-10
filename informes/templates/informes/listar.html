@@ -4,7 +4,7 @@
 {% block title %}Informes · AquaLab{% endblock %}
 
 {% block encabezado %}
-  {% include "ui/encabezado.html" with seccion="Informes" titulo="Seleccionar estudio a informar" subtitulo="Elegí un estudio y controlá que todas sus pruebas estén completadas antes de emitir el informe." %}
+  {% include "ui/encabezado.html" with seccion="Informes" titulo="Estudios listos para informar" subtitulo="Estudios con todas sus pruebas validadas y sin informe emitido." %}
 {% endblock %}
 
 {% block content %}
@@ -18,15 +18,11 @@
         <input type="text" name="q" id="{{ form.q.id_for_label }}" value="{{ form.q.value|default:'' }}"
                class="form-control pl-9{% if form.q.errors %} is-invalid{% endif %}" autofocus>
       </div>
-      <label class="inline-flex items-center gap-2 text-sm text-tinta">
-        <input type="checkbox" name="listos" value="1"{% if solo_listos %} checked{% endif %}>
-        Solo listos para informar
-      </label>
       <div class="flex gap-2">
         <button type="submit" class="btn btn-primario">
           {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar
         </button>
-        {% if q or solo_listos %}
+        {% if q %}
           <a href="{% url 'informes:listar' %}" class="btn btn-secundario">Ver todos</a>
         {% endif %}
       </div>
@@ -52,8 +48,6 @@
                 <th>Muestra</th>
                 <th>Cliente</th>
                 <th>Tipo de estudio</th>
-                <th>Estado</th>
-                <th>Avance</th>
                 <th><span class="sr-only">Acciones</span></th>
               </tr>
             </thead>
@@ -70,10 +64,8 @@
                     <div class="text-xs text-tinta-suave">{{ estudio.muestra.cliente.tipo_documento }} {{ estudio.muestra.cliente.numero_documento }}</div>
                   </td>
                   <td>{{ estudio.tipo_nombre_snapshot }}</td>
-                  <td>{% include "ui/estado.html" with estado=estudio.get_estado_display tipo=estudio.estado|tipo_estado %}</td>
-                  <td class="whitespace-nowrap text-tinta-suave">{{ estudio.pruebas_completadas }} de {{ estudio.total_pruebas }} prueba{{ estudio.total_pruebas|pluralize }} completada{{ estudio.total_pruebas|pluralize }}</td>
                   <td class="text-right">
-                    <a href="{% url 'informes:control' estudio.pk %}" class="btn btn-secundario px-3 py-1.5">Seleccionar</a>
+                    <a href="{% url 'informes:vista_previa' estudio.pk %}" class="btn btn-secundario px-3 py-1.5">Generar informe</a>
                   </td>
                 </tr>
               {% endfor %}
@@ -82,7 +74,7 @@
         </div>
         {% include "ui/paginacion.html" with parametros=parametros %}
       {% else %}
-        {% include "ui/estado_vacio.html" with icono="search" mensaje="No se encontraron estudios." %}
+        {% include "ui/estado_vacio.html" with icono="search" mensaje="No hay estudios listos para informar." %}
       {% endif %}
     </section>
   {% endif %}
