@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{% if reemplaza %}Reemplazar {{ prueba.codigo }}{% elif prueba %}Editar {{ prueba.codigo }}{% else %}Nueva prueba{% endif %} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'administracion:pruebas' as url_lista %}
+  {% if reemplaza %}
+    {% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo="Nueva prueba para reemplazar a "|add:prueba.codigo %}
+  {% elif prueba %}
+    {% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo="Editar "|add:prueba.codigo %}
+  {% else %}
+    {% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo="Nueva prueba" %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl space-y-4">
+    {% if bloqueada %}
+      <div class="aviso aviso-info" role="status" data-en-uso>
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>{{ mensaje_en_uso }}</div>
+      </div>
+    {% endif %}
+    {% if reemplaza %}
+      <div class="aviso aviso-info" role="status" data-crear-reemplazo>
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>Se cargaron los datos de {{ prueba.codigo }}: elegí un código nuevo y cambiá lo que haga falta. Al confirmar se crea esta prueba, {{ prueba.codigo }} queda desactivada y se reemplaza en las fórmulas y los tipos de estudio que la usan. La unidad del resultado tiene que ser la misma.</div>
+      </div>
+    {% endif %}
+    {% include "ui/errores_form.html" %}
+    <form method="post" novalidate class="space-y-6">
+      {% csrf_token %}
+      <input type="hidden" name="contexto" value="{{ contexto }}">
+      <input type="hidden" name="anterior" value="{{ anterior }}">
+      {% for titulo, icono, campos in form.secciones %}
+        <section class="tarjeta seccion-form">
+          {% include "ui/seccion_titulo.html" with titulo=titulo icono=icono %}
+          <div class="grid gap-5 sm:grid-cols-2">
+            {% for field in campos %}
+              {% include "ui/campo.html" with field=field %}
+            {% endfor %}
+          </div>
+        </section>
+      {% endfor %}
+      <div class="flex flex-wrap justify-end gap-3">
+        <button class="btn btn-secundario" type="submit" name="cancelar" value="1" formnovalidate>Cancelar</button>
+        <button class="btn btn-primario" type="submit">Revisar resumen {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

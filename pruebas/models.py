@@ -1,5 +1,6 @@
 import re
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -51,6 +52,41 @@ class Prueba(models.Model):
     )
     activa = models.BooleanField("activa", default=True)
     observacion = models.TextField("observación", blank=True, default="")
+    # Gestión desde la app (SCRUM-73): concurrencia, reemplazo en cascada y última modificación.
+    version = models.PositiveBigIntegerField("versión", default=1, editable=False)
+    reemplazada_por = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="reemplaza_a",
+        verbose_name="reemplazada por",
+    )
+    creada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="+",
+        verbose_name="creada por",
+    )
+    fecha_creacion = models.DateTimeField(
+        "fecha de creación", null=True, blank=True, editable=False
+    )
+    modificada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="+",
+        verbose_name="modificada por",
+    )
+    fecha_modificacion = models.DateTimeField(
+        "fecha de modificación", null=True, blank=True, editable=False
+    )
 
     TEXTOS = (
         "codigo",
@@ -79,6 +115,7 @@ class Prueba(models.Model):
                 condition=Q(es_calculada=False) | Q(tipo_calculo=TipoCalculo.FORMULA),
                 name="prueba_calculada_es_formula",
             ),
+            models.CheckConstraint(condition=Q(version__gte=1), name="prueba_version_positiva"),
         ]
 
     def __str__(self):

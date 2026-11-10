@@ -282,8 +282,13 @@ def preparar_operacion(request, pk, operacion):
     except signing.BadSignature as exc:
         return solicitud_invalida(request, exc)
     errores = {}
-    if operacion == "reactivar" and not actual["pruebas"]:
-        errores["pruebas"] = "El tipo necesita al menos una prueba válida para reactivarse."
+    if (
+        operacion == "reactivar"
+        and not Prueba.objects.filter(
+            pk__in=[p["id"] for p in actual["pruebas"]], activa=True
+        ).exists()
+    ):
+        errores["pruebas"] = "El tipo necesita al menos una prueba activa para reactivarse."
     return render(
         request, "estudios/tipos/confirmar.html", {"borrador": borrador, "errores": errores}
     )

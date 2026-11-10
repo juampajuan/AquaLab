@@ -222,6 +222,12 @@ def pruebas(request):
         Q(codigo__icontains=busqueda) | Q(nombre__icontains=busqueda)
     ).order_by("codigo", "pk")
     pagina = Paginator(consulta, 20).get_page(request.GET.get("page"))
+    # Activas que usan en su fórmula alguna inactiva: se marcan para reemplazarla (SCRUM-73).
+    from pruebas.gestion import dependencias_inactivas
+
+    dependencias = dependencias_inactivas()
+    for prueba in pagina:
+        prueba.usa_inactivas = dependencias.get(prueba.pk, [])
     return render(
         request,
         BASE + "pruebas.html",

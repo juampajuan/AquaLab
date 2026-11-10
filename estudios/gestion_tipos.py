@@ -133,6 +133,16 @@ def validar_datos(datos, tipo_id=None):
         raise DatosTipoInvalidos({"nombre": "Ya existe un tipo con ese nombre."})
     if Prueba.objects.filter(pk__in=datos["prueba_ids"]).count() != len(datos["prueba_ids"]):
         raise DatosTipoInvalidos({"pruebas": "Alguna prueba seleccionada ya no existe."})
+    # Una prueba inactiva no se agrega a un tipo; las que el tipo ya tenía se conservan (SCRUM-73).
+    ya_incluidas = set()
+    if tipo_id is not None:
+        ya_incluidas = set(TipoEstudio.objects.get(pk=tipo_id).pruebas.values_list("pk", flat=True))
+    inactivas = Prueba.objects.filter(pk__in=datos["prueba_ids"], activa=False).exclude(
+        pk__in=ya_incluidas
+    )
+    if inactivas.exists():
+        codigos = ", ".join(inactivas.order_by("codigo").values_list("codigo", flat=True))
+        raise DatosTipoInvalidos({"pruebas": f"Estas pruebas están inactivas: {codigos}."})
     return datos
 
 
@@ -160,9 +170,9 @@ def _actualizar_bloqueado(tipo, operacion, datos, actual):
         tipo.pruebas.set(propuesta["prueba_ids"])
         return ResultadoTipo("actualizado", tipo.pk, tipo.version)
     destino = operacion == "reactivar"
-    if destino and not actual["pruebas"]:
+    if destino and not tipo.pruebas.filter(activa=True).exists():
         raise DatosTipoInvalidos(
-            {"pruebas": "El tipo necesita al menos una prueba válida para reactivarse."}
+            {"pruebas": "El tipo necesita al menos una prueba activa para reactivarse."}
         )
     if tipo.activo == destino:
         return ResultadoTipo("sin_cambios", tipo.pk, tipo.version)

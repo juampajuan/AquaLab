@@ -3,6 +3,9 @@ import uuid
 import pytest
 from django.utils import timezone
 
+# Fixtures de estudios (catalogo, estudio_de, bioquimico…); las de abajo con el mismo nombre ganan.
+from estudios.tests.conftest import *  # noqa: F401,F403
+
 
 @pytest.fixture
 def empleado(django_user_model):
@@ -75,3 +78,61 @@ def prueba_libre():
     from pruebas.models import Prueba
 
     return Prueba.objects.create(codigo="LIBRE", nombre="Prueba libre")
+
+
+@pytest.fixture
+def administrador_catalogo(django_user_model):
+    """Usuario del grupo «Administradores» con el permiso del panel (SCRUM-71/73)."""
+    from django.contrib.auth.models import Group, Permission
+    from django.contrib.contenttypes.models import ContentType
+
+    from usuarios.models import Usuario
+
+    permiso, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Usuario),
+        codename="administrar_panel",
+        defaults={"name": "Puede administrar el panel de AquaLab"},
+    )
+    grupo, _ = Group.objects.get_or_create(name="Administradores")
+    grupo.permissions.add(permiso)
+    usuario = django_user_model.objects.create_user(
+        email="catalogo@lab.com", password="Clave-Valida-123", first_name="Ana", last_name="Admin"
+    )
+    usuario.groups.add(grupo)
+    return usuario
+
+
+@pytest.fixture
+def cliente_catalogo(client, administrador_catalogo):
+    client.force_login(administrador_catalogo)
+    return client
+
+
+@pytest.fixture
+def datos_prueba():
+    """Datos completos de una prueba para el formulario y el servicio."""
+
+    def armar(**cambios):
+        datos = {
+            "codigo": "TEST-DIR",
+            "nombre": "Prueba directa",
+            "tipo_calculo": "DIRECTO",
+            "formula": "",
+            "unidad_medicion": "mg/l",
+            "unidad": "mg/l",
+            "limite_min": "",
+            "limite_max": "10",
+            "norma": "Norma X",
+            "limite_deteccion": "0.1",
+            "cloacal_limite_min": "",
+            "cloacal_limite_max": "",
+            "cloacal_norma": "",
+            "canal_limite_min": "",
+            "canal_limite_max": "",
+            "canal_norma": "",
+            "observacion": "",
+        }
+        datos.update(cambios)
+        return datos
+
+    return armar
