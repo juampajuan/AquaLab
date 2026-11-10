@@ -9,9 +9,17 @@ def huella_para(request):
 
 
 def contexto_sesion(request):
+    from .models import Usuario
     from .permisos_administracion import tiene_acceso_administracion
 
+    puede_administrar = tiene_acceso_administracion(request.user)
     return {
         "huella_sesion": huella_para(request),
-        "puede_administrar": tiene_acceso_administracion(request.user),
+        "puede_administrar": puede_administrar,
+        # Para el número del engranaje y del inicio de la administración (SCRUM-82).
+        "solicitudes_pendientes": (
+            Usuario.objects.filter(aprobada=False, is_active=False).count()
+            if puede_administrar
+            else 0
+        ),
     }

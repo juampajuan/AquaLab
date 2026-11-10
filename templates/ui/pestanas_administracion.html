@@ -1,0 +1,39 @@
+{% comment %}
+  Pestañas de la administración (SCRUM-82): se muestran arriba de cada pantalla del apartado,
+  salvo en su inicio, para moverse entre secciones. Las incluye base.html para quien administra.
+{% endcomment %}
+{% with vista=request.resolver_match.view_name %}
+{% if puede_administrar and vista != "administracion:inicio" %}
+{% if "administracion:" in vista or "catalogo:" in vista or "estudios:tipos_" in vista %}
+<nav class="mb-6 flex flex-wrap items-center gap-1 border-b border-borde" aria-label="Administración" data-seccion="administracion">
+  <a href="{% url 'administracion:inicio' %}" class="mr-2 flex items-center gap-1.5 px-1 pb-3 text-sm font-semibold text-tinta-suave hover:text-marino">
+    {% include "ui/icono.html" with nombre="settings" clase="size-4" %} Administración
+  </a>
+  {% with activa="-mb-px border-b-2 border-marino text-marino" inactiva="border-b-2 border-transparent text-tinta-suave hover:text-marino" %}
+    {% if vista == "administracion:solicitudes" or vista == "administracion:aprobar" or vista == "administracion:rechazar" %}
+      <a href="{% url 'administracion:solicitudes' %}" class="px-3 pb-3 text-sm font-semibold {{ activa }}" aria-current="page">Solicitudes</a>
+    {% else %}
+      <a href="{% url 'administracion:solicitudes' %}" class="px-3 pb-3 text-sm font-semibold {{ inactiva }}">Solicitudes</a>
+    {% endif %}
+    {% if vista == "administracion:usuarios" or vista == "administracion:cambiar_rol" or vista == "administracion:desactivar" or vista == "administracion:reactivar" %}
+      <a href="{% url 'administracion:usuarios' %}" class="px-3 pb-3 text-sm font-semibold {{ activa }}" aria-current="page">Usuarios y roles</a>
+    {% else %}
+      <a href="{% url 'administracion:usuarios' %}" class="px-3 pb-3 text-sm font-semibold {{ inactiva }}">Usuarios y roles</a>
+    {% endif %}
+    {% if vista == "administracion:pruebas" or "catalogo:" in vista %}
+      <a href="{% url 'administracion:pruebas' %}" class="px-3 pb-3 text-sm font-semibold {{ activa }}" aria-current="page">Catálogo de pruebas</a>
+    {% else %}
+      <a href="{% url 'administracion:pruebas' %}" class="px-3 pb-3 text-sm font-semibold {{ inactiva }}">Catálogo de pruebas</a>
+    {% endif %}
+    {% if perms.estudios.gestionar_catalogo %}
+      {% if "estudios:tipos_" in vista %}
+        <a href="{% url 'estudios:tipos_listar' %}" class="px-3 pb-3 text-sm font-semibold {{ activa }}" aria-current="page">Tipos de estudio</a>
+      {% else %}
+        <a href="{% url 'estudios:tipos_listar' %}" class="px-3 pb-3 text-sm font-semibold {{ inactiva }}">Tipos de estudio</a>
+      {% endif %}
+    {% endif %}
+  {% endwith %}
+</nav>
+{% endif %}
+{% endif %}
+{% endwith %}

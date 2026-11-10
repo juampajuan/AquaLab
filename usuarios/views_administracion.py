@@ -21,6 +21,14 @@ BASE = "usuarios/administracion/"
 
 @administracion_requerida
 @require_http_methods(["GET"])
+def inicio(request):
+    """Inicio del apartado de administración (SCRUM-82); la cantidad de solicitudes pendientes
+    la pone el procesador de contexto."""
+    return render(request, BASE + "inicio.html")
+
+
+@administracion_requerida
+@require_http_methods(["GET"])
 def solicitudes(request):
     pagina = Paginator(
         Usuario.objects.filter(aprobada=False, is_active=False).order_by("-date_joined", "-pk"), 20
