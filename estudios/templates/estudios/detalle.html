@@ -94,11 +94,6 @@
               {% include "ui/icono.html" with nombre="check" clase="size-4" %} Validar resultados
             </a>
           {% endif %}
-          {% if perms.informes.ver_dashboard %}
-            <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}" class="btn btn-secundario">
-              {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Comparación histórica
-            </a>
-          {% endif %}
           {% if proximo_paso.accion %}
             <a href="{{ proximo_paso.url }}" class="btn btn-primario" data-accion-principal>
               {% include "ui/icono.html" with nombre=proximo_paso.icono clase="size-4" %} {{ proximo_paso.etiqueta }}
@@ -115,7 +110,7 @@
               <th>Medición</th>
               <th>Resultado</th>
               <th>Límite</th>
-              <th class="text-right">Estado</th>
+              <th>Estado</th>
               {% if estudio.admite_modificaciones %}<th class="text-right">Acción</th>{% endif %}
             </tr>
           </thead>
@@ -138,13 +133,13 @@
                   {% else %}
                     <span class="block text-tinta-suave">—</span>
                   {% endif %}
-                  {% if asignacion.resultado.formula %}
-                    <span class="mt-1 block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
-                  {% endif %}
                 </td>
                 <td>
                   {% if asignacion.resultado %}
                     <span class="numeros block font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
+                    {% if asignacion.resultado.formula %}
+                      <span class="block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
+                    {% endif %}
                     {% if asignacion.evaluacion %}
                       <span class="mt-1 block">{% include "ui/estado.html" with estado=asignacion.evaluacion.label tipo=asignacion.evaluacion_tipo %}</span>
                     {% endif %}
@@ -168,7 +163,7 @@
                     <span class="block text-tinta-suave">—</span>
                   {% endif %}
                 </td>
-                <td class="text-right">
+                <td>
                   {% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}
                   {% if asignacion.evaluacion and asignacion.validacion and asignacion.estado == "completada" %}
                     <span class="mt-1 block text-xs text-tinta-suave">Validada por {{ asignacion.validacion.validada_por.get_full_name|default:asignacion.validacion.validada_por.email }}</span>
@@ -191,5 +186,14 @@
         </table>
       </div>
     </section>
+
+    {# Consulta opcional para el bioquímico: no es parte del próximo paso. #}
+    {% if perms.informes.ver_dashboard %}
+      <div>
+        <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}" class="btn btn-secundario">
+          {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Comparación histórica del origen
+        </a>
+      </div>
+    {% endif %}
   </div>
 {% endblock %}
