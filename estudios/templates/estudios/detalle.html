@@ -115,7 +115,7 @@
               <th>Medición</th>
               <th>Resultado</th>
               <th class="text-right">Estado</th>
-              <th class="text-right">Acción</th>
+              {% if estudio.admite_modificaciones %}<th class="text-right">Acción</th>{% endif %}
             </tr>
           </thead>
           <tbody>
@@ -154,14 +154,16 @@
                   {% endif %}
                 </td>
                 <td class="text-right">{% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}</td>
-                <td class="text-right">
-                  {% if not estudio.admite_modificaciones %}
-                  {% elif total_pruebas <= 1 %}
-                    <span class="text-xs text-tinta-suave">El estudio debe conservar al menos una prueba.</span>
-                  {% elif asignacion.puede_quitarse %}
-                    <a href="{% url 'estudios:quitar_prueba' estudio.pk asignacion.pk %}" class="btn btn-peligro btn-chico">Quitar</a>
-                  {% endif %}
-                </td>
+                {# «Acción» solo existe mientras se pueden quitar pruebas (estudio pendiente de análisis). #}
+                {% if estudio.admite_modificaciones %}
+                  <td class="text-right">
+                    {% if total_pruebas <= 1 %}
+                      <span class="text-xs text-tinta-suave">El estudio debe conservar al menos una prueba.</span>
+                    {% elif asignacion.puede_quitarse %}
+                      <a href="{% url 'estudios:quitar_prueba' estudio.pk asignacion.pk %}" class="btn btn-peligro btn-chico">Quitar</a>
+                    {% endif %}
+                  </td>
+                {% endif %}
               </tr>
             {% endfor %}
           </tbody>

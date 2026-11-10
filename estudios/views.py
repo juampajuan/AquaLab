@@ -359,7 +359,10 @@ def detalle(request, pk):
     )
     hay_para_validar = any(validable(a) for a in pruebas_asignadas)
     puede_validar = request.user.has_perm("estudios.validar_resultados")
-    paso = proximo_paso(estudio, pruebas_para_medir, hay_para_validar, puede_validar, total_pruebas)
+    puede_emitir = request.user.has_perm("informes.emitir_informes")
+    paso = proximo_paso(
+        estudio, pruebas_para_medir, hay_para_validar, puede_validar, puede_emitir, total_pruebas
+    )
     return render(
         request,
         "estudios/detalle.html",
@@ -384,7 +387,9 @@ def detalle(request, pk):
     )
 
 
-def proximo_paso(estudio, pruebas_para_medir, hay_para_validar, puede_validar, total_pruebas):
+def proximo_paso(
+    estudio, pruebas_para_medir, hay_para_validar, puede_validar, puede_emitir, total_pruebas
+):
     """Lo que toca hacer ahora con el estudio (SCRUM-82): un texto y, si corresponde, una acción.
 
     La ficha muestra esta única acción como botón principal, así siempre se ve el paso siguiente:
@@ -399,6 +404,13 @@ def proximo_paso(estudio, pruebas_para_medir, hay_para_validar, puede_validar, t
             "url": reverse("informes:ver", args=[estudio.pk]),
         }
     if estudio.estado == EstadoEstudio.FINALIZADO:
+        if not puede_emitir:
+            return {
+                "accion": None,
+                "texto": (
+                    "Todas las pruebas están validadas: falta que un bioquímico emita el informe."
+                ),
+            }
         return {
             "accion": "generar_informe",
             "texto": "Todas las pruebas están validadas: ya se puede generar el informe.",
