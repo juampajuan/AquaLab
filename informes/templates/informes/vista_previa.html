@@ -36,9 +36,6 @@
       {% else %}
         <p class="text-sm text-tinta-suave">Solo un integrante del grupo Bioquímicos puede emitir el informe.</p>
       {% endif %}
-      <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver al estudio
-      </a>
     </div>
   </div>
 {% endblock %}
