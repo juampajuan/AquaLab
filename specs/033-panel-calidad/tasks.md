@@ -74,7 +74,7 @@ migraciones ni permisos nuevos. Dos tandas:
 
 ## Phase 1: Setup (Tanda 1)
 
-- [ ] T001 Confirmar que la rama `033-panel-calidad` sale de `main` actualizado y que
+- [X] T001 Confirmar que la rama `033-panel-calidad` sale de `main` actualizado y que
   `docker compose exec web pytest informes estudios` está en verde antes de empezar; actualizar el
   `**Status**` de `specs/033-panel-calidad/spec.md` a «Aprobada (fecha)» cuando el equipo la apruebe.
 
@@ -315,7 +315,7 @@ comparación, y el inactivo aparece «Inactivo» sin enlace.
 - [X] T031 Revisar que no se creó nada fuera del plan: sin migraciones nuevas
   (`docker compose exec web python manage.py makemigrations --check --dry-run`), sin cambios en
   `informes/tablero.py` ni `estudios/demo.py`, sin rutas nuevas.
-- [ ] T032 Prueba en el navegador según `specs/033-panel-calidad/quickstart.md` — **la hace el
+- [X] T032 Prueba en el navegador según `specs/033-panel-calidad/quickstart.md` — **la hace el
   usuario**; no marcar.
 - [X] T033 Cierre: `docker compose exec web pytest informes estudios`,
   `node --test usuarios/tests/js config/tests/js estudios/tests/js`,
