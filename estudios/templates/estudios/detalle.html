@@ -201,7 +201,7 @@
     {% if perms.informes.ver_dashboard %}
       <div>
         <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}" class="btn btn-secundario">
-          {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Comparación histórica del origen
+          {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Comparación histórica
         </a>
       </div>
     {% endif %}
