@@ -18,7 +18,7 @@ from .formulas import FormulaInvalida, validar_formula
 from .limites import NUMERO, TEXTOS_AUSENTE
 from .models import LimiteVertido, Prueba, TipoCalculo, TipoVertido, referencias_formula
 
-OPERACIONES = ("crear", "editar", "desactivar", "reactivar", "eliminar")
+OPERACIONES = ("crear", "editar", "desactivar", "reactivar", "eliminar", "reemplazar")
 CAMPOS_METODO = ("codigo", "nombre", "tipo_calculo", "formula", "unidad_medicion", "unidad")
 CAMPOS_TEXTO = (
     "codigo",
@@ -53,6 +53,10 @@ MENSAJE_LIMITE = "Escribí un número o “Ausente”."
 MENSAJE_RANGO = "El mínimo no puede superar al máximo."
 MENSAJE_VERSION = "La prueba cambió mientras la editabas. Revisá los datos actuales."
 MENSAJE_REEMPLAZO = "Elegí una prueba activa con la misma unidad que no dependa de esta."
+MENSAJE_UNIDAD_REEMPLAZO = "La prueba nueva tiene que tener la misma unidad del resultado."
+MENSAJE_FORMULA_REEMPLAZO = (
+    "La fórmula no puede usar la prueba que reemplaza ni las que dependen de ella."
+)
 
 
 class GestionPruebaError(Exception):
@@ -362,6 +366,8 @@ def gestionar_prueba(
             return _editar(prueba, usuario, datos)
         if operacion == "eliminar":
             return _eliminar(prueba)
+        if operacion == "reemplazar":
+            return _crear_y_reemplazar(prueba, usuario, datos)
         destino = operacion == "reactivar"
         if prueba.activa == destino:
             return Resultado("sin_cambios", prueba.pk)
@@ -385,6 +391,24 @@ def _crear(usuario, datos):
     prueba.save()
     _guardar_limites_vertido(prueba, datos)
     return Resultado("creada", prueba.pk)
+
+
+def _crear_y_reemplazar(prueba, usuario, datos):
+    """Crea la prueba nueva, desactiva `prueba` y la reemplaza en cascada, todo junto."""
+    if not prueba.activa or prueba.reemplazada_por_id:
+        raise DatosInvalidos({"__all__": "Solo se puede reemplazar una prueba activa."})
+    datos = validar_datos(datos)
+    if datos["unidad"] != prueba.unidad:
+        raise DatosInvalidos({"unidad": MENSAJE_UNIDAD_REEMPLAZO})
+    prohibidas = {prueba.codigo} | {p.codigo for p in dependientes_transitivas(prueba)}
+    if referencias_formula(datos["formula"]) & prohibidas:
+        raise DatosInvalidos({"formula": MENSAJE_FORMULA_REEMPLAZO})
+    creada = _crear(usuario, datos)
+    nueva = _reemplazar(prueba, creada.prueba_id, usuario)
+    prueba.activa = False
+    _marcar(prueba, usuario)
+    prueba.save()
+    return Resultado("creada_reemplazo", nueva.pk, nueva.codigo)
 
 
 def _editar(prueba, usuario, datos):

@@ -2,7 +2,8 @@
 
 Las reglas son las de `gestion.validar_datos` (la misma que usa el servicio): acá solo se muestran
 los errores junto a cada campo. Con `bloquear_metodo=True` (prueba en uso) los campos del método
-quedan deshabilitados y Django ignora lo que se envíe para ellos.
+quedan deshabilitados y Django ignora lo que se envíe para ellos; con `fijar_unidad=True` (prueba
+nueva que reemplaza a otra), solo la unidad del resultado.
 """
 
 from django import forms
@@ -56,7 +57,7 @@ class PruebaForm(forms.Form):
     canal_norma = texto("Norma canal", 150)
     observacion = texto("Observación", 2000, area=True)
 
-    def __init__(self, *args, prueba=None, bloquear_metodo=False, **kwargs):
+    def __init__(self, *args, prueba=None, bloquear_metodo=False, fijar_unidad=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.prueba = prueba
         for nombre, campo in self.fields.items():
@@ -65,6 +66,8 @@ class PruebaForm(forms.Form):
             )
             if bloquear_metodo and nombre in gestion.CAMPOS_METODO:
                 campo.disabled = True
+        if fijar_unidad:  # reemplazo: la nueva lleva la unidad de la que reemplaza
+            self.fields["unidad"].disabled = True
 
     def clean(self):
         datos = super().clean()

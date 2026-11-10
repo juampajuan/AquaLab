@@ -210,6 +210,9 @@ de estudio (US 5.5: `estudios/gestion_tipos.py`, `confirmaciones_tipos.py`, `vie
 - [X] T020d [US6] Implementar `calculo.resolver_referencias(asignaciones)` (quedó como `calculo.alias` + `referencias_en_estudio`) en `estudios/calculo.py` y
   usarlo en la evaluación, el orden de dependencias y `calculo.afectadas`. Correr toda la suite de
   `estudios` (cálculo, corrección, borrado, validación). Hace pasar T020b.
+- [X] T020e [US6] «Crear una prueba nueva para reemplazarla» (FR-016c): operación `reemplazar` en
+  `pruebas/gestion.py` (`_crear_y_reemplazar`), vista `catalogo:reemplazar` con `PruebaForm(fijar_unidad=True)`
+  y resumen; tests `test_crear_y_reemplazar*` y `test_crear_reemplazo_por_pantalla`.
 
 ---
 

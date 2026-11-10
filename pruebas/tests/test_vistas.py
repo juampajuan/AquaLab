@@ -114,6 +114,37 @@ def test_desactivar_y_reactivar(cliente_catalogo, administrador_catalogo):
     )
 
 
+def test_crear_reemplazo_por_pantalla(cliente_catalogo):
+    ca = Prueba.objects.create(codigo="CA", nombre="Calcio", unidad="mg/l", limite_max="10")
+    Prueba.objects.create(
+        codigo="MG", nombre="Magnesio", tipo_calculo="FORMULA", formula="{CA}*2", es_calculada=True
+    )
+    resumen = cliente_catalogo.get(
+        cliente_catalogo.get(reverse("catalogo:desactivar", args=[ca.pk]))["Location"]
+    ).content.decode()
+    url = reverse("catalogo:reemplazar", args=[ca.pk])
+    assert url in resumen
+    html = cliente_catalogo.get(url).content.decode()
+    assert 'value="Calcio"' in html and re.search(r'name="unidad"[^>]*disabled', html)
+    from pruebas import gestion
+
+    datos = gestion.datos_de(ca)
+    datos.update(codigo="CA2", nombre="Calcio nuevo", unidad="ml", contexto=contexto(html))
+    respuesta = cliente_catalogo.post(url, datos)
+    assert respuesta.status_code == 302
+    pagina = cliente_catalogo.get(respuesta["Location"]).content.decode()
+    assert "Al confirmar se crea CA2" in pagina and "MG" in pagina
+    final = confirmar(cliente_catalogo, respuesta)
+    ca2 = Prueba.objects.get(codigo="CA2")
+    assert final["Location"] == reverse("catalogo:ficha", args=[ca2.pk])
+    assert ca2.unidad == "mg/l"  # la unidad enviada se ignora
+    ca.refresh_from_db()
+    assert not ca.activa and ca.reemplazada_por == ca2
+    assert Prueba.objects.get(codigo="MG").formula == "{CA2}*2"
+    ficha = cliente_catalogo.get(final["Location"]).content.decode()
+    assert "Prueba CA2 creada. CA quedó desactivada y reemplazada por ella." in ficha
+
+
 def test_listado(cliente_catalogo):
     Prueba.objects.create(codigo="CA", nombre="Calcio", activa=False)
     mg = Prueba.objects.create(
@@ -132,6 +163,7 @@ RUTAS = [
     ("catalogo:editar", True),
     ("catalogo:desactivar", True),
     ("catalogo:reactivar", True),
+    ("catalogo:reemplazar", True),
     ("catalogo:eliminar", True),
 ]
 

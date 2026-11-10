@@ -6,6 +6,7 @@
   {% if borrador.operacion == "crear" %}{% with t="Confirmar nueva prueba" %}{% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo=t %}{% endwith %}
   {% elif borrador.operacion == "editar" %}{% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo="Confirmar cambios en "|add:prueba.codigo %}
   {% elif borrador.operacion == "desactivar" %}{% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo="Desactivar "|add:prueba.codigo %}
+  {% elif borrador.operacion == "reemplazar" %}{% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo="Reemplazar "|add:prueba.codigo|add:" por una prueba nueva" %}
   {% elif borrador.operacion == "reactivar" %}{% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo="Reactivar "|add:prueba.codigo %}
   {% else %}{% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo="Eliminar "|add:prueba.codigo %}{% endif %}
 {% endblock %}
@@ -36,6 +37,13 @@
           </table>
         </div>
       </section>
+    {% endif %}
+
+    {% if borrador.operacion == "reemplazar" %}
+      <div class="aviso aviso-info" role="status" data-resumen-reemplazo>
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>Al confirmar se crea {{ borrador.datos.codigo }}, {{ prueba.codigo }} queda desactivada y se reemplaza por {{ borrador.datos.codigo }}{% if dependientes %} en las fórmulas de {% for d in dependientes %}{{ d.codigo }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% if tipos %}{% if dependientes %} y{% endif %} en los tipos {% for fila in tipos %}{{ fila.tipo.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}. Los estudios ya hechos siguen calculándose con {{ prueba.codigo }}.</div>
+      </div>
     {% endif %}
 
     {% if borrador.operacion == "desactivar" %}
@@ -75,14 +83,22 @@
     <form method="post" action="{% url 'catalogo:confirmar' %}" class="space-y-4" data-componente="acciones-confirmacion">
       {% csrf_token %}
       <input type="hidden" name="token" value="{{ borrador.token }}">
-      {% if borrador.operacion == "desactivar" and candidatas %}
-        <div class="tarjeta seccion-form" data-reemplazo>
-          <label for="reemplazo" class="campo-etiqueta">Reemplazar por (opcional)</label>
-          <select name="reemplazo" id="reemplazo" class="form-select max-w-md">
-            <option value="">No reemplazar</option>
-            {% for c in candidatas %}<option value="{{ c.pk }}">{{ c.codigo }} · {{ c.nombre }}</option>{% endfor %}
-          </select>
-          <p class="campo-ayuda">Si elegís una, se cambia en las fórmulas que usan {{ prueba.codigo }}{% if dependientes %} ({% for d in dependientes %}{{ d.codigo }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %} y en los tipos de estudio que la incluyen. Los estudios ya hechos siguen calculándose con {{ prueba.codigo }}.</p>
+      {% if borrador.operacion == "desactivar" %}
+        <div class="tarjeta seccion-form space-y-3" data-reemplazo>
+          {% if candidatas %}
+            <label for="reemplazo" class="campo-etiqueta">Reemplazar por (opcional)</label>
+            <select name="reemplazo" id="reemplazo" class="form-select max-w-md">
+              <option value="">No reemplazar</option>
+              {% for c in candidatas %}<option value="{{ c.pk }}">{{ c.codigo }} · {{ c.nombre }}</option>{% endfor %}
+            </select>
+            <p class="campo-ayuda">Si elegís una, se cambia en las fórmulas que usan {{ prueba.codigo }}{% if dependientes %} ({% for d in dependientes %}{{ d.codigo }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %} y en los tipos de estudio que la incluyen. Los estudios ya hechos siguen calculándose con {{ prueba.codigo }}.</p>
+          {% else %}
+            <p class="campo-etiqueta">Reemplazar por (opcional)</p>
+            <p class="campo-ayuda">No hay otra prueba activa con la misma unidad para elegir.</p>
+          {% endif %}
+          <div data-crear-reemplazo>
+            <a class="btn btn-secundario" href="{% url 'catalogo:reemplazar' prueba.pk %}">{% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Crear una prueba nueva para reemplazarla</a>
+          </div>
         </div>
       {% endif %}
       <div class="flex flex-wrap items-center gap-3">

@@ -76,3 +76,48 @@ def test_cascada_atomica(administrador_catalogo, escenario, monkeypatch):
         desactivar(administrador_catalogo, escenario["ca"], escenario["ca2"])
     assert Prueba.objects.get(codigo="MG").formula == "({CA}*2.5)*0.243"
     assert Prueba.objects.get(codigo="CA").activa
+
+
+def crear_reemplazo(usuario, prueba, datos):
+    prueba.refresh_from_db()
+    return gestion.gestionar_prueba(
+        usuario=usuario,
+        operacion="reemplazar",
+        prueba_id=prueba.pk,
+        version_esperada=prueba.version,
+        datos=datos,
+    )
+
+
+def test_crear_y_reemplazar(administrador_catalogo, escenario, datos_prueba):
+    resultado = crear_reemplazo(
+        administrador_catalogo, escenario["ca"], datos_prueba(codigo="CA3", nombre="Calcio 3")
+    )
+    assert (resultado.estado, resultado.reemplazo) == ("creada_reemplazo", "CA3")
+    ca3 = Prueba.objects.get(pk=resultado.prueba_id)
+    assert ca3.activa and ca3.creada_por == administrador_catalogo
+    ca = Prueba.objects.get(codigo="CA")
+    assert not ca.activa and ca.reemplazada_por == ca3
+    assert Prueba.objects.get(codigo="MG").formula == "({CA3}*2.5)*0.243"
+    tipo = TipoEstudio.objects.get(pk=escenario["tipo"].pk)
+    assert set(tipo.pruebas.values_list("codigo", flat=True)) == {"CA3", "MG"}
+
+
+@pytest.mark.parametrize(
+    ("cambios", "campo"),
+    [
+        ({"unidad": "ml"}, "unidad"),
+        ({"tipo_calculo": "FORMULA", "formula": "{CA}*1"}, "formula"),
+        ({"tipo_calculo": "FORMULA", "formula": "{MG}*1"}, "formula"),
+        ({"codigo": "ca2"}, "codigo"),
+    ],
+)
+def test_crear_y_reemplazar_rechaza(
+    administrador_catalogo, escenario, datos_prueba, cambios, campo
+):
+    antes = Prueba.objects.count()
+    with pytest.raises(gestion.DatosInvalidos) as error:
+        crear_reemplazo(administrador_catalogo, escenario["ca"], datos_prueba(**cambios))
+    assert campo in error.value.errores
+    assert Prueba.objects.count() == antes
+    assert Prueba.objects.get(codigo="CA").activa

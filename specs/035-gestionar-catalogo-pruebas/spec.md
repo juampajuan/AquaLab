@@ -111,6 +111,7 @@ Como administrador, cuando el laboratorio cambia el método de una prueba que ot
 5. **Dados** reemplazos encadenados (A por B y después B por C), **cuando** se recalcula un estudio que tiene A, **entonces** las fórmulas que nombran C usan el valor de A.
 6. **Dados** los resultados, validaciones e informes ya hechos, **cuando** se hace un reemplazo, **entonces** no cambian.
 7. **Dada** una prueba con unidad del resultado distinta, **cuando** se intenta elegirla como reemplazo, **entonces** no se ofrece (y si se envía igual, se rechaza): cambiaría el significado de las fórmulas que la usan.
+8. **Dada** una prueba activa que se va a desactivar, **cuando** se elige «Crear una prueba nueva para reemplazarla», **entonces** se abre el alta con los datos de la vieja (código vacío, misma unidad del resultado fija) y, al confirmar, en una sola operación se crea la nueva y se hace el reemplazo del escenario 2; si algo falla (código repetido, fórmula que usa la vieja o una que depende de ella), no se crea nada y la vieja sigue activa.
 
 ---
 
@@ -163,6 +164,7 @@ Como laboratorio, quiero que solo el grupo «Administradores» gestione el catá
 - **FR-016**: Si la prueba cambió desde que se abrió la ficha, la confirmación MUST rechazarse con un aviso, sin pisar los cambios de otra persona.
 - **FR-016a**: Al crear una prueba desde la app MUST guardarse quién la creó y cuándo; al editarla, desactivarla o reactivarla, quién lo hizo y cuándo (solo la última modificación). La ficha MUST mostrar ambos datos («Sin registro» para las pruebas anteriores a esta historia o cargadas por importación).
 - **FR-016b**: Al desactivar una prueba, MUST poder elegirse opcionalmente «Reemplazar por» otra prueba activa con la misma unidad del resultado, que no sea ella misma ni la referencie (directa o indirectamente). Con reemplazo, en la misma operación MUST: registrar el reemplazo; reemplazar `{CODIGO_VIEJO}` por `{CODIGO_NUEVO}` en la fórmula de toda prueba que la referenciaba (aunque esté en uso: es la única forma en que cambia la fórmula de una prueba en uso, y no altera su método); cambiar la prueba vieja por la nueva en todo tipo de estudio que la incluía, subiendo su versión; y mostrar antes, en el resumen, las fórmulas y tipos afectados.
+- **FR-016c**: Desde la confirmación de desactivar MUST poder crearse la prueba de reemplazo: un alta precargada con los datos de la vieja (código vacío, unidad del resultado fija) cuya confirmación crea la nueva y aplica FR-016b en la misma transacción. Su fórmula MUST NOT usar la vieja ni las que dependen de ella.
 - **FR-016c**: Al calcular o recalcular un estudio, si una fórmula nombra una prueba que el estudio no tiene, MUST usarse la prueba del estudio que fue reemplazada (directa o en cadena) por la nombrada. Así los estudios anteriores al reemplazo siguen calculando igual.
 - **FR-017**: La importación por CSV (`importar_catalogo_pruebas`) MUST seguir funcionando como hoy, y el admin de Django MUST seguir disponible como respaldo.
 

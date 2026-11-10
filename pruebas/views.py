@@ -102,8 +102,16 @@ def ficha(request, pk):
 
 def formulario(request, operacion, prueba=None):
     pk = prueba.pk if prueba else None
-    bloquear = bool(prueba and prueba.esta_en_uso())
+    reemplaza = operacion == "reemplazar"
+    bloquear = bool(prueba and not reemplaza and prueba.esta_en_uso())
     initial = gestion.datos_de(prueba) if prueba else None
+    if reemplaza:  # la nueva parte de los datos de la vieja, con otro código
+        initial["codigo"] = ""
+    opciones = {
+        "prueba": None if reemplaza else prueba,
+        "bloquear_metodo": bloquear,
+        "fijar_unidad": reemplaza,
+    }
     contexto = request.POST.get("contexto", "")
     anterior = request.POST.get("anterior", "")
     if request.method == "GET":
@@ -115,7 +123,7 @@ def formulario(request, operacion, prueba=None):
                 return solicitud_invalida(request)
             initial, version, anterior = borrador["datos"], borrador["version"], clave
         contexto = tokens.crear_contexto(request, operacion, pk, version)
-        form = PruebaForm(initial=initial, prueba=prueba, bloquear_metodo=bloquear)
+        form = PruebaForm(initial=initial, **opciones)
     else:
         try:
             apertura = tokens.leer_contexto(request, contexto, operacion, pk)
@@ -129,7 +137,7 @@ def formulario(request, operacion, prueba=None):
         if prueba and apertura["version"] != prueba.version:
             messages.error(request, gestion.MENSAJE_VERSION)
             return redirect("catalogo:ficha", pk)
-        form = PruebaForm(request.POST, initial=initial, prueba=prueba, bloquear_metodo=bloquear)
+        form = PruebaForm(request.POST, initial=initial, **opciones)
         if form.is_valid():
             try:
                 borrador = tokens.preparar(
@@ -153,6 +161,7 @@ def formulario(request, operacion, prueba=None):
             "contexto": contexto,
             "anterior": anterior,
             "bloqueada": bloquear,
+            "reemplaza": reemplaza,
             "mensaje_en_uso": gestion.MENSAJE_EN_USO,
         },
     )
@@ -168,6 +177,17 @@ def nueva(request):
 @require_http_methods(["GET", "POST"])
 def editar(request, pk):
     return formulario(request, "editar", prueba_o_404(pk))
+
+
+@administracion_requerida
+@require_http_methods(["GET", "POST"])
+def reemplazar(request, pk):
+    """Alta de una prueba nueva que, al confirmar, reemplaza a esta (y la desactiva)."""
+    prueba = prueba_o_404(pk)
+    if not prueba.activa:
+        messages.error(request, "Solo se puede reemplazar una prueba activa.")
+        return redirect("catalogo:ficha", pk)
+    return formulario(request, "reemplazar", prueba)
 
 
 def preparar_operacion(request, pk, operacion):
@@ -217,16 +237,16 @@ def contexto_confirmacion(borrador, errores=None):
             raise Http404
     operacion = borrador["operacion"]
     contexto = {"borrador": borrador, "prueba": prueba, "errores": errores or {}}
-    if operacion in ("crear", "editar"):
-        antes = gestion.datos_de(prueba) if prueba else None
+    if operacion in ("crear", "editar", "reemplazar"):
+        antes = gestion.datos_de(prueba) if operacion == "editar" else None
         contexto["filas"] = filas_resumen(borrador["datos"], antes)
         url = (
             reverse("catalogo:nueva")
             if operacion == "crear"
-            else reverse("catalogo:editar", args=[prueba.pk])
+            else reverse(f"catalogo:{operacion}", args=[prueba.pk])
         )
         contexto["volver_url"] = url + "?solicitud=" + borrador["clave"]
-    if operacion == "desactivar":
+    if operacion in ("desactivar", "reemplazar"):
         contexto["dependientes"] = gestion.dependientes(prueba, solo_activas=True)
         contexto["tipos"] = gestion.tipos_afectados(prueba)
         contexto["candidatas"] = gestion.candidatas_reemplazo(prueba)
@@ -237,6 +257,10 @@ def contexto_confirmacion(borrador, errores=None):
             ).values_list("codigo", flat=True)
         )
     return contexto
+
+
+def borrador_codigo(borrador):
+    return Prueba.objects.values_list("codigo", flat=True).get(pk=borrador["prueba_id"])
 
 
 @administracion_requerida
@@ -281,7 +305,13 @@ def confirmar(request):
             return redirect("catalogo:ficha", borrador["prueba_id"])
         return redirect("administracion:pruebas")
     tokens.descartar(request, borrador["clave"])
-    if resultado.estado == "reemplazada":
+    if resultado.estado == "creada_reemplazo":
+        messages.success(
+            request,
+            f"Prueba {resultado.reemplazo} creada. {borrador_codigo(borrador)} quedó desactivada "
+            "y reemplazada por ella.",
+        )
+    elif resultado.estado == "reemplazada":
         messages.success(request, f"Prueba desactivada y reemplazada por {resultado.reemplazo}.")
     else:
         messages.success(request, MENSAJES.get(resultado.estado, "Operación completada."))

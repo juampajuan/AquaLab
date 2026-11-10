@@ -412,5 +412,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   los tipos (sube su versión) y guarda `reemplazada_por`. Los estudios viejos no se tocan:
   `calculo.alias`/`referencias_en_estudio` resuelven el código nuevo a la prueba del estudio
   (cadenas A→B→C incluidas).
+- «Crear una prueba nueva para reemplazarla» (en la confirmación de desactivar) es la operación
+  `reemplazar`: alta precargada con la unidad fija (`fijar_unidad`) que, al confirmar, crea la nueva
+  y hace el reemplazo en la misma transacción (`_crear_y_reemplazar`).
 - Tests: fixtures `administrador_catalogo`, `cliente_catalogo` y `datos_prueba`
   (`pruebas/tests/conftest.py`, que importa las de `estudios`).
