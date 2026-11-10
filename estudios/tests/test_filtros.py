@@ -14,6 +14,57 @@ from estudios.servicios import crear_estudio
 
 pytestmark = pytest.mark.django_db
 
+
+@pytest.mark.parametrize("modo", ["", "mediciones", "validaciones"])
+def test_selector_pendiente_solo_buscador(modo):
+    from estudios.forms import BuscarEstudioForm, FiltrarEstudiosForm, FiltrosEstudioForm
+
+    form = FiltrarEstudiosForm({"pendiente": modo})
+    assert form.is_valid()
+    assert form.cleaned_data["pendiente"] == modo
+    assert form.fields["pendiente"].help_text
+    assert "pendiente" not in BuscarEstudioForm().fields
+    assert "pendiente" not in FiltrosEstudioForm().fields
+
+
+@pytest.mark.parametrize(
+    "datos",
+    [
+        {"pendiente": "desconocido"},
+        {"pendiente": "validaciones", "estado": "invalido"},
+        {"pendiente": "mediciones", "desde": "invalido"},
+        {"pendiente": "validaciones", "desde": "2026-12-31", "hasta": "2026-01-01"},
+        {"pendiente": "validaciones", "q": "x" * 101},
+    ],
+)
+def test_pendientes_invalidos_conservan_fallback(cliente_http, crear_pendiente, datos):
+    esperado = {crear_pendiente().pk, crear_pendiente(cargadas=1).pk}
+    r = cliente_http.get(reverse("estudios:buscar"), datos)
+    assert r.status_code == 200
+    assert r.context["form"].errors
+    assert {e.pk for e in r.context["page_obj"]} == esperado
+    assert "total_resultados" not in r.context
+    assert not r.context["filtrado"]
+
+
+def test_pendientes_filtros_and(cliente_http, crear_pendiente):
+    a = crear_pendiente(cargadas=1)
+    crear_pendiente()
+    r = cliente_http.get(
+        reverse("estudios:buscar"),
+        {
+            "pendiente": "mediciones",
+            "estado": "en_proceso",
+            "q": a.tipo_nombre_snapshot,
+        },
+    )
+    assert {e.pk for e in r.context["page_obj"]} == {a.pk}
+    vacio = cliente_http.get(
+        reverse("estudios:buscar"), {"pendiente": "validaciones", "estado": "finalizado"}
+    )
+    assert vacio.context["page_obj"].paginator.count == 0
+
+
 ZONA = ZoneInfo(settings.TIME_ZONE)
 
 

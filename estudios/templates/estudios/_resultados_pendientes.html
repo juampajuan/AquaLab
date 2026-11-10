@@ -1,0 +1,10 @@
+{% load ui %}
+<ul class="mt-2 space-y-2 text-sm" aria-label="Resultados por validar del estudio {{ estudio.pk }}">
+  {% for asignacion in estudio.resultados_pendientes %}
+    <li data-resultado="{{ asignacion.resultado.pk }}" class="rounded-md bg-fondo p-2">
+      <span class="font-semibold">{{ asignacion.prueba.codigo }}</span> · {{ asignacion.prueba.nombre }}:
+      {{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}
+      {% if not asignacion.resultado.unidad|es_presencia %}{{ asignacion.resultado.unidad|unidad }}{% endif %}
+    </li>
+  {% endfor %}
+</ul>

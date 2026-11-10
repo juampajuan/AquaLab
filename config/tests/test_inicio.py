@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from clientes.models import Cliente
 from estudios.models import Estudio, TipoEstudio
+from estudios.tests.conftest import en_grupo_bioquimicos
 from muestras.models import Muestra, Origen
 
 pytestmark = pytest.mark.django_db
@@ -112,44 +113,28 @@ def test_accesos_rapidos_llevan_a_cada_pantalla(cliente_http):
         assert f'href="{reverse(nombre)}"' in accesos, nombre
 
 
-# Escenario 3: muestras sin estudio
+# Feature 033 reemplaza los contadores generales; conserva el resto del inicio.
 
 
-def test_muestras_sin_estudio_cuenta_solo_las_que_no_tienen_estudios(
-    cliente_http, crear_muestra, crear_estudio
-):
-    con_estudio = crear_muestra(200001)
-    crear_estudio(con_estudio)
-    crear_estudio(con_estudio)
-    crear_muestra(200002)
-    crear_muestra(200003)
-
-    assert indicador(panel(cliente_http), "muestras-sin-estudio") == 2
-
-
-# Escenario 4: muestras ingresadas hoy
-
-
-def test_muestras_hoy_cuenta_solo_la_fecha_de_ingreso_de_hoy(cliente_http, crear_muestra):
-    hoy = timezone.localdate()
-    crear_muestra(200001, hoy)
-    crear_muestra(200002, hoy)
-    crear_muestra(200003, hoy - datetime.timedelta(days=1))
-
-    assert indicador(panel(cliente_http), "muestras-hoy") == 2
-
-
-# Escenario 5: estudios pendientes
-
-
-def test_estudios_pendientes_cuenta_los_estudios_en_ese_estado(
-    cliente_http, crear_muestra, crear_estudio
-):
-    muestra = crear_muestra(200001)
-    crear_estudio(muestra)
-    crear_estudio(crear_muestra(200002))
-
-    assert indicador(panel(cliente_http), "estudios-pendientes") == 2
+@pytest.mark.parametrize("bioquimico", [False, True])
+def test_reemplazo_conserva_otras_funciones(cliente_http, crear_muestra, empleado, bioquimico):
+    if bioquimico:
+        en_grupo_bioquimicos(empleado)
+    crear_muestra(200001)
+    html = panel(cliente_http)
+    for nombre in ("muestras-sin-estudio", "muestras-hoy", "estudios-pendientes"):
+        assert f'data-indicador="{nombre}"' not in html
+    assert indicador(html, "mediciones-pendientes") == 0
+    assert "Bienvenido/a a AquaLab" in html
+    assert 'data-componente="ultimas-muestras"' in html
+    assert re.findall(r'data-modulo="([^"]+)"', html) == [
+        "Clientes",
+        "Muestras",
+        "Estudios",
+        "Informes",
+    ]
+    assert ("Ver dashboard" in html) == bioquimico
+    assert len(re.findall(r'data-indicador="', html)) == (3 if bioquimico else 1)
 
 
 # Escenario 6: últimas muestras
@@ -176,7 +161,7 @@ def test_tabla_muestra_las_cinco_mas_recientes_con_sus_datos(cliente_http, crear
 def test_sin_muestras_indicadores_en_cero_y_estado_vacio(cliente_http):
     html = panel(cliente_http)
 
-    for nombre in ("muestras-sin-estudio", "muestras-hoy", "estudios-pendientes"):
+    for nombre in ("mediciones-pendientes",):
         assert indicador(html, nombre) == 0
     vacio = re.search(r'data-componente="estado-vacio".*?</div>\s*</div>', html, re.S).group(0)
     assert f'href="{reverse("muestras:registrar")}"' in vacio

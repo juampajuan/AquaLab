@@ -7,6 +7,65 @@ from django.utils import timezone
 
 
 @pytest.fixture
+def crear_pendiente(muestra, empleado, django_user_model, firma_de):
+    """Datos sintéticos de 033; usa los servicios reales y un validador separado."""
+    from estudios.servicios import crear_estudio
+    from estudios.tests.utiles import cargar, validar
+    from informes.servicios import emitir_informe
+    from pruebas.models import Prueba, TipoCalculo
+
+    profesional = django_user_model.objects.create_user(email="validador033@example.com")
+    en_grupo_bioquimicos(profesional)
+    firma_de(profesional)
+    secuencia = 0
+
+    def crear(cantidad=2, cargadas=0, *, completado=False, informado=False, calculada=False):
+        nonlocal secuencia
+        from estudios.models import TipoEstudio
+
+        secuencia += 1
+        pruebas = [
+            Prueba.objects.create(
+                codigo=f"US33-{secuencia}-{i}", nombre=f"Prueba {secuencia} {i}", unidad="mg/L"
+            )
+            for i in range(cantidad)
+        ]
+        if calculada:
+            pruebas.append(
+                Prueba.objects.create(
+                    codigo=f"US33-{secuencia}-CALC",
+                    nombre="Calculada",
+                    es_calculada=True,
+                    tipo_calculo=TipoCalculo.FORMULA,
+                    formula="{" + pruebas[0].codigo + "} * 2",
+                    unidad="mg/L",
+                )
+            )
+        tipo = TipoEstudio.objects.create(nombre=f"Tipo US33 {secuencia}")
+        tipo.pruebas.set(pruebas)
+        estudio = crear_estudio(
+            {
+                "clave": str(uuid.uuid4()),
+                "muestra": muestra.pk,
+                "tipo": tipo.pk,
+                "version": tipo.version,
+            },
+            empleado,
+        )
+        if cargadas:
+            cargar(estudio, empleado, {p.codigo: "1" for p in pruebas[:cargadas]})
+        if completado or informado:
+            validar(estudio, profesional, *[p.codigo for p in pruebas])
+        if informado:
+            emitir_informe(estudio.pk, profesional)
+        estudio.refresh_from_db()
+        return estudio
+
+    crear.profesional = profesional
+    return crear
+
+
+@pytest.fixture
 def empleado(django_user_model):
     return django_user_model.objects.create_user(
         email="test-estudio@ejemplo.com",

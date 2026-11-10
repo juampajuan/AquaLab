@@ -352,11 +352,31 @@ class FiltrarEstudiosForm(BuscarEstudioForm, FiltrosEstudioForm):
     `BuscarEstudioForm` queda solo con el texto: lo usa también `informes:listar`.
     """
 
+    pendiente = forms.ChoiceField(
+        label="Trabajo pendiente",
+        required=False,
+        choices=[
+            ("", "Todos"),
+            ("mediciones", "Mediciones por cargar"),
+            ("validaciones", "Resultados por validar"),
+        ],
+        help_text=(
+            "Seleccioná estudios con mediciones por cargar o resultados calculados por validar."
+        ),
+        widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={"invalid_choice": "Elegí una categoría de pendientes de la lista."},
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ayuda = "Fecha en que se creó el estudio. El día indicado se incluye."
         self.fields["desde"].help_text = ayuda
         self.fields["hasta"].help_text = ayuda
+
+    def full_clean(self):
+        super().full_clean()
+        if "pendiente" in self.errors:
+            self.fields["pendiente"].widget.attrs["class"] += " is-invalid"
 
 
 class ValidarResultadosForm(forms.Form):
