@@ -8,6 +8,14 @@
 
 **Input**: User description: "SCRUM-73 – Gestionar catálogo de pruebas. Como administrador del laboratorio quiero dar de alta, editar y desactivar pruebas del catálogo desde la app, con reglas que protejan los estudios ya hechos, para mantener el catálogo al día sin entrar al admin de Django. Criterios de aceptación: (1) Desde «Administración» → Catálogo de pruebas (SCRUM-71) se puede crear una prueba: código, nombre, tipo de cálculo, fórmula (solo si el tipo es fórmula), unidades, límites por tipo de vertido, norma y límite de detección. La fórmula se valida al guardar. (2) Si la prueba no está en uso (no está en ningún tipo ni estudio), se puede editar todo y también eliminarla, con confirmación. (3) Si la prueba está en uso: se pueden editar los límites, la norma, el límite de detección y la observación, y el cambio solo afecta las validaciones futuras; el código, el nombre, el tipo de cálculo, la fórmula y las unidades quedan bloqueados, con un mensaje que explica que, para cambiar el método, hay que crear una prueba nueva y desactivar la anterior; no se puede eliminar, solo desactivar. (4) Desactivar o reactivar, con confirmación. Una prueba inactiva no se ofrece al armar tipos de estudio ni al agregar pruebas a un estudio. Donde ya estaba asignada sigue funcionando: se le cargan mediciones, se calcula, se valida y se informa. (5) Los informes emitidos y las validaciones hechas no cambian al editar una prueba. (6) Solo el grupo «Administradores» puede gestionar el catálogo. El resto recibe un error 403. Fuera de alcance: las curvas de calibración (próximo sprint) y la importación masiva desde CSV (sigue el comando importar_catalogo_pruebas). Depende de: SCRUM-71, porque usa la sección y el grupo «Administradores»."
 
+## Clarifications
+
+### Session 2026-11-10
+
+- Q: Al cargar los límites de una prueba, ¿el sistema tiene que controlar lo que se escribe o acepta cualquier texto, como hoy? → A: Solo se aceptan números (coma o punto) y «Ausente»/«Ausencia»; cualquier otro texto se rechaza, y si mínimo y máximo son números, el mínimo no puede superar al máximo. «Ausente» significa «no detectado» (0 o por debajo del límite de detección) y es el límite de las pruebas de presencia (A/P) y de mediciones con límite de detección como Sólidos sedimentables; para conteos enteros que no deben aparecer (ej. Coliformes fecales, ajuste de la US 8.4) se usa máx. 0. El formulario lo explica en la ayuda del campo.
+- Q: ¿La ficha de cada prueba tiene que mostrar quién la modificó por última vez y cuándo? → A: Sí. Se guarda quién la creó y quién la modificó por última vez, con fecha, y se muestra en la ficha; el historial completo de cambios queda fuera de alcance.
+- Q: Al desactivar una prueba que está en tipos de estudio, ¿la confirmación tiene que avisar qué tipos la incluyen? → A: Sí. Lista los tipos de estudio activos que la incluyen («Los estudios nuevos de estos tipos no la van a incluir») y marca los que se quedarían sin ninguna prueba activa («Este tipo no se va a poder usar»); se puede confirmar igual.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Dar de alta una prueba (Priority: P1)
@@ -77,9 +85,10 @@ Como administrador, desactivo una prueba que el laboratorio dejó de usar o que 
 2. **Dada** una prueba inactiva, **cuando** se arma o edita un tipo de estudio, o se agregan pruebas a un estudio, **entonces** no se ofrece.
 3. **Dado** un tipo de estudio que incluye una prueba inactiva, **cuando** se crea un estudio nuevo de ese tipo, **entonces** el estudio se crea solo con las pruebas activas del tipo; si el tipo no tiene ninguna activa, la creación se rechaza con un mensaje que lo explica.
 4. **Dado** un estudio que ya tenía la prueba asignada, **cuando** la prueba se desactiva, **entonces** se le siguen cargando mediciones, se calcula, se valida y se informa como antes.
-5. **Dada** una prueba que la fórmula de alguna prueba **activa** referencia, **cuando** se va a desactivar, **entonces** la confirmación avisa qué pruebas la usan y que en los estudios nuevos no se van a poder calcular hasta que la reemplacen; se puede confirmar igual.
-6. **Dada** una prueba activa cuya fórmula referencia una prueba inactiva, **cuando** se muestra el listado del catálogo, **entonces** queda marcada con «Depende de una prueba inactiva: <códigos>», para que se reemplace.
-7. **Dada** una prueba inactiva, **cuando** se confirma «Reactivar», **entonces** vuelve a estar activa y a ofrecerse.
+5. **Dada** una prueba incluida en tipos de estudio activos, **cuando** se va a desactivar, **entonces** la confirmación lista esos tipos, avisa que los estudios nuevos no la van a incluir y marca los que se quedarían sin pruebas activas; se puede confirmar igual.
+6. **Dada** una prueba que la fórmula de alguna prueba **activa** referencia, **cuando** se va a desactivar, **entonces** la confirmación avisa qué pruebas la usan y que en los estudios nuevos no se van a poder calcular hasta que la reemplacen; se puede confirmar igual.
+7. **Dada** una prueba activa cuya fórmula referencia una prueba inactiva, **cuando** se muestra el listado del catálogo, **entonces** queda marcada con «Depende de una prueba inactiva: <códigos>», para que se reemplace.
+8. **Dada** una prueba inactiva, **cuando** se confirma «Reactivar», **entonces** vuelve a estar activa y a ofrecerse.
 
 ---
 
@@ -104,7 +113,7 @@ Como laboratorio, quiero que solo el grupo «Administradores» gestione el catá
 - La prueba pasa a estar en uso entre abrir la ficha y confirmar (alguien la agregó a un tipo): al confirmar se revalida y, si se tocó un dato bloqueado, se rechaza con el motivo.
 - Una prueba de tipo Fórmula cuya fórmula referencia otras pruebas queda marcada como «calculada a partir de otras pruebas» automáticamente; no es un dato que cargue el administrador.
 - Pasar de «Fórmula» a «Directo» en una prueba sin uso borra la fórmula.
-- Límites con texto no numérico (ej. «Ausente», «NE»): se guardan como el catálogo los admite hoy; la evaluación sigue las reglas de la US 6.4.
+- Pruebas que hoy tienen límites de texto no comparable (ej. «NE» en Cloro libre cloacal, «SOE» en Olor, «Ph-0,2» en pH de saturación): al editarlas desde la app hay que reemplazar ese límite por un número, «Ausente» o vacío para poder guardar. La importación por CSV no aplica esta regla y sigue aceptando lo que traiga el archivo.
 - Una prueba inactiva sigue apareciendo en la consulta del catálogo, en los estudios e informes donde ya estaba y en la importación por CSV (que no la reactiva ni la borra).
 - La importación por CSV puede seguir actualizando límites y normas de pruebas existentes; no cambia el nombre de una prueba en uso (regla actual).
 - El admin de Django queda como respaldo y no aplica todas estas reglas (por ejemplo, no bloquea las unidades de una prueba en uso): no es el camino habitual.
@@ -115,13 +124,14 @@ Como laboratorio, quiero que solo el grupo «Administradores» gestione el catá
 
 - **FR-001**: Desde «Administración → Catálogo de pruebas», el sistema MUST permitir crear una prueba con código, nombre, tipo de cálculo, fórmula (obligatoria solo con tipo Fórmula), unidad de medición, unidad del resultado, límites mínimo y máximo generales, límites por tipo de vertido (Cloacal y Canal, opcionales), norma, límite de detección y observación. La prueba nueva queda activa.
 - **FR-002**: Al guardar, el sistema MUST validar la fórmula con la misma regla que hoy usa el catálogo (gramática, referencias a pruebas existentes, sin autorreferencia) y MUST rechazar códigos repetidos sin distinguir mayúsculas.
+- **FR-002a**: Los límites mínimo y máximo (generales y por vertido) MUST aceptar solo vacío, un número (coma o punto) o «Ausente»/«Ausencia»; cualquier otro texto MUST rechazarse junto al campo. Si mínimo y máximo son números, el mínimo MUST NOT superar al máximo. La ayuda del campo MUST explicar que «Ausente» es «no detectado» (pruebas A/P y mediciones con límite de detección) y que para conteos que no deben aparecer se usa máx. 0.
 - **FR-003**: El sistema MUST determinar «calculada a partir de otras pruebas» según la fórmula (si referencia otras pruebas), sin pedirlo al usuario.
 - **FR-004**: Toda alta, edición, eliminación, desactivación y reactivación MUST pedir confirmación con un resumen antes de guardarse, y permitir cancelar sin cambios.
 - **FR-005**: Una prueba MUST considerarse «en uso» si está asignada a algún tipo de estudio o a algún estudio (regla actual del catálogo).
 - **FR-006**: Si la prueba no está en uso, MUST poder editarse completa y eliminarse, salvo que la fórmula de otra prueba la referencie: en ese caso MUST rechazarse la eliminación y el cambio de código, indicando qué pruebas la usan.
 - **FR-007**: Si la prueba está en uso, MUST poder editarse solo límites (generales y por vertido), norma, límite de detección y observación; código, nombre, tipo de cálculo, fórmula y unidades MUST mostrarse bloqueados con el mensaje de US3 Esc. 1, MUST NOT poder eliminarse y MUST revalidarse estas reglas al confirmar.
 - **FR-008**: Editar una prueba MUST NOT modificar validaciones ya hechas, resultados ya calculados ni informes emitidos; los límites nuevos se usan solo en validaciones posteriores.
-- **FR-009**: El sistema MUST permitir desactivar y reactivar una prueba, con confirmación. Si alguna prueba activa la referencia en su fórmula, la confirmación de desactivar MUST listar esas pruebas y advertir que no se podrán calcular en estudios nuevos.
+- **FR-009**: El sistema MUST permitir desactivar y reactivar una prueba, con confirmación. Si alguna prueba activa la referencia en su fórmula, la confirmación de desactivar MUST listar esas pruebas y advertir que no se podrán calcular en estudios nuevos. Si está en tipos de estudio activos, la confirmación MUST listarlos («Los estudios nuevos de estos tipos no la van a incluir») y marcar los que se quedarían sin ninguna prueba activa («Este tipo no se va a poder usar»). En ambos casos se puede confirmar igual.
 - **FR-010**: Una prueba inactiva MUST NOT ofrecerse al crear o editar tipos de estudio ni al agregar pruebas a un estudio.
 - **FR-011**: Al crear un estudio, MUST asignarse solo las pruebas activas de su tipo; si el tipo no tiene ninguna activa, la creación MUST rechazarse con un mensaje que lo explique.
 - **FR-012**: En los estudios donde una prueba inactiva ya estaba asignada, MUST seguir funcionando la carga, el cálculo, la corrección, la validación y el informe.
@@ -129,11 +139,12 @@ Como laboratorio, quiero que solo el grupo «Administradores» gestione el catá
 - **FR-014**: Cada prueba del listado MUST enlazar a su ficha de gestión en la app (en lugar de al admin de Django), y el listado MUST ofrecer «Nueva prueba».
 - **FR-015**: Solo los usuarios con la pertenencia a «Administradores» y el permiso del panel de administración MUST poder ver las pantallas y ejecutar las acciones del catálogo; el resto MUST recibir 403 sin cambios (también un superusuario fuera del grupo).
 - **FR-016**: Si la prueba cambió desde que se abrió la ficha, la confirmación MUST rechazarse con un aviso, sin pisar los cambios de otra persona.
+- **FR-016a**: Al crear una prueba desde la app MUST guardarse quién la creó y cuándo; al editarla, desactivarla o reactivarla, quién lo hizo y cuándo (solo la última modificación). La ficha MUST mostrar ambos datos («Sin registro» para las pruebas anteriores a esta historia o cargadas por importación).
 - **FR-017**: La importación por CSV (`importar_catalogo_pruebas`) MUST seguir funcionando como hoy, y el admin de Django MUST seguir disponible como respaldo.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Prueba**: Entrada del catálogo (código, nombre, tipo de cálculo, fórmula, unidades, límites generales, norma, límite de detección, observación, activa). «En uso» si está en algún tipo de estudio o estudio.
+- **Prueba**: Entrada del catálogo (código, nombre, tipo de cálculo, fórmula, unidades, límites generales, norma, límite de detección, observación, activa, creada por y fecha, modificada por última vez por y fecha). «En uso» si está en algún tipo de estudio o estudio.
 - **Límite por tipo de vertido**: Límites y norma propios de Cloacal o Canal para una prueba; reemplazan a los generales para ese vertido.
 - **Tipo de estudio** (US 5.5): Paquete de pruebas; los estudios nuevos toman solo sus pruebas activas.
 - **Validación / Informe** (US 6.4, 7.2): Guardan los límites y la evaluación del momento; no cambian al editar la prueba.
@@ -156,4 +167,4 @@ Como laboratorio, quiero que solo el grupo «Administradores» gestione el catá
 - **Hoy `activa` no se usa**: ni el armado de tipos ni «agregar prueba» filtran inactivas; esta historia agrega esos filtros.
 - **Nombre en uso**: el criterio bloquea el nombre de una prueba en uso, igual que hoy el admin y la importación.
 - **Interfaz**: diseño de SCRUM-67 y componentes de `templates/ui/`, con confirmación previa como el resto del panel de administración; ayudas en los campos que no son evidentes (US 9.1).
-- **Alcance excluido**: curvas de calibración (próximo sprint); importación masiva (sigue el comando); historial de cambios de cada prueba; reemplazo automático de fórmulas que referencian una prueba desactivada.
+- **Alcance excluido**: curvas de calibración (próximo sprint); importación masiva (sigue el comando); historial completo de cambios de cada prueba (solo se guarda la última modificación); reemplazo automático de fórmulas que referencian una prueba desactivada.
