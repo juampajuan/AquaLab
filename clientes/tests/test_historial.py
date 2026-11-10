@@ -180,7 +180,7 @@ def test_formulario_de_filtros(cliente_autenticado, cliente_existente, muestra_d
         assert etiqueta in html
     for _, texto in EstadoEstudio.choices:
         assert texto in html
-    assert 'value="2026-10-01"' in html
+    assert 'value="01/10/2026"' in html
     assert re.search(r'<option value="en_proceso"[^>]*selected', html)
 
 

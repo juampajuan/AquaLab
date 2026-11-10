@@ -105,3 +105,18 @@ document.addEventListener("focusout", (evento) => {
   ayuda.removeAttribute("data-abierta");
   ayuda.removeAttribute("data-cerrada");
 });
+
+// Fechas dd/mm/aaaa (muestras/forms.py:SelectorFecha): mientras se escribe, deja solo dígitos y
+// agrega las barras. Si se borra, no las vuelve a poner sobre lo que el usuario sacó.
+function formatearFecha(texto) {
+  const digitos = texto.replace(/\D/g, "").slice(0, 8);
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 4) return `${digitos.slice(0, 2)}/${digitos.slice(2)}`;
+  return `${digitos.slice(0, 2)}/${digitos.slice(2, 4)}/${digitos.slice(4)}`;
+}
+
+document.addEventListener("input", (evento) => {
+  const campo = evento.target.closest("[data-fecha]");
+  if (!campo || evento.inputType === "deleteContentBackward") return;
+  campo.value = formatearFecha(campo.value);
+});

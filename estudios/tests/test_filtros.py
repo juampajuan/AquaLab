@@ -121,7 +121,7 @@ def test_muestra_los_filtros(cliente_http, un_estudio_por_estado):
     assert opciones == ["Todos", *(texto for _, texto in EstadoEstudio.choices)]
     assert re.search(r'<option value=""[^>]*selected', select.group(1))
     for nombre, etiqueta in (("desde", "Desde"), ("hasta", "Hasta")):
-        assert re.search(rf'<input type="date" name="{nombre}"', html)
+        assert re.search(rf'<input type="text" name="{nombre}"[^>]*placeholder="dd/mm/aaaa"', html)
         assert re.search(rf'<label for="id_{nombre}"[^>]*>\s*{etiqueta}\s*</label>', html)
     assert re.search(r'<label for="id_estado"[^>]*>\s*Estado\s*</label>', html)
 
@@ -147,7 +147,7 @@ def test_estado_todos_no_restringe(cliente_http, un_estudio_por_estado):
         ({"desde": "31/02/2026"}, "desde", "Ingresá una fecha válida (dd/mm/aaaa)."),
         ({"hasta": "no-es-fecha"}, "hasta", "Ingresá una fecha válida (dd/mm/aaaa)."),
         (
-            {"desde": "2026-11-10", "hasta": "2026-11-01"},
+            {"desde": "10/11/2026", "hasta": "01/11/2026"},
             "desde",
             "La fecha desde no puede ser posterior a la fecha hasta.",
         ),
@@ -228,7 +228,7 @@ def test_ayuda_en_fechas(cliente_http):
             r"El día indicado se incluye\.",
             html,
         )
-        control = re.search(rf'<input type="date" name="{nombre}"[^>]*>', html).group()
+        control = re.search(rf'<input type="text" name="{nombre}"[^>]*>', html).group()
         assert re.search(rf'aria-describedby="[^"]*{ayuda}', control)
 
 
@@ -299,7 +299,7 @@ def test_paginacion_conserva_filtros(cliente_http, muestra, tipo, empleado):
     pagina = resp.content.decode()
     assert 'value="Muestra test"' in pagina
     assert re.search(r'<option value="en_proceso"[^>]*selected', pagina)
-    assert 'value="2026-11-01"' in pagina and 'value="2026-11-30"' in pagina
+    assert 'value="01/11/2026"' in pagina and 'value="30/11/2026"' in pagina
 
     # Página inexistente: se muestra la última.
     resp = buscar(cliente_http, **filtros, page="99")

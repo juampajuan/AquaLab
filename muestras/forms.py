@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 from django import forms
@@ -25,11 +26,41 @@ class ClienteChoiceField(forms.ModelChoiceField):
         return f"{obj.nombre_completo} · {obj.tipo_documento} {obj.numero_documento}"
 
 
-class SelectorFecha(forms.DateInput):
-    input_type = "date"
+# Se acepta dd/mm/aaaa (lo que escribe el usuario) y aaaa-mm-dd (enlaces y sesión).
+FORMATOS_FECHA = ["%d/%m/%Y", "%Y-%m-%d"]
 
-    def __init__(self):
-        super().__init__(format="%Y-%m-%d")
+
+class SelectorFecha(forms.DateInput):
+    """Fecha como texto dd/mm/aaaa, igual en cualquier navegador.
+
+    El selector nativo (`type="date"`) muestra el formato del idioma del navegador: en uno en
+    inglés pide mm/dd/aaaa y «12/04» se lee como 4 de diciembre. aqualab.js agrega las barras
+    mientras se escribe (`data-fecha`).
+    """
+
+    input_type = "text"
+
+    def __init__(self, attrs=None):
+        super().__init__(
+            format="%d/%m/%Y",
+            attrs={
+                "placeholder": "dd/mm/aaaa",
+                "inputmode": "numeric",
+                "maxlength": "10",
+                "autocomplete": "off",
+                "data-fecha": "",
+                **(attrs or {}),
+            },
+        )
+
+    def format_value(self, value):
+        # Un valor aaaa-mm-dd (de un enlace o de la sesión) se muestra como dd/mm/aaaa.
+        if isinstance(value, str):
+            try:
+                value = datetime.date.fromisoformat(value)
+            except ValueError:
+                return value
+        return super().format_value(value)
 
 
 class RegistroMuestraForm(forms.Form):
@@ -62,12 +93,14 @@ class RegistroMuestraForm(forms.Form):
     )
     fecha_muestreo = forms.DateField(
         label="Fecha de muestreo",
+        input_formats=FORMATOS_FECHA,
         widget=SelectorFecha(),
         initial=timezone.localdate,
         help_text="Día en que se tomó la muestra.",
     )
     fecha_ingreso = forms.DateField(
         label="Fecha de ingreso",
+        input_formats=FORMATOS_FECHA,
         widget=SelectorFecha(),
         initial=timezone.localdate,
         help_text="Día en que la muestra llegó al laboratorio.",
