@@ -587,7 +587,7 @@ def test_detalle_muestra_evaluacion(
     assert f">{evaluacion}</span>" in html
     assert limite in html
     if evaluacion == "Fuera de norma":
-        assert 'data-estado="danger"' in html
+        assert "text-peligro" in html  # SCRUM-82: texto rojo en lugar de etiqueta
 
 
 @pytest.mark.parametrize(

@@ -138,7 +138,7 @@
                 </td>
                 <td>
                   {% if asignacion.resultado %}
-                    <span class="numeros block font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
+                    <span class="numeros block font-semibold {% if asignacion.evaluacion == 'fuera_de_norma' %}text-peligro{% else %}text-tinta{% endif %}">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
                     {% if asignacion.resultado.formula %}
                       <span class="block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
                     {% endif %}
@@ -151,13 +151,23 @@
                 </td>
                 <td>
                   {% if asignacion.evaluacion %}
-                    {# El límite y si se cumple; sin límite en el catálogo, solo «Sin límite comparable». #}
-                    {% if asignacion.limite_texto %}
+                    {# Solo se resalta lo que falla: «Cumple» es un ✓ discreto (SCRUM-82). #}
+                    {% if asignacion.evaluacion == 'cumple' %}
+                      <span class="flex items-center gap-1.5 font-semibold text-tinta" title="Cumple">
+                        {{ asignacion.limite_texto }}
+                        {% include "ui/icono.html" with nombre="check" clase="size-4 text-exito" %}<span class="sr-only">Cumple</span>
+                      </span>
+                    {% elif asignacion.evaluacion == 'fuera_de_norma' %}
                       <span class="block font-semibold text-tinta">{{ asignacion.limite_texto }}</span>
+                      <span class="mt-0.5 flex items-center gap-1 text-xs font-semibold text-peligro">
+                        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-3.5" %}<span>Fuera de norma</span>
+                      </span>
+                    {% else %}
+                      {% if asignacion.limite_texto %}<span class="block font-semibold text-tinta">{{ asignacion.limite_texto }}</span>{% endif %}
+                      <span class="block text-xs text-tinta-suave">Sin límite comparable</span>
                     {% endif %}
-                    <span class="{% if asignacion.limite_texto %}mt-1 {% endif %}block">{% include "ui/estado.html" with estado=asignacion.evaluacion.label tipo=asignacion.evaluacion_tipo %}</span>
                     {% if asignacion.limite_texto %}
-                      {% if asignacion.limite_norma %}<span class="mt-1 block text-xs text-tinta-suave">{{ asignacion.limite_norma }}</span>{% endif %}
+                      {% if asignacion.limite_norma %}<span class="mt-0.5 block text-xs text-tinta-suave">{{ asignacion.limite_norma }}</span>{% endif %}
                       {% if asignacion.limite_origen %}<span class="block text-xs text-tinta-suave">Vertido {{ asignacion.limite_origen|lower }}</span>{% endif %}
                     {% endif %}
                   {% else %}
