@@ -15,7 +15,7 @@ from estudios.forms import BuscarEstudioForm, ElegirOrigenForm
 from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
 from estudios.views import RESULTADOS_POR_PAGINA
 
-from . import envios, pdf, servicios, tablero
+from . import calidad, envios, pdf, servicios, tablero
 from .busqueda import informes_emitidos
 from .contenido import armar_contenido
 from .forms import BuscarInformeForm, FirmaForm
@@ -247,6 +247,8 @@ def mi_firma(request):
 def dashboard(request):
     """Indicadores del laboratorio (US 8.3): solo con el permiso «Puede ver el dashboard»."""
     contexto = tablero.armar(request.GET.get("periodo", "este_mes"))
+    contexto["calidad"] = calidad.armar(contexto["periodo"])  # sección «Calidad» (US 8.4)
+    contexto["datos_graficos"].update(contexto["calidad"]["graficos"])
     contexto["form_origen"] = ElegirOrigenForm()  # comparación histórica (US 8.1)
     pendientes = desvios.pendientes()  # desvíos sin revisar (US 8.2), no dependen del período
     contexto["desvios_cantidad"] = len(pendientes)

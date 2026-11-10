@@ -66,7 +66,7 @@ CINC,Zinc (Zn),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
 COBALTO,Cobalto (Co),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
 VANADIO,Vanadio (V),mg/l,mg/l,DIRECTO,,no,A.A. llama aire acetileno,,,0.01,si,
 COL-TOT,Coliformes Totales,UFC/ 100 ml,UFC/100 ml,DIRECTO,,no,SM 9221 B y C,,3,1.0,si,
-COL-FEC,Coliformes Fecales,UFC/ 100 ml,UFC/100 ml,DIRECTO,,no,9222 D Std. Meth,,Ausencia,1.0,si,
+COL-FEC,Coliformes Fecales,UFC/ 100 ml,UFC/100 ml,DIRECTO,,no,9222 D Std. Meth,,0,1.0,si,Límite cambiado: en el sistema original decía «Ausencia»; con conteos enteros de colonias equivale a máx. 0.
 ECOLI,E. Coli,A/P,A/P,DIRECTO,,no,SM 9221 B/F,,Ausente,Ausente,si,
 PSEUDO,Pseudomona aeruginosa,A/P,A/P,DIRECTO,,no,SM 9213 E,,Ausente,Ausente,si,
 MESOFILAS,Bacterias Aerobias Mesófilas Totales,UFC/ 100 ml,UFC/100 ml,DIRECTO,,no,SM 9215 B,,500.0,1.0,si,
