@@ -114,6 +114,7 @@
               <th>Prueba</th>
               <th>Medición</th>
               <th>Resultado</th>
+              <th>Límite</th>
               <th class="text-right">Estado</th>
               {% if estudio.admite_modificaciones %}<th class="text-right">Acción</th>{% endif %}
             </tr>
@@ -125,26 +126,27 @@
                 <td>{{ asignacion.prueba.nombre }}</td>
                 <td>
                   {% if asignacion.medicion %}
-                    <span class="numeros font-semibold text-tinta">{{ asignacion.medicion.valor_ingresado|valor_medicion:asignacion.medicion.unidad }}{% if not asignacion.medicion.unidad|es_presencia %} {{ asignacion.medicion.unidad|unidad }}{% endif %}</span>
-                    <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.cargada_por.get_full_name|default:asignacion.medicion.cargada_por.email }} · {{ asignacion.medicion.fecha_carga|date:"d/m/Y H:i" }}</span>
+                    <span class="numeros block font-semibold text-tinta">{{ asignacion.medicion.valor_ingresado|valor_medicion:asignacion.medicion.unidad }}{% if not asignacion.medicion.unidad|es_presencia %} {{ asignacion.medicion.unidad|unidad }}{% endif %}</span>
+                    <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.cargada_por.get_full_name|default:asignacion.medicion.cargada_por.email }}</span>
+                    <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.fecha_carga|date:"d/m/Y H:i" }}</span>
                     {% if asignacion.medicion.corregida_por %}
-                      <span class="block text-xs text-tinta-suave">Corregida por {{ asignacion.medicion.corregida_por.get_full_name|default:asignacion.medicion.corregida_por.email }} · {{ asignacion.medicion.fecha_correccion|date:"d/m/Y H:i" }}</span>
+                      <span class="mt-1 block text-xs text-tinta-suave">Corregida por {{ asignacion.medicion.corregida_por.get_full_name|default:asignacion.medicion.corregida_por.email }}</span>
+                      <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.fecha_correccion|date:"d/m/Y H:i" }}</span>
                     {% endif %}
                   {% elif asignacion.prueba.es_calculada %}
-                    <span class="text-xs text-tinta-suave">Se calcula</span>
+                    <span class="block text-xs text-tinta-suave">Se calcula</span>
                   {% else %}
-                    <span class="text-tinta-suave">—</span>
+                    <span class="block text-tinta-suave">—</span>
+                  {% endif %}
+                  {% if asignacion.resultado.formula %}
+                    <span class="mt-1 block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
                   {% endif %}
                 </td>
                 <td>
                   {% if asignacion.resultado %}
-                    <span class="numeros font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
-                    {% if asignacion.resultado.formula %}
-                      <span class="block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
-                    {% endif %}
-                    <span class="mt-1 block">{% include "estudios/evaluacion.html" %}</span>
-                    {% if asignacion.evaluacion and asignacion.validacion and asignacion.estado == "completada" %}
-                      <span class="block text-xs text-tinta-suave">Validada por {{ asignacion.validacion.validada_por.get_full_name|default:asignacion.validacion.validada_por.email }} · {{ asignacion.validacion.fecha_validacion|date:"d/m/Y H:i" }}</span>
+                    <span class="numeros block font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
+                    {% if asignacion.evaluacion %}
+                      <span class="mt-1 block">{% include "ui/estado.html" with estado=asignacion.evaluacion.label tipo=asignacion.evaluacion_tipo %}</span>
                     {% endif %}
                     {% if asignacion.deteccion %}
                       {% include "estudios/desvio.html" with deteccion=asignacion.deteccion validacion=asignacion.validacion_desvio codigo=asignacion.prueba.codigo %}
@@ -153,7 +155,26 @@
                     <span class="text-xs text-tinta-suave">{{ asignacion.motivo_sin_resultado }}</span>
                   {% endif %}
                 </td>
-                <td class="text-right">{% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}</td>
+                <td>
+                  {% if asignacion.evaluacion %}
+                    {% if asignacion.limite_texto %}
+                      <span class="block font-semibold text-tinta">{{ asignacion.limite_texto }}</span>
+                      {% if asignacion.limite_norma %}<span class="block text-xs text-tinta-suave">{{ asignacion.limite_norma }}</span>{% endif %}
+                      {% if asignacion.limite_origen %}<span class="block text-xs text-tinta-suave">Vertido {{ asignacion.limite_origen|lower }}</span>{% endif %}
+                    {% else %}
+                      <span class="block text-xs text-tinta-suave">Sin límite en el catálogo</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="block text-tinta-suave">—</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  {% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}
+                  {% if asignacion.evaluacion and asignacion.validacion and asignacion.estado == "completada" %}
+                    <span class="mt-1 block text-xs text-tinta-suave">Validada por {{ asignacion.validacion.validada_por.get_full_name|default:asignacion.validacion.validada_por.email }}</span>
+                    <span class="block text-xs text-tinta-suave">{{ asignacion.validacion.fecha_validacion|date:"d/m/Y H:i" }}</span>
+                  {% endif %}
+                </td>
                 {# «Acción» solo existe mientras se pueden quitar pruebas (estudio pendiente de análisis). #}
                 {% if estudio.admite_modificaciones %}
                   <td class="text-right">

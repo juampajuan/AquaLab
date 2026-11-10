@@ -568,11 +568,11 @@ def fila(html, codigo):
 @pytest.mark.parametrize(
     "codigo,valor,evaluacion,limite",
     [
-        ("PH", "7.4", "Cumple", "Límite: 6.4 a 8.5"),
-        ("CL-", "40", "Fuera de norma", "Límite: máx. 350.0"),  # x*10 → 400
-        ("ECOLI", "1", "Fuera de norma", "Límite: Ausente"),
-        ("SS10", "0", "Cumple", "Límite: Ausente"),
-        ("OLOR", "2", "Sin límite comparable", "Límite: máx. SOE"),
+        ("PH", "7.4", "Cumple", "6.4 a 8.5"),
+        ("CL-", "40", "Fuera de norma", "máx. 350.0"),  # x*10 → 400
+        ("ECOLI", "1", "Fuera de norma", "Ausente"),
+        ("SS10", "0", "Cumple", "Ausente"),
+        ("OLOR", "2", "Sin límite comparable", "máx. SOE"),
         ("CL2-LIB", "0.3", "Sin límite comparable", "Sin límite en el catálogo"),
     ],
 )
@@ -593,9 +593,9 @@ def test_detalle_muestra_evaluacion(
 @pytest.mark.parametrize(
     "vertido,codigo,valor,evaluacion,texto",
     [
-        ("cloacal", "PH", "7", "Fuera de norma", "Límite: 7.01 a 10.0 · (AGOSBA) 389/98 (Cloacal)"),
-        ("agua", "PH", "7", "Cumple", "Límite: 6.4 a 8.5"),
-        ("cloacal", "CL2-LIB", "0.3", "Sin límite comparable", "Límite: máx. NE"),
+        ("cloacal", "PH", "7", "Fuera de norma", "7.01 a 10.0"),
+        ("agua", "PH", "7", "Cumple", "6.4 a 8.5"),
+        ("cloacal", "CL2-LIB", "0.3", "Sin límite comparable", "máx. NE"),
     ],
 )
 def test_detalle_usa_limites_del_vertido(
@@ -621,5 +621,5 @@ def test_detalle_validada_usa_lo_guardado(cliente_http, estudio_de, empleado, bi
     Prueba.objects.filter(codigo="CL-").update(limite_max="250")
     html = fila(html_detalle(cliente_http, estudio), "CL-")
     assert ">Cumple</span>" in html
-    assert "Límite: máx. 350.0" in html
+    assert "máx. 350.0" in html
     assert "Validada por " in html
