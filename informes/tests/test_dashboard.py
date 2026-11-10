@@ -404,10 +404,25 @@ def test_vertidos_en_pantalla(cliente_bioquimico, evaluadas):
 
     html = html_de(cliente_bioquimico.get(URL))
     vertidos = bloque(seccion_calidad(html), "data-vertidos")
-    assert "Cumplimiento por tipo de vertido" in vertidos
+    assert "Pruebas validadas por tipo de vertido" in vertidos
+    assert (
+        "Cada prueba validada en el período suma una: una muestra con 7 pruebas aporta 7."
+        in vertidos
+    )
+    assert 'aria-label="Pruebas que cumplen y fuera de norma por tipo de vertido"' in vertidos
     assert '<canvas id="grafico-calidad-vertidos"' in vertidos
-    for encabezado in ("Tipo", "Evaluados", "Cumple", "Fuera de norma", "Cumplimiento"):
+    for encabezado in (
+        "Tipo",
+        "Pruebas evaluadas",
+        "Pruebas que cumplen",
+        "Pruebas fuera de norma",
+        "Cumplimiento",
+    ):
         assert f"<th>{encabezado}</th>" in vertidos
+    assert "<th>Pruebas validadas</th>" not in vertidos
+    nota = vertidos.split("data-nota-vertidos")[1]
+    assert "No se cuentan las pruebas sin límite para comparar." in nota
+    assert vertidos.index("</table>") < vertidos.index("data-nota-vertidos")
     filas = re.findall(r"<tr data-vertido=\"(\w+)\">(.*?)</tr>", vertidos, re.S)
     assert [valor for valor, _ in filas] == ["agua", "cloacal", "canal"]
     assert "90,0 %" in filas[0][1]

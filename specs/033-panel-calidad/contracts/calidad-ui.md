@@ -25,10 +25,13 @@ Entre «Actividad semanal» y «Comparación histórica». Parcial `informes/cal
    aria-label="Porcentaje de incumplimiento por prueba">` + `<details>` «Ver datos»: tabla Prueba
    (código · nombre) / Incumplimiento («25,0 % (2 de 8)»). «Y N pruebas más» si `restantes`. Vacío:
    «Ninguna prueba con al menos 5 resultados evaluados tuvo incumplimientos en el período.»
-4. **Cumplimiento por tipo de vertido** (`data-vertidos`): `<canvas id="grafico-calidad-vertidos"
-   role="img" aria-label="Resultados que cumplen y fuera de norma por tipo de vertido">` + tabla
-   Tipo / Evaluados / Cumple / Fuera de norma / Cumplimiento (siempre Agua, Cloacal, Canal;
-   «Sin resultados» con 0).
+4. **Pruebas validadas por tipo de vertido** (`data-vertidos`): subtítulo «Cada prueba validada en
+   el período suma una: una muestra con 7 pruebas aporta 7.» `<canvas id="grafico-calidad-vertidos"
+   role="img" aria-label="Pruebas que cumplen y fuera de norma por tipo de vertido">` (leyenda
+   «Pruebas que cumplen» y «Pruebas fuera de norma») + tabla Tipo / Pruebas evaluadas / Pruebas que
+   cumplen / Pruebas fuera de norma / Cumplimiento (siempre Agua, Cloacal, Canal; «Sin resultados»
+   con 0) y, debajo de la tabla (fuera de «Ver datos», siempre visible), la nota «No se cuentan las
+   pruebas sin límite para comparar.» (`data-nota-vertidos`).
 5. **Clientes con más incumplimientos** (`data-ranking="clientes"`) y **Orígenes con más
    incumplimientos** (`data-ranking="origenes"`), lado a lado: tabla Cliente (u Origen · Cliente) /
    Fuera de norma («3 de 12 · 25,0 %»). Enlace en el nombre: `clientes:historial` /

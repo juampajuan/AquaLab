@@ -28,8 +28,8 @@ node --test usuarios/tests/js config/tests/js estudios/tests/js
 4. Pruebas que más fallan: al menos 3 pruebas, alguna con fuera de norma; ninguna fila con menos
    de 5 evaluados; cada fila «xx,x % (a de b)»;
    orden por porcentaje. Abrir «Ver datos»: mismos valores que el gráfico.
-5. Cumplimiento por tipo de vertido: Agua, Cloacal y Canal, con «Sin resultados» en los que no
-   tengan.
+5. Pruebas validadas por tipo de vertido: Agua, Cloacal y Canal, con «Sin resultados» en los que
+   no tengan; se cuentan pruebas, no muestras (lo aclara el subtítulo, la tabla y la leyenda).
 6. Clientes y orígenes: aparecen «Pozo 2» (Cloruro 415) y «Tanque domiciliario» (E. coli
    Presente). El enlace del cliente abre su historial; el del origen, la comparación histórica.
 7. Desactivar un cliente con incumplimientos en el admin → recargar: aparece «Inactivo» sin enlace
