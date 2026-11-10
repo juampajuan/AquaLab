@@ -260,3 +260,130 @@ def test_seccion_desvios_sin_revisar(cliente_bioquimico, estudio_en_origen, clie
     cantidad = len(desvios.pendientes())
     assert cantidad == 1
     assert f"{cantidad} pendiente<" in html
+
+
+# --- Calidad (US 8.4) --------------------------------------------------------------------------
+
+
+def seccion_calidad(html):
+    seccion = re.search(r"<section[^>]*data-calidad.*?</section>", html, re.S)
+    assert seccion, "falta la sección «Calidad»"
+    return seccion.group(0)
+
+
+def bloque(html, atributo):
+    """El elemento que lleva `atributo` y lo que contiene hasta su cierre (div)."""
+    inicio = html.index(atributo)
+    resto = html[inicio:]
+    profundidad, posicion = 0, 0
+    for marca in re.finditer(r"<div\b|</div>", resto):
+        profundidad += 1 if marca.group(0) == "<div" else -1
+        if profundidad < 0:
+            posicion = marca.end()
+            break
+    return resto[:posicion] if posicion else resto
+
+
+def test_indicador_calidad_en_pantalla(cliente_bioquimico, evaluadas):
+    evaluadas({"PH": (0, 10), "TURBIDEZ": (0, 10), "COLOR": (0, 10), "CL-": (4, 10)})
+    evaluadas({}, sin_limite={"COND": 3})
+    evaluadas({"CL-": (1, 1)}, momento=timezone.now() - dt.timedelta(days=75))
+
+    seccion = seccion_calidad(html_de(cliente_bioquimico.get(URL)))
+
+    assert seccion.index('aria-labelledby="titulo-calidad"') < seccion.index("Calidad")
+    assert 'id="ayuda-calidad"' in seccion
+    indicador = bloque(seccion, 'data-indicador="calidad"')
+    assert "10,0 % fuera de norma" in indicador
+    assert "4 de 40 resultados" in indicador
+    assert re.search(r'data-tono="(exito|peligro|neutro)"', indicador)
+    assert "Sin datos previos" in indicador
+    assert "3 resultados sin límite comparable, fuera del cálculo" in bloque(
+        seccion, "data-sin-limite"
+    )
+
+    seccion = seccion_calidad(html_de(cliente_bioquimico.get(URL + "?periodo=ultimos_6")))
+    indicador = bloque(seccion, 'data-indicador="calidad"')
+    assert "12,2 % fuera de norma" in indicador
+    assert "5 de 41 resultados" in indicador
+
+
+def test_seccion_calidad_ubicacion(cliente_bioquimico):
+    html = html_de(cliente_bioquimico.get(URL))
+    assert (
+        html.index('aria-labelledby="titulo-actividad"')
+        < html.index("data-calidad")
+        < html.index("data-comparacion-historica")
+    )
+
+
+def test_seccion_sin_datos(cliente_bioquimico):
+    respuesta = cliente_bioquimico.get(URL)
+    assert respuesta.status_code == 200
+    seccion = seccion_calidad(html_de(respuesta))
+    assert "Sin resultados validados en el período" in seccion
+    assert 'data-indicador="calidad"' in seccion
+    assert "grafico-calidad-pruebas" not in seccion
+
+
+def test_ranking_en_pantalla(cliente_bioquimico, evaluadas):
+    import json
+
+    evaluadas({"CL-": (2, 10), "ECOLI": (2, 8), "PH": (3, 4)})
+
+    html = html_de(cliente_bioquimico.get(URL))
+    seccion = seccion_calidad(html)
+    ranking = bloque(seccion, 'data-ranking="pruebas"')
+    assert "Solo pruebas con al menos 5 resultados evaluados" in ranking
+    assert '<canvas id="grafico-calidad-pruebas"' in ranking
+    assert re.search(r"<details[^>]*>\s*<summary[^>]*>Ver datos</summary>", ranking)
+    assert "ECOLI · E. Coli" in ranking
+    assert "25,0 % (2 de 8)" in ranking
+    assert "20,0 % (2 de 10)" in ranking
+    assert ranking.index("25,0 % (2 de 8)") < ranking.index("20,0 % (2 de 10)")
+    assert "PH · pH" not in ranking
+    assert "pruebas más" not in ranking
+    datos = re.search(
+        r'<script id="datos-dashboard" type="application/json">(.*?)</script>', html, re.S
+    )
+    graficos = json.loads(datos.group(1))
+    assert graficos["calidad_pruebas"]["porcentajes"] == ["25.0", "20.0"]
+    assert "respuesta" in graficos and "actividad" in graficos
+
+
+def test_ranking_restantes_en_pantalla(cliente_bioquimico, evaluadas):
+    codigos = (
+        "AG",
+        "AL",
+        "BO",
+        "CA",
+        "CADMIO",
+        "CL-",
+        "COBRE",
+        "COLOR",
+        "COND",
+        "IAC",
+        "PH",
+        "TURBIDEZ",
+    )
+    evaluadas(dict.fromkeys(codigos, (1, 5)))
+
+    ranking = bloque(
+        seccion_calidad(html_de(cliente_bioquimico.get(URL))), 'data-ranking="pruebas"'
+    )
+
+    assert "Y 2 pruebas más" in ranking
+
+
+def test_ranking_vacio_en_pantalla(cliente_bioquimico, evaluadas):
+    evaluadas({"CL-": (0, 10), "PH": (3, 4)})
+
+    ranking = bloque(
+        seccion_calidad(html_de(cliente_bioquimico.get(URL))), 'data-ranking="pruebas"'
+    )
+
+    assert (
+        "Ninguna prueba con al menos 5 resultados evaluados tuvo incumplimientos en el período."
+        in ranking
+    )
+    assert "grafico-calidad-pruebas" not in ranking

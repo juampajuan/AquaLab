@@ -82,18 +82,18 @@ migraciones ni permisos nuevos. Dos tandas:
 
 ## Phase 2: Foundational (Tanda 1, bloquea todas las historias)
 
-- [ ] T002 Tests base en `informes/tests/test_calidad.py` (nuevo; importa las fixtures de
+- [X] T002 Tests base en `informes/tests/test_calidad.py` (nuevo; importa las fixtures de
   `estudios/tests/conftest.py` como `informes/tests/conftest.py`): `test_porcentaje`
   (parametrizado: 4 de 40 → `Decimal("10.0")`; 1 de 3 → `33.3`; 2 de 3 → `66.7`; 1 de 8 → `12.5`;
   1 de 16 → `6.3` (mitad hacia arriba); 0 de 5 → `0.0`; 0 de 0 → `None`) y `test_conteo_texto`
   («20,0 % (2 de 10)»; sin evaluados «Sin resultados»).
-- [ ] T003 Crear `informes/calidad.py` con docstring de módulo (US 8.4, única fuente de la sección
+- [X] T003 Crear `informes/calidad.py` con docstring de módulo (US 8.4, única fuente de la sección
   «Calidad», solo lectura, ver specs/033-panel-calidad/), las constantes `MINIMO_EVALUADOS_RANKING
   = 5` y `TOPE_LISTA = 10`, `porcentaje(parte, total)`, el dataclass `Conteo(fuera, evaluados)` con
   propiedades `porcentaje`, `fraccion` (exacta, para ordenar) y `texto` (data-model.md),
   `Lista(filas, restantes)` y `vigentes()` = `Validacion.objects.filter(anulada=False).annotate(
   dia=fecha_local("fecha_validacion"))`. Hace pasar T002.
-- [ ] T004 Enganche en el dashboard: `calidad.armar(p)` (por ahora devuelve `{"minimo_ranking":
+- [X] T004 Enganche en el dashboard: `calidad.armar(p)` (por ahora devuelve `{"minimo_ranking":
   MINIMO_EVALUADOS_RANKING, "graficos": {}}`); en `informes/views.py:dashboard`, después de
   `tablero.armar`, `contexto["calidad"] = calidad.armar(contexto["periodo"])` y
   `contexto["datos_graficos"].update(contexto["calidad"]["graficos"])`; parcial nuevo
@@ -118,7 +118,7 @@ del selector cambia la sección.
 
 ### Tests (escribir primero; deben fallar)
 
-- [ ] T005 [P] [US1] En `informes/tests/test_calidad.py`: `test_indicador_general` (36 «cumple» y 4
+- [X] T005 [P] [US1] En `informes/tests/test_calidad.py`: `test_indicador_general` (36 «cumple» y 4
   «fuera de norma» en el período → `actual.porcentaje == Decimal("10.0")`, `fuera == 4`,
   `evaluados == 40`; 3 `sin_limite` → `sin_limite == 3` y fuera del total);
   `test_cuenta_solo_validaciones_vigentes` (una anulada no cuenta; una prueba corregida y revalidada
@@ -129,11 +129,11 @@ del selector cambia la sección.
   `p.inicio..p.fin` no cuenta; una en el período anterior cuenta en `anterior`);
   `test_zona_horaria` (validación a las 23:30 hora del laboratorio del último día del período cuenta
   en el período).
-- [ ] T006 [P] [US1] En `informes/tests/test_calidad.py`: `test_variacion_del_porcentaje`
+- [X] T006 [P] [US1] En `informes/tests/test_calidad.py`: `test_variacion_del_porcentaje`
   (parametrizado: 10,0 vs 5,0 → «▲ +5,0 p. p.», tono `peligro`; 5,0 vs 10,0 → «▼ −5,0 p. p.»,
   `exito`; iguales → «= 0,0 p. p.», `neutro`; anterior sin evaluados → `variacion is None` y
   `anterior.evaluados == 0`; actual sin evaluados → `variacion is None`).
-- [ ] T007 [P] [US1] En `informes/tests/test_dashboard.py`: `test_indicador_calidad_en_pantalla`
+- [X] T007 [P] [US1] En `informes/tests/test_dashboard.py`: `test_indicador_calidad_en_pantalla`
   (`data-indicador="calidad"` con «10,0 % fuera de norma», «4 de 40 resultados», `data-tono`,
   `data-sin-limite` con «3 resultados sin límite comparable, fuera del cálculo»; con
   `?periodo=ultimos_6` usa ese período) y `test_seccion_sin_datos` (base vacía: «Sin resultados
@@ -141,14 +141,14 @@ del selector cambia la sección.
 
 ### Implementation
 
-- [ ] T008 [US1] En `informes/calidad.py`: `IndicadorCalidad(actual, anterior, sin_limite,
+- [X] T008 [US1] En `informes/calidad.py`: `IndicadorCalidad(actual, anterior, sin_limite,
   variacion)` e `indicador(p)` con **un** `aggregate` sobre `vigentes()` con `Count("pk",
   filter=Q(...))` para fuera/evaluados del período y del anterior y sin límite del período;
   `VariacionCalidad(tono, texto)` a partir de `tablero.variacion(actual.porcentaje,
   anterior.porcentaje, favorable_si_sube=False)` con texto `f"{v.simbolo} {con_signo(v.diferencia)}
   p. p."` (diferencia con un decimal y coma; usar `tablero.con_signo`); `None` si falta alguno de
   los porcentajes. `armar(p)` agrega `"indicador"`. Hace pasar T005–T006.
-- [ ] T009 [US1] En `informes/templates/informes/calidad.html`: bloque del indicador
+- [X] T009 [US1] En `informes/templates/informes/calidad.html`: bloque del indicador
   (`contracts/calidad-ui.md` §2) con `informes/variacion.html` para la variación; «Sin datos previos»
   cuando el anterior no tiene evaluados; «Sin resultados validados en el período» con
   `ui/estado_vacio.html` cuando el actual no tiene evaluados (y el resto de la sección con el mismo
@@ -168,17 +168,17 @@ E. coli, Cloruro (la de 4 evaluados no aparece), con su gráfico y tabla.
 
 ### Tests (escribir primero; deben fallar)
 
-- [ ] T010 [P] [US2] En `informes/tests/test_calidad.py`: `test_ranking_de_pruebas` (parametrizado
+- [X] T010 [P] [US2] En `informes/tests/test_calidad.py`: `test_ranking_de_pruebas` (parametrizado
   o en casos: E. coli 2 de 8 antes que Cloruro 2 de 10, con `texto` «25,0 % (2 de 8)» y «20,0 %
   (2 de 10)»; 3 de 4 no entra y 3 de 5 sí; 0 de 10 no entra; mismo porcentaje → más fuera de norma
   primero (2 de 10 antes que 1 de 5), luego por código; 12 pruebas que cumplen la regla → 10 filas y
   `restantes == 2`; 2 de 6 y 5 de 15 (misma fracción) → desempata por fuera de norma: 5 de 15
   primero).
-- [ ] T011 [P] [US2] En `informes/tests/test_calidad.py`: `test_minimo_definido_en_un_solo_lugar`
+- [X] T011 [P] [US2] En `informes/tests/test_calidad.py`: `test_minimo_definido_en_un_solo_lugar`
   (`calidad.MINIMO_EVALUADOS_RANKING == 5`; con `monkeypatch.setattr` a 3, una prueba 2 de 3 entra;
   el texto «al menos 5» no está escrito en `informes/templates/informes/calidad.html` y ningún otro
   `.py` de `informes/` ni `estudios/` define `MINIMO_EVALUADOS_RANKING`).
-- [ ] T012 [P] [US2] En `informes/tests/test_dashboard.py`: `test_ranking_en_pantalla`
+- [X] T012 [P] [US2] En `informes/tests/test_dashboard.py`: `test_ranking_en_pantalla`
   (`data-ranking="pruebas"` con «Solo pruebas con al menos 5 resultados evaluados», fila «25,0 %
   (2 de 8)», `<canvas id="grafico-calidad-pruebas"`, tabla en `<details>` «Ver datos», «Y 2 pruebas
   más» cuando corresponde; `json_script` `datos-dashboard` con `calidad_pruebas.porcentajes` como
@@ -187,7 +187,7 @@ E. coli, Cloruro (la de 4 evaluados no aparece), con su gráfico y tabla.
 
 ### Implementation
 
-- [ ] T013 [US2] En `informes/calidad.py`: `FilaPrueba(codigo, nombre, conteo)` y `pruebas(p)`:
+- [X] T013 [US2] En `informes/calidad.py`: `FilaPrueba(codigo, nombre, conteo)` y `pruebas(p)`:
   una consulta `vigentes().filter(dia__range=(p.inicio, p.fin), evaluacion__in=(CUMPLE,
   FUERA_DE_NORMA)).values("asignacion__prueba", "asignacion__prueba__codigo",
   "asignacion__prueba__nombre").annotate(fuera=..., evaluados=...).filter(evaluados__gte=
@@ -195,18 +195,18 @@ E. coli, Cloruro (la de 4 evaluados no aparece), con su gráfico y tabla.
   codigo)`; `Lista(filas[:TOPE_LISTA], max(0, len - TOPE_LISTA))`. `armar` agrega `"pruebas"` y
   `graficos["calidad_pruebas"] = {"etiquetas": ["CODIGO · Nombre", ...], "porcentajes":
   [str(porcentaje), ...]}`. Hace pasar T010–T011.
-- [ ] T014 [US2] En `informes/templates/informes/calidad.html`: tarjeta «Pruebas que más fallan»
+- [X] T014 [US2] En `informes/templates/informes/calidad.html`: tarjeta «Pruebas que más fallan»
   (`contracts/calidad-ui.md` §3) en una grilla `xl:grid-cols-2` (la otra columna queda para US3),
   con canvas, `<details>` «Ver datos» (tabla Prueba / Incumplimiento), «Y N pruebas más» y
   `ui/estado_vacio.html` con el texto de vacío (que usa `{{ calidad.minimo_ranking }}`).
-- [ ] T015 [US2] En `informes/static/informes/dashboard.js`: si existe `grafico-calidad-pruebas`,
+- [X] T015 [US2] En `informes/static/informes/dashboard.js`: si existe `grafico-calidad-pruebas`,
   barras horizontales (`indexAxis: "y"`) con `datos.calidad_pruebas`, porcentajes con `Number(...)`,
   color `--color-peligro` (respaldo `#dc2626`), eje X 0–100 con título «% fuera de norma», sin
   leyenda. Si `datos.calidad_pruebas` no existe, no hace nada. Hace pasar T012.
 
 ### Cierre de la tanda 1
 
-- [ ] T016 `docker compose exec web pytest informes estudios` y
+- [X] T016 `docker compose exec web pytest informes estudios` y
   `node --test usuarios/tests/js config/tests/js estudios/tests/js` en verde.
 - [ ] T017 `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .`
   sin errores. Commit de la tanda 1.

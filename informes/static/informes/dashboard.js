@@ -1,4 +1,4 @@
-// Gráficos del dashboard (US 8.3) con Chart.js local (static/vendor/chart.umd.min.js).
+// Gráficos del dashboard (US 8.3 y 8.4) con Chart.js local (static/vendor/chart.umd.min.js).
 // Lee los datos del json_script "datos-dashboard". Sin Chart.js (o sin JavaScript) quedan las
 // tablas «Ver datos», que muestran lo mismo.
 (function () {
@@ -64,6 +64,33 @@
         options: {
           maintainAspectRatio: false,
           scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+        },
+      });
+    }
+
+    // Calidad (US 8.4): pruebas que más fallan, en % fuera de norma.
+    var calidadPruebas = document.getElementById("grafico-calidad-pruebas");
+    if (calidadPruebas && datos.calidad_pruebas) {
+      new window.Chart(calidadPruebas, {
+        type: "bar",
+        data: {
+          labels: datos.calidad_pruebas.etiquetas,
+          datasets: [
+            {
+              label: "% fuera de norma",
+              // Los porcentajes llegan como texto ("20.0").
+              data: datos.calidad_pruebas.porcentajes.map(Number),
+              backgroundColor: color("--color-peligro", "#dc2626"),
+            },
+          ],
+        },
+        options: {
+          indexAxis: "y",
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { min: 0, max: 100, title: { display: true, text: "% fuera de norma" } },
+          },
         },
       });
     }
