@@ -32,7 +32,7 @@ def test_control_muestra_ficha_y_pruebas(cliente_http, estudio_de, completar):
     assert "Muestra test" in html
     assert "Cliente de test" in html
     assert estudio.tipo_nombre_snapshot in html
-    assert "Pendiente de análisis" in html
+    assert "Sin iniciar" in html
     assert "1 de 3 pruebas completadas" in html
     codigos = re.findall(r'<tr data-prueba="([^"]+)">', html)
     assert codigos == ["CA", "CL-", "PH"]

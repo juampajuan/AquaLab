@@ -312,7 +312,7 @@ def test_columnas_en_resultados_de_busqueda(cliente_http, escenario_consulta):
     assert "DNI 30123456" in html
     assert "Físico-Químico" in html
     assert "Control Básico" in html
-    assert "Pendiente de análisis" in html
+    assert "Sin iniciar" in html
     assert "En proceso" in html
     assert reverse("estudios:detalle", args=[estudio_ep.pk]) in html
 
@@ -353,7 +353,7 @@ def test_detalle_estudio_cabecera_avance_y_pruebas_ordenadas(
 @pytest.mark.parametrize(
     ("clave_estudio", "etiqueta_esperada"),
     [
-        ("estudio_pendiente", "Pendiente de análisis"),
+        ("estudio_pendiente", "Sin iniciar"),
         ("estudio_en_proceso", "En proceso"),
         ("estudio_finalizado", "Finalizado"),
         ("estudio_informado", "Informe generado"),

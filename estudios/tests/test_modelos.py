@@ -100,7 +100,7 @@ def test_uuid_obligatorio_y_identificador_propio(muestra, tipo, empleado):
     campo = Estudio._meta.get_field("estado")
     assert not campo.editable
     assert list(campo.choices) == [
-        ("pendiente_analisis", "Pendiente de análisis"),
+        ("pendiente_analisis", "Sin iniciar"),
         ("en_proceso", "En proceso"),
         ("finalizado", "Finalizado"),
         ("informe_generado", "Informe generado"),

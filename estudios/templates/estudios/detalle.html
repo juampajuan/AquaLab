@@ -186,7 +186,7 @@
                     {% if total_pruebas <= 1 %}
                       <span class="text-xs text-tinta-suave">El estudio debe conservar al menos una prueba.</span>
                     {% elif asignacion.puede_quitarse %}
-                      <a href="{% url 'estudios:quitar_prueba' estudio.pk asignacion.pk %}" class="btn btn-peligro btn-chico">Quitar</a>
+                      <a href="{% url 'estudios:quitar_prueba' estudio.pk asignacion.pk %}" class="text-xs font-semibold text-tinta-suave hover:text-peligro hover:underline">Quitar</a>
                     {% endif %}
                   </td>
                 {% endif %}

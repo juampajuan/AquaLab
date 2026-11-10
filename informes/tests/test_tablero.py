@@ -179,7 +179,7 @@ def test_estudios_por_estado(armar):
     Estudio.objects.filter(pk=estudio.pk).update(estado=EstadoEstudio.FINALIZADO)
     estados = {etiqueta: total for etiqueta, total, _ in tablero.estudios_por_estado()}
     assert estados == {
-        "Pendiente de análisis": 1,
+        "Sin iniciar": 1,
         "En proceso": 0,
         "Finalizado": 1,
         "Informe generado": 1,
