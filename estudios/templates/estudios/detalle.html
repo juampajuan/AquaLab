@@ -28,14 +28,6 @@
       </h2>
       <dl class="resumen p-6 lg:grid-cols-3">
         <div>
-          <dt>Identificador</dt>
-          <dd>#{{ estudio.pk }}</dd>
-        </div>
-        <div>
-          <dt>Estado general</dt>
-          <dd>{{ estudio.get_estado_display }}</dd>
-        </div>
-        <div>
           <dt>Tipo de estudio</dt>
           <dd>
             {{ estudio.tipo_nombre_snapshot }}
@@ -79,9 +71,17 @@
           <p class="numeros text-xs text-tinta-suave">
             Total: {{ total_pruebas }} · Completadas: {{ pruebas_completadas }} · Cargadas: {{ pruebas_cargadas }} · Pendientes: {{ pruebas_pendientes }}
           </p>
-          {% if estudio.admite_mediciones and pruebas_para_medir %}
-            <a href="{% url 'estudios:cargar_mediciones' estudio.pk %}" class="btn btn-primario">
-              {% include "ui/icono.html" with nombre="clipboard-list" clase="size-4" %} Cargar mediciones
+        </div>
+      </div>
+      {# Próximo paso (SCRUM-82): una sola acción principal según el estado; el resto, secundarias. #}
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-borde px-6 py-4" data-componente="proximo-paso" data-accion="{{ proximo_paso.accion|default:'' }}">
+        <p class="text-sm text-tinta">
+          <span class="font-semibold text-marino">Próximo paso:</span> {{ proximo_paso.texto }}
+        </p>
+        <div class="flex flex-wrap items-center gap-2">
+          {% if estudio.admite_modificaciones %}
+            <a href="{% url 'estudios:agregar_prueba' estudio.pk %}" class="btn btn-secundario">
+              {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Agregar prueba
             </a>
           {% endif %}
           {% if estudio.admite_correcciones and hay_mediciones %}
@@ -89,14 +89,19 @@
               {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Corregir mediciones
             </a>
           {% endif %}
-          {% if perms.estudios.validar_resultados and estudio.admite_correcciones and hay_para_validar %}
-            <a href="{% url 'estudios:validar_resultados' estudio.pk %}" class="btn btn-primario">
+          {% if validar_secundario %}
+            <a href="{% url 'estudios:validar_resultados' estudio.pk %}" class="btn btn-secundario">
               {% include "ui/icono.html" with nombre="check" clase="size-4" %} Validar resultados
             </a>
           {% endif %}
-          {% if estudio.admite_modificaciones %}
-            <a href="{% url 'estudios:agregar_prueba' estudio.pk %}" class="btn btn-primario">
-              {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Agregar prueba
+          {% if perms.informes.ver_dashboard %}
+            <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}" class="btn btn-secundario">
+              {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Comparación histórica
+            </a>
+          {% endif %}
+          {% if proximo_paso.accion %}
+            <a href="{{ proximo_paso.url }}" class="btn btn-primario" data-accion-principal>
+              {% include "ui/icono.html" with nombre=proximo_paso.icono clase="size-4" %} {{ proximo_paso.etiqueta }}
             </a>
           {% endif %}
         </div>
@@ -163,27 +168,5 @@
         </table>
       </div>
     </section>
-
-    <div class="flex flex-wrap gap-3">
-      <a href="{% url 'muestras:detalle' estudio.muestra.pk %}" class="btn btn-primario">
-        {% include "ui/icono.html" with nombre="flask-conical" clase="size-4" %} Ver ficha de la muestra
-      </a>
-      <a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar estudios
-      </a>
-      {% if estudio.informe %}
-        <a href="{% url 'informes:ver' estudio.pk %}" class="btn btn-secundario">
-          {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Ver informe
-        </a>
-      {% endif %}
-      <a href="{% url 'informes:control' estudio.pk %}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Controlar para informe
-      </a>
-      {% if perms.informes.ver_dashboard %}
-        <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}" class="btn btn-secundario">
-          {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Comparación histórica
-        </a>
-      {% endif %}
-    </div>
   </div>
 {% endblock %}

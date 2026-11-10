@@ -35,6 +35,7 @@ from .forms import (
     ValidarResultadosForm,
 )
 from .models import (
+    EstadoEstudio,
     EstadoPruebaEstudio,
     Estudio,
     OrigenLimites,
@@ -351,6 +352,14 @@ def detalle(request, pk):
     pruebas_pendientes = sum(
         1 for a in pruebas_asignadas if a.estado == EstadoPruebaEstudio.PENDIENTE
     )
+    pruebas_para_medir = sum(
+        1
+        for a in pruebas_asignadas
+        if a.estado == EstadoPruebaEstudio.PENDIENTE and not a.prueba.es_calculada
+    )
+    hay_para_validar = any(validable(a) for a in pruebas_asignadas)
+    puede_validar = request.user.has_perm("estudios.validar_resultados")
+    paso = proximo_paso(estudio, pruebas_para_medir, hay_para_validar, puede_validar, total_pruebas)
     return render(
         request,
         "estudios/detalle.html",
@@ -362,15 +371,63 @@ def detalle(request, pk):
             "pruebas_cargadas": pruebas_cargadas,
             "pruebas_pendientes": pruebas_pendientes,
             "hay_mediciones": any(calculo.tiene_medicion(a) for a in pruebas_asignadas),
-            "pruebas_para_medir": sum(
-                1
-                for a in pruebas_asignadas
-                if a.estado == EstadoPruebaEstudio.PENDIENTE and not a.prueba.es_calculada
-            ),
-            "hay_para_validar": any(validable(a) for a in pruebas_asignadas),
+            "pruebas_para_medir": pruebas_para_medir,
+            "hay_para_validar": hay_para_validar,
+            # Validar como acción secundaria cuando el paso principal todavía es medir.
+            "validar_secundario": puede_validar
+            and hay_para_validar
+            and estudio.admite_correcciones
+            and paso["accion"] != "validar",
+            "proximo_paso": paso,
             "regla_desvio": desvios.texto_regla(desvios.regla()),
         },
     )
+
+
+def proximo_paso(estudio, pruebas_para_medir, hay_para_validar, puede_validar, total_pruebas):
+    """Lo que toca hacer ahora con el estudio (SCRUM-82): un texto y, si corresponde, una acción.
+
+    La ficha muestra esta única acción como botón principal, así siempre se ve el paso siguiente:
+    cargar mediciones → validar → generar el informe → verlo.
+    """
+    if estudio.estado == EstadoEstudio.INFORME_GENERADO:
+        return {
+            "accion": "ver_informe",
+            "texto": "El informe ya fue emitido.",
+            "etiqueta": "Ver informe",
+            "icono": "file-text",
+            "url": reverse("informes:ver", args=[estudio.pk]),
+        }
+    if estudio.estado == EstadoEstudio.FINALIZADO:
+        return {
+            "accion": "generar_informe",
+            "texto": "Todas las pruebas están validadas: ya se puede generar el informe.",
+            "etiqueta": "Generar informe",
+            "icono": "file-text",
+            "url": reverse("informes:vista_previa", args=[estudio.pk]),
+        }
+    if estudio.admite_mediciones and pruebas_para_medir:
+        cantidad = f"{pruebas_para_medir} prueba{'s' if pruebas_para_medir != 1 else ''}"
+        return {
+            "accion": "cargar",
+            "texto": f"Falta cargar la medición de {cantidad}.",
+            "etiqueta": "Cargar mediciones",
+            "icono": "clipboard-list",
+            "url": reverse("estudios:cargar_mediciones", args=[estudio.pk]),
+        }
+    if hay_para_validar:
+        if puede_validar:
+            return {
+                "accion": "validar",
+                "texto": "Los resultados están cargados: falta validarlos.",
+                "etiqueta": "Validar resultados",
+                "icono": "check",
+                "url": reverse("estudios:validar_resultados", args=[estudio.pk]),
+            }
+        return {"accion": None, "texto": "Los resultados esperan la validación de un bioquímico."}
+    if not total_pruebas:
+        return {"accion": None, "texto": "El estudio no tiene pruebas."}
+    return {"accion": None, "texto": "Hay pruebas sin resultado: revisá la columna «Resultado»."}
 
 
 def agregar_prueba(request, pk):

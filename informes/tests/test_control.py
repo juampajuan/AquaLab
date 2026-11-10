@@ -135,10 +135,12 @@ def test_control_y_detalle_muestran_el_mismo_estado(cliente_http, empleado, estu
     }
 
 
-def test_detalle_enlaza_control(cliente_http, estudio_de):
+def test_detalle_ya_no_enlaza_control(cliente_http, estudio_de):
+    """SCRUM-82: el detalle ofrece «Generar informe» como próximo paso, sin pasar por el control."""
     estudio = estudio_de("CL-")
     html = cliente_http.get(reverse("estudios:detalle", args=[estudio.pk])).content.decode()
-    assert re.search(rf'href="{url(estudio)}"[^>]*>.*?Controlar para informe', html, re.S)
+    assert "Controlar para informe" not in html
+    assert f'href="{url(estudio)}"' not in html
 
 
 def test_flujo_con_validacion_real(cliente_http, bioquimico, estudio_de):
