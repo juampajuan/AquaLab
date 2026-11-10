@@ -7,7 +7,7 @@
   {% url 'informes:listar' as url_listar %}
   {% with numero=estudio.pk|stringformat:"s" %}
     {% with titulo="Controlar pruebas del estudio "|add:numero %}
-      {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Informes por emitir" anterior_url=url_listar titulo=titulo miga="Control de pruebas" estado=estudio.get_estado_display estado_tipo=estudio.estado|tipo_estado %}
+      {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Estudios por informar" anterior_url=url_listar titulo=titulo miga="Control de pruebas" estado=estudio.get_estado_display estado_tipo=estudio.estado|tipo_estado %}
     {% endwith %}
   {% endwith %}
 {% endblock %}
