@@ -208,7 +208,7 @@ E. coli, Cloruro (la de 4 evaluados no aparece), con su gráfico y tabla.
 
 - [X] T016 `docker compose exec web pytest informes estudios` y
   `node --test usuarios/tests/js config/tests/js estudios/tests/js` en verde.
-- [ ] T017 `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .`
+- [X] T017 `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .`
   sin errores. Commit de la tanda 1.
 
 **Checkpoint**: MVP (US1 + US2).
