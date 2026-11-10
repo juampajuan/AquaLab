@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ prueba.codigo }} · Catálogo de pruebas · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'administracion:pruebas' as url_lista %}
+  {% if prueba.activa %}
+    {% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo=prueba.codigo|add:" · "|add:prueba.nombre estado="Activa" estado_tipo="success" %}
+  {% else %}
+    {% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de pruebas" anterior_url=url_lista titulo=prueba.codigo|add:" · "|add:prueba.nombre estado="Inactiva" estado_tipo="neutral" %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl space-y-6" data-ficha-prueba>
+    {% if en_uso %}
+      <div class="aviso aviso-info" role="status" data-en-uso>
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>{{ mensaje_en_uso }}</div>
+      </div>
+    {% endif %}
+    {% if usa_inactivas %}
+      <div class="aviso aviso-advertencia" role="status" data-depende-inactiva>
+        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+        <div>Depende de una prueba inactiva: {{ usa_inactivas|join:", " }}.</div>
+      </div>
+    {% endif %}
+    {% if prueba.reemplazada_por %}
+      <div class="aviso aviso-info" role="status" data-reemplazada>
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>Reemplazada por <a href="{% url 'catalogo:ficha' prueba.reemplazada_por.pk %}">{{ prueba.reemplazada_por.codigo }}</a>.</div>
+      </div>
+    {% endif %}
+
+    <section class="tarjeta seccion-form">
+      {% include "ui/seccion_titulo.html" with titulo="Método" icono="flask-conical" %}
+      <dl class="resumen">
+        {% include "ui/dato.html" with etiqueta="Código" valor=prueba.codigo %}
+        {% include "ui/dato.html" with etiqueta="Nombre" valor=prueba.nombre %}
+        {% include "ui/dato.html" with etiqueta="Tipo de cálculo" valor=prueba.get_tipo_calculo_display %}
+        {% include "ui/dato.html" with etiqueta="Fórmula" valor=prueba.formula %}
+        {% include "ui/dato.html" with etiqueta="Unidad de medición" valor=prueba.unidad_medicion %}
+        {% include "ui/dato.html" with etiqueta="Unidad del resultado" valor=prueba.unidad %}
+      </dl>
+    </section>
+
+    <section class="tarjeta seccion-form">
+      {% include "ui/seccion_titulo.html" with titulo="Límites" icono="clipboard-list" %}
+      <dl class="resumen">
+        {% include "ui/dato.html" with etiqueta="Mínimo general" valor=prueba.limite_min %}
+        {% include "ui/dato.html" with etiqueta="Máximo general" valor=prueba.limite_max %}
+        {% include "ui/dato.html" with etiqueta="Norma" valor=prueba.norma %}
+        {% include "ui/dato.html" with etiqueta="Límite de detección" valor=prueba.limite_deteccion %}
+        {% for limite in limites_vertido %}
+          {% include "ui/dato.html" with etiqueta="Vertido "|add:limite.get_tipo_vertido_display valor=limite.limite_min|default:"—"|add:" a "|add:limite.limite_max|default:"—" extra=limite.norma %}
+        {% endfor %}
+      </dl>
+      {% if prueba.observacion %}<p class="mt-4 text-sm text-tinta-suave">{{ prueba.observacion|linebreaksbr }}</p>{% endif %}
+    </section>
+
+    {% if dependientes %}
+      <p class="text-sm text-tinta-suave" data-dependientes>La usan en su fórmula: {% for d in dependientes %}<a class="text-cian-texto hover:underline" href="{% url 'catalogo:ficha' d.pk %}">{{ d.codigo }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+    {% endif %}
+
+    <p class="text-xs text-tinta-suave" data-auditoria>
+      Creada: {% if prueba.creada_por %}{{ prueba.creada_por.get_full_name|default:prueba.creada_por.email }} el {{ prueba.fecha_creacion|date:"d/m/Y H:i" }}{% else %}Sin registro{% endif %}
+      · Última modificación: {% if prueba.modificada_por %}{{ prueba.modificada_por.get_full_name|default:prueba.modificada_por.email }} el {{ prueba.fecha_modificacion|date:"d/m/Y H:i" }}{% else %}Sin registro{% endif %}
+    </p>
+
+    <div class="flex flex-wrap gap-3">
+      <a class="btn btn-primario" href="{% url 'catalogo:editar' prueba.pk %}">{% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Editar</a>
+      {% if prueba.activa %}
+        <a class="btn btn-secundario" href="{% url 'catalogo:desactivar' prueba.pk %}">Desactivar</a>
+      {% else %}
+        <a class="btn btn-secundario" href="{% url 'catalogo:reactivar' prueba.pk %}">Reactivar</a>
+      {% endif %}
+      {% if not en_uso and not dependientes %}
+        <a class="btn btn-peligro sm:ml-auto" href="{% url 'catalogo:eliminar' prueba.pk %}">Eliminar</a>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

@@ -1,8 +1,14 @@
 from django import forms
+from django.db.models import Q
 
 from pruebas.models import Prueba
 
 from .models import TipoEstudio
+
+
+class PruebasDelTipoField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        return str(obj) if obj.activa else f"{obj} (inactiva)"
 
 
 class TipoEstudioForm(forms.Form):
@@ -10,9 +16,9 @@ class TipoEstudioForm(forms.Form):
     descripcion = forms.CharField(
         label="Descripción", required=False, strip=False, widget=forms.Textarea
     )
-    pruebas = forms.ModelMultipleChoiceField(
+    pruebas = PruebasDelTipoField(
         label="Pruebas predeterminadas",
-        queryset=Prueba.objects.order_by("codigo", "pk"),
+        queryset=Prueba.objects.filter(activa=True).order_by("codigo", "pk"),
         help_text=(
             "Pruebas con las que nacen los estudios nuevos de este tipo. Los estudios ya creados "
             "no cambian."
@@ -22,6 +28,11 @@ class TipoEstudioForm(forms.Form):
     def __init__(self, *args, tipo_id=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.tipo_id = tipo_id
+        # Solo pruebas activas; al editar, también las inactivas que el tipo ya tiene (SCRUM-73).
+        incluidas = Q(tipoestudioprueba__tipo_id=tipo_id) if tipo_id else Q(pk__in=[])
+        self.fields["pruebas"].queryset = (
+            Prueba.objects.filter(Q(activa=True) | incluidas).distinct().order_by("codigo", "pk")
+        )
         for campo in self.fields.values():
             campo.widget.attrs["class"] = (
                 "form-select"

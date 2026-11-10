@@ -48,10 +48,14 @@ class AgregarPruebaForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.estudio = estudio
         self.fields["prueba"] = forms.ModelChoiceField(
-            queryset=Prueba.objects.exclude(pk__in=estudio.pruebas_asignadas.values("prueba")),
+            queryset=Prueba.objects.filter(activa=True).exclude(
+                pk__in=estudio.pruebas_asignadas.values("prueba")
+            ),
             label="Prueba",
             empty_label="Elegí una prueba",
-            help_text="Solo se listan las pruebas del catálogo que el estudio todavía no tiene.",
+            help_text=(
+                "Solo se listan las pruebas activas del catálogo que el estudio todavía no tiene."
+            ),
         )
         self.fields["prueba"].widget.attrs["class"] = "form-select"
 

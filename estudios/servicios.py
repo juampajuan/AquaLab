@@ -122,7 +122,7 @@ def agregar_prueba(estudio_pk, prueba_pk, usuario):
         if not estudio.admite_modificaciones:
             raise GestionPruebasError("Este estudio ya no admite cambios en sus pruebas.")
         prueba = Prueba.objects.filter(pk=prueba_pk).first()
-        if prueba is None:
+        if prueba is None or not prueba.activa:  # una inactiva no se agrega (SCRUM-73)
             raise GestionPruebasError("La prueba no está disponible.")
         ya_asignada = PruebaYaAsignada(f"La prueba {prueba.codigo} ya forma parte del estudio.")
         if estudio.pruebas_asignadas.filter(prueba_id=prueba.pk).exists():

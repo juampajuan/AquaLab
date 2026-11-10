@@ -32,6 +32,30 @@ def tiene_resultado(asignacion):
     return hasattr(asignacion, "resultado")
 
 
+def alias(todas):
+    """`{codigo_nuevo: codigo_del_estudio}` para las pruebas del estudio que fueron reemplazadas
+    (SCRUM-73, en cadena): una fórmula que ya nombra la prueba nueva se resuelve con la vieja en
+    los estudios anteriores al reemplazo. Solo consulta la base si hay reemplazos."""
+    resultado = {}
+    for codigo, asignacion in todas.items():
+        prueba, vistos = asignacion.prueba, set()
+        while prueba.reemplazada_por_id and prueba.reemplazada_por_id not in vistos:
+            vistos.add(prueba.reemplazada_por_id)
+            prueba = Prueba.objects.only("codigo", "reemplazada_por").get(
+                pk=prueba.reemplazada_por_id
+            )
+            if prueba.codigo not in todas:
+                resultado.setdefault(prueba.codigo, codigo)
+    return resultado
+
+
+def referencias_en_estudio(prueba, todas, nombres=None):
+    """Las referencias de la fórmula de `prueba`, cada una con el código del estudio que la
+    resuelve (el mismo, o la prueba reemplazada)."""
+    nombres = alias(todas) if nombres is None else nombres
+    return {r: nombres.get(r, r) for r in referencias_formula(prueba.formula)}
+
+
 def listado(codigos):
     nombres = dict(Prueba.objects.filter(codigo__in=codigos).values_list("codigo", "nombre"))
     return ", ".join(f"{c} · {nombres[c]}" if c in nombres else c for c in sorted(codigos))
@@ -46,16 +70,16 @@ def calcular(asignacion, todas, valores):
     prueba = asignacion.prueba
     if not prueba.es_calculada and not tiene_medicion(asignacion):
         raise FaltanDatos("Falta la medición.")
-    referencias = referencias_formula(prueba.formula)
-    if ausentes := referencias - todas.keys():
+    referencias = referencias_en_estudio(prueba, todas)
+    if ausentes := {r for r, c in referencias.items() if c not in todas}:
         raise FaltanDatos(f"No forma parte del estudio: {listado(ausentes)}.")
-    if faltantes := referencias - valores.keys():
+    if faltantes := {r for r, c in referencias.items() if c not in valores}:
         raise FaltanDatos(f"Faltan resultados de: {listado(faltantes)}.")
     x = asignacion.medicion.valor if tiene_medicion(asignacion) else None
     if prueba.tipo_calculo == TipoCalculo.DIRECTO:
         valor = x
     else:
-        valor = evaluar_formula(prueba.formula, x, {c: valores[c] for c in referencias})
+        valor = evaluar_formula(prueba.formula, x, {r: valores[c] for r, c in referencias.items()})
     if valor and valor.adjusted() >= MAX_ENTEROS:
         raise CalculoImposible("el resultado es demasiado grande")
     return valor.quantize(DECIMALES, ROUND_HALF_UP)
@@ -64,8 +88,9 @@ def calcular(asignacion, todas, valores):
 def dependientes(todas):
     """Para cada código, las pruebas del estudio cuya fórmula lo referencia."""
     grafo = defaultdict(set)
+    nombres = alias(todas)
     for codigo, asignacion in todas.items():
-        for referencia in referencias_formula(asignacion.prueba.formula):
+        for referencia in referencias_en_estudio(asignacion.prueba, todas, nombres).values():
             grafo[referencia].add(codigo)
     return grafo
 
@@ -85,7 +110,11 @@ def afectadas(todas, codigos):
 
 def en_orden(codigos, todas):
     """Orden topológico (Kahn) de `codigos`; devuelve también los que quedan en un ciclo."""
-    pendientes = {c: referencias_formula(todas[c].prueba.formula) & codigos for c in codigos}
+    nombres = alias(todas)
+    pendientes = {
+        c: set(referencias_en_estudio(todas[c].prueba, todas, nombres).values()) & codigos
+        for c in codigos
+    }
     orden = []
     listos = sorted(c for c, refs in pendientes.items() if not refs)
     while listos:
@@ -102,9 +131,11 @@ def en_orden(codigos, todas):
 
 def en_ciclo(codigo, todas):
     visitados, por_visitar = set(), [codigo]
+    nombres = alias(todas)
     while por_visitar:
         actual = por_visitar.pop()
-        for referencia in referencias_formula(todas[actual].prueba.formula) & todas.keys():
+        usadas = set(referencias_en_estudio(todas[actual].prueba, todas, nombres).values())
+        for referencia in usadas & todas.keys():
             if referencia == codigo:
                 return True
             if referencia not in visitados:

@@ -391,3 +391,26 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Permiso `informes.emitir_informes`, en la vista (403) y en el servicio. En los tests, parchear
   `informes.envios.generar_pdf`; para un empleado sin permiso usar `cliente_comun`
   (`informes/tests/conftest.py`): el usuario de `cliente_http` es el mismo que `bioquimico`.
+
+## Gestión del catálogo (SCRUM-73)
+
+- `pruebas/gestion.py:gestionar_prueba` es la única escritura del catálogo desde la app (crear,
+  editar, desactivar, reactivar, eliminar): revalida el permiso del panel (`autorizar_administracion`),
+  bloquea la prueba (`select_for_update`), compara `version` y registra `creada_por`/`modificada_por`
+  con fecha. Las pantallas (`catalogo:*`, `pruebas/views.py`) confirman con un borrador firmado
+  (`pruebas/confirmaciones.py`, como los tipos de estudio). El admin de Django queda como respaldo.
+- En uso (`esta_en_uso()`): solo se cambian límites, norma, LD y observación; `PruebaForm` con
+  `bloquear_metodo` ignora lo enviado. Sin uso: se edita todo, salvo el código si otra fórmula la
+  nombra (`dependientes`). Eliminar solo sin uso, sin referencias y sin haber reemplazado a otra.
+- Límites en la app: solo número, «Ausente» o «Ausencia» (`gestion.es_limite_valido`, mín ≤ máx); el
+  CSV de importación no pasa por esta regla. «Ausente» es «no detectado» (A/P); un conteo usa máx 0.
+- `activa`: los estudios nuevos (`catalogo.configuracion_bloqueada`), agregar prueba y los tipos
+  (solo para pruebas nuevas en el tipo) usan solo activas. Desactivar o reactivar sube la `version`
+  de los tipos que la tienen, así una confirmación vieja de crear estudio se rechaza.
+- Reemplazo en cascada (al desactivar, «Reemplazar por» una activa con la misma unidad que no
+  dependa de ella): reescribe `{VIEJA}` → `{NUEVA}` en las fórmulas dependientes, cambia la prueba en
+  los tipos (sube su versión) y guarda `reemplazada_por`. Los estudios viejos no se tocan:
+  `calculo.alias`/`referencias_en_estudio` resuelven el código nuevo a la prueba del estudio
+  (cadenas A→B→C incluidas).
+- Tests: fixtures `administrador_catalogo`, `cliente_catalogo` y `datos_prueba`
+  (`pruebas/tests/conftest.py`, que importa las de `estudios`).

@@ -20,7 +20,7 @@ def test_catalogo_datos_busqueda_y_unidad(cliente_panel):
             "Directo",
             "Sin unidad",
             "Inactiva",
-            reverse("admin:pruebas_prueba_change", args=[prueba.pk]),
+            reverse("catalogo:ficha", args=[prueba.pk]),  # SCRUM-73: ficha propia
         ]:
             assert texto in html
     assert len(cliente_panel.get(url, {"q": " "}).context["page_obj"]) == 2
