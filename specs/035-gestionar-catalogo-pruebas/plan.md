@@ -21,8 +21,8 @@ y `importar_catalogo_pruebas` siguen igual.
 **Language/Version**: Python 3.12
 
 **Primary Dependencies**: Django 5.2 LTS (forms, `signing`, `select_for_update`), Tailwind CSS 4 y
-`templates/ui/`. Sin dependencias nuevas ni JavaScript nuevo (el campo fórmula se muestra/oculta
-con el patrón existente de la página o queda siempre visible con ayuda).
+`templates/ui/`. Sin dependencias nuevas ni JavaScript nuevo: el campo fórmula queda siempre visible, con la ayuda
+«Solo si el tipo de cálculo es Fórmula».
 
 **Storage**: PostgreSQL 16. Migración `pruebas/0003_gestion_catalogo.py`: en `Prueba`, `version`
 (entero ≥ 1), `creada_por`/`modificada_por` (FK a usuario, `PROTECT`, nulos para las existentes),
@@ -96,6 +96,7 @@ Pantallas y mensajes en [contracts/catalogo-ui.md](./contracts/catalogo-ui.md); 
 | FR-008, US3 Esc. 4 — validaciones e informes iguales tras editar límites; validación nueva usa el nuevo | `test_historial_intacto` | idem |
 | FR-009, US4 Esc. 5–6 — avisos de fórmulas y de tipos al desactivar | `test_avisos_desactivar` | `pruebas/tests/test_vistas.py` |
 | FR-010 — inactiva no se ofrece en tipos ni en agregar prueba; edición de tipo conserva las ya incluidas | `test_inactiva_no_se_ofrece` | `estudios/tests/test_catalogo_activas.py` |
+| FR-009/011, US4 Esc. 9 — desactivar sube la versión de los tipos; confirmación vieja de crear estudio se rechaza | `test_confirmacion_vieja_se_rechaza` | idem |
 | FR-011, US4 Esc. 3 — estudio nuevo solo con activas; tipo sin activas rechaza | `test_estudio_nuevo_solo_activas` | idem |
 | FR-012, US4 Esc. 4 — estudio existente con prueba inactiva: carga, cálculo, validación, informe | `test_estudio_existente_sigue` | idem |
 | FR-013/014 — listado: marca «Depende de…», «Nueva prueba», enlaces a ficha | `test_listado` | `pruebas/tests/test_vistas.py` |

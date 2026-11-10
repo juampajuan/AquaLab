@@ -162,14 +162,19 @@ de estudio (US 5.5: `estudios/gestion_tipos.py`, `confirmaciones_tipos.py`, `vie
   `test_estudio_nuevo_solo_activas` (estudio nuevo de un tipo con una inactiva no la incluye; tipo sin
   activas → «El tipo de estudio no tiene pruebas activas.»; reactivar un tipo sin activas → rechazado)
   y `test_estudio_existente_sigue` (estudio con la prueba ya asignada: cargar, calcular, corregir,
-  validar y emitir informe después de desactivarla).
+  validar y emitir informe después de desactivarla) y `test_confirmacion_vieja_se_rechaza` (abrir la
+  confirmación de crear estudio, desactivar una prueba del tipo, confirmar → «el tipo cambió», sin
+  estudio nuevo; la `version` de los tipos que la incluyen subió).
 - [ ] T017 [P] [US4] En `pruebas/tests/test_vistas.py`: `test_avisos_desactivar` (confirmación lista
   las pruebas activas que la usan en su fórmula y los tipos activos que la incluyen, marcando «Este
-  tipo no se va a poder usar»), `test_desactivar_y_reactivar` (mensajes, `modificada_por`, `version`)
+  tipo no se va a poder usar»), `test_desactivar_y_reactivar` (mensajes, `modificada_por`, `version`; reactivar una prueba cuya
+  fórmula usa una inactiva muestra «Usa en su fórmula una prueba inactiva: …»)
   y `test_listado` (marca «Depende de una prueba inactiva: CA» en `MG`, «Nueva prueba», «Ver ficha»
   en lugar de «Editar en Django Admin»).
 - [ ] T018 [US4] Implementar `desactivar` y `reactivar` en `pruebas/gestion.py` y sus vistas con los
-  avisos de `dependientes` y `tipos_afectados`. Hace pasar la parte de T017.
+  avisos de `dependientes`, `tipos_afectados` y, al reactivar, de las pruebas inactivas que usa en su
+  fórmula; en la misma transacción, subir `version` de cada `TipoEstudio` que la incluye
+  (`select_for_update`, research R7). Hace pasar la parte de T017 y `test_confirmacion_vieja_se_rechaza`.
 - [ ] T019 [US4] Aplicar «activa» en `estudios` (research R7): `estudios/forms_tipos.py` (activas +
   ya incluidas marcadas), `estudios/gestion_tipos.py` (rechaza agregar inactivas; reactivar exige una
   activa), `estudios/forms.py:AgregarPruebaForm`, `estudios/servicios.py:agregar_prueba` y

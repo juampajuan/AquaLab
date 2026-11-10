@@ -65,10 +65,16 @@ Decisiones técnicas de SCRUM-73. Formato: decisión, motivo y alternativas desc
     ninguna, el error existente «El tipo de estudio no está disponible o no tiene pruebas» pasa a
     «El tipo de estudio no tiene pruebas activas».
   - Carga, cálculo, corrección, validación e informe no miran `activa` (FR-012): no se tocan.
+  - **Versión de los tipos**: `desactivar` y `reactivar` (en `gestionar_prueba`, en la misma
+    transacción) suben `version` de cada `TipoEstudio` que incluye la prueba, con `select_for_update`
+    en el mismo orden (prueba → tipos por pk). Así `crear_estudio`, que ya compara la versión del tipo
+    con la de la confirmación (`VersionDesactualizada`), rechaza una confirmación abierta antes del
+    cambio y nunca crea un estudio con otras pruebas que las confirmadas (hallazgo U1 del análisis).
 - **Motivo**: FR-010/011/012 y la decisión previa (estudios nuevos solo con activas).
 
 ## R8 – Formulario y campos bloqueados
-- **Decisión**: `PruebaForm` (código, nombre, tipo de cálculo, fórmula, unidades, límites generales,
+- **Decisión**: el campo fórmula queda siempre visible con la ayuda «Solo si el tipo de cálculo es
+  Fórmula» (sin JavaScript; hallazgo I1). `PruebaForm` (código, nombre, tipo de cálculo, fórmula, unidades, límites generales,
   norma, límite de detección, observación) + `LimitesVertidoForm` (cloacal y canal: mín, máx,
   norma). En uso: los campos del método se renderizan `disabled` con el mensaje de US3 Esc. 1, y el
   servicio ignora o rechaza cualquier cambio a ellos. `es_calculada` se deduce de la fórmula. Pasar a
@@ -80,3 +86,8 @@ Decisiones técnicas de SCRUM-73. Formato: decisión, motivo y alternativas desc
   `catalogo:ficha` en lugar de «Editar en Django Admin» y la marca «Depende de una prueba inactiva:
   <códigos>». El admin de Django (`pruebas/admin.py`) y `importar_catalogo_pruebas` no cambian.
 - **Motivo**: FR-013, FR-014, FR-017 y la decisión de dejar el admin como respaldo.
+
+## R10 – Reactivar con dependencias inactivas
+- **Decisión**: se permite reactivar una prueba cuya fórmula usa otra inactiva; la confirmación lo
+  avisa («Usa en su fórmula una prueba inactiva: <códigos>») y el listado la sigue marcando.
+- **Motivo**: hallazgo U2 del análisis; mismo criterio que desactivar con aviso.

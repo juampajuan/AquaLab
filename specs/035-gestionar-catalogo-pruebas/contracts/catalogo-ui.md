@@ -25,6 +25,7 @@ sin sesión → login.
   a poder calcular hasta que la reemplacen.»
 - Aviso al desactivar (tipos): «Los estudios nuevos de estos tipos no la van a incluir: <tipos>.»;
   junto a cada tipo sin otra prueba activa: «Este tipo no se va a poder usar».
+- Aviso al reactivar: «Usa en su fórmula una prueba inactiva: <códigos>.»
 - Listado: «Depende de una prueba inactiva: <códigos>».
 - Concurrencia: «La prueba cambió mientras la editabas. Revisá los datos actuales.»
 - Límites: «Escribí un número o “Ausente”.», «El mínimo no puede superar al máximo.»
