@@ -27,7 +27,7 @@ logger = logging.getLogger("informes")
 
 
 def listar(request):
-    """Estudios listos para informar (SCRUM-82): solo los que se pueden informar ya.
+    """Informes por emitir (SCRUM-82): solo los que se pueden informar ya.
 
     Los que están sin iniciar o en proceso no se pueden informar, y los que ya tienen informe se
     buscan en «Informes emitidos»; por eso no se listan.
@@ -88,10 +88,10 @@ def vista_previa(request, pk):
         messages.error(request, motivo)
         return redirect("informes:control", pk=estudio.pk)
     puede_emitir = request.user.has_perm("informes.emitir_informes")
-    # Se llega desde «Listos para informar» (?desde=listos) o desde la ficha del estudio: «Volver»
+    # Se llega desde «Informes por emitir» (?desde=listos) o desde la ficha del estudio: «Volver»
     # lleva a donde se estaba (SCRUM-82). Cualquier otro valor vuelve al estudio.
     if request.GET.get("desde") == "listos":
-        volver = (reverse("informes:listar"), "Volver a listos para informar")
+        volver = (reverse("informes:listar"), "Volver a informes por emitir")
     else:
         volver = (reverse("estudios:detalle", args=[estudio.pk]), "Volver al estudio")
     contexto = {

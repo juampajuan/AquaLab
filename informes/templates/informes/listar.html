@@ -4,7 +4,7 @@
 {% block title %}Informes · AquaLab{% endblock %}
 
 {% block encabezado %}
-  {% include "ui/encabezado.html" with seccion="Informes" titulo="Estudios listos para informar" subtitulo="Estudios con todas sus pruebas validadas y sin informe emitido." %}
+  {% include "ui/encabezado.html" with seccion="Informes" titulo="Informes por emitir" subtitulo="Estudios con todas sus pruebas validadas y sin informe emitido." %}
 {% endblock %}
 
 {% block content %}
@@ -74,7 +74,7 @@
         </div>
         {% include "ui/paginacion.html" with parametros=parametros %}
       {% else %}
-        {% include "ui/estado_vacio.html" with icono="search" mensaje="No hay estudios listos para informar." %}
+        {% include "ui/estado_vacio.html" with icono="search" mensaje="No hay informes por emitir." %}
       {% endif %}
     </section>
   {% endif %}

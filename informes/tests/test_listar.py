@@ -37,7 +37,7 @@ def test_listado_solo_muestra_los_listos(cliente_http, tres_estudios):
     respuesta = cliente_http.get(URL)
     assert respuesta.status_code == 200
     html = respuesta.content.decode()
-    assert "Estudios listos para informar" in html
+    assert "Informes por emitir" in html
     assert filas(respuesta) == [listo.pk]
     assert reverse("informes:vista_previa", args=[listo.pk]) in html
     assert "Generar informe</a>" in html
@@ -74,7 +74,7 @@ def test_busqueda_no_encuentra_los_no_listos(cliente_http, tres_estudios):
 def test_busqueda_sin_resultados(cliente_http, tres_estudios):
     respuesta = cliente_http.get(URL, {"q": "zzz"})
     assert filas(respuesta) == []
-    assert "No hay estudios listos para informar" in respuesta.content.decode()
+    assert "No hay informes por emitir" in respuesta.content.decode()
 
 
 def test_busqueda_demasiado_larga(cliente_http, tres_estudios):

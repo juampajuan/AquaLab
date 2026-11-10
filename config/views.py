@@ -35,7 +35,7 @@ def inicio(request):
                 },
                 {
                     "nombre": "estudios-listos",
-                    "titulo": "Estudios listos para emitir",
+                    "titulo": "Informes por emitir",
                     "valor": estudios_para_informar("", True).count(),
                     "icono": "file-text",
                     "url": reverse("informes:listar") + "?" + urlencode({"listos": "1"}),
