@@ -4,9 +4,9 @@
 {% block title %}Vista previa del informe · AquaLab{% endblock %}
 
 {% block encabezado %}
-  {% url 'informes:control' estudio.pk as url_control %}
+  {% url 'estudios:detalle' estudio.pk as url_estudio %}
   {% with numero=estudio.pk|stringformat:"s" %}
-    {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Control del estudio "|add:numero anterior_url=url_control titulo="Vista previa del informe" miga="Vista previa" %}
+    {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Estudio #"|add:numero anterior_url=url_estudio titulo="Vista previa del informe" miga="Vista previa" %}
   {% endwith %}
 {% endblock %}
 
@@ -36,8 +36,8 @@
       {% else %}
         <p class="text-sm text-tinta-suave">Solo un integrante del grupo Bioquímicos puede emitir el informe.</p>
       {% endif %}
-      <a href="{% url 'informes:control' estudio.pk %}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver al control
+      <a href="{% url 'estudios:detalle' estudio.pk %}" class="btn btn-secundario">
+        {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver al estudio
       </a>
     </div>
   </div>
