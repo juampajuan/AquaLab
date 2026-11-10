@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -12,7 +14,8 @@ def documento(html):
     """El bloque del documento, sin la marca de borrador ni el encabezado de la página."""
     inicio = html.index('data-componente="informe"')
     cuerpo = html[html.index("<section", inicio) : html.index("<footer", inicio)]
-    return cuerpo
+    # El informe emitido enlaza estudio, muestra y cliente (SCRUM-82); el contenido es el mismo.
+    return re.sub(r"</?a[^>]*>", "", cuerpo)
 
 
 @pytest.fixture
@@ -81,9 +84,14 @@ def test_parcial_firma():
 
 def test_ver_vuelve_a_emitidos(cliente_bioquimico, estudio_listo, bioquimico):
     emitir_informe(estudio_listo.pk, bioquimico)
-    html = cliente_bioquimico.get(reverse("informes:ver", args=[estudio_listo.pk])).content.decode()
-    assert f'href="{reverse("informes:emitidos")}"' in html
-    assert "Volver a informes emitidos" in html
+    url = reverse("informes:ver", args=[estudio_listo.pk])
+    html = cliente_bioquimico.get(url, {"desde": "emitidos"}).content.decode()
+    assert re.search(rf'href="{reverse("informes:emitidos")}"[^>]*>.*?Volver', html, re.S)
+    # Sin «desde», vuelve al estudio.
+    html = cliente_bioquimico.get(url).content.decode()
+    assert re.search(
+        rf'href="{reverse("estudios:detalle", args=[estudio_listo.pk])}"[^>]*>.*?Volver', html, re.S
+    )
 
 
 def test_ver_pk_inexistente_404(cliente_http):

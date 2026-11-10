@@ -29,6 +29,13 @@ class BuscarInformeForm(forms.Form):
         widget=SelectorFecha(attrs={"class": "form-control"}),
     )
 
+    envio = forms.ChoiceField(
+        label="Envío por correo",
+        required=False,
+        choices=[("", "Todos"), ("sin_enviar", "Sin enviar"), ("enviados", "Enviados")],
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
     def full_clean(self):
         super().full_clean()
         for nombre in ("desde", "hasta"):

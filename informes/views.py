@@ -127,13 +127,31 @@ def generar(request, pk):
 def ver(request, pk):
     """El informe emitido, siempre desde su copia (FR-010)."""
     informe = get_object_or_404(
-        Informe.objects.select_related("estudio", "emitido_por"), estudio__pk=pk
+        Informe.objects.select_related("estudio__muestra__cliente", "emitido_por"), estudio__pk=pk
     )
+    estudio = informe.estudio
+    cliente = estudio.muestra.cliente
+    # «Volver» lleva a donde se estaba (SCRUM-82): informes emitidos, el historial del cliente o,
+    # por defecto, el estudio.
+    desde = request.GET.get("desde")
+    if desde == "emitidos":
+        volver_url = reverse("informes:emitidos")
+    elif desde == "historial" and cliente.activo:
+        volver_url = reverse("clientes:historial", args=[cliente.pk])
+    else:
+        volver_url = reverse("estudios:detalle", args=[estudio.pk])
     contexto = {
-        "estudio": informe.estudio,
+        "estudio": estudio,
         "informe": informe,
         "contenido": informe.contenido,
         "envios": list(informe.envios.select_related("enviado_por")),
+        "volver_url": volver_url,
+        # En pantalla, el estudio, la muestra y el cliente del informe son enlaces (no en el PDF).
+        "enlaces": {
+            "estudio": reverse("estudios:detalle", args=[estudio.pk]),
+            "muestra": reverse("muestras:detalle", args=[estudio.muestra.pk]),
+            "cliente": reverse("clientes:detalle", args=[cliente.pk]) if cliente.activo else "",
+        },
     }
     return render(request, "informes/ver.html", contexto)
 
@@ -190,11 +208,11 @@ def emitidos(request):
     """Listado y búsqueda de informes emitidos (US 7.3): cualquier empleado con sesión."""
     page_obj = None
     form = BuscarInformeForm(request.GET or None)
-    datos = {"q": "", "desde": None, "hasta": None}
+    datos = {"q": "", "desde": None, "hasta": None, "envio": ""}
     if form.is_bound and form.is_valid():
         datos = form.cleaned_data
     if not form.is_bound or form.is_valid():
-        qs = informes_emitidos(datos["q"], datos["desde"], datos["hasta"])
+        qs = informes_emitidos(datos["q"], datos["desde"], datos["hasta"], datos["envio"])
         page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
     parametros = urlencode(
         {

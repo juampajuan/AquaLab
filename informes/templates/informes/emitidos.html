@@ -69,7 +69,7 @@
               {% for informe in page_obj %}
                 {% with cliente=informe.contenido.cliente estudio=informe.contenido.estudio %}
                   <tr>
-                    <td class="font-semibold text-marino whitespace-nowrap"><a href="{% url 'informes:ver' informe.estudio_id %}" class="hover:underline">{{ informe.numero_mostrado }}</a></td>
+                    <td class="font-semibold text-marino whitespace-nowrap"><a href="{% url 'informes:ver' informe.estudio_id %}?desde=emitidos" class="hover:underline">{{ informe.numero_mostrado }}</a></td>
                     <td class="whitespace-nowrap">{{ informe.fecha_emision|date:"d/m/Y H:i" }}</td>
                     <td>
                       <div class="font-medium">{{ cliente.nombre_completo|default:"—" }}</div>
@@ -82,7 +82,7 @@
                     </td>
                     <td>{{ informe.contenido.firma.nombre|default:informe.emitido_por.get_full_name|default:informe.emitido_por.email }}</td>
                     <td class="text-right">
-                      <a href="{% url 'informes:ver' informe.estudio_id %}" class="btn btn-secundario px-3 py-1.5">
+                      <a href="{% url 'informes:ver' informe.estudio_id %}?desde=emitidos" class="btn btn-secundario px-3 py-1.5">
                         {% include "ui/icono.html" with nombre="eye" clase="size-4" %} Ver
                       </a>
                     </td>

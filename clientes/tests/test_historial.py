@@ -289,6 +289,6 @@ def test_ver_informe_solo_con_informe(
 
     assert html.count("Ver informe") == 1
     assert "Ver informe INF-000001" in html
-    assert f'href="{reverse("informes:ver", args=[con_informe.pk])}"' in html
+    assert f'href="{reverse("informes:ver", args=[con_informe.pk])}?desde=historial"' in html
     for sin_informe in (en_proceso, inconsistente):
         assert reverse("informes:ver", args=[sin_informe.pk]) not in html
