@@ -112,7 +112,7 @@ def test_ficha_muestra_raya_en_los_datos_vacios_y_sus_acciones(
     assert re.search(r"<dt>Nombre</dt>\s*<dd>—</dd>", html)
     assert re.search(r"<dt>Teléfono</dt>\s*<dd>—</dd>", html)
     assert "Editar cliente" in html
-    assert "Volver a la búsqueda" in html
+    assert "Volver a la búsqueda" not in html  # SCRUM-82: las migas de pan llevan a la búsqueda
 
 
 def test_historial_usa_componentes(cliente_autenticado, cliente_existente, muestra_de, estudio_en):
