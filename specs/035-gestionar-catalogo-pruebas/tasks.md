@@ -20,12 +20,12 @@ de estudio (US 5.5: `estudios/gestion_tipos.py`, `confirmaciones_tipos.py`, `vie
 **antes** de la implementación de cada historia (deben fallar primero).
 
 **Organization**: US1 (P1, alta), US2 (P1, editar o eliminar sin uso), US3 (P1, editar en uso), US4
-(P2, desactivar y reactivar) y US5 (P2, solo Administradores).
+(P2, desactivar y reactivar), US6 (P2, reemplazar en cascada) y US5 (P2, solo Administradores).
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: se puede ejecutar en paralelo (archivos distintos, sin dependencias pendientes)
-- **[Story]**: user story a la que pertenece (`[US1]` a `[US5]`)
+- **[Story]**: user story a la que pertenece (`[US1]` a `[US6]`)
 - Rutas relativas a la raíz del repo
 
 ## Convenciones para todas las tareas
@@ -58,6 +58,8 @@ de estudio (US 5.5: `estudios/gestion_tipos.py`, `confirmaciones_tipos.py`, `vie
 
 - [ ] T003 Modelo y migración (data-model.md): en `pruebas/models.py` agregar a `Prueba`
   «`version = PositiveBigIntegerField(default=1)`» (con `CheckConstraint version >= 1`),
+  «`reemplazada_por`: FK a `Prueba`, `on_delete=PROTECT`, `null=True`, `blank=True`, `editable=False`,
+  `related_name="reemplaza_a"`»,
   «`creada_por` y `modificada_por`: FK a usuario, `on_delete=PROTECT`, `null=True`, `blank=True`,
   `editable=False`, `related_name="+"`» y «`fecha_creacion` y `fecha_modificacion`:
   `DateTimeField(null=True, blank=True, editable=False)`». Generar
@@ -185,6 +187,32 @@ de estudio (US 5.5: `estudios/gestion_tipos.py`, `confirmaciones_tipos.py`, `vie
 
 ---
 
+## Phase 6b: User Story 6 – Reemplazar una prueba en cascada (P2)
+
+**Goal**: al desactivar, «Reemplazar por» actualiza fórmulas y tipos; los estudios viejos calculan igual.
+
+**Independent Test**: spec US6 (MG con `{CA}`, reemplazar CA por CA2).
+
+- [ ] T020a [P] [US6] En `pruebas/tests/test_reemplazo.py`: `test_candidatas` (solo activas, misma
+  unidad, ni ella ni sus dependientes directas o indirectas; envío con una incompatible → rechazo),
+  `test_cascada` (fórmula de MG pasa de `{CA}` a `{CA2}` aunque MG esté en uso; tipos con CA pasan a
+  CA2 o la pierden si ya tenían CA2; `version` de pruebas y tipos sube; `CA.reemplazada_por == CA2`;
+  todo en una transacción: si falla un paso, nada cambia) y `test_resumen_reemplazo` (la confirmación
+  lista fórmulas y tipos afectados).
+- [ ] T020b [P] [US6] En `estudios/tests/test_calculo_reemplazos.py`: `test_recalculo_con_reemplazo`
+  (estudio viejo con CA y MG calculado; reemplazar CA por CA2; corregir la medición de CA → MG se
+  recalcula con el valor de CA, mismo resultado que antes con el valor nuevo; validaciones e informes
+  previos iguales), `test_estudio_nuevo_usa_reemplazo` (estudio nuevo trae CA2 y calcula MG) y
+  `test_cadena` (A→B→C: un estudio con A calcula una fórmula que nombra C).
+- [ ] T020c [US6] Implementar el reemplazo en `pruebas/gestion.py` (operación `desactivar` con
+  `reemplazo_id`, research R11), el selector y el resumen en la vista y el template de desactivar.
+  Hace pasar T020a.
+- [ ] T020d [US6] Implementar `calculo.resolver_referencias(asignaciones)` en `estudios/calculo.py` y
+  usarlo en la evaluación, el orden de dependencias y `calculo.afectadas`. Correr toda la suite de
+  `estudios` (cálculo, corrección, borrado, validación). Hace pasar T020b.
+
+---
+
 ## Phase 7: User Story 5 – Solo Administradores (P2)
 
 **Goal**: 403 para todos menos «Administradores» con el permiso del panel.
@@ -205,7 +233,7 @@ de estudio (US 5.5: `estudios/gestion_tipos.py`, `confirmaciones_tipos.py`, `vie
 - [ ] T024 [P] `CLAUDE.md`: sección «Gestión del catálogo (SCRUM-73)» (`gestionar_prueba` única
   escritura con reglas; límites solo números o «Ausente» en la app, no en el CSV; «Ausente» vs máx.
   0; `activa` en tipos, agregar prueba y crear estudio; admin de Django como respaldo; versión y
-  tokens como en tipos).
+  tokens como en tipos; reemplazo en cascada y `calculo.resolver_referencias`).
 - [ ] T025 Comprobar que los tests existentes de `pruebas` (importación, admin, límites) y de
   `estudios` (tipos, crear estudio, agregar prueba) siguen en verde; ajustar solo los que dependan del
   enlace «Editar en Django Admin» del listado.
@@ -225,6 +253,8 @@ de estudio (US 5.5: `estudios/gestion_tipos.py`, `confirmaciones_tipos.py`, `vie
 - **US2 (T011–T012)** y **US3 (T013–T015)** comparten `editar` en `gestion.py`: van en orden.
 - **US4 (T016–T020)**: T019 (cambios en `estudios`) y T020 (listado) son independientes de las
   vistas de pruebas y pueden hacerse en paralelo con T018.
+- **US6 (T020a–T020d)** depende de T018 (desactivar) y T019; T020d toca el cálculo: hacerlo con la
+  suite de `estudios` a mano.
 - **US5 (T021–T022)** puede hacerse en cualquier momento después de T009.
 - **Polish (T023–T029)** al final.
 

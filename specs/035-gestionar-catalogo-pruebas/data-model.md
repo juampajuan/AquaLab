@@ -4,6 +4,7 @@
 
 | Campo | Tipo | Regla |
 |---|---|---|
+| `reemplazada_por` | FK `Prueba`, `PROTECT`, nulo | Prueba que la reemplazó al desactivarla (R11) |
 | `version` | entero ≥ 1, default 1 | Sube en cada operación de `gestionar_prueba`; concurrencia optimista |
 | `creada_por` | FK usuario, `PROTECT`, nulo | Quién la creó desde la app; nulo en existentes/importadas |
 | `fecha_creacion` | fecha y hora, nula | Cuándo |
@@ -24,6 +25,16 @@ fórmula), norma, límites generales, límite de detección, observación, activ
 
 «En uso» = `Prueba.esta_en_uso()` (tipo de estudio o estudio). «Dependientes» = pruebas cuya fórmula
 referencia `{CODIGO}` de esta.
+
+## Reemplazo (desactivar con «Reemplazar por»)
+
+| Paso | Efecto |
+|---|---|
+| Validar candidata | Activa, misma `unidad` del resultado, distinta, no la referencia directa ni indirectamente |
+| Prueba vieja | `activa=False`, `reemplazada_por=nueva`, auditoría, `version += 1` |
+| Pruebas dependientes | `{VIEJO}` → `{NUEVO}` en la fórmula, `full_clean()`, `version += 1` |
+| Tipos de estudio | vieja → nueva (o se quita la vieja si ya estaba la nueva), `version += 1` |
+| Estudios anteriores | Sin cambios; al recalcular, `{NUEVO}` se resuelve con la asignación de la vieja |
 
 ## Validación de límites
 

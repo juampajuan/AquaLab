@@ -25,6 +25,10 @@ sin sesión → login.
   a poder calcular hasta que la reemplacen.»
 - Aviso al desactivar (tipos): «Los estudios nuevos de estos tipos no la van a incluir: <tipos>.»;
   junto a cada tipo sin otra prueba activa: «Este tipo no se va a poder usar».
+- Reemplazo (en la confirmación de desactivar): selector «Reemplazar por (opcional)» con las pruebas
+  compatibles; resumen «Se va a reemplazar <VIEJO> por <NUEVO> en: fórmulas <códigos>; tipos
+  <nombres>». Éxito: «Prueba desactivada y reemplazada por <NUEVO>.» Incompatible: «Elegí una prueba
+  activa con la misma unidad que no dependa de esta.»
 - Aviso al reactivar: «Usa en su fórmula una prueba inactiva: <códigos>.»
 - Listado: «Depende de una prueba inactiva: <códigos>».
 - Concurrencia: «La prueba cambió mientras la editabas. Revisá los datos actuales.»

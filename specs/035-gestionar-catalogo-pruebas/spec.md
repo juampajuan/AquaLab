@@ -15,6 +15,7 @@
 - Q: Al cargar los límites de una prueba, ¿el sistema tiene que controlar lo que se escribe o acepta cualquier texto, como hoy? → A: Solo se aceptan números (coma o punto) y «Ausente»/«Ausencia»; cualquier otro texto se rechaza, y si mínimo y máximo son números, el mínimo no puede superar al máximo. «Ausente» significa «no detectado» (0 o por debajo del límite de detección) y es el límite de las pruebas de presencia (A/P) y de mediciones con límite de detección como Sólidos sedimentables; para conteos enteros que no deben aparecer (ej. Coliformes fecales, ajuste de la US 8.4) se usa máx. 0. El formulario lo explica en la ayuda del campo.
 - Q: ¿La ficha de cada prueba tiene que mostrar quién la modificó por última vez y cuándo? → A: Sí. Se guarda quién la creó y quién la modificó por última vez, con fecha, y se muestra en la ficha; el historial completo de cambios queda fuera de alcance.
 - Q: Al desactivar una prueba que está en tipos de estudio, ¿la confirmación tiene que avisar qué tipos la incluyen? → A: Sí. Lista los tipos de estudio activos que la incluyen («Los estudios nuevos de estos tipos no la van a incluir») y marca los que se quedarían sin ninguna prueba activa («Este tipo no se va a poder usar»); se puede confirmar igual.
+- Q: Si reemplazo una prueba por una nueva (ej. Calcio por Calcio nuevo), ¿hay que crear también una versión nueva de cada prueba que la usa en su fórmula (ej. Magnesio)? → A: No. Al desactivar se puede elegir «Reemplazar por» otra prueba y el sistema actualiza en cascada las fórmulas de todas las pruebas que la usan y los tipos de estudio que la incluyen; los estudios ya hechos siguen calculándose con la prueba vieja. Vale para cualquier prueba, no solo Calcio. Cambia el criterio 3 de Jira (ya no hace falta recrear las pruebas que dependen de la reemplazada).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -93,6 +94,26 @@ Como administrador, desactivo una prueba que el laboratorio dejó de usar o que 
 
 ---
 
+### User Story 6 - Reemplazar una prueba en cascada (Priority: P2)
+
+Como administrador, cuando el laboratorio cambia el método de una prueba que otras usan en su fórmula (ej. Calcio, que usa Magnesio), creo la prueba nueva y, al desactivar la vieja, elijo «Reemplazar por» la nueva. El sistema actualiza solo las fórmulas que la usaban y los tipos de estudio que la incluían, sin que tenga que recrear las pruebas que dependen de ella.
+
+**Why this priority**: Evita recrear en cadena todas las pruebas que dependen de la reemplazada; aplica a cualquier prueba con dependientes.
+
+**Independent Test**: Con `MG` (fórmula con `{CA}`) en uso, crear `CA2`, desactivar `CA` eligiendo «Reemplazar por CA2»; verificar que la fórmula de `MG` usa `{CA2}`, que los tipos tienen `CA2` en lugar de `CA`, que un estudio nuevo calcula `MG` con `CA2` y que en un estudio viejo corregir la medición de `CA` recalcula `MG` igual que antes.
+
+**Acceptance Scenarios**:
+
+1. **Dada** una prueba activa con dependientes o en tipos de estudio, **cuando** se va a desactivar, **entonces** se ofrece «Reemplazar por» con las pruebas activas compatibles (misma unidad del resultado, que no sean ella misma ni dependan de ella); elegir una es opcional.
+2. **Dado** un reemplazo elegido, **cuando** se confirma, **entonces** en una sola operación: la prueba queda inactiva y registrada como reemplazada por la nueva; en la fórmula de cada prueba que la referenciaba, `{CODIGO_VIEJO}` pasa a `{CODIGO_NUEVO}`; y en cada tipo de estudio que la incluía, la vieja se cambia por la nueva (si el tipo ya tenía la nueva, solo se quita la vieja).
+3. **Dado** el resumen previo, **cuando** se muestra, **entonces** lista exactamente qué fórmulas y qué tipos se van a modificar.
+4. **Dado** un estudio creado antes del reemplazo, **cuando** se corrige una medición y se recalcula, **entonces** las fórmulas que ahora nombran la prueba nueva usan el valor de la vieja en ese estudio y el resultado es el mismo que antes del reemplazo.
+5. **Dados** reemplazos encadenados (A por B y después B por C), **cuando** se recalcula un estudio que tiene A, **entonces** las fórmulas que nombran C usan el valor de A.
+6. **Dados** los resultados, validaciones e informes ya hechos, **cuando** se hace un reemplazo, **entonces** no cambian.
+7. **Dada** una prueba con unidad del resultado distinta, **cuando** se intenta elegirla como reemplazo, **entonces** no se ofrece (y si se envía igual, se rechaza): cambiaría el significado de las fórmulas que la usan.
+
+---
+
 ### User Story 5 - Solo Administradores (Priority: P2)
 
 Como laboratorio, quiero que solo el grupo «Administradores» gestione el catálogo.
@@ -141,11 +162,14 @@ Como laboratorio, quiero que solo el grupo «Administradores» gestione el catá
 - **FR-015**: Solo los usuarios con la pertenencia a «Administradores» y el permiso del panel de administración MUST poder ver las pantallas y ejecutar las acciones del catálogo; el resto MUST recibir 403 sin cambios (también un superusuario fuera del grupo).
 - **FR-016**: Si la prueba cambió desde que se abrió la ficha, la confirmación MUST rechazarse con un aviso, sin pisar los cambios de otra persona.
 - **FR-016a**: Al crear una prueba desde la app MUST guardarse quién la creó y cuándo; al editarla, desactivarla o reactivarla, quién lo hizo y cuándo (solo la última modificación). La ficha MUST mostrar ambos datos («Sin registro» para las pruebas anteriores a esta historia o cargadas por importación).
+- **FR-016b**: Al desactivar una prueba, MUST poder elegirse opcionalmente «Reemplazar por» otra prueba activa con la misma unidad del resultado, que no sea ella misma ni la referencie (directa o indirectamente). Con reemplazo, en la misma operación MUST: registrar el reemplazo; reemplazar `{CODIGO_VIEJO}` por `{CODIGO_NUEVO}` en la fórmula de toda prueba que la referenciaba (aunque esté en uso: es la única forma en que cambia la fórmula de una prueba en uso, y no altera su método); cambiar la prueba vieja por la nueva en todo tipo de estudio que la incluía, subiendo su versión; y mostrar antes, en el resumen, las fórmulas y tipos afectados.
+- **FR-016c**: Al calcular o recalcular un estudio, si una fórmula nombra una prueba que el estudio no tiene, MUST usarse la prueba del estudio que fue reemplazada (directa o en cadena) por la nombrada. Así los estudios anteriores al reemplazo siguen calculando igual.
 - **FR-017**: La importación por CSV (`importar_catalogo_pruebas`) MUST seguir funcionando como hoy, y el admin de Django MUST seguir disponible como respaldo.
 
 ### Key Entities *(include if feature involves data)*
 
 - **Prueba**: Entrada del catálogo (código, nombre, tipo de cálculo, fórmula, unidades, límites generales, norma, límite de detección, observación, activa, creada por y fecha, modificada por última vez por y fecha). «En uso» si está en algún tipo de estudio o estudio.
+- **Reemplazo**: Vínculo «reemplazada por» entre una prueba desactivada y la nueva; lo usan la cascada de fórmulas y tipos y el cálculo de los estudios anteriores.
 - **Límite por tipo de vertido**: Límites y norma propios de Cloacal o Canal para una prueba; reemplazan a los generales para ese vertido.
 - **Tipo de estudio** (US 5.5): Paquete de pruebas; los estudios nuevos toman solo sus pruebas activas.
 - **Validación / Informe** (US 6.4, 7.2): Guardan los límites y la evaluación del momento; no cambian al editar la prueba.
@@ -160,6 +184,7 @@ Como laboratorio, quiero que solo el grupo «Administradores» gestione el catá
 - **SC-004**: Ninguna prueba inactiva se ofrece al armar tipos ni al agregar pruebas, y ningún estudio nuevo la incluye.
 - **SC-005**: El 100 % de los estudios que ya tenían una prueba desactivada pueden completar su ciclo (carga, cálculo, validación e informe).
 - **SC-006**: Toda prueba activa que depende de una inactiva aparece marcada en el listado del catálogo.
+- **SC-007**: Reemplazar una prueba con dependientes se hace en una sola confirmación, sin recrear ninguna prueba dependiente, y el 100 % de los recálculos de estudios anteriores dan el mismo resultado que antes del reemplazo.
 
 ## Assumptions
 
@@ -168,4 +193,4 @@ Como laboratorio, quiero que solo el grupo «Administradores» gestione el catá
 - **Hoy `activa` no se usa**: ni el armado de tipos ni «agregar prueba» filtran inactivas; esta historia agrega esos filtros.
 - **Nombre en uso**: el criterio bloquea el nombre de una prueba en uso, igual que hoy el admin y la importación.
 - **Interfaz**: diseño de SCRUM-67 y componentes de `templates/ui/`, con confirmación previa como el resto del panel de administración; ayudas en los campos que no son evidentes (US 9.1).
-- **Alcance excluido**: curvas de calibración (próximo sprint); importación masiva (sigue el comando); historial completo de cambios de cada prueba (solo se guarda la última modificación); reemplazo automático de fórmulas que referencian una prueba desactivada.
+- **Alcance excluido**: curvas de calibración (próximo sprint); importación masiva (sigue el comando); historial completo de cambios de cada prueba (solo se guarda la última modificación); reemplazar sin desactivar (el reemplazo siempre retira la prueba vieja); deshacer un reemplazo.

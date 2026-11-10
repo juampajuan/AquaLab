@@ -87,6 +87,25 @@ Decisiones técnicas de SCRUM-73. Formato: decisión, motivo y alternativas desc
   <códigos>». El admin de Django (`pruebas/admin.py`) y `importar_catalogo_pruebas` no cambian.
 - **Motivo**: FR-013, FR-014, FR-017 y la decisión de dejar el admin como respaldo.
 
+## R11 – Reemplazo en cascada
+- **Decisión**: campo `Prueba.reemplazada_por` (FK a `Prueba`, `PROTECT`, nulo). `gestionar_prueba`
+  operación `desactivar` con `reemplazo_id` opcional: valida (activa, misma `unidad`, distinta, no
+  dependiente directa ni indirecta), bloquea en orden prueba vieja → pruebas dependientes (por pk) →
+  tipos (por pk), y en la misma transacción: `activa=False` + `reemplazada_por`; en cada dependiente
+  reescribe la fórmula cambiando `{VIEJO}` por `{NUEVO}` con una sustitución sobre las referencias de
+  `referencias_formula` (no texto libre), `full_clean()` y `version += 1`; en cada `TipoEstudio`
+  que la incluye cambia la `TipoEstudioPrueba` (o la borra si ya estaba la nueva) y sube `version`.
+- **Cálculo** (`estudios/calculo.py`): al armar los valores de una fórmula, si una referencia
+  `{X}` no está entre las pruebas del estudio, se busca una asignación del estudio cuya prueba llegue
+  a `X` siguiendo `reemplazada_por` (en cadena, con tope para evitar ciclos) y se usa su valor; el
+  orden de dependencias y `calculo.afectadas` usan la misma resolución. Una función única,
+  `calculo.resolver_referencias(asignaciones)`, devuelve `{codigo_en_formula: asignacion}`.
+- **Motivo**: aclaración 4; los resultados ya calculados guardan su fórmula y no cambian, pero el
+  recálculo usa la fórmula vigente de la prueba, así que sin la resolución un estudio viejo perdería
+  el resultado de las dependientes al corregir una medición.
+- **Alternativas**: recrear las dependientes (lo que pide el criterio original; descartado por la
+  responsable); copiar la fórmula en cada `PruebaEstudio` (migración grande y duplica datos).
+
 ## R10 – Reactivar con dependencias inactivas
 - **Decisión**: se permite reactivar una prueba cuya fórmula usa otra inactiva; la confirmación lo
   avisa («Usa en su fórmula una prueba inactiva: <códigos>») y el listado la sigue marcando.

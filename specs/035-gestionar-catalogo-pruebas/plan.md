@@ -13,7 +13,9 @@ para no pisar cambios. Un único servicio, `pruebas/gestion.py:gestionar_prueba`
 revalida permiso, versión, «en uso», referencias en fórmulas y reglas de límites, y guarda quién y
 cuándo. La regla «prueba activa» se aplica donde hoy no existe: formulario y servicio de tipos de
 estudio, «agregar prueba» y la creación de estudios (solo pruebas activas del tipo). El listado
-actual marca las pruebas que dependen de una inactiva y enlaza a la ficha nueva. El admin de Django
+actual marca las pruebas que dependen de una inactiva y enlaza a la ficha nueva. Al desactivar se puede
+elegir «Reemplazar por»: la cascada actualiza las fórmulas que la usan y los tipos que la incluyen,
+y el cálculo resuelve los reemplazos en los estudios anteriores (research R11). El admin de Django
 y `importar_catalogo_pruebas` siguen igual.
 
 ## Technical Context
@@ -25,7 +27,7 @@ y `importar_catalogo_pruebas` siguen igual.
 «Solo si el tipo de cálculo es Fórmula».
 
 **Storage**: PostgreSQL 16. Migración `pruebas/0003_gestion_catalogo.py`: en `Prueba`, `version`
-(entero ≥ 1), `creada_por`/`modificada_por` (FK a usuario, `PROTECT`, nulos para las existentes),
+(entero ≥ 1), `reemplazada_por` (FK a `Prueba`, `PROTECT`, nulo), `creada_por`/`modificada_por` (FK a usuario, `PROTECT`, nulos para las existentes),
 `fecha_creacion`/`fecha_modificacion` (nulas para las existentes).
 
 **Testing**: pytest + pytest-django; fixtures de `usuarios/tests/conftest.py` (administrador del
@@ -37,7 +39,8 @@ panel) y `estudios/tests/conftest.py` (`catalogo`, `estudio_de`, `bioquimico`); 
 
 **Performance Goals**: Alta completa < 3 minutos para una persona (SC-001); pantallas sin N+1.
 
-**Constraints**: Historial intacto (FR-008, principio IV); acceso del panel 025 sin excepción para
+**Constraints**: Historial intacto (FR-008, principio IV; el reemplazo reescribe fórmulas pero los
+resultados guardan la suya y el cálculo resuelve los reemplazos, FR-016c); acceso del panel 025 sin excepción para
 superusuarios (FR-015); concurrencia optimista (FR-016); CSV y admin sin cambios (FR-017).
 
 **Scale/Scope**: app `pruebas` (servicio, formularios, confirmaciones, vistas, URLs, 5 templates,
@@ -103,6 +106,8 @@ Pantallas y mensajes en [contracts/catalogo-ui.md](./contracts/catalogo-ui.md); 
 | FR-015, US5 — 403 (común, bioquímico, superusuario fuera del grupo), login | `test_acceso` (parametrizado) | idem |
 | FR-016, edges — versión cambiada, pasó a estar en uso entre abrir y confirmar | `test_concurrencia_*` | `pruebas/tests/test_gestion.py` |
 | FR-016a — creada/modificada por y fecha; «Sin registro» en las existentes | `test_auditoria` | idem |
+| FR-016b, US6 Esc. 1–3, 7 — reemplazo: candidatas compatibles, cascada en fórmulas y tipos, resumen | `test_reemplazo_*` | `pruebas/tests/test_reemplazo.py` |
+| FR-016c, US6 Esc. 4–6 — estudio viejo recalcula igual; cadena A→B→C; historial intacto | `test_recalculo_con_reemplazo`, `test_cadena` | `estudios/tests/test_calculo_reemplazos.py` |
 | FR-017 — CSV y admin siguen funcionando | tests existentes de `pruebas` sin cambios | `pruebas/tests/` |
 
 ## Project Structure
@@ -134,6 +139,7 @@ pruebas/
 estudios/
 ├── forms_tipos.py, forms.py                      # solo activas (+ ya incluidas al editar un tipo)
 ├── gestion_tipos.py                              # rechaza agregar inactivas; reactivar exige una activa
+├── calculo.py                                    # resolver_referencias: reemplazos en estudios viejos
 ├── catalogo.py                                   # configuracion_bloqueada: solo activas
 ├── servicios.py                                  # agregar_prueba revalida activa
 └── tests/test_catalogo_activas.py
