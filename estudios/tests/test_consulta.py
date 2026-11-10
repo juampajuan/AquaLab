@@ -573,7 +573,7 @@ def fila(html, codigo):
         ("ECOLI", "1", "Fuera de norma", "Ausente"),
         ("SS10", "0", "Cumple", "Ausente"),
         ("OLOR", "2", "Sin límite comparable", "máx. SOE"),
-        ("CL2-LIB", "0.3", "Sin límite comparable", "Sin límite en el catálogo"),
+        ("CL2-LIB", "0.3", "Sin límite comparable", "Sin límite comparable"),
     ],
 )
 def test_detalle_muestra_evaluacion(

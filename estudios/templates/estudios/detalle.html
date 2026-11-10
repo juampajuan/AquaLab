@@ -140,9 +140,6 @@
                     {% if asignacion.resultado.formula %}
                       <span class="block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
                     {% endif %}
-                    {% if asignacion.evaluacion %}
-                      <span class="mt-1 block">{% include "ui/estado.html" with estado=asignacion.evaluacion.label tipo=asignacion.evaluacion_tipo %}</span>
-                    {% endif %}
                     {% if asignacion.deteccion %}
                       {% include "estudios/desvio.html" with deteccion=asignacion.deteccion validacion=asignacion.validacion_desvio codigo=asignacion.prueba.codigo %}
                     {% endif %}
@@ -152,12 +149,14 @@
                 </td>
                 <td>
                   {% if asignacion.evaluacion %}
+                    {# El límite y si se cumple; sin límite en el catálogo, solo «Sin límite comparable». #}
                     {% if asignacion.limite_texto %}
                       <span class="block font-semibold text-tinta">{{ asignacion.limite_texto }}</span>
-                      {% if asignacion.limite_norma %}<span class="block text-xs text-tinta-suave">{{ asignacion.limite_norma }}</span>{% endif %}
+                    {% endif %}
+                    <span class="{% if asignacion.limite_texto %}mt-1 {% endif %}block">{% include "ui/estado.html" with estado=asignacion.evaluacion.label tipo=asignacion.evaluacion_tipo %}</span>
+                    {% if asignacion.limite_texto %}
+                      {% if asignacion.limite_norma %}<span class="mt-1 block text-xs text-tinta-suave">{{ asignacion.limite_norma }}</span>{% endif %}
                       {% if asignacion.limite_origen %}<span class="block text-xs text-tinta-suave">Vertido {{ asignacion.limite_origen|lower }}</span>{% endif %}
-                    {% else %}
-                      <span class="block text-xs text-tinta-suave">Sin límite en el catálogo</span>
                     {% endif %}
                   {% else %}
                     <span class="block text-tinta-suave">—</span>
