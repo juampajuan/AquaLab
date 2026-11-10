@@ -570,8 +570,8 @@ def fila(html, codigo):
     [
         ("PH", "7.4", "Cumple", "Límite: 6.4 a 8.5"),
         ("CL-", "40", "Fuera de norma", "Límite: máx. 350.0"),  # x*10 → 400
-        ("ECOLI", "1", "Fuera de norma", "Límite: máx. Ausente"),
-        ("SS10", "0", "Cumple", "Límite: máx. Ausente"),
+        ("ECOLI", "1", "Fuera de norma", "Límite: Ausente"),
+        ("SS10", "0", "Cumple", "Límite: Ausente"),
         ("OLOR", "2", "Sin límite comparable", "Límite: máx. SOE"),
         ("CL2-LIB", "0.3", "Sin límite comparable", "Sin límite en el catálogo"),
     ],
