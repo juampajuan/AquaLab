@@ -87,9 +87,9 @@ def catalogo(db):
         ("PH", "agua", "6.4", "8.5", "general"),
         ("PH", "cloacal", "7.01", "10.0", "cloacal"),
         ("PH", "canal", "6.5", "10", "canal"),
-        # La fila del vertido reemplaza a los generales completos (el general es «Ausencia»).
+        # La fila del vertido reemplaza a los generales completos (el general es máx. 0).
         ("COL-FEC", "canal", "", "2000", "canal"),
-        ("COL-FEC", "agua", "", "Ausencia", "general"),
+        ("COL-FEC", "agua", "", "0", "general"),
         # Sin fila para ese vertido: generales.
         ("CL-", "cloacal", "", "350.0", "general"),
         ("CL2-LIB", "cloacal", "", "NE", "cloacal"),
