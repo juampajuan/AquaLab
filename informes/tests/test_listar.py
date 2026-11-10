@@ -110,5 +110,5 @@ def test_generar_informe_abre_la_vista_previa(cliente_http, estudio_de, completa
     completar(estudio)
     html = cliente_http.get(URL).content.decode()
     enlace = re.search(r'href="([^"]+)"[^>]*>Generar informe</a>', html).group(1)
-    assert enlace == reverse("informes:vista_previa", args=[estudio.pk])
+    assert enlace == reverse("informes:vista_previa", args=[estudio.pk]) + "?desde=listos"
     assert cliente_http.get(enlace).status_code == 200

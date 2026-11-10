@@ -65,7 +65,7 @@
                   </td>
                   <td>{{ estudio.tipo_nombre_snapshot }}</td>
                   <td class="text-right">
-                    <a href="{% url 'informes:vista_previa' estudio.pk %}" class="btn btn-secundario px-3 py-1.5">Generar informe</a>
+                    <a href="{% url 'informes:vista_previa' estudio.pk %}?desde=listos" class="btn btn-secundario px-3 py-1.5">Generar informe</a>
                   </td>
                 </tr>
               {% endfor %}

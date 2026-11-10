@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.db import DatabaseError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from estudios import calculo, desvios
@@ -87,8 +88,16 @@ def vista_previa(request, pk):
         messages.error(request, motivo)
         return redirect("informes:control", pk=estudio.pk)
     puede_emitir = request.user.has_perm("informes.emitir_informes")
+    # Se llega desde «Listos para informar» (?desde=listos) o desde la ficha del estudio: «Volver»
+    # lleva a donde se estaba (SCRUM-82). Cualquier otro valor vuelve al estudio.
+    if request.GET.get("desde") == "listos":
+        volver = (reverse("informes:listar"), "Volver a listos para informar")
+    else:
+        volver = (reverse("estudios:detalle", args=[estudio.pk]), "Volver al estudio")
     contexto = {
         "estudio": estudio,
+        "volver_url": volver[0],
+        "volver_texto": volver[1],
         "contenido": armar_contenido(estudio, request.user),
         "puede_emitir": puede_emitir,
         "falta_firma": puede_emitir
