@@ -93,8 +93,11 @@ def bajo_deteccion(valor, limites):
 
 
 def texto_limite(limites):
-    """El límite como se muestra: «6.4 a 8.5», «máx. 350.0», «mín. 0.1» o vacío."""
+    """El límite como se muestra: «6.4 a 8.5», «máx. 350.0», «mín. 0.1», «Ausente» o vacío."""
     minimo, maximo = limites.minimo.strip(), limites.maximo.strip()
+    # «máx. Ausente» se lee raro: el límite de las pruebas de presencia es directamente «Ausente».
+    if maximo and not minimo and leer_limite(maximo) == AUSENTE:
+        return "Ausente"
     if minimo and maximo:
         return f"{minimo} a {maximo}"
     if maximo:

@@ -1,4 +1,4 @@
-// Gráficos del dashboard (US 8.3) con Chart.js local (static/vendor/chart.umd.min.js).
+// Gráficos del dashboard (US 8.3 y 8.4) con Chart.js local (static/vendor/chart.umd.min.js).
 // Lee los datos del json_script "datos-dashboard". Sin Chart.js (o sin JavaScript) quedan las
 // tablas «Ver datos», que muestran lo mismo.
 (function () {
@@ -64,6 +64,70 @@
         options: {
           maintainAspectRatio: false,
           scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+        },
+      });
+    }
+
+    // Calidad (US 8.4): pruebas que más fallan, en % fuera de norma.
+    var calidadPruebas = document.getElementById("grafico-calidad-pruebas");
+    if (calidadPruebas && datos.calidad_pruebas) {
+      // Los porcentajes llegan como texto ("20.0").
+      var porcentajes = datos.calidad_pruebas.porcentajes.map(Number);
+      // El eje llega hasta el máximo del ranking redondeado a la decena (entre 10 y 100), así
+      // las barras usan el ancho del gráfico.
+      var tope = Math.min(
+        100,
+        Math.max(10, Math.ceil(Math.max.apply(null, porcentajes.concat(0)) / 10) * 10)
+      );
+      new window.Chart(calidadPruebas, {
+        type: "bar",
+        data: {
+          labels: datos.calidad_pruebas.etiquetas,
+          datasets: [
+            {
+              label: "% fuera de norma",
+              data: porcentajes,
+              backgroundColor: color("--color-peligro", "#dc2626"),
+            },
+          ],
+        },
+        options: {
+          indexAxis: "y",
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { min: 0, max: tope, title: { display: true, text: "% fuera de norma" } },
+          },
+        },
+      });
+    }
+
+    // Calidad (US 8.4): pruebas que cumplen y fuera de norma por tipo de vertido.
+    var calidadVertidos = document.getElementById("grafico-calidad-vertidos");
+    if (calidadVertidos && datos.calidad_vertidos) {
+      new window.Chart(calidadVertidos, {
+        type: "bar",
+        data: {
+          labels: datos.calidad_vertidos.etiquetas,
+          datasets: [
+            {
+              label: "Pruebas que cumplen",
+              data: datos.calidad_vertidos.cumple,
+              backgroundColor: color("--color-exito", "#16a34a"),
+            },
+            {
+              label: "Pruebas fuera de norma",
+              data: datos.calidad_vertidos.fuera,
+              backgroundColor: color("--color-peligro", "#dc2626"),
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+          },
         },
       });
     }

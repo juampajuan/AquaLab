@@ -1,0 +1,99 @@
+{# Sección «Calidad» del dashboard (US 8.4). Parámetros: calidad (informes.calidad.armar) y periodo. #}
+<section class="tarjeta mb-6 p-5" aria-labelledby="titulo-calidad" data-calidad>
+  <h2 id="titulo-calidad" class="flex items-center gap-2 text-sm font-semibold text-marino">
+    Calidad
+    {% include "ui/ayuda.html" with texto="Resultados con validación vigente en el período, según la evaluación guardada al validar. Los que no tienen límite comparable no se cuentan." id="ayuda-calidad" etiqueta="Calidad" %}
+  </h2>
+  <p class="mb-4 text-xs text-tinta-suave">
+    Del {{ periodo.inicio|date:"d/m/Y" }} al {{ periodo.fin|date:"d/m/Y" }} · comparado con
+    {{ periodo.inicio_anterior|date:"d/m/Y" }} al {{ periodo.fin_anterior|date:"d/m/Y" }}
+  </p>
+
+  {% with indicador=calidad.indicador %}
+    {# 1. Indicador general (US1) #}
+    <div class="mb-6 flex items-start gap-4 rounded-lg border border-borde p-4" data-indicador="calidad">
+      <span class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-cian-suave text-cian-texto">
+        {% include "ui/icono.html" with nombre="droplet" clase="size-6" %}
+      </span>
+      <div>
+        <span class="block text-[11px] font-semibold tracking-wide text-tinta-suave uppercase">Nivel de cumplimiento</span>
+        {% if indicador.actual.evaluados %}
+          <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ indicador.actual.porcentaje_texto }} fuera de norma</span>
+          <span class="numeros block text-sm text-tinta-suave">{{ indicador.actual.fuera }} de {{ indicador.actual.evaluados }} resultados</span>
+          {% if indicador.variacion %}
+            {% include "informes/variacion.html" with variacion=indicador.variacion %}
+          {% elif not indicador.anterior.evaluados %}
+            <span class="mt-1 block text-xs text-tinta-suave" data-tono="neutro">Sin datos previos</span>
+          {% endif %}
+        {% else %}
+          <span class="block text-base font-semibold text-tinta-suave" data-valor>Sin resultados validados en el período</span>
+        {% endif %}
+        {% if indicador.sin_limite %}
+          <p class="mt-2 text-xs text-tinta-suave" data-sin-limite>{{ indicador.sin_limite }} resultado{{ indicador.sin_limite|pluralize }} sin límite comparable, fuera del cálculo</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not indicador.actual.evaluados %}
+      {% include "ui/estado_vacio.html" with icono="droplet" mensaje="Sin resultados validados en el período" %}
+    {% else %}
+      <div class="grid gap-6 xl:grid-cols-2">
+        {# 2. Pruebas que más fallan (US2) #}
+        <div class="min-w-0" data-ranking="pruebas">
+          <h3 class="text-sm font-semibold text-marino">Pruebas que más fallan</h3>
+          <p class="mb-4 text-xs text-tinta-suave">Solo pruebas con al menos {{ calidad.minimo_ranking }} resultados evaluados</p>
+          {% if calidad.pruebas.filas %}
+            <div class="relative h-64">
+              <canvas id="grafico-calidad-pruebas" role="img" aria-label="Porcentaje de incumplimiento por prueba"></canvas>
+            </div>
+            <details class="mt-4 text-sm">
+              <summary class="cursor-pointer text-cian-texto">Ver datos</summary>
+              <div class="mt-2 overflow-x-auto"><table class="tabla [&_th]:whitespace-normal" data-tabla="calidad-pruebas">
+                <thead><tr><th>Prueba</th><th>Incumplimiento</th></tr></thead>
+                <tbody>
+                  {% for fila in calidad.pruebas.filas %}
+                    <tr><td>{{ fila.etiqueta }}</td><td class="numeros">{{ fila.conteo.texto }}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table></div>
+            </details>
+            {% if calidad.pruebas.restantes %}
+              <p class="mt-2 text-xs text-tinta-suave">Y {{ calidad.pruebas.restantes }} prueba{{ calidad.pruebas.restantes|pluralize }} más</p>
+            {% endif %}
+          {% else %}
+            {% with minimo=calidad.minimo_ranking|stringformat:"d" %}
+              {% include "ui/estado_vacio.html" with icono="circle-check" mensaje="Ninguna prueba con al menos "|add:minimo|add:" resultados evaluados tuvo incumplimientos en el período." %}
+            {% endwith %}
+          {% endif %}
+        </div>
+
+        {# 3. Cumplimiento por tipo de vertido (US3) #}
+        <div class="min-w-0" data-vertidos>
+          <h3 class="text-sm font-semibold text-marino">Pruebas evaluadas por tipo de vertido</h3>
+          <p class="mb-4 text-xs text-tinta-suave">Cada prueba evaluada en el período suma una: una muestra con 7 pruebas aporta 7.</p>
+          <div class="relative h-64">
+            <canvas id="grafico-calidad-vertidos" role="img" aria-label="Pruebas que cumplen y fuera de norma por tipo de vertido"></canvas>
+          </div>
+          <details class="mt-4 text-sm">
+            <summary class="cursor-pointer text-cian-texto">Ver datos</summary>
+            <div class="mt-2 overflow-x-auto"><table class="tabla [&_th]:whitespace-normal" data-tabla="calidad-vertidos">
+              <thead><tr><th>Tipo</th><th>Pruebas evaluadas</th><th>Pruebas que cumplen</th><th>Pruebas fuera de norma</th><th>Cumplimiento</th></tr></thead>
+              <tbody>
+                {% for fila in calidad.vertidos %}
+                  <tr data-vertido="{{ fila.valor }}"><td>{{ fila.etiqueta }}</td><td class="numeros">{{ fila.conteo.evaluados }}</td><td class="numeros">{{ fila.cumple }}</td><td class="numeros">{{ fila.conteo.fuera }}</td><td class="numeros">{{ fila.cumplimiento_texto }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table></div>
+          </details>
+          <p class="mt-2 text-xs text-tinta-suave" data-nota-vertidos>No se cuentan las pruebas sin límite para comparar.</p>
+        </div>
+      </div>
+
+      {# 4. Clientes y orígenes con más incumplimientos (US4) #}
+      <div class="mt-6 grid gap-6 xl:grid-cols-2">
+        {% include "informes/calidad_lista.html" with clave="clientes" titulo="Clientes con más incumplimientos" columna="Cliente" lista=calidad.clientes %}
+        {% include "informes/calidad_lista.html" with clave="origenes" titulo="Orígenes con más incumplimientos" columna="Origen · Cliente" lista=calidad.origenes %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</section>

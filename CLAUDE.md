@@ -346,6 +346,25 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Demo: Pozo 2 mes 0 (430 contra mediana 124) es el único pendiente; el mes 1 (415) quedó validado
   con observación (`OBSERVACIONES` en `estudios/demo.py`). Tests: `estudios/tests/test_desvios*.py`.
 
+## Panel de calidad (US 8.4)
+
+- `informes/calidad.py` es la única fuente de la sección «Calidad» del dashboard (`calidad.armar`,
+  que la vista suma al contexto y a `datos_graficos`). Recibe el `Periodo` de `tablero.periodo`
+  (no lo recalcula); `tablero.py` no se toca. Solo lectura, 7 consultas fijas.
+- Cuenta solo validaciones vigentes (`anulada=False`) por `fecha_validacion` en la zona del
+  laboratorio, con la `evaluacion` guardada: nunca evalúa con `pruebas/limites.py` (de ahí solo
+  `Evaluacion`; un test lo verifica). «Sin límite comparable» se muestra aparte, fuera del %.
+- `MINIMO_EVALUADOS_RANKING` (5) y `TOPE_LISTA` (10) solo en `calidad.py`; el template usa
+  `{{ calidad.minimo_ranking }}`. Porcentajes con `calidad.porcentaje` (`Decimal`, 1 decimal,
+  `ROUND_HALF_UP`); el orden usa la fracción exacta (`Conteo.fraccion`), no el redondeado.
+- La variación del indicador va en puntos porcentuales («▲ +5,0 p. p.», subir es desfavorable)
+  con `tablero.variacion`. Vertidos: siempre Agua, Cloacal y Canal (`TipoVertido.choices`).
+- Clientes y orígenes enlazan al historial (3.3) y a la comparación (8.1); con el cliente
+  inactivo, «Inactivo» y sin enlace (esas vistas los rechazan).
+- Tests: el fixture `evaluadas` (`informes/tests/conftest.py`) crea validaciones con la evaluación
+  elegida sin cargar ni validar; para el flujo real, `estudio_en_origen`. Con la demo el ranking se
+  verifica con «Últimos 6 meses» (con «Este mes» solo pH llega a 5).
+
 ## Filtrar estudios (SCRUM-74)
 
 - `estudios.forms.FiltrosEstudioForm` es la única definición de los filtros `desde`/`hasta`/`estado`

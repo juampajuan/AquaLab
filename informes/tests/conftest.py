@@ -150,3 +150,82 @@ def cliente_comun(django_user_model):
     cliente = Client()
     cliente.force_login(usuario)
     return cliente
+
+
+@pytest.fixture
+def evaluadas(empleado, catalogo, cliente_a):
+    """Validaciones vigentes con la evaluación elegida, para la sección «Calidad» (US 8.4).
+
+    `crear({"CL-": (2, 10)}, sin_limite={"COND": 3}, origen=..., tipo_vertido=..., momento=...)`
+    deja 10 resultados evaluados de Cloruro (2 fuera de norma) y 3 de Conductividad sin límite
+    comparable. Arma los estudios y las validaciones directo en la base, sin cargar ni validar:
+    la sección solo lee la evaluación guardada. Para el flujo real usar `estudio_en_origen`.
+    Con `momento`, las validaciones nacen en esa fecha (`demo.reloj`). Devuelve los estudios.
+    """
+    import itertools
+    import uuid
+
+    from estudios import demo
+    from estudios.models import Estudio, OrigenLimites, PruebaEstudio, TipoEstudio, Validacion
+    from muestras.models import Muestra, Origen, TipoVertido
+    from pruebas.limites import Evaluacion
+
+    numeros = itertools.count(400001)
+    origen_por_defecto = []
+
+    def crear(
+        por_codigo, *, sin_limite=None, origen=None, tipo_vertido=TipoVertido.AGUA, momento=None
+    ):
+        if origen is None:
+            if not origen_por_defecto:
+                origen_por_defecto.append(
+                    Origen.objects.create(cliente=cliente_a, nombre="Origen de calidad")
+                )
+            origen = origen_por_defecto[0]
+        planes = {}  # código → evaluaciones, una por estudio
+        for codigo, (fuera, evaluados) in por_codigo.items():
+            planes[codigo] = [Evaluacion.FUERA_DE_NORMA] * fuera + [Evaluacion.CUMPLE] * (
+                evaluados - fuera
+            )
+        for codigo, cantidad in (sin_limite or {}).items():
+            planes.setdefault(codigo, []).extend([Evaluacion.SIN_LIMITE] * cantidad)
+        hoy = timezone.localdate(momento) if momento else timezone.localdate()
+        numero = next(numeros)
+        muestra = Muestra.objects.create(
+            numero_pi=numero,
+            nombre=f"Muestra {numero}",
+            cliente=origen.cliente,
+            origen=origen,
+            fecha_muestreo=hoy,
+            fecha_ingreso=hoy,
+            sitio_extraccion="Sitio test",
+            tipo_vertido=tipo_vertido,
+            registrada_por=empleado,
+        )
+        tipo = TipoEstudio.objects.create(nombre=f"Tipo de calidad {uuid.uuid4()}")
+        estudios = []
+        with demo.reloj(momento or timezone.now()):
+            for i in range(max((len(e) for e in planes.values()), default=0)):
+                estudio = Estudio.objects.create(
+                    muestra=muestra,
+                    tipo=tipo,
+                    creado_por=empleado,
+                    tipo_nombre_snapshot=tipo.nombre,
+                    tipo_version_snapshot=tipo.version,
+                    clave_idempotencia=uuid.uuid4(),
+                )
+                for codigo, plan in planes.items():
+                    if i < len(plan):
+                        asignacion = PruebaEstudio.objects.create(
+                            estudio=estudio, prueba=catalogo[codigo]
+                        )
+                        Validacion.objects.create(
+                            asignacion=asignacion,
+                            validada_por=empleado,
+                            origen_limites=OrigenLimites.GENERAL,
+                            evaluacion=plan[i],
+                        )
+                estudios.append(estudio)
+        return estudios
+
+    return crear
