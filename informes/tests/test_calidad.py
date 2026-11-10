@@ -308,3 +308,158 @@ def test_armar_datos_del_grafico(evaluadas):
         "etiquetas": ["ECOLI · E. Coli", "CL- · Cloruro"],
         "porcentajes": ["25.0", "20.0"],
     }
+
+
+# --- US3: cumplimiento por tipo de vertido -----------------------------------------------------
+
+
+def test_cumplimiento_por_vertido(evaluadas):
+    from muestras.models import TipoVertido
+
+    evaluadas({"CL-": (1, 10)}, tipo_vertido=TipoVertido.AGUA)
+    evaluadas({"CL-": (1, 1)}, tipo_vertido=TipoVertido.CLOACAL)
+    evaluadas({}, sin_limite={"COND": 2}, tipo_vertido=TipoVertido.CANAL)
+
+    agua, cloacal, canal = calidad.vertidos(este_mes())
+
+    assert [f.etiqueta for f in (agua, cloacal, canal)] == ["Agua", "Cloacal", "Canal"]
+    assert (agua.cumple, agua.conteo.fuera, agua.conteo.evaluados) == (9, 1, 10)
+    assert agua.porcentaje_cumplimiento == Decimal("90.0")
+    assert (cloacal.cumple, cloacal.conteo.fuera) == (0, 1)
+    assert cloacal.porcentaje_cumplimiento == Decimal("0.0")
+    assert canal.conteo.evaluados == 0
+    assert canal.porcentaje_cumplimiento is None
+    assert canal.conteo.texto == "Sin resultados"
+
+
+def test_vertidos_sin_datos():
+    assert [(f.valor, f.conteo.evaluados) for f in calidad.vertidos(este_mes())] == [
+        ("agua", 0),
+        ("cloacal", 0),
+        ("canal", 0),
+    ]
+
+
+def test_vertido_de_la_muestra(estudio_en_origen, cliente_a):
+    from muestras.models import TipoVertido
+
+    origen = Origen.objects.create(cliente=cliente_a, nombre="Colectora")
+    estudio_en_origen(
+        origen, timezone.localdate(), 300721, {"CL-": "40"}, tipo_vertido=TipoVertido.CLOACAL
+    )
+
+    por_valor = {f.valor: f.conteo for f in calidad.vertidos(este_mes())}
+
+    assert (por_valor["cloacal"].fuera, por_valor["cloacal"].evaluados) == (1, 1)
+    assert por_valor["agua"].evaluados == 0
+
+
+# --- US4: clientes y orígenes ------------------------------------------------------------------
+
+
+def nuevo_cliente(nombre, documento, activo=True):
+    from clientes.models import Cliente
+
+    return Cliente.objects.create(
+        nombre=nombre,
+        tipo_documento="DNI",
+        numero_documento=documento,
+        email=f"{documento}@ejemplo.com",
+        activo=activo,
+    )
+
+
+def nuevo_origen(cliente, nombre):
+    return Origen.objects.create(cliente=cliente, nombre=nombre)
+
+
+def test_clientes_y_origenes(evaluadas):
+    a = nuevo_cliente("Aguas A", "30000001")
+    b = nuevo_cliente("Bodega B", "30000002")
+    limpio = nuevo_cliente("Limpio", "30000003")
+    evaluadas({"CL-": (2, 6)}, origen=nuevo_origen(a, "Pozo A1"))
+    evaluadas({"CL-": (1, 6)}, origen=nuevo_origen(a, "Pozo A2"))
+    evaluadas({"CL-": (2, 4)}, origen=nuevo_origen(b, "Pozo B1"))
+    evaluadas({"CL-": (0, 5)}, origen=nuevo_origen(limpio, "Pozo limpio"))
+
+    p = este_mes()
+    clientes = calidad.clientes(p)
+    origenes = calidad.origenes(p)
+
+    assert [(f.cliente.nombre, f.conteo.fuera, f.conteo.evaluados) for f in clientes.filas] == [
+        ("Aguas A", 3, 12),
+        ("Bodega B", 2, 4),
+    ]
+    # Pozo B1 (2 de 4) y Pozo A1 (2 de 6): mismo fuera de norma, mayor porcentaje primero.
+    assert [(f.origen.nombre, f.origen.cliente.nombre) for f in origenes.filas] == [
+        ("Pozo B1", "Bodega B"),
+        ("Pozo A1", "Aguas A"),
+        ("Pozo A2", "Aguas A"),
+    ]
+    assert clientes.restantes == origenes.restantes == 0
+
+
+def test_clientes_desempate_por_nombre(evaluadas):
+    for nombre, documento in (("beta", "30000011"), ("Alfa", "30000012")):
+        evaluadas({"CL-": (2, 10)}, origen=nuevo_origen(nuevo_cliente(nombre, documento), "Pozo"))
+    evaluadas({"CL-": (2, 4)}, origen=nuevo_origen(nuevo_cliente("Gamma", "30000013"), "Pozo"))
+
+    filas = calidad.clientes(este_mes()).filas
+
+    assert [f.cliente.nombre for f in filas] == ["Gamma", "Alfa", "beta"]
+
+
+def test_clientes_tope_de_diez(evaluadas):
+    for n in range(12):
+        cliente = nuevo_cliente(f"Cliente {n:02d}", f"3100{n:04d}")
+        evaluadas({"CL-": (1, 1)}, origen=nuevo_origen(cliente, f"Origen {n:02d}"))
+
+    p = este_mes()
+    clientes = calidad.clientes(p)
+    origenes = calidad.origenes(p)
+
+    assert len(clientes.filas) == len(origenes.filas) == 10
+    assert clientes.restantes == origenes.restantes == 2
+    assert clientes.filas[0].cliente.nombre == "Cliente 00"
+
+
+def test_enlaces_de_clientes_y_origenes(evaluadas):
+    from django.urls import reverse
+
+    activo = nuevo_cliente("Activo", "30000021")
+    inactivo = nuevo_cliente("Inactivo SA", "30000022", activo=False)
+    pozo = nuevo_origen(activo, "Pozo activo")
+    evaluadas({"CL-": (2, 2)}, origen=pozo)
+    evaluadas({"CL-": (1, 1)}, origen=nuevo_origen(inactivo, "Pozo inactivo"))
+
+    p = este_mes()
+    clientes = {f.cliente.pk: f.url for f in calidad.clientes(p).filas}
+    origenes = {f.origen.pk: f.url for f in calidad.origenes(p).filas}
+
+    assert clientes[activo.pk] == reverse("clientes:historial", args=[activo.pk])
+    assert clientes[inactivo.pk] is None
+    assert origenes[pozo.pk] == (
+        reverse("estudios:comparacion") + f"?cliente={activo.pk}&origen={pozo.pk}"
+    )
+    assert [url for pk, url in origenes.items() if pk != pozo.pk] == [None]
+
+
+# --- Demo (SCRUM-78) ---------------------------------------------------------------------------
+
+
+def test_calidad_con_la_demo(catalogo):
+    import io
+
+    from estudios import demo
+
+    ahora = dt.datetime(2026, 11, 2, 12, 0, tzinfo=ZONA)
+    demo.cargar_demo(io.StringIO(), ahora=ahora)
+
+    datos = calidad.armar(tablero.periodo("ultimos_6", timezone.localdate(ahora)))
+
+    filas = datos["pruebas"].filas
+    assert len(filas) >= 3
+    assert any(f.conteo.fuera >= 1 for f in filas)
+    assert all(f.conteo.evaluados >= calidad.MINIMO_EVALUADOS_RANKING for f in filas)
+    origenes = {f.origen.nombre for f in datos["origenes"].filas}
+    assert {"Pozo 2", "Tanque domiciliario"} <= origenes

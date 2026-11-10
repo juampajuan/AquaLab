@@ -72,6 +72,7 @@ def test_acceso(django_user_model, grupos, superusuario, estado):
     )
     respuesta = cliente.get(URL)
     assert respuesta.status_code == estado
+    assert ("data-calidad" in html_de(respuesta)) == (estado == 200)  # US 8.4
     menu = html_de(cliente.get(reverse("inicio")))
     assert (f'href="{URL}"' in menu) == (estado == 200)
     if estado == 200:
@@ -189,22 +190,26 @@ def test_base_vacia(cliente_bioquimico):
 def test_solo_lectura(cliente_bioquimico, con_demo):
     modelos = (Muestra, Estudio, Medicion, Validacion, Informe)
     antes = [m.objects.count() for m in modelos]
-    cliente_bioquimico.get(URL + "?periodo=ultimos_3")
+    vigentes = Validacion.objects.filter(anulada=False).count()
+    respuesta = cliente_bioquimico.get(URL + "?periodo=ultimos_3")
+    assert "data-calidad" in html_de(respuesta)  # la sección «Calidad» (US 8.4) tampoco escribe
     assert [m.objects.count() for m in modelos] == antes
+    assert Validacion.objects.filter(anulada=False).count() == vigentes
 
 
 def test_cantidad_de_consultas(cliente_bioquimico, con_demo, django_assert_max_num_queries):
     from estudios.models import EstadoPruebaEstudio, PruebaEstudio
 
     # «Desvíos sin revisar» (US 8.2) suma una consulta y una evaluación de cantidad fija (6
-    # consultas de la comparación histórica) por estudio con resultados sin validar.
+    # consultas de la comparación histórica) por estudio con resultados sin validar; «Calidad»
+    # (US 8.4), 7 consultas fijas.
     con_pendientes = (
         PruebaEstudio.objects.filter(estado=EstadoPruebaEstudio.CARGADA, resultado__isnull=False)
         .values("estudio")
         .distinct()
         .count()
     )
-    with django_assert_max_num_queries(25 + 1 + 6 * con_pendientes):
+    with django_assert_max_num_queries(25 + 1 + 7 + 6 * con_pendientes):
         assert cliente_bioquimico.get(URL).status_code == 200
 
 
@@ -387,3 +392,74 @@ def test_ranking_vacio_en_pantalla(cliente_bioquimico, evaluadas):
         in ranking
     )
     assert "grafico-calidad-pruebas" not in ranking
+
+
+def test_vertidos_en_pantalla(cliente_bioquimico, evaluadas):
+    import json
+
+    from muestras.models import TipoVertido
+
+    evaluadas({"CL-": (1, 10)}, tipo_vertido=TipoVertido.AGUA)
+    evaluadas({"CL-": (1, 1)}, tipo_vertido=TipoVertido.CLOACAL)
+
+    html = html_de(cliente_bioquimico.get(URL))
+    vertidos = bloque(seccion_calidad(html), "data-vertidos")
+    assert "Cumplimiento por tipo de vertido" in vertidos
+    assert '<canvas id="grafico-calidad-vertidos"' in vertidos
+    for encabezado in ("Tipo", "Evaluados", "Cumple", "Fuera de norma", "Cumplimiento"):
+        assert f"<th>{encabezado}</th>" in vertidos
+    filas = re.findall(r"<tr data-vertido=\"(\w+)\">(.*?)</tr>", vertidos, re.S)
+    assert [valor for valor, _ in filas] == ["agua", "cloacal", "canal"]
+    assert "90,0 %" in filas[0][1]
+    assert "0,0 %" in filas[1][1]
+    assert "Sin resultados" in filas[2][1]
+    datos = re.search(
+        r'<script id="datos-dashboard" type="application/json">(.*?)</script>', html, re.S
+    )
+    assert json.loads(datos.group(1))["calidad_vertidos"] == {
+        "etiquetas": ["Agua", "Cloacal", "Canal"],
+        "cumple": [9, 0, 0],
+        "fuera": [1, 1, 0],
+    }
+
+
+def test_clientes_y_origenes_en_pantalla(cliente_bioquimico, evaluadas, cliente_a):
+    from clientes.models import Cliente
+
+    pozo = Origen.objects.create(cliente=cliente_a, nombre="Pozo con desvíos")
+    evaluadas({"CL-": (3, 12)}, origen=pozo)
+    inactivo = Cliente.objects.create(
+        nombre="Cliente dado de baja",
+        tipo_documento="DNI",
+        numero_documento="30999888",
+        email="baja@ejemplo.com",
+        activo=False,
+    )
+    evaluadas({"CL-": (1, 1)}, origen=Origen.objects.create(cliente=inactivo, nombre="Pozo viejo"))
+
+    seccion = seccion_calidad(html_de(cliente_bioquimico.get(URL)))
+    clientes = bloque(seccion, 'data-ranking="clientes"')
+    origenes = bloque(seccion, 'data-ranking="origenes"')
+
+    assert "Clientes con más incumplimientos" in clientes
+    assert "Orígenes con más incumplimientos" in origenes
+    assert "3 de 12 · 25,0 %" in clientes and "3 de 12 · 25,0 %" in origenes
+    historial = reverse("clientes:historial", args=[cliente_a.pk])
+    comparacion = reverse("estudios:comparacion") + f"?cliente={cliente_a.pk}&amp;origen={pozo.pk}"
+    assert f'href="{historial}"' in clientes
+    assert f'href="{comparacion}"' in origenes
+    assert cliente_bioquimico.get(historial).status_code == 200
+    assert cliente_bioquimico.get(comparacion.replace("&amp;", "&")).status_code == 200
+    for lista in (clientes, origenes):
+        fila = re.search(r"<tr[^>]*>(?:(?!</tr>).)*Cliente dado de baja.*?</tr>", lista, re.S)
+        assert fila and "Inactivo" in fila.group(0) and "<a " not in fila.group(0)
+
+
+def test_clientes_y_origenes_vacios(cliente_bioquimico, evaluadas):
+    evaluadas({"CL-": (0, 3)})
+
+    seccion = seccion_calidad(html_de(cliente_bioquimico.get(URL)))
+
+    for nombre in ("clientes", "origenes"):
+        lista = bloque(seccion, f'data-ranking="{nombre}"')
+        assert "No hubo resultados fuera de norma en el período." in lista

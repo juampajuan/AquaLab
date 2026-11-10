@@ -225,26 +225,26 @@ con sus conteos y Canal con «Sin resultados».
 
 ### Tests (escribir primero; deben fallar)
 
-- [ ] T018 [P] [US3] En `informes/tests/test_calidad.py`: `test_cumplimiento_por_vertido` (agua
+- [X] T018 [P] [US3] En `informes/tests/test_calidad.py`: `test_cumplimiento_por_vertido` (agua
   9 cumple + 1 fuera → `porcentaje_cumplimiento == Decimal("90.0")`; cloacal 1 fuera de 1 → `0.0`;
   canal sin evaluados → `conteo.evaluados == 0` y texto «Sin resultados»; el orden es siempre
   Agua, Cloacal, Canal; el vertido sale de `Muestra.tipo_vertido`, con
   `estudio_en_origen(..., tipo_vertido=TipoVertido.CLOACAL)`).
-- [ ] T019 [P] [US3] En `informes/tests/test_dashboard.py`: `test_vertidos_en_pantalla`
+- [X] T019 [P] [US3] En `informes/tests/test_dashboard.py`: `test_vertidos_en_pantalla`
   (`data-vertidos` con las tres filas, `<canvas id="grafico-calidad-vertidos"`, tabla Tipo /
   Evaluados / Cumple / Fuera de norma / Cumplimiento; `calidad_vertidos` en el `json_script` con
   `etiquetas == ["Agua", "Cloacal", "Canal"]` y listas `cumple`/`fuera` de enteros).
 
 ### Implementation
 
-- [ ] T020 [US3] En `informes/calidad.py`: `FilaVertido(valor, etiqueta, conteo)` con `cumple` (=
+- [X] T020 [US3] En `informes/calidad.py`: `FilaVertido(valor, etiqueta, conteo)` con `cumple` (=
   `evaluados - fuera`) y `porcentaje_cumplimiento` (`porcentaje(cumple, evaluados)`); `vertidos(p)`:
   una consulta agrupada por `asignacion__estudio__muestra__tipo_vertido`, completada con
   `muestras.models.TipoVertido.choices` (los que faltan, `Conteo(0, 0)`). `armar` agrega
   `"vertidos"` y `graficos["calidad_vertidos"]`. Hace pasar T018.
-- [ ] T021 [US3] En `informes/templates/informes/calidad.html`: tarjeta «Cumplimiento por tipo de
+- [X] T021 [US3] En `informes/templates/informes/calidad.html`: tarjeta «Cumplimiento por tipo de
   vertido» (`contracts/calidad-ui.md` §4) en la segunda columna de la grilla de T014.
-- [ ] T022 [US3] En `informes/static/informes/dashboard.js`: si existe `grafico-calidad-vertidos`,
+- [X] T022 [US3] En `informes/static/informes/dashboard.js`: si existe `grafico-calidad-vertidos`,
   barras apiladas (`scales.x.stacked`, `scales.y.stacked`) «Cumple» (`--color-exito`, respaldo
   `#16a34a`) y «Fuera de norma» (`--color-peligro`), `ticks.precision: 0`. Hace pasar T019.
 
@@ -261,7 +261,7 @@ comparación, y el inactivo aparece «Inactivo» sin enlace.
 
 ### Tests (escribir primero; deben fallar)
 
-- [ ] T023 [P] [US4] En `informes/tests/test_calidad.py`: `test_clientes_y_origenes` (cliente A con
+- [X] T023 [P] [US4] En `informes/tests/test_calidad.py`: `test_clientes_y_origenes` (cliente A con
   3 fuera de 12 antes que B con 2 de 4; empate en cantidad → mayor porcentaje primero, después
   nombre sin distinguir mayúsculas; clientes y orígenes sin fuera de norma no aparecen; 12 clientes
   con incumplimientos → 10 filas y `restantes == 2`; los orígenes incluyen su cliente) y
@@ -269,14 +269,14 @@ comparación, y el inactivo aparece «Inactivo» sin enlace.
   reverse("clientes:historial", args=[pk])`; origen → `reverse("estudios:comparacion") +
   f"?cliente={cliente.pk}&origen={origen.pk}"`; cliente inactivo → `url is None` en el cliente y en
   sus orígenes).
-- [ ] T024 [P] [US4] En `informes/tests/test_dashboard.py`: `test_clientes_y_origenes_en_pantalla`
+- [X] T024 [P] [US4] En `informes/tests/test_dashboard.py`: `test_clientes_y_origenes_en_pantalla`
   (`data-ranking="clientes"` y `data-ranking="origenes"` con «3 de 12 · 25,0 %», los `href`
   esperados y que se abren con 200 para `cliente_bioquimico`; inactivo con «Inactivo» y sin `<a>`;
   vacío: «No hubo resultados fuera de norma en el período.»).
 
 ### Implementation
 
-- [ ] T025 [US4] En `informes/calidad.py`: `FilaCliente(cliente, conteo, url)` y `FilaOrigen(origen,
+- [X] T025 [US4] En `informes/calidad.py`: `FilaCliente(cliente, conteo, url)` y `FilaOrigen(origen,
   conteo, url)`; `clientes(p)` y `origenes(p)`: una consulta agrupada por
   `asignacion__estudio__muestra__cliente` (u `__origen`) con `fuera__gte=1`; después
   `Cliente.objects.in_bulk(ids)` / `Origen.objects.select_related("cliente").in_bulk(ids)` de
@@ -284,7 +284,7 @@ comparación, y el inactivo aparece «Inactivo» sin enlace.
   nombre.casefold(), pk)` (`Cliente.nombre_completo`, `Origen.nombre`), `Lista` con `TOPE_LISTA`;
   `url` según R6 (sin enlace si el cliente está inactivo). `armar` agrega `"clientes"` y
   `"origenes"`. Hace pasar T023.
-- [ ] T026 [US4] En `informes/templates/informes/calidad.html`: tarjetas «Clientes con más
+- [X] T026 [US4] En `informes/templates/informes/calidad.html`: tarjetas «Clientes con más
   incumplimientos» y «Orígenes con más incumplimientos» lado a lado (`contracts/calidad-ui.md` §5),
   con `ui/estado.html` «Inactivo» y sin enlace para inactivos, «Y N más» y vacío con
   `ui/estado_vacio.html`. Hace pasar T024.
@@ -293,31 +293,31 @@ comparación, y el inactivo aparece «Inactivo» sin enlace.
 
 ## Phase 7: Polish & Cross-Cutting Concerns (Tanda 2)
 
-- [ ] T027 [P] En `informes/tests/test_calidad.py`: `test_calidad_con_la_demo` (`catalogo` +
+- [X] T027 [P] En `informes/tests/test_calidad.py`: `test_calidad_con_la_demo` (`catalogo` +
   `demo.cargar_demo(io.StringIO(), ahora=...)` con `ahora` fijo, y `calidad.armar(tablero.periodo(
   "ultimos_6", hoy))`: el ranking de pruebas tiene **al menos 3** filas y alguna con `conteo.fuera >=
   1`; ninguna fila con menos de `MINIMO_EVALUADOS_RANKING` evaluados; «Pozo 2» y «Tanque
   domiciliario» están en `origenes`). Sin modificar `estudios/demo.py`. Si «Pozo 2» o «Tanque
   domiciliario» no quedan fuera de norma con la demo, consultar al usuario antes de cambiar la
   aserción.
-- [ ] T028 [P] En `informes/tests/test_dashboard.py`: ampliar `test_acceso` (sin permiso no aparece
+- [X] T028 [P] En `informes/tests/test_dashboard.py`: ampliar `test_acceso` (sin permiso no aparece
   `data-calidad`; 403), `test_solo_lectura` (la sección no modifica nada: conteos de `Validacion`,
   `Medicion`, `Estudio` iguales antes y después) y `test_cantidad_de_consultas` (sumar las 7
   consultas de la sección al máximo: `25 + 1 + 7 + 6 * con_pendientes`).
-- [ ] T029 [P] Agregar a `CLAUDE.md` la sección «Panel de calidad (US 8.4)»: `informes/calidad.py`
+- [X] T029 [P] Agregar a `CLAUDE.md` la sección «Panel de calidad (US 8.4)»: `informes/calidad.py`
   es la única fuente; recibe el `Periodo` de `tablero`; solo validaciones vigentes por
   `fecha_validacion` con la evaluación guardada (nunca `pruebas/limites.py`); «sin límite
   comparable» fuera del porcentaje; `MINIMO_EVALUADOS_RANKING` y `TOPE_LISTA` solo ahí; orden por
   fracción exacta; variación en p. p.; inactivos sin enlace; con la demo el ranking se verifica con
   «Últimos 6 meses» (con «Este mes» solo pH llega a 5).
-- [ ] T030 [P] Si se agregaron clases de Tailwind nuevas, recompilar `static/css/aqualab.css` con el
+- [X] T030 [P] Si se agregaron clases de Tailwind nuevas, recompilar `static/css/aqualab.css` con el
   CLI standalone (como en la 8.3) y commitearlo (`chore(ui): recompilar CSS`).
-- [ ] T031 Revisar que no se creó nada fuera del plan: sin migraciones nuevas
+- [X] T031 Revisar que no se creó nada fuera del plan: sin migraciones nuevas
   (`docker compose exec web python manage.py makemigrations --check --dry-run`), sin cambios en
   `informes/tablero.py` ni `estudios/demo.py`, sin rutas nuevas.
 - [ ] T032 Prueba en el navegador según `specs/033-panel-calidad/quickstart.md` — **la hace el
   usuario**; no marcar.
-- [ ] T033 Cierre: `docker compose exec web pytest informes estudios`,
+- [X] T033 Cierre: `docker compose exec web pytest informes estudios`,
   `node --test usuarios/tests/js config/tests/js estudios/tests/js`,
   `docker compose exec web ruff check .` y `docker compose exec web ruff format --check .` en verde.
   Commit de la tanda 2.

@@ -12,9 +12,12 @@ from decimal import ROUND_HALF_UP, Decimal
 from fractions import Fraction
 
 from django.db.models import Count, Q
+from django.urls import reverse
 
+from clientes.models import Cliente
 from estudios.models import Validacion
 from informes import tablero
+from muestras.models import Origen, TipoVertido
 from pruebas.limites import Evaluacion
 
 MINIMO_EVALUADOS_RANKING = 5
@@ -58,6 +61,11 @@ class Conteo:
         if not self.evaluados:
             return "Sin resultados"
         return f"{self.porcentaje_texto} ({self.fuera} de {self.evaluados})"
+
+    @property
+    def texto_cantidad(self):
+        """«3 de 12 · 25,0 %», para las listas de clientes y orígenes."""
+        return f"{self.fuera} de {self.evaluados} · {self.porcentaje_texto}"
 
 
 @dataclass(frozen=True)
@@ -175,21 +183,155 @@ def pruebas(p):
     return recortar(ranking)
 
 
+# --- Cumplimiento por tipo de vertido (US3) --------------------------------------------------
+
+
+@dataclass(frozen=True)
+class FilaVertido:
+    valor: str
+    etiqueta: str
+    conteo: Conteo
+
+    @property
+    def cumple(self):
+        return self.conteo.evaluados - self.conteo.fuera
+
+    @property
+    def porcentaje_cumplimiento(self):
+        return porcentaje(self.cumple, self.conteo.evaluados)
+
+    @property
+    def cumplimiento_texto(self):
+        """«90,0 %»; «Sin resultados» sin evaluados."""
+        if not self.conteo.evaluados:
+            return "Sin resultados"
+        return f"{tablero.con_coma(self.porcentaje_cumplimiento)} %"
+
+
+def vertidos(p):
+    """Agua, Cloacal y Canal, siempre los tres y en ese orden (el de `TipoVertido`), según el tipo
+    de vertido de la muestra."""
+    campo = "asignacion__estudio__muestra__tipo_vertido"
+    conteos = {
+        fila[campo]: Conteo(fila["fuera"], fila["evaluados"])
+        for fila in vigentes()
+        .filter(en_periodo(p), evaluacion__in=EVALUADAS)
+        .values(campo)
+        .annotate(**contar())
+        .order_by()
+    }
+    return [
+        FilaVertido(valor, etiqueta, conteos.get(valor, Conteo(0, 0)))
+        for valor, etiqueta in TipoVertido.choices
+    ]
+
+
+# --- Clientes y orígenes con más incumplimientos (US4) ---------------------------------------
+
+
+@dataclass(frozen=True)
+class FilaCliente:
+    cliente: Cliente
+    conteo: Conteo
+    url: str | None
+
+    @property
+    def nombre(self):
+        return self.cliente.nombre_completo
+
+    @property
+    def pk(self):
+        return self.cliente.pk
+
+
+@dataclass(frozen=True)
+class FilaOrigen:
+    origen: Origen
+    conteo: Conteo
+    url: str | None
+
+    @property
+    def nombre(self):
+        return self.origen.nombre
+
+    @property
+    def pk(self):
+        return self.origen.pk
+
+
+def _con_incumplimientos(p, campo):
+    """`{pk: Conteo}` de los clientes u orígenes con algún fuera de norma en el período."""
+    return {
+        fila[campo]: Conteo(fila["fuera"], fila["evaluados"])
+        for fila in vigentes()
+        .filter(en_periodo(p), evaluacion__in=EVALUADAS)
+        .values(campo)
+        .annotate(**contar())
+        .filter(fuera__gte=1)
+        .order_by()
+    }
+
+
+def _ordenar(filas):
+    """Más fuera de norma primero; después mayor proporción, nombre (sin mayúsculas) y pk."""
+    filas.sort(key=lambda f: (-f.conteo.fuera, -f.conteo.fraccion, f.nombre.casefold(), f.pk))
+    return recortar(filas)
+
+
+def url_historial(cliente):
+    """El historial (US 3.3) rechaza clientes inactivos: sin enlace."""
+    return reverse("clientes:historial", args=[cliente.pk]) if cliente.activo else None
+
+
+def url_comparacion(origen):
+    """La comparación histórica (US 8.1) solo acepta orígenes de clientes activos."""
+    if not origen.cliente.activo:
+        return None
+    return reverse("estudios:comparacion") + f"?cliente={origen.cliente_id}&origen={origen.pk}"
+
+
+def clientes(p):
+    conteos = _con_incumplimientos(p, "asignacion__estudio__muestra__cliente")
+    filas = [
+        FilaCliente(cliente, conteos[cliente.pk], url_historial(cliente))
+        for cliente in Cliente.objects.in_bulk(conteos).values()
+    ]
+    return _ordenar(filas)
+
+
+def origenes(p):
+    conteos = _con_incumplimientos(p, "asignacion__estudio__muestra__origen")
+    filas = [
+        FilaOrigen(origen, conteos[origen.pk], url_comparacion(origen))
+        for origen in Origen.objects.select_related("cliente").in_bulk(conteos).values()
+    ]
+    return _ordenar(filas)
+
+
 # --- Contexto --------------------------------------------------------------------------------
 
 
 def armar(p):
     """Todo el contexto de la sección «Calidad» para el período `p` (de `tablero.periodo`)."""
     ranking = pruebas(p)
+    por_vertido = vertidos(p)
     return {
         "indicador": indicador(p),
         "pruebas": ranking,
+        "vertidos": por_vertido,
+        "clientes": clientes(p),
+        "origenes": origenes(p),
         "minimo_ranking": MINIMO_EVALUADOS_RANKING,
         # Para Chart.js (json_script): los porcentajes van como texto para no pasar por float.
         "graficos": {
             "calidad_pruebas": {
                 "etiquetas": [fila.etiqueta for fila in ranking.filas],
                 "porcentajes": [str(fila.conteo.porcentaje) for fila in ranking.filas],
+            },
+            "calidad_vertidos": {
+                "etiquetas": [fila.etiqueta for fila in por_vertido],
+                "cumple": [fila.cumple for fila in por_vertido],
+                "fuera": [fila.conteo.fuera for fila in por_vertido],
             },
         },
     }

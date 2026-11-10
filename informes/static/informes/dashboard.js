@@ -94,6 +94,36 @@
         },
       });
     }
+
+    // Calidad (US 8.4): resultados que cumplen y fuera de norma por tipo de vertido.
+    var calidadVertidos = document.getElementById("grafico-calidad-vertidos");
+    if (calidadVertidos && datos.calidad_vertidos) {
+      new window.Chart(calidadVertidos, {
+        type: "bar",
+        data: {
+          labels: datos.calidad_vertidos.etiquetas,
+          datasets: [
+            {
+              label: "Cumple",
+              data: datos.calidad_vertidos.cumple,
+              backgroundColor: color("--color-exito", "#16a34a"),
+            },
+            {
+              label: "Fuera de norma",
+              data: datos.calidad_vertidos.fuera,
+              backgroundColor: color("--color-peligro", "#dc2626"),
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+          },
+        },
+      });
+    }
   }
 
   if (document.readyState === "loading") {

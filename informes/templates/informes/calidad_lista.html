@@ -1,0 +1,26 @@
+{# Lista de clientes u orígenes con más incumplimientos (US 8.4). Parámetros: clave («clientes» u «origenes»), titulo, columna y lista (calidad.Lista). #}
+<div data-ranking="{{ clave }}">
+  <h3 class="mb-4 text-sm font-semibold text-marino">{{ titulo }}</h3>
+  {% if lista.filas %}
+    <table class="tabla">
+      <thead><tr><th>{{ columna }}</th><th>Fuera de norma</th></tr></thead>
+      <tbody>
+        {% for fila in lista.filas %}
+          <tr>
+            <td>
+              {% if fila.url %}<a href="{{ fila.url }}" class="text-cian-texto hover:underline">{{ fila.nombre }}</a>{% else %}{{ fila.nombre }}{% endif %}
+              {% if clave == "origenes" %}<span class="text-tinta-suave"> · {{ fila.origen.cliente.nombre_completo }}</span>{% endif %}
+              {% if not fila.url %} {% include "ui/estado.html" with estado="Inactivo" tipo="neutral" %}{% endif %}
+            </td>
+            <td class="numeros">{{ fila.conteo.texto_cantidad }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if lista.restantes %}
+      <p class="mt-2 text-xs text-tinta-suave">Y {{ lista.restantes }} más</p>
+    {% endif %}
+  {% else %}
+    {% include "ui/estado_vacio.html" with icono="circle-check" mensaje="No hubo resultados fuera de norma en el período." %}
+  {% endif %}
+</div>
