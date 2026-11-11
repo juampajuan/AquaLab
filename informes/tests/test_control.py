@@ -32,7 +32,7 @@ def test_control_muestra_ficha_y_pruebas(cliente_http, estudio_de, completar):
     assert "Muestra test" in html
     assert "Cliente de test" in html
     assert estudio.tipo_nombre_snapshot in html
-    assert "Pendiente de análisis" in html
+    assert "Sin iniciar" in html
     assert "1 de 3 pruebas completadas" in html
     codigos = re.findall(r'<tr data-prueba="([^"]+)">', html)
     assert codigos == ["CA", "CL-", "PH"]
@@ -48,7 +48,7 @@ def test_control_marca_incompletas_y_sin_validar(cliente_http, empleado, estudio
     assert "Incompleta" in fila(html, "PH")
     assert "Pendiente" in fila(html, "PH")
     assert "Sin validar" in fila(html, "CL-")
-    assert "Cargada" in fila(html, "CL-")
+    assert "Por validar" in fila(html, "CL-")
     assert "Incompleta" not in fila(html, "CA") and "Sin validar" not in fila(html, "CA")
     assert "Hay 2 pruebas sin completar." in html
 
@@ -135,10 +135,12 @@ def test_control_y_detalle_muestran_el_mismo_estado(cliente_http, empleado, estu
     }
 
 
-def test_detalle_enlaza_control(cliente_http, estudio_de):
+def test_detalle_ya_no_enlaza_control(cliente_http, estudio_de):
+    """SCRUM-82: el detalle ofrece «Generar informe» como próximo paso, sin pasar por el control."""
     estudio = estudio_de("CL-")
     html = cliente_http.get(reverse("estudios:detalle", args=[estudio.pk])).content.decode()
-    assert re.search(rf'href="{url(estudio)}"[^>]*>.*?Controlar para informe', html, re.S)
+    assert "Controlar para informe" not in html
+    assert f'href="{url(estudio)}"' not in html
 
 
 def test_flujo_con_validacion_real(cliente_http, bioquimico, estudio_de):
@@ -154,8 +156,8 @@ def test_flujo_con_validacion_real(cliente_http, bioquimico, estudio_de):
     assert Estudio.objects.get(pk=estudio.pk).estado == EstadoEstudio.FINALIZADO
     html = cliente_http.get(url(estudio)).content.decode()
     assert "El estudio está listo para informar" in html
-    listos = cliente_http.get(reverse("informes:listar"), {"listos": "1"}).content.decode()
-    assert url(estudio) in listos
+    listos = cliente_http.get(reverse("informes:listar")).content.decode()
+    assert reverse("informes:vista_previa", args=[estudio.pk]) in listos
 
     ph = asignacion_de(estudio, "PH")
     original = Decimal(ph.medicion.valor_ingresado)  # el que vio el formulario (US 6.3)

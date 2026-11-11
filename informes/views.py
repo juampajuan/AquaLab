@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.db import DatabaseError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from estudios import calculo, desvios
@@ -26,25 +27,22 @@ logger = logging.getLogger("informes")
 
 
 def listar(request):
+    """Estudios por informar (SCRUM-82): solo los que se pueden informar ya.
+
+    Los que están sin iniciar o en proceso no se pueden informar, y los que ya tienen informe se
+    buscan en «Informes emitidos»; por eso no se listan.
+    """
     page_obj = None
     q = ""
-    solo_listos = request.GET.get("listos") == "1"
     form = BuscarEstudioForm(request.GET or None)
     if not form.is_bound or form.is_valid():
         q = form.cleaned_data.get("q", "") if form.is_bound else ""
-        qs = servicios.estudios_para_informar(q, solo_listos)
+        qs = servicios.estudios_para_informar(q, solo_listos=True)
         page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
-    parametros = urlencode({"q": q} | ({"listos": "1"} if solo_listos else {}))
     return render(
         request,
         "informes/listar.html",
-        {
-            "form": form,
-            "page_obj": page_obj,
-            "q": q,
-            "solo_listos": solo_listos,
-            "parametros": parametros,
-        },
+        {"form": form, "page_obj": page_obj, "q": q, "parametros": urlencode({"q": q})},
     )
 
 
@@ -80,6 +78,20 @@ def control(request, pk):
     )
 
 
+def enlaces_del_informe(estudio):
+    """En pantalla, el estudio, la muestra y el cliente del informe son enlaces (no en el PDF).
+
+    Llevan `?desde=informe` para que el «Volver» de esas fichas regrese al informe.
+    """
+    cliente = estudio.muestra.cliente
+    enlaces = {
+        "estudio": reverse("estudios:detalle", args=[estudio.pk]),
+        "muestra": reverse("muestras:detalle", args=[estudio.muestra.pk]),
+        "cliente": reverse("clientes:detalle", args=[cliente.pk]) if cliente.activo else "",
+    }
+    return {clave: f"{url}?desde=informe" if url else "" for clave, url in enlaces.items()}
+
+
 def vista_previa(request, pk):
     """Borrador del informe (US 7.2): cualquier empleado lo ve; no cambia nada."""
     estudio = get_object_or_404(
@@ -90,9 +102,17 @@ def vista_previa(request, pk):
         messages.error(request, motivo)
         return redirect("informes:control", pk=estudio.pk)
     puede_emitir = request.user.has_perm("informes.emitir_informes")
+    # Se llega desde «Estudios por informar» (?desde=listos) o desde la ficha del estudio: «Volver»
+    # lleva a donde se estaba (SCRUM-82). Cualquier otro valor vuelve al estudio.
+    if request.GET.get("desde") == "listos":
+        volver_url = reverse("informes:listar")
+    else:
+        volver_url = reverse("estudios:detalle", args=[estudio.pk])
     contexto = {
         "estudio": estudio,
+        "volver_url": volver_url,
         "contenido": armar_contenido(estudio, request.user),
+        "enlaces": enlaces_del_informe(estudio),
         "puede_emitir": puede_emitir,
         "falta_firma": puede_emitir
         and not FirmaProfesional.objects.filter(usuario=request.user).exists(),
@@ -122,13 +142,26 @@ def generar(request, pk):
 def ver(request, pk):
     """El informe emitido, siempre desde su copia (FR-010)."""
     informe = get_object_or_404(
-        Informe.objects.select_related("estudio", "emitido_por"), estudio__pk=pk
+        Informe.objects.select_related("estudio__muestra__cliente", "emitido_por"), estudio__pk=pk
     )
+    estudio = informe.estudio
+    cliente = estudio.muestra.cliente
+    # «Volver» lleva a donde se estaba (SCRUM-82): informes emitidos, el historial del cliente o,
+    # por defecto, el estudio.
+    desde = request.GET.get("desde")
+    if desde == "emitidos":
+        volver_url = reverse("informes:emitidos")
+    elif desde == "historial" and cliente.activo:
+        volver_url = reverse("clientes:historial", args=[cliente.pk])
+    else:
+        volver_url = reverse("estudios:detalle", args=[estudio.pk])
     contexto = {
-        "estudio": informe.estudio,
+        "estudio": estudio,
         "informe": informe,
         "contenido": informe.contenido,
         "envios": list(informe.envios.select_related("enviado_por")),
+        "volver_url": volver_url,
+        "enlaces": enlaces_del_informe(estudio),
     }
     return render(request, "informes/ver.html", contexto)
 
@@ -185,11 +218,11 @@ def emitidos(request):
     """Listado y búsqueda de informes emitidos (US 7.3): cualquier empleado con sesión."""
     page_obj = None
     form = BuscarInformeForm(request.GET or None)
-    datos = {"q": "", "desde": None, "hasta": None}
+    datos = {"q": "", "desde": None, "hasta": None, "envio": ""}
     if form.is_bound and form.is_valid():
         datos = form.cleaned_data
     if not form.is_bound or form.is_valid():
-        qs = informes_emitidos(datos["q"], datos["desde"], datos["hasta"])
+        qs = informes_emitidos(datos["q"], datos["desde"], datos["hasta"], datos["envio"])
         page_obj = Paginator(qs, RESULTADOS_POR_PAGINA).get_page(request.GET.get("page"))
     parametros = urlencode(
         {

@@ -56,7 +56,9 @@ def test_ficha_ofrece_historial(cliente_autenticado, cliente_existente):
         reverse("clientes:detalle", args=[cliente_existente.pk])
     ).content.decode()
 
-    assert re.search(rf'href="{re.escape(url(cliente_existente))}"[^>]*>.*?Historial', html, re.S)
+    assert re.search(
+        rf'href="{re.escape(url(cliente_existente))}"[^>]*>.*?Ver historial', html, re.S
+    )
 
 
 def test_lista_muestras_del_cliente(
@@ -180,7 +182,7 @@ def test_formulario_de_filtros(cliente_autenticado, cliente_existente, muestra_d
         assert etiqueta in html
     for _, texto in EstadoEstudio.choices:
         assert texto in html
-    assert 'value="2026-10-01"' in html
+    assert 'value="01/10/2026"' in html
     assert re.search(r'<option value="en_proceso"[^>]*selected', html)
 
 
@@ -287,6 +289,6 @@ def test_ver_informe_solo_con_informe(
 
     assert html.count("Ver informe") == 1
     assert "Ver informe INF-000001" in html
-    assert f'href="{reverse("informes:ver", args=[con_informe.pk])}"' in html
+    assert f'href="{reverse("informes:ver", args=[con_informe.pk])}?desde=historial"' in html
     for sin_informe in (en_proceso, inconsistente):
         assert reverse("informes:ver", args=[sin_informe.pk]) not in html

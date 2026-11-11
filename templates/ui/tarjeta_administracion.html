@@ -1,0 +1,20 @@
+{# Tarjeta de una sección del inicio de administración. Parámetros: url, icono, titulo, descripcion y, con contador=True, cantidad (pendientes, siempre visible). #}
+<a href="{{ url }}" class="tarjeta group flex items-start gap-4 p-5 transition-shadow hover:shadow-nivel2">
+  <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-marino text-white">
+    {% include "ui/icono.html" with nombre=icono clase="size-5" %}
+  </span>
+  <span class="flex-1">
+    <span class="flex items-center gap-2 text-base font-semibold text-marino">
+      {{ titulo }}
+      {% if contador %}
+        {% if cantidad %}
+          <span class="rounded-full bg-advertencia px-2 py-0.5 text-xs font-semibold text-white" data-pendientes>{{ cantidad }} nueva{{ cantidad|pluralize }}</span>
+        {% else %}
+          <span class="rounded-full bg-fondo-hundido px-2 py-0.5 text-xs font-semibold text-tinta-suave" data-pendientes>0 nuevas</span>
+        {% endif %}
+      {% endif %}
+    </span>
+    <span class="mt-1 block text-sm text-tinta-suave">{{ descripcion }}</span>
+  </span>
+  {% include "ui/icono.html" with nombre="arrow-right" clase="size-4 shrink-0 self-center text-tinta-suave group-hover:text-cian-texto" %}
+</a>

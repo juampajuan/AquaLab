@@ -27,19 +27,19 @@
     </header>
 
     <section>
-      <h2 class="mb-3 text-sm font-semibold text-marino">Cliente</h2>
+      <h2 class="mb-4 flex items-center gap-2 text-base font-semibold text-marino">{% include "ui/icono.html" with nombre="users" clase="size-4 text-cian-texto" %} Cliente</h2>
       <dl class="resumen lg:grid-cols-3">
-        <div><dt>Nombre o razón social</dt><dd>{{ cliente.nombre_completo|default:"—" }}</dd></div>
+        <div><dt>Nombre o razón social</dt><dd>{% if enlaces.cliente %}<a href="{{ enlaces.cliente }}" class="text-cian-texto hover:underline">{{ cliente.nombre_completo|default:"—" }}</a>{% else %}{{ cliente.nombre_completo|default:"—" }}{% endif %}</dd></div>
         <div><dt>Documento</dt><dd>{{ cliente.tipo_documento }} {{ cliente.numero_documento }}</dd></div>
         <div><dt>Domicilio</dt><dd>{{ cliente.domicilio|default:"—" }}</dd></div>
         <div><dt>Correo electrónico</dt><dd>{{ cliente.email|default:"—" }}</dd></div>
       </dl>
     </section>
 
-    <section>
-      <h2 class="mb-3 text-sm font-semibold text-marino">Muestra</h2>
+    <section class="border-t border-borde pt-6">
+      <h2 class="mb-4 flex items-center gap-2 text-base font-semibold text-marino">{% include "ui/icono.html" with nombre="flask-conical" clase="size-4 text-cian-texto" %} Muestra</h2>
       <dl class="resumen lg:grid-cols-3">
-        <div><dt>Muestra</dt><dd>N° PI {{ muestra.numero_pi }}<span class="mt-0.5 block text-xs font-normal text-tinta-suave">{{ muestra.nombre|default:"—" }}</span></dd></div>
+        <div><dt>Muestra</dt><dd>{% if enlaces.muestra %}<a href="{{ enlaces.muestra }}" class="text-cian-texto hover:underline">N° PI {{ muestra.numero_pi }}</a>{% else %}N° PI {{ muestra.numero_pi }}{% endif %}<span class="mt-0.5 block text-xs font-normal text-tinta-suave">{{ muestra.nombre|default:"—" }}</span></dd></div>
         <div><dt>Origen</dt><dd>{{ muestra.origen|default:"—" }}</dd></div>
         <div><dt>Tipo de vertido</dt><dd>{{ muestra.tipo_vertido|default:"—" }}</dd></div>
         <div><dt>Fecha de muestreo</dt><dd>{{ muestra.fecha_muestreo|default:"—" }}</dd></div>
@@ -49,16 +49,16 @@
       </dl>
     </section>
 
-    <section>
-      <h2 class="mb-3 text-sm font-semibold text-marino">Estudio</h2>
+    <section class="border-t border-borde pt-6">
+      <h2 class="mb-4 flex items-center gap-2 text-base font-semibold text-marino">{% include "ui/icono.html" with nombre="microscope" clase="size-4 text-cian-texto" %} Estudio</h2>
       <dl class="resumen lg:grid-cols-3">
-        <div><dt>N° de estudio</dt><dd>{{ estudio.numero }}</dd></div>
+        <div><dt>N° de estudio</dt><dd>{% if enlaces.estudio %}<a href="{{ enlaces.estudio }}" class="text-cian-texto hover:underline">{{ estudio.numero }}</a>{% else %}{{ estudio.numero }}{% endif %}</dd></div>
         <div><dt>Tipo de estudio</dt><dd>{{ estudio.tipo|default:"—" }}</dd></div>
       </dl>
     </section>
 
-    <section>
-      <h2 class="mb-3 text-sm font-semibold text-marino">Resultados</h2>
+    <section class="border-t border-borde pt-6">
+      <h2 class="mb-4 flex items-center gap-2 text-base font-semibold text-marino">{% include "ui/icono.html" with nombre="clipboard-list" clase="size-4 text-cian-texto" %} Resultados</h2>
       <div class="overflow-x-auto">
         <table class="tabla">
           <thead>

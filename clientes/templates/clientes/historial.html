@@ -60,7 +60,7 @@
                       <a href="{% url 'estudios:detalle' estudio.pk %}" class="font-medium text-cian-texto hover:underline">Estudio N° {{ estudio.pk }} · {{ estudio.tipo_nombre_snapshot }}</a>
                       {% include "ui/estado.html" with estado=estudio.get_estado_display tipo=estudio.estado|tipo_estado %}
                       {% if estudio.informe %}
-                        <a href="{% url 'informes:ver' estudio.pk %}" class="btn btn-secundario btn-chico">
+                        <a href="{% url 'informes:ver' estudio.pk %}?desde=historial" class="btn btn-secundario btn-chico">
                           {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Ver informe {{ estudio.informe.numero_mostrado }}
                         </a>
                       {% endif %}
@@ -81,4 +81,8 @@
       {% include "ui/estado_vacio.html" with icono="search" mensaje="Ninguna muestra coincide con los filtros." accion_texto="Limpiar filtros" accion_url=url_historial %}
     {% endif %}
   </section>
+
+  <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+    {% include "ui/volver.html" with url=volver_url %}
+  </div>
 {% endblock %}

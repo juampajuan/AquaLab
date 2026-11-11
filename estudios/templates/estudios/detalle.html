@@ -21,20 +21,12 @@
 {% endblock %}
 
 {% block content %}
-  <div class="max-w-5xl space-y-6">
+  <div class="space-y-6">
     <section class="tarjeta overflow-hidden">
       <h2 class="flex items-center gap-2.5 border-b border-borde bg-fondo-hundido px-6 py-4 text-sm font-semibold text-marino">
         {% include "ui/icono.html" with nombre="microscope" clase="size-4 text-cian-texto" %} Datos del estudio
       </h2>
       <dl class="resumen p-6 lg:grid-cols-3">
-        <div>
-          <dt>Identificador</dt>
-          <dd>#{{ estudio.pk }}</dd>
-        </div>
-        <div>
-          <dt>Estado general</dt>
-          <dd>{{ estudio.get_estado_display }}</dd>
-        </div>
         <div>
           <dt>Tipo de estudio</dt>
           <dd>
@@ -77,11 +69,19 @@
         </div>
         <div class="flex flex-wrap items-center gap-4">
           <p class="numeros text-xs text-tinta-suave">
-            Total: {{ total_pruebas }} · Completadas: {{ pruebas_completadas }} · Cargadas: {{ pruebas_cargadas }} · Pendientes: {{ pruebas_pendientes }}
+            Total: {{ total_pruebas }} · Completadas: {{ pruebas_completadas }} · Por validar: {{ pruebas_cargadas }} · Pendientes: {{ pruebas_pendientes }}
           </p>
-          {% if estudio.admite_mediciones and pruebas_para_medir %}
-            <a href="{% url 'estudios:cargar_mediciones' estudio.pk %}" class="btn btn-primario">
-              {% include "ui/icono.html" with nombre="clipboard-list" clase="size-4" %} Cargar mediciones
+        </div>
+      </div>
+      {# Próximo paso (SCRUM-82): una sola acción principal según el estado; el resto, secundarias. #}
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-borde px-6 py-4" data-componente="proximo-paso" data-accion="{{ proximo_paso.accion|default:'' }}">
+        <p class="text-sm text-tinta">
+          <span class="font-semibold text-marino">Próximo paso:</span> {{ proximo_paso.texto }}
+        </p>
+        <div class="flex flex-wrap items-center gap-2">
+          {% if estudio.admite_modificaciones %}
+            <a href="{% url 'estudios:agregar_prueba' estudio.pk %}" class="btn btn-secundario">
+              {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Agregar prueba
             </a>
           {% endif %}
           {% if estudio.admite_correcciones and hay_mediciones %}
@@ -89,14 +89,14 @@
               {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Corregir mediciones
             </a>
           {% endif %}
-          {% if perms.estudios.validar_resultados and estudio.admite_correcciones and hay_para_validar %}
-            <a href="{% url 'estudios:validar_resultados' estudio.pk %}" class="btn btn-primario">
+          {% if validar_secundario %}
+            <a href="{% url 'estudios:validar_resultados' estudio.pk %}" class="btn btn-secundario">
               {% include "ui/icono.html" with nombre="check" clase="size-4" %} Validar resultados
             </a>
           {% endif %}
-          {% if estudio.admite_modificaciones %}
-            <a href="{% url 'estudios:agregar_prueba' estudio.pk %}" class="btn btn-primario">
-              {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Agregar prueba
+          {% if proximo_paso.accion %}
+            <a href="{{ proximo_paso.url }}" class="btn btn-primario" data-accion-principal>
+              {% include "ui/icono.html" with nombre=proximo_paso.icono clase="size-4" %} {{ proximo_paso.etiqueta }}
             </a>
           {% endif %}
         </div>
@@ -109,8 +109,9 @@
               <th>Prueba</th>
               <th>Medición</th>
               <th>Resultado</th>
-              <th class="text-right">Estado</th>
-              <th class="text-right">Acción</th>
+              <th>Límite</th>
+              <th>Estado</th>
+              {% if estudio.admite_modificaciones %}<th class="text-right">Acción</th>{% endif %}
             </tr>
           </thead>
           <tbody>
@@ -120,26 +121,26 @@
                 <td>{{ asignacion.prueba.nombre }}</td>
                 <td>
                   {% if asignacion.medicion %}
-                    <span class="numeros font-semibold text-tinta">{{ asignacion.medicion.valor_ingresado|valor_medicion:asignacion.medicion.unidad }}{% if not asignacion.medicion.unidad|es_presencia %} {{ asignacion.medicion.unidad|unidad }}{% endif %}</span>
-                    <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.cargada_por.get_full_name|default:asignacion.medicion.cargada_por.email }} · {{ asignacion.medicion.fecha_carga|date:"d/m/Y H:i" }}</span>
+                    <span class="numeros block font-semibold text-tinta">{{ asignacion.medicion.valor_ingresado|valor_medicion:asignacion.medicion.unidad }}{% if not asignacion.medicion.unidad|es_presencia %} {{ asignacion.medicion.unidad|unidad }}{% endif %}</span>
+                    {# Quién la cargó por última vez: si se corrigió, quien la corrigió. #}
                     {% if asignacion.medicion.corregida_por %}
-                      <span class="block text-xs text-tinta-suave">Corregida por {{ asignacion.medicion.corregida_por.get_full_name|default:asignacion.medicion.corregida_por.email }} · {{ asignacion.medicion.fecha_correccion|date:"d/m/Y H:i" }}</span>
+                      <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.corregida_por.get_full_name|default:asignacion.medicion.corregida_por.email }}</span>
+                      <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.fecha_correccion|date:"d/m/Y H:i" }}</span>
+                    {% else %}
+                      <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.cargada_por.get_full_name|default:asignacion.medicion.cargada_por.email }}</span>
+                      <span class="block text-xs text-tinta-suave">{{ asignacion.medicion.fecha_carga|date:"d/m/Y H:i" }}</span>
                     {% endif %}
                   {% elif asignacion.prueba.es_calculada %}
-                    <span class="text-xs text-tinta-suave">Se calcula</span>
+                    <span class="block text-xs text-tinta-suave">Se calcula</span>
                   {% else %}
-                    <span class="text-tinta-suave">—</span>
+                    <span class="block text-tinta-suave">—</span>
                   {% endif %}
                 </td>
                 <td>
                   {% if asignacion.resultado %}
-                    <span class="numeros font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
+                    <span class="numeros block font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
                     {% if asignacion.resultado.formula %}
                       <span class="block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
-                    {% endif %}
-                    <span class="mt-1 block">{% include "estudios/evaluacion.html" %}</span>
-                    {% if asignacion.evaluacion and asignacion.validacion and asignacion.estado == "completada" %}
-                      <span class="block text-xs text-tinta-suave">Validada por {{ asignacion.validacion.validada_por.get_full_name|default:asignacion.validacion.validada_por.email }} · {{ asignacion.validacion.fecha_validacion|date:"d/m/Y H:i" }}</span>
                     {% endif %}
                     {% if asignacion.deteccion %}
                       {% include "estudios/desvio.html" with deteccion=asignacion.deteccion validacion=asignacion.validacion_desvio codigo=asignacion.prueba.codigo %}
@@ -148,15 +149,47 @@
                     <span class="text-xs text-tinta-suave">{{ asignacion.motivo_sin_resultado }}</span>
                   {% endif %}
                 </td>
-                <td class="text-right">{% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}</td>
-                <td class="text-right">
-                  {% if not estudio.admite_modificaciones %}
-                  {% elif total_pruebas <= 1 %}
-                    <span class="text-xs text-tinta-suave">El estudio debe conservar al menos una prueba.</span>
-                  {% elif asignacion.puede_quitarse %}
-                    <a href="{% url 'estudios:quitar_prueba' estudio.pk asignacion.pk %}" class="btn btn-peligro btn-chico">Quitar</a>
+                <td>
+                  {% if asignacion.evaluacion %}
+                    {# Solo se resalta lo que falla: «Cumple» es un ✓ discreto (SCRUM-82). #}
+                    {% if asignacion.evaluacion == 'cumple' or asignacion.evaluacion == 'fuera_de_norma' %}
+                      <span class="flex items-center gap-1.5 font-semibold text-tinta">
+                        {{ asignacion.limite_texto }}
+                        {% if asignacion.evaluacion == 'cumple' %}
+                          {% include "ui/marca_evaluacion.html" with icono="check" color="text-exito" texto="Cumple" %}
+                        {% else %}
+                          {% include "ui/marca_evaluacion.html" with icono="x" color="text-peligro" texto="Fuera de norma" %}
+                        {% endif %}
+                      </span>
+                    {% else %}
+                      {% if asignacion.limite_texto %}<span class="block font-semibold text-tinta">{{ asignacion.limite_texto }}</span>{% endif %}
+                      <span class="block text-xs text-tinta-suave">Sin límite comparable</span>
+                    {% endif %}
+                    {% if asignacion.limite_texto %}
+                      {% if asignacion.limite_norma %}<span class="mt-0.5 block text-xs text-tinta-suave">{{ asignacion.limite_norma }}</span>{% endif %}
+                      {% if asignacion.limite_origen %}<span class="block text-xs text-tinta-suave">Vertido {{ asignacion.limite_origen|lower }}</span>{% endif %}
+                    {% endif %}
+                  {% else %}
+                    <span class="block text-tinta-suave">—</span>
                   {% endif %}
                 </td>
+                <td>
+                  {% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}
+                  {% if asignacion.evaluacion and asignacion.validacion and asignacion.estado == "completada" %}
+                    <span class="mt-1 block text-xs text-tinta-suave">Validada por {{ asignacion.validacion.validada_por.get_full_name|default:asignacion.validacion.validada_por.email }}</span>
+                    <span class="block text-xs text-tinta-suave">{{ asignacion.validacion.fecha_validacion|date:"d/m/Y H:i" }}</span>
+                  {% endif %}
+                </td>
+                {# «Acción» solo existe mientras se pueden quitar pruebas (estudio pendiente de análisis). #}
+                {% if estudio.admite_modificaciones %}
+                  <td class="text-right">
+                    {% if total_pruebas <= 1 %}
+                      <span class="text-xs text-tinta-suave">El estudio debe conservar al menos una prueba.</span>
+                    {% elif asignacion.puede_quitarse %}
+                      <a href="{% url 'estudios:quitar_prueba' estudio.pk asignacion.pk %}" class="text-xs font-semibold text-tinta-suave hover:text-peligro hover:underline">Quitar</a>
+                    {% endif %}
+                  </td>
+                {% endif %}
               </tr>
             {% endfor %}
           </tbody>
@@ -164,21 +197,9 @@
       </div>
     </section>
 
-    <div class="flex flex-wrap gap-3">
-      <a href="{% url 'muestras:detalle' estudio.muestra.pk %}" class="btn btn-primario">
-        {% include "ui/icono.html" with nombre="flask-conical" clase="size-4" %} Ver ficha de la muestra
-      </a>
-      <a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar estudios
-      </a>
-      {% if estudio.informe %}
-        <a href="{% url 'informes:ver' estudio.pk %}" class="btn btn-secundario">
-          {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Ver informe
-        </a>
-      {% endif %}
-      <a href="{% url 'informes:control' estudio.pk %}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Controlar para informe
-      </a>
+    {# «Volver» abajo a la izquierda; a la derecha, la comparación histórica (consulta opcional). #}
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      {% include "ui/volver.html" with url=volver_url %}
       {% if perms.informes.ver_dashboard %}
         <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}" class="btn btn-secundario">
           {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Comparación histórica

@@ -16,7 +16,7 @@ TIPOS_DE_ESTADO = {
     "informe_generado": "success",
     # Prueba de un estudio
     "pendiente": "neutral",
-    "cargada": "info",
+    "cargada": "warning",
     "completada": "success",
     # Evaluación de un resultado (US 6.4), en el informe (US 7.2)
     "cumple": "success",

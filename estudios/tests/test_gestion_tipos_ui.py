@@ -88,7 +88,8 @@ def test_listado_paginado_filtrado_y_navegacion(navegador, tipo_inactivo):
     assert not navegador.get(reverse("estudios:tipos_listar"), {"estado": "activos"}).context[
         "page_obj"
     ]
-    assert "Gestionar tipos" in navegador.get(reverse("inicio")).content.decode()
+    # SCRUM-82: el catálogo de estudios se abre desde la administración, no desde el inicio.
+    assert "Gestionar tipos" not in navegador.get(reverse("inicio")).content.decode()
 
 
 def abrir_edicion(client, tipo):

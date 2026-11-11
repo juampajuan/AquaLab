@@ -67,16 +67,20 @@
       · Última modificación: {% if prueba.modificada_por %}{{ prueba.modificada_por.get_full_name|default:prueba.modificada_por.email }} el {{ prueba.fecha_modificacion|date:"d/m/Y H:i" }}{% else %}Sin registro{% endif %}
     </p>
 
-    <div class="flex flex-wrap gap-3">
-      <a class="btn btn-primario" href="{% url 'catalogo:editar' prueba.pk %}">{% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Editar</a>
-      {% if prueba.activa %}
-        <a class="btn btn-secundario" href="{% url 'catalogo:desactivar' prueba.pk %}">Desactivar</a>
-      {% else %}
-        <a class="btn btn-secundario" href="{% url 'catalogo:reactivar' prueba.pk %}">Reactivar</a>
-      {% endif %}
-      {% if not en_uso and not dependientes %}
-        <a class="btn btn-peligro sm:ml-auto" href="{% url 'catalogo:eliminar' prueba.pk %}">Eliminar</a>
-      {% endif %}
+    {# «Volver» a la izquierda; a la derecha las acciones, con «Editar» como principal (SCRUM-82). #}
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <a class="btn btn-secundario" href="{% url 'administracion:pruebas' %}">{% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver al catálogo</a>
+      <div class="flex flex-wrap items-center gap-3">
+        {% if not en_uso and not dependientes %}
+          <a class="btn btn-peligro" href="{% url 'catalogo:eliminar' prueba.pk %}">Eliminar</a>
+        {% endif %}
+        {% if prueba.activa %}
+          <a class="btn btn-secundario" href="{% url 'catalogo:desactivar' prueba.pk %}">Desactivar</a>
+        {% else %}
+          <a class="btn btn-secundario" href="{% url 'catalogo:reactivar' prueba.pk %}">Reactivar</a>
+        {% endif %}
+        <a class="btn btn-primario" href="{% url 'catalogo:editar' prueba.pk %}">{% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Editar</a>
+      </div>
     </div>
   </div>
 {% endblock %}

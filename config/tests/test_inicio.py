@@ -152,7 +152,8 @@ def test_tabla_muestra_las_cinco_mas_recientes_con_sus_datos(cliente_http, crear
     assert "Aguas del Sur S.A." in contenido
     assert "Pozo N°2" in contenido
     assert ayer.strftime("%d/%m/%Y") in contenido
-    assert 'data-estado="info">Ingresada' in contenido
+    assert "Ingresada" not in contenido
+    assert 'data-estado="warning">Sin estudio' in contenido
 
 
 # Escenario 7: base sin muestras

@@ -1,9 +1,9 @@
 from django import forms
 
+from muestras.forms import FORMATOS_FECHA, SelectorFecha
+
 from .firmas import leer_firma
 from .models import FirmaProfesional
-
-FORMATOS_FECHA = ["%Y-%m-%d", "%d/%m/%Y"]
 
 
 class BuscarInformeForm(forms.Form):
@@ -20,14 +20,27 @@ class BuscarInformeForm(forms.Form):
         label="Emitido desde",
         required=False,
         input_formats=FORMATOS_FECHA,
-        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        widget=SelectorFecha(attrs={"class": "form-control"}),
     )
     hasta = forms.DateField(
         label="Emitido hasta",
         required=False,
         input_formats=FORMATOS_FECHA,
-        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        widget=SelectorFecha(attrs={"class": "form-control"}),
     )
+
+    envio = forms.ChoiceField(
+        label="Envío por correo",
+        required=False,
+        choices=[("", "Todos"), ("sin_enviar", "Sin enviar"), ("enviados", "Enviados")],
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    def full_clean(self):
+        super().full_clean()
+        for nombre in ("desde", "hasta"):
+            if nombre in self.errors:
+                self.fields[nombre].widget.attrs["class"] = "form-control is-invalid"
 
     def clean(self):
         datos = super().clean()

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Administración · AquaLab{% endblock %}
+{% block encabezado %}{% include "ui/encabezado.html" with titulo="Administración" subtitulo="Cuentas, roles y catálogo del laboratorio." %}{% endblock %}
+{% block content %}
+{# Inicio del apartado de administración (SCRUM-82): las secciones, agrupadas por tema. #}
+<div class="space-y-8" data-seccion="administracion">
+  <section aria-labelledby="gestion-usuarios">
+    <h2 id="gestion-usuarios" class="mb-3 text-base font-semibold text-marino">Gestión de usuarios</h2>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% url "administracion:solicitudes" as url %}
+      {% include "ui/tarjeta_administracion.html" with url=url icono="user-plus" titulo="Solicitudes de cuenta" descripcion="Aprobá o rechazá las cuentas nuevas que esperan acceso." contador=True cantidad=solicitudes_pendientes %}
+      {% url "administracion:usuarios" as url %}
+      {% include "ui/tarjeta_administracion.html" with url=url icono="users" titulo="Usuarios y roles" descripcion="Cambiá el rol de cada cuenta y activala o desactivala." %}
+    </div>
+  </section>
+  <section aria-labelledby="gestion-catalogos">
+    <h2 id="gestion-catalogos" class="mb-3 text-base font-semibold text-marino">Gestión de catálogos</h2>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% url "administracion:pruebas" as url %}
+      {% include "ui/tarjeta_administracion.html" with url=url icono="flask-conical" titulo="Catálogo de pruebas" descripcion="Dá de alta, editá o desactivá las pruebas del laboratorio." %}
+      {% if perms.estudios.gestionar_catalogo %}
+        {% url "estudios:tipos_listar" as url %}
+        {% include "ui/tarjeta_administracion.html" with url=url icono="clipboard-list" titulo="Catálogo de estudios" descripcion="Armá los tipos de estudio con las pruebas que incluye cada uno." %}
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -249,10 +249,8 @@ def test_gestion_tipos_permiso(client, empleado, autorizado):
     if autorizado:
         permiso(empleado, "estudios.gestionar_catalogo")
     html = accesos(inicio(client, empleado))
-    assert (reverse("estudios:tipos_listar") in html) == autorizado
-    if autorizado:
-        assert html.index('data-modulo="Estudios"') < html.index(reverse("estudios:tipos_listar"))
-        assert html.index(reverse("estudios:tipos_listar")) < html.index('data-modulo="Informes"')
+    # SCRUM-82: «Tipos de estudio» se gestiona desde la administración, no desde el inicio.
+    assert reverse("estudios:tipos_listar") not in html
     assert client.get(reverse("estudios:tipos_listar")).status_code == (200 if autorizado else 403)
 
 

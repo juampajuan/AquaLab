@@ -33,10 +33,6 @@
         {% include "ui/dato.html" with etiqueta="Nombre de la muestra" valor=datos.nombre %}
       {% endif %}
       {% include "ui/dato.html" with etiqueta="Responsable del muestreo" valor=datos.responsable_muestreo %}
-      <div class="sm:col-span-2">
-        <dt>Estado inicial</dt>
-        <dd>{% include "ui/estado.html" with estado="Ingresada" tipo="info" %}</dd>
-      </div>
     </dl>
 
     <p class="mt-4 text-sm text-tinta-suave">El N° PI se asigna al confirmar.</p>

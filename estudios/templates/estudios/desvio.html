@@ -2,26 +2,33 @@
   Marca de desvío de una prueba (US 8.2). Parámetros: deteccion (desvios.Deteccion), estudio,
   codigo y, si el desvío ya se revisó al validar, validacion (la vigente, con la constancia).
   Usa regla_desvio del contexto para la ayuda. El desvío se calcula al vuelo; no se guarda.
+  SCRUM-82: a la vista solo la etiqueta; los datos se despliegan al tocarla.
 {% endcomment %}
 {% load ui %}
-<div class="aviso {% if validacion %}aviso-info{% else %}aviso-advertencia{% endif %} mt-2 text-xs" data-desvio="{% if validacion %}revisado{% else %}pendiente{% endif %}">
-  <div>
-    <p class="flex items-center gap-1.5 font-semibold">
-      {% if validacion %}
-        {% include "ui/icono.html" with nombre="circle-check" clase="size-4" %} Desvío revisado
-      {% else %}
-        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-4" %} Desvío
-      {% endif %}
-      {% if regla_desvio %}
-        {% include "ui/ayuda.html" with texto="Hay desvío si el resultado sin validar difiere en "|add:regla_desvio|add:". Se revisa al validar la prueba." id="ayuda-desvio-"|add:codigo etiqueta="Desvío" %}
-      {% endif %}
-    </p>
-    <p class="numeros">Observado {{ deteccion.observado }} · {{ deteccion.etiqueta_referencia }}: {{ deteccion.referencia_texto }} · {{ deteccion.variacion_texto }}</p>
+<details class="group mt-2 text-xs" data-desvio="{% if validacion %}revisado{% else %}pendiente{% endif %}">
+  <summary class="inline-flex cursor-pointer list-none items-center gap-1.5 [&::-webkit-details-marker]:hidden">
     {% if validacion %}
-      <p>Validado por {{ validacion.validada_por.get_full_name|default:validacion.validada_por.email }} el {{ validacion.fecha_validacion|date:"d/m/Y H:i" }} – {{ validacion.observacion|default:"Sin observación" }} · {% if deteccion.presencia %}referencia{% else %}mediana{% endif %} {{ deteccion.referencia_texto }}, umbral {{ deteccion.umbral_texto }}</p>
+      {% include "ui/estado.html" with estado="Desvío revisado" tipo="info" %}
+    {% else %}
+      {% include "ui/estado.html" with estado="Desvío" tipo="warning" %}
+    {% endif %}
+    {% include "ui/icono.html" with nombre="chevron-down" clase="size-3.5 text-tinta-suave transition-transform group-open:rotate-180" %}
+  </summary>
+  <div class="mt-1.5 border-l-2 border-advertencia-borde pl-2.5">
+    <span class="numeros block text-tinta-suave">Observado {{ deteccion.observado }}</span>
+    <span class="numeros block text-tinta-suave">{{ deteccion.etiqueta_referencia }}: {{ deteccion.referencia_texto }}</span>
+    <span class="numeros block font-semibold text-tinta">{{ deteccion.variacion_texto }}</span>
+    {% if validacion %}
+      <span class="mt-1 block text-tinta-suave">Validado por {{ validacion.validada_por.get_full_name|default:validacion.validada_por.email }}</span>
+      <span class="block text-tinta-suave">{{ validacion.fecha_validacion|date:"d/m/Y H:i" }}</span>
+      <span class="block text-tinta-suave">{{ validacion.observacion|default:"Sin observación" }}</span>
+      <span class="block text-tinta-suave">{% if deteccion.presencia %}Referencia{% else %}Mediana{% endif %} {{ deteccion.referencia_texto }}, umbral {{ deteccion.umbral_texto }}</span>
+    {% endif %}
+    {% if regla_desvio %}
+      <span class="mt-1 block text-tinta-suave">Hay desvío si el resultado sin validar difiere en {{ regla_desvio }}.</span>
     {% endif %}
     {% if perms.informes.ver_dashboard %}
-      <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}&amp;pruebas={{ codigo|urlencode }}&amp;elegir=1" class="font-semibold">Comparación histórica</a>
+      <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}&amp;pruebas={{ codigo|urlencode }}&amp;elegir=1" class="mt-1 inline-block font-semibold text-cian-texto hover:underline">Comparación histórica</a>
     {% endif %}
   </div>
-</div>
+</details>

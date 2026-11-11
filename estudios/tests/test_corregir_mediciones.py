@@ -121,7 +121,7 @@ def test_confirmar_corrige_y_recalcula(cliente_http, estudio_cargado):
     html = cliente_http.get(url_detalle(estudio_cargado)).content.decode()
     assert "2,53 ml" in html
     assert "25,3 mg/l" in html
-    assert "Corregida por" in html
+    assert "Corregida por" not in html  # SCRUM-82: se muestra solo quién la cargó por última vez
 
 
 def test_otro_empleado_puede_corregir(estudio_cargado, django_user_model):

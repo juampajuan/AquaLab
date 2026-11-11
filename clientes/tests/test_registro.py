@@ -265,7 +265,6 @@ def test_detalle_muestra_todos_los_datos_registrados(cliente_autenticado):
         "maria@hidrolab.com",
         "+54 11 5555-1234",
         "Av. Libertador 500",
-        "Activo",
     ):
         assert texto in html
 

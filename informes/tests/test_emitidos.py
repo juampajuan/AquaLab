@@ -39,7 +39,7 @@ def test_listado_columnas_y_orden(cliente_http, tres_informes, con_fecha):
     assert f"#{dos.estudio_id}" in html
     assert dos.contenido["estudio"]["tipo"] in html
     assert dos.contenido["firma"]["nombre"] in html
-    assert f'href="{reverse("informes:ver", args=[dos.estudio_id])}"' in html
+    assert f'href="{reverse("informes:ver", args=[dos.estudio_id])}?desde=emitidos"' in html
 
 
 def test_emitido_por_sin_firma_usa_el_usuario(cliente_http, tres_informes):

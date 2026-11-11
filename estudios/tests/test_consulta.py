@@ -312,7 +312,7 @@ def test_columnas_en_resultados_de_busqueda(cliente_http, escenario_consulta):
     assert "DNI 30123456" in html
     assert "Físico-Químico" in html
     assert "Control Básico" in html
-    assert "Pendiente de análisis" in html
+    assert "Sin iniciar" in html
     assert "En proceso" in html
     assert reverse("estudios:detalle", args=[estudio_ep.pk]) in html
 
@@ -344,7 +344,7 @@ def test_detalle_estudio_cabecera_avance_y_pruebas_ordenadas(
     codigos = [a.prueba.codigo for a in resp.context["pruebas_asignadas"]]
     assert codigos == ["ALC", "NO3", "PH"]
     estados = [a.get_estado_display() for a in resp.context["pruebas_asignadas"]]
-    assert estados == ["Cargada", "Completada", "Pendiente"]
+    assert estados == ["Por validar", "Completada", "Pendiente"]
     assert "Alcalinidad total" in html
     assert "Nitratos" in html
     assert "Potencial de hidrógeno" in html
@@ -353,7 +353,7 @@ def test_detalle_estudio_cabecera_avance_y_pruebas_ordenadas(
 @pytest.mark.parametrize(
     ("clave_estudio", "etiqueta_esperada"),
     [
-        ("estudio_pendiente", "Pendiente de análisis"),
+        ("estudio_pendiente", "Sin iniciar"),
         ("estudio_en_proceso", "En proceso"),
         ("estudio_finalizado", "Finalizado"),
         ("estudio_informado", "Informe generado"),
@@ -568,12 +568,12 @@ def fila(html, codigo):
 @pytest.mark.parametrize(
     "codigo,valor,evaluacion,limite",
     [
-        ("PH", "7.4", "Cumple", "Límite: 6.4 a 8.5"),
-        ("CL-", "40", "Fuera de norma", "Límite: máx. 350.0"),  # x*10 → 400
-        ("ECOLI", "1", "Fuera de norma", "Límite: Ausente"),
-        ("SS10", "0", "Cumple", "Límite: Ausente"),
-        ("OLOR", "2", "Sin límite comparable", "Límite: máx. SOE"),
-        ("CL2-LIB", "0.3", "Sin límite comparable", "Sin límite en el catálogo"),
+        ("PH", "7.4", "Cumple", "6.4 a 8.5"),
+        ("CL-", "40", "Fuera de norma", "máx. 350.0"),  # x*10 → 400
+        ("ECOLI", "1", "Fuera de norma", "Ausente"),
+        ("SS10", "0", "Cumple", "Ausente"),
+        ("OLOR", "2", "Sin límite comparable", "máx. SOE"),
+        ("CL2-LIB", "0.3", "Sin límite comparable", "Sin límite comparable"),
     ],
 )
 def test_detalle_muestra_evaluacion(
@@ -587,15 +587,15 @@ def test_detalle_muestra_evaluacion(
     assert f">{evaluacion}</span>" in html
     assert limite in html
     if evaluacion == "Fuera de norma":
-        assert 'data-estado="danger"' in html
+        assert "text-peligro" in html  # SCRUM-82: texto rojo en lugar de etiqueta
 
 
 @pytest.mark.parametrize(
     "vertido,codigo,valor,evaluacion,texto",
     [
-        ("cloacal", "PH", "7", "Fuera de norma", "Límite: 7.01 a 10.0 · (AGOSBA) 389/98 (Cloacal)"),
-        ("agua", "PH", "7", "Cumple", "Límite: 6.4 a 8.5"),
-        ("cloacal", "CL2-LIB", "0.3", "Sin límite comparable", "Límite: máx. NE"),
+        ("cloacal", "PH", "7", "Fuera de norma", "7.01 a 10.0"),
+        ("agua", "PH", "7", "Cumple", "6.4 a 8.5"),
+        ("cloacal", "CL2-LIB", "0.3", "Sin límite comparable", "máx. NE"),
     ],
 )
 def test_detalle_usa_limites_del_vertido(
@@ -621,5 +621,5 @@ def test_detalle_validada_usa_lo_guardado(cliente_http, estudio_de, empleado, bi
     Prueba.objects.filter(codigo="CL-").update(limite_max="250")
     html = fila(html_detalle(cliente_http, estudio), "CL-")
     assert ">Cumple</span>" in html
-    assert "Límite: máx. 350.0" in html
+    assert "máx. 350.0" in html
     assert "Validada por " in html

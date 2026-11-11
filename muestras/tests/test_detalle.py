@@ -56,7 +56,7 @@ def test_ficha_muestra_exhibe_todos_los_datos_vigentes(
 
     assert "200001" in html
     assert "Pozo N°2 Octubre" in html
-    assert "Ingresada" in html
+    assert "Ingresada" not in html  # la muestra tiene un único estado: no se muestra
     assert "Aguas del Sur S.A." in html
     assert "CUIT 20123456786" in html
     assert "contacto@aguassur.com" in html

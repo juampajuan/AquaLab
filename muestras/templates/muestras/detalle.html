@@ -10,10 +10,7 @@
       {% include "ui/icono.html" with nombre="chevron-right" clase="size-3.5" %}
       <span class="text-tinta" aria-current="page">Ficha de la muestra</span>
     </nav>
-    <div class="flex flex-wrap items-center gap-3">
-      <h1 class="text-2xl font-semibold tracking-tight text-marino">Muestra N° PI {{ muestra.numero_pi }}</h1>
-      {% include "ui/estado.html" with estado=muestra.get_estado_display tipo=muestra.estado|tipo_estado %}
-    </div>
+    <h1 class="text-2xl font-semibold tracking-tight text-marino">Muestra N° PI {{ muestra.numero_pi }}</h1>
   </header>
 {% endblock %}
 
@@ -26,7 +23,6 @@
       <dl class="resumen p-6 lg:grid-cols-3">
         {% include "ui/dato.html" with etiqueta="N° PI" valor=muestra.numero_pi %}
         {% include "ui/dato.html" with etiqueta="Nombre" valor=muestra.nombre %}
-        {% include "ui/dato.html" with etiqueta="Estado" valor=muestra.get_estado_display %}
         <div class="lg:col-span-2">
           <dt>Cliente</dt>
           <dd>
@@ -55,7 +51,8 @@
         <h2 class="flex items-center gap-2.5 text-sm font-semibold text-marino">
           {% include "ui/icono.html" with nombre="microscope" clase="size-4 text-cian-texto" %} Estudios asignados
         </h2>
-        <a href="{% url 'estudios:crear' %}?muestra={{ muestra.pk }}" class="btn btn-primario px-3 py-1.5">
+        {# Destacado solo si la muestra todavía no tiene estudios: es lo que falta hacer (SCRUM-82). #}
+        <a href="{% url 'estudios:crear' %}?muestra={{ muestra.pk }}" class="btn {% if estudios %}btn-secundario{% else %}btn-primario{% endif %} px-3 py-1.5">
           {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Crear estudio
         </a>
       </div>
@@ -95,13 +92,8 @@
       {% endif %}
     </section>
 
-    <div class="flex flex-wrap gap-3">
-      <a href="{% url 'estudios:buscar' %}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="search" clase="size-4" %} Buscar estudios
-      </a>
-      <a href="{% url 'muestras:registrar' %}" class="btn btn-secundario">
-        {% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Registrar muestra
-      </a>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      {% include "ui/volver.html" with url=volver_url %}
     </div>
   </div>
 {% endblock %}

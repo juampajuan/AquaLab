@@ -16,4 +16,4 @@ def test_confirmacion_usa_los_componentes_comunes(cliente_http, muestra, tipo):
 
     assert tiene_componentes_de_confirmacion(html)
     assert f"PI {muestra.numero_pi}" in html
-    assert 'data-estado="warning">Pendiente de análisis' in html
+    assert 'data-estado="warning">Sin iniciar' in html

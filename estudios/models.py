@@ -52,7 +52,7 @@ class TipoEstudioPrueba(models.Model):
 
 
 class EstadoEstudio(models.TextChoices):
-    PENDIENTE_ANALISIS = "pendiente_analisis", "Pendiente de análisis"
+    PENDIENTE_ANALISIS = "pendiente_analisis", "Sin iniciar"
     EN_PROCESO = "en_proceso", "En proceso"
     FINALIZADO = "finalizado", "Finalizado"
     INFORME_GENERADO = "informe_generado", "Informe generado"
@@ -60,7 +60,7 @@ class EstadoEstudio(models.TextChoices):
 
 class EstadoPruebaEstudio(models.TextChoices):
     PENDIENTE = "pendiente", "Pendiente"
-    CARGADA = "cargada", "Cargada"
+    CARGADA = "cargada", "Por validar"
     COMPLETADA = "completada", "Completada"
 
 

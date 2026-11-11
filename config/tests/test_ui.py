@@ -43,7 +43,7 @@ def test_estado_marca_el_tipo():
         ("finalizado", "success"),
         ("informe_generado", "success"),
         ("pendiente", "neutral"),
-        ("cargada", "info"),
+        ("cargada", "warning"),
         ("completada", "success"),
         ("desconocido", "neutral"),
     ],

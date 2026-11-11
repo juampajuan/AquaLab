@@ -136,7 +136,7 @@
 
   {# 9. Alertas (a lo ancho: la tabla tiene seis columnas) #}
   <div class="grid gap-6">
-    {% include "informes/alerta.html" with clave="sin_avanzar" titulo="Estudios sin avanzar" ayuda="Pendientes de análisis o en proceso sin actividad hace más de 7 días. «Días»: desde la última actividad." columna_dias="Días" filas=alertas.sin_avanzar %}
+    {% include "informes/alerta.html" with clave="sin_avanzar" titulo="Estudios sin avanzar" ayuda="Sin iniciar o en proceso sin actividad hace más de 7 días. «Días»: desde la última actividad." columna_dias="Días" filas=alertas.sin_avanzar %}
     {% include "informes/alerta.html" with clave="finalizados" titulo="Finalizados sin informe" ayuda="Estudios finalizados que todavía no tienen informe emitido. «Días»: desde la última validación." columna_dias="Días" filas=alertas.finalizados_sin_informe %}
   </div>
 

@@ -127,7 +127,7 @@ def test_indicadores_en_pantalla(cliente_bioquimico, con_demo):
     assert re.search(r'data-tono="(exito|peligro|neutro)"', html)
     assert "sin datos previos" in html  # la demo no tiene datos 6 meses antes
     assert "Estudios por estado" in html
-    for estado in ("Pendiente de análisis", "En proceso", "Finalizado", "Informe generado"):
+    for estado in ("Sin iniciar", "En proceso", "Finalizado", "Informe generado"):
         assert estado in html
 
 

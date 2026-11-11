@@ -10,22 +10,23 @@ def test_tipos_solo_en_administracion_con_ambos_permisos(cliente_panel, administ
         content_type__app_label="estudios", codename="gestionar_catalogo"
     )
     url = reverse("estudios:tipos_listar")
-    html = cliente_panel.get(reverse("administracion:solicitudes")).content.decode()
+    html = cliente_panel.get(reverse("administracion:inicio")).content.decode()
     assert url not in html
     administrador_panel.user_permissions.add(permiso)
-    html = cliente_panel.get(reverse("administracion:solicitudes")).content.decode()
+    html = cliente_panel.get(reverse("administracion:inicio")).content.decode()
     assert html.count('href="' + url + '"') == 1
     assert html.index('data-seccion="administracion"') < html.index('href="' + url + '"')
 
 
-def test_gestor_conserva_tarjeta_sin_panel(client, usuario_aprobado):
+def test_gestor_sin_panel_no_ve_tipos_en_el_inicio(client, usuario_aprobado):
     permiso = Permission.objects.get(
         content_type__app_label="estudios", codename="gestionar_catalogo"
     )
     usuario_aprobado.user_permissions.add(permiso)
     client.force_login(usuario_aprobado)
     html = client.get(reverse("inicio")).content.decode()
-    assert reverse("estudios:tipos_listar") in html
+    # SCRUM-82: los tipos se gestionan desde la administración; el inicio ya no los ofrece.
+    assert reverse("estudios:tipos_listar") not in html
     assert 'data-seccion="administracion"' not in html
     nav = html.split("data-menu-navegacion>")[1].split("</nav>")[0]
     assert reverse("estudios:tipos_listar") not in nav

@@ -7,7 +7,7 @@
   {% url 'informes:listar' as url_listar %}
   {% with numero=estudio.pk|stringformat:"s" %}
     {% with titulo="Controlar pruebas del estudio "|add:numero %}
-      {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Seleccionar estudio" anterior_url=url_listar titulo=titulo miga="Control de pruebas" estado=estudio.get_estado_display estado_tipo=estudio.estado|tipo_estado %}
+      {% include "ui/encabezado.html" with seccion="Informes" anterior_texto="Estudios por informar" anterior_url=url_listar titulo=titulo miga="Control de pruebas" estado=estudio.get_estado_display estado_tipo=estudio.estado|tipo_estado %}
     {% endwith %}
   {% endwith %}
 {% endblock %}
@@ -54,7 +54,7 @@
             <tr>
               <th>Código</th>
               <th>Prueba</th>
-              <th class="text-right">Estado</th>
+              <th>Estado</th>
             </tr>
           </thead>
           <tbody>
@@ -67,7 +67,7 @@
                     <span class="mt-0.5 block text-xs text-tinta-suave">{{ asignacion.motivo_sin_resultado }}</span>
                   {% endif %}
                 </td>
-                <td class="text-right">
+                <td>
                   <span class="inline-flex flex-wrap justify-end gap-1.5">
                     {% include "ui/estado.html" with estado=asignacion.get_estado_display tipo=asignacion.estado|tipo_estado %}
                     {% if asignacion.estado == "pendiente" %}

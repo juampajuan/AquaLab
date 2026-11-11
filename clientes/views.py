@@ -2,11 +2,12 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import DatabaseError, IntegrityError, transaction
-from django.db.models import Q
+from django.db.models import Count, Max, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 
+from config.volver import url_volver
 from estudios.forms import CAMPOS_FILTRO
 
 from .forms import (
@@ -209,7 +210,17 @@ def detalle(request, pk):
     if not cliente.activo:
         messages.warning(request, MENSAJE_NO_DISPONIBLE)
         return redirect("clientes:buscar")
-    return render(request, "clientes/detalle.html", {"cliente": cliente})
+    resumen = cliente.muestras.aggregate(
+        muestras=Count("pk", distinct=True),
+        estudios=Count("estudios", distinct=True),
+        ultimo_ingreso=Max("fecha_ingreso"),
+    )
+    contexto = {
+        "cliente": cliente,
+        "resumen": resumen,
+        "volver_url": url_volver(request, reverse("clientes:buscar")),
+    }
+    return render(request, "clientes/detalle.html", contexto)
 
 
 @require_GET
@@ -235,6 +246,7 @@ def historial(request, pk):
         # Según lo recibido, válido o no: un filtro inválido también se puede limpiar.
         "hay_filtros": any(request.GET.get(c, "").strip() for c in CAMPOS_FILTRO),
         "sin_muestras": not page_obj.object_list and not cliente.muestras.exists(),
+        "volver_url": url_volver(request, reverse("clientes:detalle", args=[cliente.pk])),
     }
     return render(request, "clientes/historial.html", contexto)
 

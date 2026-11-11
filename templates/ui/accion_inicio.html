@@ -1,0 +1,8 @@
+{# Acción de un módulo del inicio (dentro de ui/modulo_inicio.html). Parámetros: url, titulo, icono, descripcion. #}
+<li>
+  <a href="{{ url }}" title="{{ descripcion }}" class="group flex items-center gap-3 px-5 py-3 text-sm font-medium text-tinta transition-colors hover:bg-fondo-hundido hover:text-marino focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cian-texto">
+    {% include "ui/icono.html" with nombre=icono clase="size-4 shrink-0 text-tinta-suave group-hover:text-cian-texto" %}
+    <span class="flex-1">{{ titulo }}</span>
+    {% include "ui/icono.html" with nombre="arrow-right" clase="size-4 shrink-0 text-tinta-suave group-hover:text-cian-texto" %}
+  </a>
+</li>

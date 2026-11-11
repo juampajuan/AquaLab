@@ -1,0 +1,15 @@
+{% comment %}
+  Tarjeta de un módulo en los accesos del inicio: encabezado con ícono y la lista de acciones.
+  Uso:
+    {% include "ui/modulo_inicio.html" with nombre="Clientes" icono="users" color="bg-turquesa-texto" %}
+  La lista de acciones va en el bloque del llamador: este parcial abre la tarjeta y el <ul>, y
+  ui/modulo_inicio_fin.html los cierra. Cada acción se arma con ui/accion_inicio.html.
+{% endcomment %}
+<div class="tarjeta flex flex-col overflow-hidden" data-modulo="{{ nombre }}">
+  <div class="flex items-center gap-3 border-b border-borde px-5 py-4">
+    <span class="flex size-9 items-center justify-center rounded-lg text-white {{ color }}">
+      {% include "ui/icono.html" with nombre=icono clase="size-5" %}
+    </span>
+    <h2 class="text-base font-semibold text-marino">{{ nombre }}</h2>
+  </div>
+  <ul class="flex-1 divide-y divide-borde">

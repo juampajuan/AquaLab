@@ -1,7 +1,7 @@
 from django import forms
 
 from clientes.models import Cliente
-from muestras.forms import SelectorFecha
+from muestras.forms import FORMATOS_FECHA, SelectorFecha
 from muestras.models import Muestra, Origen
 from pruebas.limites import Evaluacion
 from pruebas.models import Prueba
@@ -11,7 +11,6 @@ from .models import EstadoEstudio, TipoEstudio
 
 MAX_LONGITUD_BUSQUEDA = 100
 MAX_ENTERO_BUSQUEDA = 9_223_372_036_854_775_807
-FORMATOS_FECHA = ["%Y-%m-%d", "%d/%m/%Y"]
 MENSAJE_FECHA_INVALIDA = "Ingresá una fecha válida (dd/mm/aaaa)."
 CAMPOS_FILTRO = ("desde", "hasta", "estado")
 
@@ -413,7 +412,13 @@ class ValidarResultadosForm(forms.Form):
                         "Queda guardada en la validación de esta prueba como revisión del desvío. "
                         "Solo la ve el laboratorio."
                     ),
-                    widget=forms.Textarea(attrs={"rows": 2}),
+                    widget=forms.Textarea(
+                        attrs={
+                            "rows": 2,
+                            "class": "form-control",
+                            "placeholder": "Ej.: se repitió la medición y el valor es correcto.",
+                        }
+                    ),
                 )
 
     @staticmethod

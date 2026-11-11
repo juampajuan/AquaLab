@@ -26,7 +26,7 @@
           {% endwith %}
           <div>
             <dt>Estado inicial</dt>
-            <dd>{% include "ui/estado.html" with estado="Pendiente de análisis" tipo="warning" %}</dd>
+            <dd>{% include "ui/estado.html" with estado="Sin iniciar" tipo="warning" %}</dd>
           </div>
           {% include "ui/dato.html" with etiqueta="Cliente" valor=borrador.muestra.cliente %}
           {% include "ui/dato.html" with etiqueta="Origen" valor=borrador.muestra.origen %}

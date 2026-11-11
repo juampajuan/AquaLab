@@ -3,7 +3,7 @@
 
 {% block encabezado %}
   {% url 'estudios:tipos_listar' as url_lista %}
-  {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Gestionar tipos" anterior_url=url_lista miga="Conflicto" titulo="La configuración cambió" %}
+  {% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de estudios" anterior_url=url_lista miga="Conflicto" titulo="La configuración cambió" %}
 {% endblock %}
 
 {% block content %}

@@ -6,11 +6,12 @@ pytestmark = pytest.mark.django_db
 
 def test_menu_autorizado_y_diseno(client, administrador_panel):
     client.force_login(administrador_panel)
-    respuesta = client.get(reverse("administracion:solicitudes"))
+    # SCRUM-82: la administración se abre desde el engranaje; su inicio enlaza las secciones.
+    respuesta = client.get(reverse("administracion:inicio"))
     assert respuesta.status_code == 200
     html = respuesta.content.decode()
     assert "Administración" in html
-    assert 'aria-current="page"' in html
+    assert "data-enlace-administracion" in html
     assert "data-menu-navegacion" in html
     for nombre in ["solicitudes", "usuarios", "pruebas"]:
         assert reverse("administracion:" + nombre) in html

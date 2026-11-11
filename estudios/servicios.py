@@ -344,7 +344,7 @@ def corregir_mediciones(estudio_pk, cambios, usuario):
 
 
 def estado_tras_correccion(estudio):
-    """Sin pruebas Cargadas ni Completadas vuelve a Pendiente de análisis (US 6.5); un estudio
+    """Sin pruebas Cargadas ni Completadas vuelve a Sin iniciar (US 6.5); un estudio
     Finalizado con alguna prueba sin validar vuelve a En proceso (US 6.3)."""
     pruebas = estudio.pruebas_asignadas
     con_datos = (EstadoPruebaEstudio.CARGADA, EstadoPruebaEstudio.COMPLETADA)

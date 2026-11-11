@@ -101,8 +101,8 @@ def test_revisado_en_detalle(con_desvio, bioquimico, cliente_bioquimico):
     cloruro = fila(html, "CL-")
     assert 'data-desvio="revisado"' in cloruro and "Desvío revisado" in cloruro
     fecha = timezone.localtime(validacion.fecha_validacion).strftime("%d/%m/%Y %H:%M")
-    assert f"el {fecha} – Repetida" in cloruro
-    assert "mediana 110 mg/l, umbral 30 %" in cloruro
+    assert fecha in cloruro and ">Repetida</span>" in cloruro
+    assert "Mediana 110 mg/l, umbral 30 %" in cloruro
     assert "Mediana histórica: 110 mg/l" in cloruro
 
 
@@ -192,9 +192,10 @@ def test_enlaces(con_desvio, cliente_bioquimico, django_user_model):
     calculado = desvios.pendientes()[0].fecha_calculo
     assert timezone.localtime(calculado).strftime("%d/%m/%Y") in fila_html
     assert reverse("estudios:detalle", args=[con_desvio.pk]) in fila_html
-    assert desvios.enlace_comparacion(con_desvio, "CL-") in fila_html
+    # SCRUM-82: la fila ofrece solo «Ver estudio» (comparar y validar se hacen desde el estudio).
+    assert desvios.enlace_comparacion(con_desvio, "CL-") not in fila_html
     validar_url = reverse("estudios:validar_resultados", args=[con_desvio.pk])
-    assert validar_url in fila_html and "Validar" in fila_html
+    assert validar_url not in fila_html
 
     administrador = usuario(django_user_model, "admin-desvios@ejemplo.com", "Administradores")
     html_admin = html_de(administrador.get(reverse("estudios:desvios")))

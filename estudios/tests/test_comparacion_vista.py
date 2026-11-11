@@ -114,7 +114,7 @@ def test_desde_estudio(historia, origen, cliente_bioquimico):
     assert origen.nombre in html and origen.cliente.nombre_completo in html
     assert f"N° PI {historia.muestra.numero_pi}" in html
     assert historia.tipo_nombre_snapshot in html
-    assert "Pendiente de análisis" in html or "En proceso" in html
+    assert "Sin iniciar" in html or "En proceso" in html
     assert "Volver al estudio" in html
     assert html.count("data-prueba=") == 2
 

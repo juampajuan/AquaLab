@@ -25,7 +25,7 @@
               <td>{{ fila.estudio.muestra.cliente.nombre_completo }}</td>
               <td>{% include "ui/estado.html" with estado=fila.estudio.get_estado_display tipo=fila.estudio.estado|tipo_estado %}</td>
               <td class="numeros">{{ fila.dias|default_if_none:"—" }}</td>
-              <td><a href="{% url 'estudios:detalle' fila.estudio.pk %}" class="btn btn-secundario btn-chico">Ver estudio</a></td>
+              <td class="text-right"><a href="{% url 'estudios:detalle' fila.estudio.pk %}" class="btn btn-secundario btn-chico">Ver estudio</a></td>
             </tr>
           {% endfor %}
         </tbody>

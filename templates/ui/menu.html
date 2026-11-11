@@ -51,24 +51,11 @@
       {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Informes
     </p>
     <a href="{% url 'informes:listar' %}" class="block rounded-md px-3 py-2 pl-9 {% if vista == 'informes:listar' or vista == 'informes:control' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'informes:listar' or vista == 'informes:control' %} aria-current="page"{% endif %}>
-      Seleccionar estudio
+      Estudios por informar
     </a>
     <a href="{% url 'informes:emitidos' %}" class="block rounded-md px-3 py-2 pl-9 {% if vista == 'informes:emitidos' or vista == 'informes:ver' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if vista == 'informes:emitidos' or vista == 'informes:ver' %} aria-current="page"{% endif %}>
       Informes emitidos
     </a>
   </div>
-  {% if puede_administrar %}
-  <div data-seccion="administracion">
-    <p class="mb-1 px-3 text-xs font-semibold tracking-wide text-tinta-suave uppercase">Administración</p>
-    <a href="{% url 'administracion:pruebas' %}" class="block rounded-md px-3 py-2 {% if vista == 'administracion:pruebas' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido{% endif %}"{% if vista == 'administracion:pruebas' %} aria-current="page"{% endif %}>Catálogo de pruebas</a>
-    <a href="{% url 'administracion:usuarios' %}" class="block rounded-md px-3 py-2 {% if vista == 'administracion:usuarios' or vista == 'administracion:cambiar_rol' or vista == 'administracion:desactivar' or vista == 'administracion:reactivar' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido{% endif %}"{% if vista == 'administracion:usuarios' or vista == 'administracion:cambiar_rol' or vista == 'administracion:desactivar' or vista == 'administracion:reactivar' %} aria-current="page"{% endif %}>Usuarios y roles</a>
-    <a href="{% url 'administracion:solicitudes' %}" class="block rounded-md px-3 py-2 {% if 'administracion:solicitudes' == vista or vista == 'administracion:aprobar' or vista == 'administracion:rechazar' %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido{% endif %}"{% if 'administracion:solicitudes' == vista or vista == 'administracion:aprobar' or vista == 'administracion:rechazar' %} aria-current="page"{% endif %}>Solicitudes de cuenta</a>
-    {% if perms.estudios.gestionar_catalogo %}
-      <a href="{% url 'estudios:tipos_listar' %}" class="block rounded-md px-3 py-2 text-left {% if 'estudios:tipos_' in vista %}bg-marino font-semibold text-white{% else %}text-tinta-suave hover:bg-fondo-hundido hover:text-tinta{% endif %}"{% if 'estudios:tipos_' in vista %} aria-current="page"{% endif %}>
-        Gestionar tipos
-      </a>
-    {% endif %}
-  </div>
-  {% endif %}
 </nav>
 {% endwith %}
