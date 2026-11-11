@@ -150,8 +150,12 @@ def detalle(request, pk):
         {
             "muestra": muestra,
             "estudios": estudios,
+            # Por defecto vuelve al cliente; si está inactivo su ficha no se abre: a la búsqueda.
             "volver_url": volver_de_ficha(
-                request, reverse("clientes:detalle", args=[muestra.cliente_id])
+                request,
+                reverse("clientes:detalle", args=[muestra.cliente_id])
+                if muestra.cliente.activo
+                else reverse("clientes:buscar"),
             ),
         },
     )
