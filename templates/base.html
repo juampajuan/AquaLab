@@ -68,7 +68,6 @@
     <main class="mx-auto {% if user.is_authenticated %}max-w-7xl px-4 py-6 lg:px-8 lg:py-8{% else %}max-w-xl px-4 py-10{% endif %}">
       {# Sin sesión las pantallas usan base_acceso.html; esto es solo un respaldo sin menú. #}
       {% if not user.is_authenticated %}<div class="mb-8">{% include "ui/logo.html" %}</div>{% endif %}
-      {% include "ui/pestanas_administracion.html" %}
       {% block encabezado %}{% endblock %}
       {% include "ui/mensajes.html" %}
       {% block content %}{% endblock %}

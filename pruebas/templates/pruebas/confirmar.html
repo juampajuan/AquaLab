@@ -101,16 +101,19 @@
           </div>
         </div>
       {% endif %}
-      <div class="flex flex-wrap items-center gap-3">
-        <button type="submit" name="accion" value="confirmar" class="btn btn-primario">
-          {% include "ui/icono.html" with nombre="check" clase="size-4" %} Confirmar
+      {# SCRUM-82: «Volver» a la izquierda descarta la operación; a la derecha, editar y confirmar. #}
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <button type="submit" name="accion" value="cancelar" class="btn btn-secundario">
+          {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} {% if prueba %}Volver a la ficha{% else %}Volver al catálogo{% endif %}
         </button>
-        {% if volver_url %}
-          <a class="btn btn-secundario" href="{{ volver_url }}">{% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Volver a editar</a>
-        {% endif %}
-        <button type="submit" name="accion" value="cancelar" class="btn btn-peligro sm:ml-auto">
-          {% include "ui/icono.html" with nombre="x" clase="size-4" %} Cancelar
-        </button>
+        <div class="flex flex-wrap items-center gap-3">
+          {% if volver_url %}
+            <a class="btn btn-secundario" href="{{ volver_url }}">{% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Volver a editar</a>
+          {% endif %}
+          <button type="submit" name="accion" value="confirmar" class="btn btn-primario">
+            {% include "ui/icono.html" with nombre="check" clase="size-4" %} Confirmar
+          </button>
+        </div>
       </div>
     </form>
   </div>

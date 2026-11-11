@@ -10,10 +10,10 @@ def test_tipos_solo_en_administracion_con_ambos_permisos(cliente_panel, administ
         content_type__app_label="estudios", codename="gestionar_catalogo"
     )
     url = reverse("estudios:tipos_listar")
-    html = cliente_panel.get(reverse("administracion:solicitudes")).content.decode()
+    html = cliente_panel.get(reverse("administracion:inicio")).content.decode()
     assert url not in html
     administrador_panel.user_permissions.add(permiso)
-    html = cliente_panel.get(reverse("administracion:solicitudes")).content.decode()
+    html = cliente_panel.get(reverse("administracion:inicio")).content.decode()
     assert html.count('href="' + url + '"') == 1
     assert html.index('data-seccion="administracion"') < html.index('href="' + url + '"')
 

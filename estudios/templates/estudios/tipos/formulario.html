@@ -4,9 +4,9 @@
 {% block encabezado %}
   {% url 'estudios:tipos_listar' as url_lista %}
   {% if operacion == 'editar' %}
-    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Gestionar tipos" anterior_url=url_lista titulo="Editar tipo de estudio" %}
+    {% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de estudios" anterior_url=url_lista titulo="Editar tipo de estudio" %}
   {% else %}
-    {% include "ui/encabezado.html" with seccion="Estudios" anterior_texto="Gestionar tipos" anterior_url=url_lista titulo="Crear tipo de estudio" %}
+    {% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Catálogo de estudios" anterior_url=url_lista titulo="Crear tipo de estudio" %}
   {% endif %}
 {% endblock %}
 

@@ -27,7 +27,8 @@
         {% endif %}
       </dl>
     </div>
-    <div class="mt-6 flex flex-wrap items-center gap-3" data-componente="acciones-confirmacion">
+    <div class="mt-6 flex flex-wrap items-center justify-end gap-3" data-componente="acciones-confirmacion">
+      <a href="{{ url_informe }}" class="btn btn-secundario">Cancelar</a>
       <form method="post" onsubmit="this.querySelector('button').disabled = true;">
         {% csrf_token %}
         <input type="hidden" name="clave" value="{{ clave }}">
@@ -35,7 +36,6 @@
           {% include "ui/icono.html" with nombre="mail" clase="size-4" %} Enviar informe
         </button>
       </form>
-      <a href="{{ url_informe }}" class="btn btn-secundario">Cancelar</a>
     </div>
   </div>
 {% endblock %}
