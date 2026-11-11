@@ -46,5 +46,9 @@
         {% include "ui/dato.html" with etiqueta="Último ingreso" valor=resumen.ultimo_ingreso|date:"d/m/Y" %}
       </dl>
     </section>
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      {% include "ui/volver.html" with url=volver_url %}
+    </div>
   </div>
 {% endblock %}

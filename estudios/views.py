@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.views.decorators.http import require_GET
 
+from config.volver import url_volver
 from muestras.models import Muestra
 from pruebas.limites import (
     Evaluacion,
@@ -368,6 +369,9 @@ def detalle(request, pk):
         "estudios/detalle.html",
         {
             "estudio": estudio,
+            "volver_url": url_volver(
+                request, reverse("muestras:detalle", args=[estudio.muestra_id])
+            ),
             "pruebas_asignadas": pruebas_asignadas,
             "total_pruebas": total_pruebas,
             "pruebas_completadas": pruebas_completadas,

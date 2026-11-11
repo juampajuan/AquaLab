@@ -91,5 +91,9 @@
         {% include "ui/estado_vacio.html" with icono="microscope" mensaje="Esta muestra aún no tiene estudios asignados." %}
       {% endif %}
     </section>
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      {% include "ui/volver.html" with url=volver_url %}
+    </div>
   </div>
 {% endblock %}

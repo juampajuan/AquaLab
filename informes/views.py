@@ -78,6 +78,20 @@ def control(request, pk):
     )
 
 
+def enlaces_del_informe(estudio):
+    """En pantalla, el estudio, la muestra y el cliente del informe son enlaces (no en el PDF).
+
+    Llevan `?desde=informe` para que el «Volver» de esas fichas regrese al informe.
+    """
+    cliente = estudio.muestra.cliente
+    enlaces = {
+        "estudio": reverse("estudios:detalle", args=[estudio.pk]),
+        "muestra": reverse("muestras:detalle", args=[estudio.muestra.pk]),
+        "cliente": reverse("clientes:detalle", args=[cliente.pk]) if cliente.activo else "",
+    }
+    return {clave: f"{url}?desde=informe" if url else "" for clave, url in enlaces.items()}
+
+
 def vista_previa(request, pk):
     """Borrador del informe (US 7.2): cualquier empleado lo ve; no cambia nada."""
     estudio = get_object_or_404(
@@ -98,6 +112,7 @@ def vista_previa(request, pk):
         "estudio": estudio,
         "volver_url": volver_url,
         "contenido": armar_contenido(estudio, request.user),
+        "enlaces": enlaces_del_informe(estudio),
         "puede_emitir": puede_emitir,
         "falta_firma": puede_emitir
         and not FirmaProfesional.objects.filter(usuario=request.user).exists(),
@@ -146,12 +161,7 @@ def ver(request, pk):
         "contenido": informe.contenido,
         "envios": list(informe.envios.select_related("enviado_por")),
         "volver_url": volver_url,
-        # En pantalla, el estudio, la muestra y el cliente del informe son enlaces (no en el PDF).
-        "enlaces": {
-            "estudio": reverse("estudios:detalle", args=[estudio.pk]),
-            "muestra": reverse("muestras:detalle", args=[estudio.muestra.pk]),
-            "cliente": reverse("clientes:detalle", args=[cliente.pk]) if cliente.activo else "",
-        },
+        "enlaces": enlaces_del_informe(estudio),
     }
     return render(request, "informes/ver.html", contexto)
 

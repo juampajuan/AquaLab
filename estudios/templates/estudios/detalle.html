@@ -197,13 +197,14 @@
       </div>
     </section>
 
-    {# Consulta opcional para el bioquímico: no es parte del próximo paso. #}
-    {% if perms.informes.ver_dashboard %}
-      <div>
+    {# «Volver» abajo a la izquierda; a la derecha, la comparación histórica (consulta opcional). #}
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      {% include "ui/volver.html" with url=volver_url %}
+      {% if perms.informes.ver_dashboard %}
         <a href="{% url 'estudios:comparacion' %}?estudio={{ estudio.pk }}" class="btn btn-secundario">
           {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Comparación histórica
         </a>
-      </div>
-    {% endif %}
+      {% endif %}
+    </div>
   </div>
 {% endblock %}

@@ -81,4 +81,8 @@
       {% include "ui/estado_vacio.html" with icono="search" mensaje="Ninguna muestra coincide con los filtros." accion_texto="Limpiar filtros" accion_url=url_historial %}
     {% endif %}
   </section>
+
+  <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+    {% include "ui/volver.html" with url=volver_url %}
+  </div>
 {% endblock %}

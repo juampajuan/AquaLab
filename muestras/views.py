@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from clientes.models import Cliente
+from config.volver import url_volver as volver_de_ficha
 from estudios.models import EstadoPruebaEstudio
 
 from .forms import CAMPOS_MUESTRA, RegistroMuestraForm, datos_clientes
@@ -146,5 +147,11 @@ def detalle(request, pk):
     return render(
         request,
         "muestras/detalle.html",
-        {"muestra": muestra, "estudios": estudios},
+        {
+            "muestra": muestra,
+            "estudios": estudios,
+            "volver_url": volver_de_ficha(
+                request, reverse("clientes:detalle", args=[muestra.cliente_id])
+            ),
+        },
     )
