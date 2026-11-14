@@ -164,6 +164,7 @@ Como laboratorio, quiero que solo quien tiene permiso para gestionar el catálog
 - Una absorbancia que da concentración negativa (menor que la ordenada): queda fuera del rango de la curva y se muestra con el aviso; se aplica la regla habitual de límite de detección («< LD») si corresponde.
 - Un archivo .xlsx con varias hojas: se leen los puntos de la primera hoja.
 - Un archivo con más de dos columnas numéricas (ej. réplicas o promedio): el sistema no adivina; pide elegir cuál es la de concentración y cuál la de absorbancia.
+- Una prueba por curva sin uso que ya tiene curvas cargadas no puede cambiar a otro tipo de cálculo: se indica que primero hay que borrar sus curvas. Si se elimina la prueba (sin uso), se eliminan también sus curvas, que nunca se usaron.
 - La prueba por curva se desactiva (SCRUM-73): sus curvas siguen consultables y los estudios donde ya estaba siguen calculando con la curva vigente o la ya usada.
 - Un informe ya emitido o un resultado validado no cambian por cargar una curva nueva (principio IV).
 - La importación del catálogo por CSV (`importar_catalogo_pruebas`) no carga curvas; si trae el tipo «Curva de calibración», la prueba queda sin curva vigente hasta que se cargue desde la app.
