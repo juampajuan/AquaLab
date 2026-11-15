@@ -416,12 +416,12 @@ aviso y las demás pantallas responden igual.
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T044 [P] [US4] En `asistente/tests/test_cliente_ia.py`: 429 → `CuotaAgotada`; 401 y 403 →
+- [X] T044 [P] [US4] En `asistente/tests/test_cliente_ia.py`: 429 → `CuotaAgotada`; 401 y 403 →
   `ServicioNoDisponible` con log «clave inválida o sin acceso (401/403)»; 500/502 y otro 4xx →
   `ServicioNoDisponible` con «error HTTP <código>»; `TimeoutError`, `socket.timeout` y `URLError` →
   `ServicioNoDisponible` con «sin respuesta»; cuerpo no JSON o sin `choices` → «respuesta inválida»;
   con `caplog`, ningún registro contiene la clave, la pregunta ni los mensajes.
-- [ ] T045 [P] [US4] En `asistente/tests/test_vista.py`: `CuotaAgotada` → 429 `{"error": "cuota",
+- [X] T045 [P] [US4] En `asistente/tests/test_vista.py`: `CuotaAgotada` → 429 `{"error": "cuota",
   "mensaje": "Se alcanzó el límite de consultas del asistente. Probá más tarde; el resto de AquaLab
   funciona normalmente."}` (US4 Esc. 2); `ServicioNoDisponible` → 503 `no_disponible` con «El
   asistente no está disponible en este momento. Probá de nuevo más tarde o usá las pantallas de
@@ -434,11 +434,11 @@ aviso y las demás pantallas responden igual.
 
 ### Implementation for User Story 4
 
-- [ ] T046 [US4] Completar la traducción de errores en `asistente/cliente_ia.py` según la tabla de
+- [X] T046 [US4] Completar la traducción de errores en `asistente/cliente_ia.py` según la tabla de
   `contracts/servicio-ia.md` (`HTTPError` por código, `URLError`, `TimeoutError`/`socket.timeout`,
   `json.JSONDecodeError`, falta de `choices`) con `logger = logging.getLogger("asistente")` y el
   motivo, sin datos del pedido.
-- [ ] T047 [US4] En `asistente/views.py`: mapear `CuotaAgotada` → 429 `cuota`,
+- [X] T047 [US4] En `asistente/views.py`: mapear `CuotaAgotada` → 429 `cuota`,
   `ServicioNoDisponible` (incluido el presupuesto de 20 s agotado, que `conversacion.responder`
   informa con esa excepción) → 503 `no_disponible`; el tope de vueltas o ejecuciones no es una
   excepción y sale como 200; sin configuración → 503
@@ -450,7 +450,7 @@ aviso y las demás pantallas responden igual.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T048 [P] En `asistente/tests/test_conversacion.py`: casos borde de la spec con el servicio
+- [X] T048 [P] En `asistente/tests/test_conversacion.py`: casos borde de la spec con el servicio
   simulado: pregunta fuera de alcance (catálogo/usuarios) y pedido de cambio, con el modelo
   respondiendo sin herramientas → 200 con `MENSAJE_SOLO_CONSULTA` exacto (FR-012); el modelo no
   recibe herramientas de escritura (todas las de `herramientas.definiciones()` son de lectura: el test lista los
@@ -459,7 +459,7 @@ aviso y las demás pantallas responden igual.
   llega al modelo solo dentro del JSON de la herramienta y el correo del cliente no aparece en
   ningún mensaje enviado (FR-013); pregunta de seguimiento: el historial enviado incluye los mensajes previos
   y la nueva consulta vuelve a ejecutar la herramienta (datos vigentes).
-- [ ] T049 [P] Agregar en `CLAUDE.md` la sección «Asistente de consultas (US 10.1)»: app
+- [X] T049 [P] Agregar en `CLAUDE.md` la sección «Asistente de consultas (US 10.1)»: app
   `asistente` sin modelos; `cliente_ia.enviar` único punto de red (en los tests se parchea, el
   conftest bloquea `urlopen`); herramientas de solo lectura en `READ ONLY`, lista blanca de campos y
   `puede_ver` como única regla de permisos; `pruebas_del_detalle` compartida con
@@ -468,15 +468,42 @@ aviso y las demás pantallas responden igual.
   cuando no se usó ninguna herramienta; aviso de FR-009a con más de 5 estudios por muestra;
   `estudios_de_la_ficha` compartida con `muestras:detalle`; `ASISTENTE_API_KEY`/`ASISTENTE_URL`/
   `ASISTENTE_MODELO` (Groq, `openai/gpt-oss-120b` por defecto).
-- [ ] T050 [P] README: en la sección de configuración, cómo habilitar el asistente con la clave de
+- [X] T050 [P] README: en la sección de configuración, cómo habilitar el asistente con la clave de
   Groq y que sin ella AquaLab funciona igual.
-- [ ] T051 `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .`,
+- [X] T051 `docker compose exec web ruff check .`, `docker compose exec web ruff format --check .`,
   `docker compose exec web pytest` y `node --test usuarios/tests/js config/tests/js estudios/tests/js pruebas/tests/js asistente/tests/js`
   en verde; `makemigrations --check --dry-run` sin cambios; `static/css/aqualab.css` al día.
-- [ ] T052 Revisar el «Conjunto de 20 preguntas sobre la demo» de `quickstart.md` contra
+- [X] T052 Revisar el «Conjunto de 20 preguntas sobre la demo» de `quickstart.md` contra
   `estudios/demo.py` (orígenes, clientes y casos especiales vigentes) y ajustarlo si la demo
   cambió; dejar en este archivo, debajo de esta tarea, una tabla vacía para registrar por pregunta:
   #, PI usado, OK/falla, dato que no coincidió y tiempo (s) de las «qué no cumple» (5–9).
+
+  Revisado contra `estudios/demo.py` el 2026-11-15: se corrigieron la #2 (el Finalizado sin
+  informe de «Escuela N° 12» es el del mes anterior) y la #15 (la numeración de la demo sigue
+  desde la última muestra de la base: se usa «Pozo domiciliario», mes actual, que tiene informe).
+
+  | # | PI usado | OK / falla | Dato que no coincidió | Tiempo (s) |
+  |---|---|---|---|---|
+  | 1 | | | | |
+  | 2 | | | | |
+  | 3 | | | | |
+  | 4 | | | | |
+  | 5 | | | | |
+  | 6 | | | | |
+  | 7 | | | | |
+  | 8 | | | | |
+  | 9 | | | | |
+  | 10 | | | | |
+  | 11 | | | | |
+  | 12 | | | | |
+  | 13 | | | | |
+  | 14 | | | | |
+  | 15 | | | | |
+  | 16 | | | | |
+  | 17 | | | | |
+  | 18 | | | | |
+  | 19 | | | | |
+  | 20 | | | | |
 - [ ] T053 Validación manual con la demo y una clave real de Groq según `quickstart.md`: pruebas
   1–11 y las 20 preguntas (SC-001, SC-002), registrando el resultado y el tiempo de las «qué no
   cumple» (SC-003, objetivo < 15 s) en la tabla de T052; incluye confirmar que Groq acepta

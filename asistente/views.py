@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
 from . import configuracion, conversacion
-from .cliente_ia import ServicioNoDisponible
+from .cliente_ia import CuotaAgotada, ServicioNoDisponible
 from .forms import MENSAJE_INVALIDA, PreguntaForm
 
 logger = logging.getLogger("asistente")
@@ -18,6 +18,10 @@ MENSAJE_NO_DISPONIBLE = (
     "pantallas de AquaLab."
 )
 MENSAJE_NO_CONFIGURADO = "El asistente no está configurado."
+MENSAJE_CUOTA = (
+    "Se alcanzó el límite de consultas del asistente. Probá más tarde; el resto de AquaLab "
+    "funciona normalmente."
+)
 
 
 def error(codigo, mensaje, status):
@@ -43,7 +47,10 @@ def preguntar(request):
             form.cleaned_data["historial"],
             config=config,
         )
+    except CuotaAgotada:
+        return error("cuota", MENSAJE_CUOTA, 429)
     except ServicioNoDisponible:
+        # Incluye el presupuesto de 20 s agotado; el tope de vueltas sale como 200 (research R9).
         return error("no_disponible", MENSAJE_NO_DISPONIBLE, 503)
     except Exception:
         logger.error("Asistente: error inesperado al responder.", exc_info=True)

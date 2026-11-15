@@ -54,7 +54,7 @@ respuesta (objetivo < 15 s).
 | # | Pregunta | Se compara con | Esperado |
 |---|---|---|---|
 | 1 | «¿Cómo está el PI <Pozo 1, mes actual>?» | ficha de la muestra + detalle del estudio | estados, resultados, evaluación y norma iguales |
-| 2 | «¿Cómo está el PI <Escuela N° 12, mes actual>?» | ídem | estudio Finalizado sin informe |
+| 2 | «¿Cómo está el PI <Escuela N° 12, mes anterior>?» | ídem | estudio bacteriológico Finalizado sin informe |
 | 3 | «¿Cómo está el PI <Tanque elevado, mes actual>?» | ídem | varios tipos de estudio de la misma muestra |
 | 4 | «¿Cómo está el PI 999999?» | — | «No hay ninguna muestra con el N° PI 999999.» (SC-002) |
 | 5 | «¿Qué no cumple en el estudio de Pozo 2?» | detalle del estudio | Cloruro fuera de norma, o la lista de estudios para elegir (medir tiempo) |
@@ -67,7 +67,7 @@ respuesta (objetivo < 15 s).
 | 12 | «¿Qué estudios tiene María González?» | historial del cliente | ídem; sin correo, teléfono, domicilio ni documento |
 | 13 | «¿Qué estudios tiene Aguas del Norte?» | — | «no encontré ese cliente» (SC-002) |
 | 14 | «¿Qué no cumple en el estudio del Pozo 9?» | — | no encontró el origen (SC-002) |
-| 15 | «¿Cómo está el PI 200001?» (o el primero de la demo) | ficha de la muestra | estudio con informe: enlace al informe |
+| 15 | «¿Cómo está el PI <Pozo domiciliario, mes actual>?» | ficha de la muestra | estudio con informe emitido: enlace al informe |
 | 16 | Después de la 1: «¿y qué no cumple?» | detalle del estudio | responde sobre la misma muestra con datos vigentes |
 | 17 | «¿Qué valor dio el pH del Pozo 1 este mes?» | detalle del estudio | valor con coma decimal y unidad como en pantalla |
 | 18 | «¿Qué pruebas hay en el catálogo?» | — | mensaje fijo «Solo puedo consultar muestras, estudios y clientes…» |

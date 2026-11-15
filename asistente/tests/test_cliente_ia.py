@@ -91,3 +91,77 @@ def test_respuesta_invalida(capturar, cuerpo):
     capturar(cuerpo)
     with pytest.raises(cliente_ia.ServicioNoDisponible):
         cliente_ia.enviar([], HERRAMIENTAS, timeout=5)
+
+
+# --- Traducción de errores (US4, contracts/servicio-ia.md) ---
+
+
+def error_http(codigo):
+    return urllib.error.HTTPError("https://ia.test", codigo, "error", {}, io.BytesIO(b"{}"))
+
+
+def test_429_cuota_agotada(capturar, caplog):
+    capturar(error_http(429))
+    with pytest.raises(cliente_ia.CuotaAgotada) as error:
+        cliente_ia.enviar([], HERRAMIENTAS, timeout=5)
+    assert error.value.motivo == "cuota agotada"
+    assert "cuota agotada" in caplog.text
+
+
+@pytest.mark.parametrize("codigo", [401, 403])
+def test_clave_invalida(capturar, caplog, codigo):
+    capturar(error_http(codigo))
+    with pytest.raises(cliente_ia.ServicioNoDisponible) as error:
+        cliente_ia.enviar([], HERRAMIENTAS, timeout=5)
+    assert not isinstance(error.value, cliente_ia.CuotaAgotada)
+    assert error.value.motivo == "clave inválida o sin acceso (401/403)"
+    assert "clave inválida o sin acceso (401/403)" in caplog.text
+
+
+@pytest.mark.parametrize("codigo", [400, 404, 500, 502, 503])
+def test_otros_errores_http(capturar, caplog, codigo):
+    capturar(error_http(codigo))
+    with pytest.raises(cliente_ia.ServicioNoDisponible) as error:
+        cliente_ia.enviar([], HERRAMIENTAS, timeout=5)
+    assert error.value.motivo == f"error HTTP {codigo}"
+    assert f"error HTTP {codigo}" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "falla",
+    [TimeoutError("lento"), TimeoutError("lento"), urllib.error.URLError("sin red")],
+)
+def test_sin_respuesta(capturar, caplog, falla):
+    capturar(falla)
+    with pytest.raises(cliente_ia.ServicioNoDisponible) as error:
+        cliente_ia.enviar([], HERRAMIENTAS, timeout=5)
+    assert error.value.motivo == "sin respuesta"
+    assert "sin respuesta" in caplog.text
+
+
+def test_cuerpo_no_json(monkeypatch, config_asistente, caplog):
+    monkeypatch.setattr(
+        urllib.request, "urlopen", lambda pedido, timeout=None: RespuestaHttp(b"<html>")
+    )
+    with pytest.raises(cliente_ia.ServicioNoDisponible) as error:
+        cliente_ia.enviar([], HERRAMIENTAS, timeout=5)
+    assert error.value.motivo == "respuesta inválida"
+    assert "respuesta inválida" in caplog.text
+
+
+@pytest.mark.parametrize("cuerpo", [{"sin": "choices"}, {"choices": []}, {"choices": [{}]}])
+def test_sin_choices_respuesta_invalida(capturar, cuerpo):
+    capturar(cuerpo)
+    with pytest.raises(cliente_ia.ServicioNoDisponible) as error:
+        cliente_ia.enviar([], HERRAMIENTAS, timeout=5)
+    assert error.value.motivo == "respuesta inválida"
+
+
+@pytest.mark.parametrize("falla", [error_http(429), error_http(401), TimeoutError("x")])
+def test_log_sin_datos_del_pedido(capturar, caplog, falla):
+    capturar(falla)
+    mensajes = [{"role": "user", "content": "¿Cómo está el PI 200417 de Lácteos del Sur?"}]
+    with pytest.raises(cliente_ia.ErrorServicio):
+        cliente_ia.enviar(mensajes, HERRAMIENTAS, timeout=5)
+    for prohibido in ("clave-test", "200417", "Lácteos", "buscar_muestra"):
+        assert prohibido not in caplog.text

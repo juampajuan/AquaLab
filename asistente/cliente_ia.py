@@ -46,10 +46,29 @@ def enviar(mensajes, herramientas, timeout, config=None):
     )
     try:
         with urllib.request.urlopen(pedido, timeout=timeout) as respuesta:
-            datos = json.loads(respuesta.read().decode("utf-8"))
-        return datos["choices"][0]["message"]
-    except (OSError, ValueError, KeyError, IndexError, TypeError) as error:
-        # OSError incluye URLError, HTTPError y los timeouts. La traducción por código HTTP
-        # (cuota, clave inválida) se completa en la US4 del asistente (T046).
-        logger.warning("Asistente: el servicio no respondió (%s).", type(error).__name__)
-        raise ServicioNoDisponible("sin respuesta") from error
+            cuerpo_respuesta = respuesta.read()
+    except urllib.error.HTTPError as error:
+        raise falla(error_http(error.code)) from error
+    except OSError as error:
+        # URLError, TimeoutError y socket.timeout son OSError.
+        raise falla(ServicioNoDisponible("sin respuesta")) from error
+    try:
+        return json.loads(cuerpo_respuesta.decode("utf-8"))["choices"][0]["message"]
+    except (ValueError, KeyError, IndexError, TypeError, AttributeError) as error:
+        raise falla(ServicioNoDisponible("respuesta inválida")) from error
+
+
+def error_http(codigo):
+    """Traduce el código HTTP del servicio (contracts/servicio-ia.md)."""
+    if codigo == 429:
+        return CuotaAgotada("cuota agotada")
+    if codigo in (401, 403):
+        # Para el usuario es «no disponible»; el log le dice a quien administra que es la clave.
+        return ServicioNoDisponible("clave inválida o sin acceso (401/403)")
+    return ServicioNoDisponible(f"error HTTP {codigo}")
+
+
+def falla(error):
+    """Registra el motivo (nunca la clave, la pregunta ni los datos enviados) y lo devuelve."""
+    logger.warning("Asistente: %s.", error.motivo)
+    return error

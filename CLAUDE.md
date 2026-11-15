@@ -254,8 +254,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   abierta). `static/js/aqualab.js` suma el toque (`data-abierta`), Escape (`data-cerrada`) y una sola
   abierta. Pasar del ícono al texto no la cierra (WCAG 1.4.13): `pointerout` con `relatedTarget`
   dentro de la misma `.ayuda` y el puente `.ayuda-texto::before`; solo el mouse la cierra al salir.
-- El JS se prueba con `node --test usuarios/tests/js config/tests/js estudios/tests/js` (DOM
-  simulado, sin dependencias), también en el CI.
+- El JS se prueba con `node --test usuarios/tests/js config/tests/js estudios/tests/js
+  pruebas/tests/js asistente/tests/js` (DOM simulado, sin dependencias), también en el CI.
 
 ## Datos de demo (SCRUM-78)
 
@@ -448,3 +448,34 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Tests: fixtures `prueba_curva` (NO2-C, mg/l) y `curva_de` (puntos (0; 0,001), (0,2; 0,101),
   (0,4; 0,201), pendiente 0,5, ordenada 0,001) en `estudios/tests/conftest.py`. Caso de
   referencia de la recta en specs/037-curva-calibracion/research.md (R2).
+
+## Asistente de consultas (US 10.1)
+
+- App `asistente` sin modelos ni migraciones: no guarda conversaciones (la historia la manda el
+  navegador, últimos 6 mensajes de ≤ 4000 caracteres). Configuración en `settings.ASISTENTE`
+  (`ASISTENTE_API_KEY`, `ASISTENTE_URL`, `ASISTENTE_MODELO`; Groq y `openai/gpt-oss-120b` por
+  defecto); sin clave, el botón aparece deshabilitado y la vista responde 503 `no_configurado`.
+- `asistente/cliente_ia.py:enviar` es el único punto de red (urllib, sin dependencias). Traduce
+  429 → `CuotaAgotada` (vista 429) y todo lo demás → `ServicioNoDisponible` (503); el logger
+  `asistente` registra solo el motivo. En los tests se parchea `asistente.cliente_ia.enviar`
+  (fixture `servicio_simulado`); el conftest hace fallar cualquier `urlopen` no simulado.
+- El modelo solo redacta: los datos salen de las herramientas de `asistente/herramientas.py`
+  (`@registrar`: `buscar_muestra`, `detalle_estudio`, `buscar_cliente`, `estudios_de_cliente`).
+  Corren con el usuario que pregunta en `transaction.atomic()` + `SET TRANSACTION READ ONLY`, que
+  siempre se deshace. Salidas con lista blanca de campos: nunca correo, teléfono, domicilio ni
+  documento del cliente, ni datos de usuarios. `puede_ver` es la única regla de permisos (la de
+  las pantallas: cliente inactivo rechazado en ficha e historial).
+- Reutilizan las consultas de pantalla: `estudios.views.pruebas_del_detalle` (`estudios:detalle`),
+  `muestras.views.estudios_de_la_ficha` (`muestras:detalle`), `clientes.historial.
+  muestras_del_historial`, `clientes.views.filtro_clientes` y `estudios.busqueda.filtro_busqueda`
+  (+ origen). Resultados con `informes.contenido.texto_resultado` («< LD», Ausente/Presente).
+- `asistente/conversacion.py`: una herramienta por vuelta (`parallel_tool_calls: false`; si
+  llegan varias, solo la primera), 6 vueltas + la llamada final, 8 ejecuciones, 20 s en total
+  (timeout = min(15, lo que queda)). Tope de vueltas/ejecuciones → 200 «No pude completar…»;
+  tiempo agotado → 503. Sin ninguna herramienta válida en la pregunta → `MENSAJE_SOLO_CONSULTA`.
+- Enlaces: los arma AquaLab con `enlaces.Referencia` + `reverse`, nunca del modelo; el panel
+  muestra todo con `textContent`. Avisos fijos de AquaLab (FR-009/009a): más de 5 estudios por
+  muestra o más de 10 por cliente, con el enlace a la ficha o al historial primero.
+- Panel: `templates/ui/asistente.html` (incluido en `base.html` con sesión) + `static/js/aqualab.js`
+  (avisos por JSON, no con `messages`: excepción justificada en el plan). Tests JS en
+  `asistente/tests/js`.

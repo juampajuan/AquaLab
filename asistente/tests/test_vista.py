@@ -129,3 +129,102 @@ def test_error_inesperado_no_sale_de_la_vista(cliente_http, servicio_simulado):
     respuesta = preguntar(cliente_http, {"pregunta": "hola"})
     assert respuesta.status_code == 503
     assert respuesta.json()["error"] == "no_disponible"
+
+
+# --- US4: servicio no disponible ---
+
+
+def test_cuota_agotada(cliente_http, servicio_simulado):
+    """US4 Esc. 2."""
+    from asistente.cliente_ia import CuotaAgotada
+
+    servicio_simulado.guion(CuotaAgotada("cuota agotada"))
+    respuesta = preguntar(cliente_http, {"pregunta": "hola"})
+    assert respuesta.status_code == 429
+    assert respuesta.json() == {
+        "error": "cuota",
+        "mensaje": (
+            "Se alcanzó el límite de consultas del asistente. Probá más tarde; el resto de "
+            "AquaLab funciona normalmente."
+        ),
+    }
+
+
+def test_no_disponible_mensaje_literal(cliente_http, servicio_simulado):
+    """US4 Esc. 1."""
+    from asistente.cliente_ia import ServicioNoDisponible
+
+    servicio_simulado.guion(ServicioNoDisponible("sin respuesta"))
+    assert preguntar(cliente_http, {"pregunta": "hola"}).json() == {
+        "error": "no_disponible",
+        "mensaje": (
+            "El asistente no está disponible en este momento. Probá de nuevo más tarde o usá "
+            "las pantallas de AquaLab."
+        ),
+    }
+
+
+def test_sin_clave_no_configurado(cliente_http, settings, monkeypatch):
+    """US4 Esc. 3: sin clave no se llama al servicio."""
+    from asistente import cliente_ia
+
+    settings.ASISTENTE = {"clave": ""}
+    llamadas = []
+    monkeypatch.setattr(cliente_ia, "enviar", lambda *a, **k: llamadas.append(a))
+    respuesta = preguntar(cliente_http, {"pregunta": "hola"})
+    assert respuesta.status_code == 503
+    assert respuesta.json() == {
+        "error": "no_configurado",
+        "mensaje": "El asistente no está configurado.",
+    }
+    assert llamadas == []
+
+
+def test_segunda_llamada_lenta_503(cliente_http, servicio_simulado, monkeypatch):
+    """El tiempo agotado por demora del servicio da 503; el tope de vueltas, 200."""
+    from asistente import herramientas
+
+    from .conftest import Lenta, herramienta
+
+    definicion = {
+        "type": "function",
+        "function": {"name": "eco", "parameters": {"type": "object", "properties": {}}},
+    }
+    monkeypatch.setitem(
+        herramientas.REGISTRO,
+        "eco",
+        herramientas.Herramienta(definicion, lambda usuario: ({"encontrado": True}, [])),
+    )
+    servicio_simulado.guion(herramienta("eco"), Lenta(30, texto("tarde")))
+    respuesta = preguntar(cliente_http, {"pregunta": "hola"})
+    assert respuesta.status_code == 503
+    assert respuesta.json()["error"] == "no_disponible"
+    servicio_simulado.guion(*[herramienta("eco") for _ in range(7)])
+    respuesta = preguntar(cliente_http, {"pregunta": "hola"})
+    assert respuesta.status_code == 200
+    assert respuesta.json()["texto"] == (
+        "No pude completar la consulta; probá con una pregunta más concreta."
+    )
+
+
+def test_despues_de_una_falla_se_puede_preguntar(cliente_http, servicio_simulado):
+    """US4 Esc. 1: otra pregunta funciona después de una falla."""
+    from asistente.cliente_ia import CuotaAgotada, ServicioNoDisponible
+
+    servicio_simulado.guion(
+        ServicioNoDisponible("sin respuesta"), CuotaAgotada("cuota agotada"), texto("Hola")
+    )
+    assert preguntar(cliente_http, {"pregunta": "a"}).status_code == 503
+    assert preguntar(cliente_http, {"pregunta": "b"}).status_code == 429
+    assert preguntar(cliente_http, {"pregunta": "c"}).status_code == 200
+
+
+@pytest.mark.parametrize("ruta", ["inicio", "estudios:buscar", "clientes:buscar"])
+def test_pantallas_con_el_servicio_caido(cliente_http, servicio_simulado, ruta):
+    """US4 Esc. 5, FR-017: el resto de AquaLab no depende del servicio."""
+    from asistente.cliente_ia import ServicioNoDisponible
+
+    servicio_simulado.guion(ServicioNoDisponible("sin respuesta"))
+    preguntar(cliente_http, {"pregunta": "hola"})
+    assert cliente_http.get(reverse(ruta)).status_code == 200
+    assert servicio_simulado.llamadas[1:] == []
