@@ -206,3 +206,80 @@ def test_url_del_modelo_no_es_enlace(servicio_simulado, eco):
     respuesta = responder(servicio_simulado)
     assert "http://malo.test/x" in respuesta.texto
     assert [e["url"] for e in respuesta.enlaces] == ["/muestras/7/"]
+
+
+# --- US1: preguntar por una muestra ---
+
+
+def test_pregunta_por_pi(empleado, estudio_completo, muestra, servicio_simulado):
+    """US1 Esc. 3: una herramienta por vuelta y enlaces a la muestra y al estudio."""
+    servicio_simulado.guion(
+        herramienta("buscar_muestra", {"numero_pi": 200001}),
+        herramienta("detalle_estudio", {"numero": estudio_completo.pk}),
+        texto(f"La muestra PI 200001 tiene el Estudio {estudio_completo.pk} En proceso."),
+    )
+    respuesta = conversacion.responder(
+        empleado, "¿Cómo está el PI 200001?", [], reloj=servicio_simulado.reloj
+    )
+    assert respuesta.enlaces == [
+        {"etiqueta": "PI 200001", "url": f"/muestras/{muestra.pk}/"},
+        {"etiqueta": f"Estudio {estudio_completo.pk}", "url": f"/estudios/{estudio_completo.pk}/"},
+    ]
+    nombres = [ll["mensajes"][-1].get("content") for ll in servicio_simulado.llamadas[1:]]
+    assert '"numero_pi": 200001' in nombres[0]
+    assert '"pruebas"' in nombres[1]
+
+
+def test_enlaces_sin_mencion(empleado, estudio_completo, muestra, cliente_a, servicio_simulado):
+    servicio_simulado.guion(
+        herramienta("buscar_muestra", {"numero_pi": 200001}), texto("Está en proceso.")
+    )
+    respuesta = conversacion.responder(empleado, "¿Y?", [], reloj=servicio_simulado.reloj)
+    assert [e["url"] for e in respuesta.enlaces] == [
+        f"/muestras/{muestra.pk}/",
+        f"/estudios/{estudio_completo.pk}/",
+        f"/clientes/{cliente_a.pk}/",
+    ]
+
+
+def test_sin_herramientas_mensaje_fijo(servicio_simulado):
+    """El modelo responde de memoria con un valor inventado: no llega al usuario (FR-004)."""
+    servicio_simulado.guion(texto("El PI 200001 tiene pH 9,9."))
+    respuesta = conversacion.responder(None, "¿pH?", [], reloj=servicio_simulado.reloj)
+    assert respuesta.texto == conversacion.MENSAJE_SOLO_CONSULTA
+    assert "9,9" not in respuesta.texto
+    assert respuesta.enlaces == []
+
+
+def test_muestra_con_muchos_estudios(empleado, muestra, catalogo, servicio_simulado):
+    """US1 Esc. 7 / FR-009a: el aviso y el enlace a la ficha los pone AquaLab."""
+    import uuid
+
+    from estudios.models import TipoEstudio
+    from estudios.servicios import crear_estudio
+    from pruebas.models import Prueba
+
+    tipo = TipoEstudio.objects.create(nombre="Muchos")
+    tipo.pruebas.set(Prueba.objects.filter(codigo="PH"))
+    estudios = [
+        crear_estudio(
+            {
+                "clave": str(uuid.uuid4()),
+                "muestra": muestra.pk,
+                "tipo": tipo.pk,
+                "version": tipo.version,
+            },
+            empleado,
+        )
+        for _ in range(7)
+    ]
+    servicio_simulado.guion(
+        herramienta("buscar_muestra", {"numero_pi": 200001}),
+        texto(f"El Estudio {estudios[-1].pk} está Sin iniciar."),
+    )
+    respuesta = conversacion.responder(empleado, "¿PI 200001?", [], reloj=servicio_simulado.reloj)
+    assert respuesta.texto.endswith(
+        "La muestra PI 200001 tiene 7 estudios; se detallan los 5 más recientes. "
+        "El resto está en la ficha de la muestra."
+    )
+    assert respuesta.enlaces[0] == {"etiqueta": "PI 200001", "url": f"/muestras/{muestra.pk}/"}

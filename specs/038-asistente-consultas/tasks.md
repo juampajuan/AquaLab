@@ -242,14 +242,14 @@ muestra y el detalle del estudio; los enlaces llevan a esas pantallas.
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T024 [P] [US1] `estudios/tests/test_detalle_estudio.py` (o el test existente del detalle):
+- [X] T024 [P] [US1] `estudios/tests/test_detalle_estudio.py` (o el test existente del detalle):
   `test_pruebas_del_detalle_igual_a_la_vista` (la lista de `pruebas_del_detalle(estudio)` tiene las
   mismas asignaciones, en el mismo orden y con los mismos `motivo_sin_resultado`, `fuera_de_rango`,
   `evaluacion`, `limite_texto`, `limite_norma` y `deteccion` que el contexto de `estudios:detalle`);
   en `muestras/tests/test_detalle.py` (o el test existente de la ficha):
   `test_estudios_de_la_ficha_igual_a_la_vista` (mismos estudios, orden `-pk` y mismos
   `total_pruebas`/`pruebas_completadas` que el contexto de `muestras:detalle`).
-- [ ] T025 [P] [US1] `asistente/tests/test_herramientas.py` (muestra y estudio):
+- [X] T025 [P] [US1] `asistente/tests/test_herramientas.py` (muestra y estudio):
   `test_buscar_muestra_por_pi` (datos de contracts/herramientas.md: `numero_pi`, nombre, cliente,
   origen, estado con etiqueta, fecha de ingreso, tipo de vertido, `total_estudios`, estudios `-pk`
   con `pruebas_completadas`/`total_pruebas`/`con_informe`, igual que el contexto de
@@ -266,10 +266,10 @@ muestra y el detalle del estudio; los enlaces llevan a esas pantallas.
   bajo el LD → «< …»; nunca 0/1); `test_detalle_coma_decimal` (7,2 sale «7,2»);
   `test_detalle_con_informe` (estudio con `Informe` → `con_informe` y referencia `informe`);
   `test_referencias` (muestra, estudios y cliente activo, con pk y etiquetas «PI N» y «Estudio N»).
-- [ ] T026 [P] [US1] `asistente/tests/test_paridad.py`: para la misma fixture, cada valor que
+- [X] T026 [P] [US1] `asistente/tests/test_paridad.py`: para la misma fixture, cada valor que
   devuelve `detalle_estudio` (estado, resultado, unidad, evaluación, norma) aparece en el HTML de
   `estudios:detalle` y cada estudio de `buscar_muestra` en el de `muestras:detalle` (SC-001).
-- [ ] T027 [P] [US1] `asistente/tests/test_solo_lectura.py`: `test_herramientas_en_solo_lectura`
+- [X] T027 [P] [US1] `asistente/tests/test_solo_lectura.py`: `test_herramientas_en_solo_lectura`
   (una herramienta de prueba registrada en el test que intenta `Muestra.objects.update(...)`
   termina en «No se pudo consultar.» y la base no cambia); `test_base_igual` (recorrido completo con
   el servicio simulado pidiendo todas las herramientas de US1: son iguales antes y después los
@@ -278,7 +278,7 @@ muestra y el detalle del estudio; los enlaces llevan a esas pantallas.
   `PruebaEstudio.estado`, `Medicion.valor`, `Resultado.valor`, `Validacion.anulada` y
   `Cliente.activo`; SC-005); `test_pedido_de_cambio` («validá el PI 200417» con el modelo
   respondiendo texto sin herramientas → 200 con `MENSAJE_SOLO_CONSULTA` y la base igual; FR-011).
-- [ ] T028 [P] [US1] En `asistente/tests/test_conversacion.py`: `test_pregunta_por_pi` (el modelo
+- [X] T028 [P] [US1] En `asistente/tests/test_conversacion.py`: `test_pregunta_por_pi` (el modelo
   pide `buscar_muestra` y después `detalle_estudio`, una por vuelta, y responde un texto que nombra
   «PI 200417» y «Estudio N» → enlaces a `muestras:detalle` y `estudios:detalle` con esas etiquetas;
   US1 Esc. 3); `test_enlaces_sin_mencion` (texto sin números → enlaces de la última herramienta);
@@ -292,12 +292,12 @@ muestra y el detalle del estudio; los enlaces llevan a esas pantallas.
 
 ### Implementation for User Story 1
 
-- [ ] T029 [US1] Extraer `pruebas_del_detalle(estudio)` de `estudios.views.detalle` en
+- [X] T029 [US1] Extraer `pruebas_del_detalle(estudio)` de `estudios.views.detalle` en
   `estudios/views.py`: la misma consulta (`select_related`/`prefetch_related` con
   `prueba__limites_vertido` y `validaciones_vigentes()`), `motivo_sin_resultado`, `fuera_de_rango`,
   `evaluar_asignaciones` y `marcar_desvios`; `detalle()` la llama sin cambiar su contexto. Hace
   pasar T024 y los tests existentes del detalle.
-- [ ] T030 [US1] Herramienta `buscar_muestra` en `asistente/herramientas.py` (definición JSON +
+- [X] T030 [US1] Herramienta `buscar_muestra` en `asistente/herramientas.py` (definición JSON +
   función) según `contracts/herramientas.md`. Antes, extraer (obligatorio)
   `estudios_de_la_ficha(muestra)` de `muestras.views.detalle` en `muestras/views.py` (los mismos
   `annotate` de `total_pruebas`/`pruebas_completadas` y orden `-pk`) y hacer que `detalle()` la use
@@ -306,13 +306,13 @@ muestra y el detalle del estudio; los enlaces llevan a esas pantallas.
   `ESTUDIOS_POR_MUESTRA` (5) de `estudios_de_la_ficha`, con el `mensaje` de FR-009a si hay más; con `texto`, coincidencias por nombre de la muestra, origen o cliente
   (`__unaccent__icontains`), `-fecha_ingreso`, `-numero_pi`, hasta 10 con `total`; salida con lista
   blanca y referencias (muestra, estudios, cliente activo).
-- [ ] T031 [US1] Herramienta `detalle_estudio` (por `numero` o `numero_pi`) en
+- [X] T031 [US1] Herramienta `detalle_estudio` (por `numero` o `numero_pi`) en
   `asistente/herramientas.py`: usa `pruebas_del_detalle`; cada prueba con
   `informes.contenido.limites_y_evaluacion` + `texto_resultado`, `config.ui.unidad`, etiqueta de
   estado y de evaluación, `limite_texto`, `limite_norma`, `limite_origen`, `validada` y fecha de la
   validación vigente; sin datos de usuarios; `numero_pi` con varios estudios → `coincidencias`
   (completar en US2, T037); referencias estudio, muestra, cliente activo e informe si existe.
-- [ ] T032 [US1] Verificar `asistente/tests/test_conversacion.py` y `test_solo_lectura.py` en verde
+- [X] T032 [US1] Verificar `asistente/tests/test_conversacion.py` y `test_solo_lectura.py` en verde
   con las herramientas reales; ajustar `MENSAJE_SISTEMA` si el guion de T028 lo necesita.
 
 **Checkpoint**: MVP. Se pregunta por un N° PI y la respuesta coincide con las pantallas.

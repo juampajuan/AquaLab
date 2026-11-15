@@ -130,20 +130,25 @@ def registrar_confirmar(request):
     return render(request, "muestras/registro_confirmar.html", {"datos": resumen})
 
 
+def estudios_de_la_ficha(muestra):
+    """Los estudios de la muestra como los lista su ficha: del más nuevo al más viejo, con el total
+    de pruebas y las Completadas. Única consulta de la ficha: la usan `detalle` y el asistente
+    (US 10.1)."""
+    return muestra.estudios.annotate(
+        total_pruebas=Count("pruebas_asignadas"),
+        pruebas_completadas=Count(
+            "pruebas_asignadas",
+            filter=Q(pruebas_asignadas__estado=EstadoPruebaEstudio.COMPLETADA),
+        ),
+    ).order_by("-pk")
+
+
 def detalle(request, pk):
     muestra = get_object_or_404(
         Muestra.objects.select_related("cliente", "origen", "registrada_por"),
         pk=pk,
     )
-    estudios = list(
-        muestra.estudios.annotate(
-            total_pruebas=Count("pruebas_asignadas"),
-            pruebas_completadas=Count(
-                "pruebas_asignadas",
-                filter=Q(pruebas_asignadas__estado=EstadoPruebaEstudio.COMPLETADA),
-            ),
-        ).order_by("-pk")
-    )
+    estudios = list(estudios_de_la_ficha(muestra))
     return render(
         request,
         "muestras/detalle.html",

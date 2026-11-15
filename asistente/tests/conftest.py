@@ -114,3 +114,28 @@ def servicio_simulado(monkeypatch, config_asistente):
     servicio = ServicioSimulado()
     monkeypatch.setattr(cliente_ia, "enviar", servicio)
     return servicio
+
+
+@pytest.fixture
+def estudio_completo(estudio_de, empleado, bioquimico):
+    """Estudio de la muestra PI 200001 con una prueba de cada caso (US1 del asistente):
+    PH 7,2 cumple y CL- 40 → 400 fuera de norma (validadas); COND sin límite comparable, ECOLI
+    Ausente y TURBIDEZ bajo el LD (Cargadas, sin validar); TEMPERATURA Pendiente."""
+    from estudios.tests.utiles import cargar, validar
+
+    estudio = estudio_de("PH", "CL-", "COND", "ECOLI", "TURBIDEZ", "TEMPERATURA")
+    cargar(
+        estudio,
+        empleado,
+        {"PH": "7.2", "CL-": "40", "COND": "500", "ECOLI": "0", "TURBIDEZ": "0.05"},
+    )
+    validar(estudio, bioquimico, "PH", "CL-")
+    estudio.refresh_from_db()
+    return estudio
+
+
+def ejecutar(usuario, nombre, **argumentos):
+    """Ejecuta una herramienta como lo hace la conversación y devuelve la `Ejecucion`."""
+    from asistente import herramientas
+
+    return herramientas.ejecutar(usuario, nombre, json.dumps(argumentos))

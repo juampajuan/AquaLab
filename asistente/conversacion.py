@@ -66,7 +66,7 @@ def responder(usuario, pregunta, historial, config=None, reloj=time.monotonic):
     config = config or configuracion.actual()
     inicio = reloj()
     mensajes = mensajes_iniciales(pregunta, historial)
-    referencias, ultimas = [], []
+    referencias, ultimas, avisos, primeras = [], [], [], []
     vueltas = ejecuciones = 0
     alguna_valida = False
     while True:
@@ -99,6 +99,8 @@ def responder(usuario, pregunta, historial, config=None, reloj=time.monotonic):
                 alguna_valida = alguna_valida or ejecucion.valida
                 referencias.extend(ejecucion.referencias)
                 ultimas = ejecucion.referencias
+                avisos.extend(a for a in ejecucion.avisos if a not in avisos)
+                primeras.extend(ejecucion.primeras)
                 salida = ejecucion.salida
             else:
                 # La API exige una respuesta por llamada; las de más no se ejecutan (R11).
@@ -112,4 +114,6 @@ def responder(usuario, pregunta, historial, config=None, reloj=time.monotonic):
         return Respuesta(MENSAJE_SOLO_CONSULTA)
     if not texto:
         return Respuesta(MENSAJE_TOPE)
-    return Respuesta(texto, enlaces.elegir_enlaces(texto, referencias, ultimas))
+    # Los avisos los agrega AquaLab, no el modelo (FR-009a).
+    texto_final = "\n\n".join([texto, *avisos]) if avisos else texto
+    return Respuesta(texto_final, enlaces.elegir_enlaces(texto, referencias, ultimas, primeras))
