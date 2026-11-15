@@ -89,6 +89,11 @@
               {% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Corregir mediciones
             </a>
           {% endif %}
+          {% if calcular_con_curva %}
+            <a href="{% url 'estudios:calcular_con_curva' estudio.pk %}" class="btn btn-secundario" data-calcular-con-curva>
+              {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Calcular con la curva vigente
+            </a>
+          {% endif %}
           {% if validar_secundario %}
             <a href="{% url 'estudios:validar_resultados' estudio.pk %}" class="btn btn-secundario">
               {% include "ui/icono.html" with nombre="check" clase="size-4" %} Validar resultados
@@ -142,6 +147,7 @@
                     {% if asignacion.resultado.formula %}
                       <span class="block text-xs text-tinta-suave">Fórmula: {{ asignacion.resultado.formula }}</span>
                     {% endif %}
+                    {% include "estudios/_curva_resultado.html" %}
                     {% if asignacion.deteccion %}
                       {% include "estudios/desvio.html" with deteccion=asignacion.deteccion validacion=asignacion.validacion_desvio codigo=asignacion.prueba.codigo %}
                     {% endif %}

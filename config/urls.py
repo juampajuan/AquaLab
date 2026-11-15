@@ -11,6 +11,7 @@ urlpatterns = [
     path("usuarios/", include("usuarios.urls")),
     path("administracion/", include("usuarios.urls_administracion")),
     path("administracion/pruebas/", include("pruebas.urls")),  # SCRUM-73
+    path("pruebas/", include("pruebas.urls_curvas")),  # US 6.6
     path("clientes/", include("clientes.urls")),
     path("muestras/", include("muestras.urls")),
     path("estudios/", include("estudios.urls")),

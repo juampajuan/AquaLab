@@ -16,7 +16,15 @@ from django.utils import timezone
 
 from .formulas import FormulaInvalida, validar_formula
 from .limites import NUMERO, TEXTOS_AUSENTE
-from .models import LimiteVertido, Prueba, TipoCalculo, TipoVertido, referencias_formula
+from .models import (
+    MENSAJE_UNIDAD_CURVA,
+    UNIDAD_ABSORBANCIA,
+    LimiteVertido,
+    Prueba,
+    TipoCalculo,
+    TipoVertido,
+    referencias_formula,
+)
 
 OPERACIONES = ("crear", "editar", "desactivar", "reactivar", "eliminar", "reemplazar")
 CAMPOS_METODO = ("codigo", "nombre", "tipo_calculo", "formula", "unidad_medicion", "unidad")
@@ -54,6 +62,9 @@ MENSAJE_RANGO = "El mínimo no puede superar al máximo."
 MENSAJE_VERSION = "La prueba cambió mientras la editabas. Revisá los datos actuales."
 MENSAJE_REEMPLAZO = "Elegí una prueba activa con la misma unidad que no dependa de esta."
 MENSAJE_UNIDAD_REEMPLAZO = "La prueba nueva tiene que tener la misma unidad del resultado."
+MENSAJE_TIPO_CON_CURVAS = (
+    "Tiene curvas de calibración cargadas: borralas antes de cambiar el tipo de cálculo."
+)
 MENSAJE_FORMULA_REEMPLAZO = (
     "La fórmula no puede usar la prueba que reemplaza ni las que dependen de ella."
 )
@@ -208,8 +219,8 @@ def normalizar(datos):
             raise DatosInvalidos({"__all__": "La solicitud no es válida."})
         limpios[campo] = valor.strip()
     limpios["tipo_calculo"] = datos.get("tipo_calculo", "")
-    if limpios["tipo_calculo"] == TipoCalculo.DIRECTO:
-        limpios["formula"] = ""  # pasar a Directo descarta la fórmula
+    if limpios["tipo_calculo"] in (TipoCalculo.DIRECTO, TipoCalculo.CURVA):
+        limpios["formula"] = ""  # pasar a Directo o Curva descarta la fórmula
     return limpios
 
 
@@ -220,6 +231,14 @@ def validar_datos(datos, prueba=None):
     """
     datos = normalizar(datos)
     errores = {}
+    # US 6.6: en una prueba por curva la medición es la absorbancia. En una prueba en uso no se
+    # completa: cambiaría un dato bloqueado del método.
+    if (
+        datos["tipo_calculo"] == TipoCalculo.CURVA
+        and not datos["unidad_medicion"]
+        and (prueba is None or not prueba.esta_en_uso())
+    ):
+        datos["unidad_medicion"] = UNIDAD_ABSORBANCIA
     for campo in ("codigo", "nombre"):
         if not datos[campo]:
             errores[campo] = "Este campo es obligatorio."
@@ -233,6 +252,8 @@ def validar_datos(datos, prueba=None):
         errores["tipo_calculo"] = "Elegí un tipo de cálculo."
     elif datos["tipo_calculo"] == TipoCalculo.FORMULA and not datos["formula"]:
         errores["formula"] = "Una prueba de tipo Fórmula necesita una fórmula."
+    elif datos["tipo_calculo"] == TipoCalculo.CURVA and not datos["unidad"]:
+        errores["unidad"] = MENSAJE_UNIDAD_CURVA
     if datos["codigo"] and "codigo" not in errores:
         repetido = Prueba.objects.filter(codigo__iexact=datos["codigo"])
         if prueba is not None:
@@ -418,6 +439,12 @@ def _editar(prueba, usuario, datos):
             raise PruebaEnUso()
     elif datos["codigo"] != prueba.codigo and (usan := dependientes(prueba)):
         raise PruebaReferenciada([p.codigo for p in usan])
+    if (
+        prueba.tipo_calculo == TipoCalculo.CURVA
+        and datos["tipo_calculo"] != TipoCalculo.CURVA
+        and prueba.curvas.exists()
+    ):
+        raise DatosInvalidos({"tipo_calculo": MENSAJE_TIPO_CON_CURVAS})  # US 6.6, research R12
     antes = datos_de(prueba)
     if all(antes[c] == datos[c] for c in antes):
         return Resultado("sin_cambios", prueba.pk)

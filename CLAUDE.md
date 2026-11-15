@@ -417,3 +417,34 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   y hace el reemplazo en la misma transacción (`_crear_y_reemplazar`).
 - Tests: fixtures `administrador_catalogo`, `cliente_catalogo` y `datos_prueba`
   (`pruebas/tests/conftest.py`, que importa las de `estudios`).
+
+## Curvas de calibración (US 6.6)
+
+- Tercer tipo de cálculo, `TipoCalculo.CURVA`: la medición es la absorbancia (unidad de medición
+  «Abs» por defecto, salvo en una prueba en uso) y el resultado, la concentración. Modelos
+  `CurvaCalibracion` y `PuntoCurva` en `pruebas`; a lo sumo una vigente por prueba
+  (`curva_vigente_unica`). Ninguna curva se edita: para cambiar puntos se carga otra.
+- `pruebas/curvas.py` es la única fuente de las reglas: `ajustar` (mínimos cuadrados en `Decimal`,
+  pendiente y ordenada a 12 decimales, R² a 10; el resultado se calcula con lo guardado),
+  `curva_para`, `fuera_de_rango` (al vuelo, bordes inclusivos), `motivo_curva`,
+  `pendientes_de_curva`, `guardar_curva` y `borrar_curva`. `R2_MINIMO` (0,995) solo avisa.
+- `calculo.calcular`/`recalcular` tienen la rama `CURVA`: usan la curva del resultado existente (una
+  corrección o un recálculo no cambian de curva) o la vigente, y guardan `Resultado.curva`. Sin
+  curva → «Falta curva de calibración.»; con medición cargada antes de la vigente → «Se cargó antes
+  de la curva vigente.» y `servicios.calcular_con_curva` («Calcular con la curva vigente»).
+- `CurvaCalibracion.usada` pasa a `True` con el primer resultado y nunca vuelve: una curva usada no
+  se borra aunque su resultado se haya descartado (US 6.5). `Resultado.curva` es `PROTECT`.
+- Bloqueos (research R5): estudios por pk → `pg_advisory_xact_lock(6_600_001, prueba_id)`
+  (`curvas.bloquear_prueba`). Guardar y borrar toman el exclusivo; `recalcular` toma el compartido
+  antes de leer la vigente. «Calcularlas con esta curva» bloquea los estudios antes del lock.
+- Importación (`pruebas/importacion_curvas.py`): .csv o .xlsx (openpyxl, primera hoja), ≤ 1 MB,
+  ≤ 1000 filas, ≤ 50 puntos; columnas por encabezados «conc…»/«abs…» o elegidas a mano; números con
+  `leer_valor`. El `float` de openpyxl pasa a `Decimal` (6 decimales) al leer. El archivo no se
+  guarda: su nombre viaja firmado en el formulario y queda en `archivo_origen`.
+- Carga con un formset sin JavaScript (`formularios_curvas.py`) y borrador de `confirmaciones.py`
+  (operación «curva»; su clave es `CurvaCalibracion.clave`, así un doble envío no duplica).
+  Carga y borrado en `catalogo:` (Administradores); consulta para todos en `curvas:`. Gráfico con
+  `pruebas/static/pruebas/curva.js` (Chart.js local), probado con `node --test pruebas/tests/js`.
+- Tests: fixtures `prueba_curva` (NO2-C, mg/l) y `curva_de` (puntos (0; 0,001), (0,2; 0,101),
+  (0,4; 0,201), pendiente 0,5, ordenada 0,001) en `estudios/tests/conftest.py`. Caso de
+  referencia de la recta en specs/037-curva-calibracion/research.md (R2).

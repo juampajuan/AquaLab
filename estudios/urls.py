@@ -25,5 +25,10 @@ urlpatterns = [
     ),
     path("<int:pk>/mediciones/cargar/", views.cargar_mediciones, name="cargar_mediciones"),
     path("<int:pk>/mediciones/corregir/", views.corregir_mediciones, name="corregir_mediciones"),
+    path(
+        "<int:pk>/mediciones/calcular-con-curva/",
+        views.calcular_con_curva,
+        name="calcular_con_curva",
+    ),
     path("<int:pk>/resultados/validar/", views.validar_resultados, name="validar_resultados"),
 ]

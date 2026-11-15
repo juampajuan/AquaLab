@@ -17,6 +17,7 @@ from .models import (
     Estudio,
     Medicion,
     PruebaEstudio,
+    Resultado,
     TipoEstudio,
     Validacion,
 )
@@ -264,6 +265,36 @@ def recalcular_resultados(estudio_pk, asignacion_pks, usuario):
             pk__in=asignacion_pks
         )
         return calculo.recalcular(estudio, list(asignaciones))
+
+
+class CalcularConCurvaError(Exception):
+    pass
+
+
+def calcular_con_curva(estudio_pk, usuario):
+    """Calcula con la curva vigente las mediciones del estudio que se cargaron antes de que su
+    prueba tuviera curva (US 6.6, FR-026). Devuelve cuántas calculó (0 si ya no quedaba ninguna).
+
+    Bloquea el estudio como la carga de mediciones y vuelve a buscar las pendientes bajo el
+    bloqueo; `calculo.recalcular` toma el lock compartido de cada prueba (research R5, R14).
+    """
+    from pruebas import curvas
+
+    if not usuario.is_authenticated or not usuario.is_active:
+        raise CalcularConCurvaError("Se requiere una sesión activa.")
+    with transaction.atomic():
+        estudio = Estudio.objects.select_for_update().filter(pk=estudio_pk).first()
+        if estudio is None:
+            raise CalcularConCurvaError("El estudio no está disponible.")
+        if not estudio.admite_mediciones:
+            raise CalcularConCurvaError(
+                "El estudio ya no admite mediciones: no se pueden calcular resultados nuevos."
+            )
+        pendientes = curvas.pendientes_de_curva(estudio=estudio)
+        if not pendientes:
+            return 0
+        calculo.recalcular(estudio, pendientes)
+        return Resultado.objects.filter(asignacion__in=pendientes).count()
 
 
 class CorregirMedicionesError(Exception):

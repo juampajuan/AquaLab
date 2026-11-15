@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Nueva curva · {{ prueba.codigo }} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'catalogo:ficha' prueba.pk as url_ficha %}
+  {% include "ui/encabezado.html" with seccion="Administración" anterior_texto=prueba.codigo anterior_url=url_ficha titulo="Nueva curva de calibración · "|add:prueba.codigo %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl space-y-4" data-carga-curva>
+    {% include "ui/errores_form.html" %}
+    {% for error in formset.non_form_errors %}
+      <div class="aviso aviso-error" role="alert" data-error-puntos>
+        {% include "ui/icono.html" with nombre="circle-alert" clase="size-5 shrink-0" %}
+        <div>{{ error }}</div>
+      </div>
+    {% endfor %}
+    {% if error_archivo %}
+      <div class="aviso aviso-error" role="alert" data-error-archivo>
+        {% include "ui/icono.html" with nombre="circle-alert" clase="size-5 shrink-0" %}
+        <div>{{ error_archivo }} No se cargó ningún punto.</div>
+      </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" novalidate class="space-y-6">
+      {% csrf_token %}
+      {{ form.archivo_origen }}
+      <section class="tarjeta seccion-form">
+        {% include "ui/seccion_titulo.html" with titulo="Curva" icono="calendar" %}
+        <div class="grid gap-5 sm:grid-cols-2">
+          {% include "ui/campo.html" with field=form.fecha_preparacion %}
+          {% include "ui/campo.html" with field=form.observacion %}
+        </div>
+      </section>
+
+      <section class="tarjeta seccion-form" data-importar>
+        {% include "ui/seccion_titulo.html" with titulo="Importar desde un archivo (opcional)" icono="file-text" %}
+        <div class="grid gap-5 sm:grid-cols-2 sm:items-end">
+          {% include "ui/campo.html" with field=importar.archivo %}
+          <div class="flex flex-wrap gap-3">
+            <button class="btn btn-secundario" type="submit" name="accion" value="importar">Importar puntos</button>
+            <a class="btn btn-secundario" href="{% url 'catalogo:plantilla_curva' %}" download>{% include "ui/icono.html" with nombre="download" clase="size-4" %} Descargar plantilla</a>
+          </div>
+        </div>
+        <p class="mt-3 text-sm text-tinta-suave">Los puntos leídos reemplazan a los de la tabla, donde podés revisarlos antes de calcular.</p>
+      </section>
+
+      {% if elegir %}
+        <section class="tarjeta seccion-form" data-elegir-columnas>
+          {% include "ui/seccion_titulo.html" with titulo="Elegí las columnas" icono="clipboard-list" %}
+          <p class="mb-4 text-sm text-tinta-suave">No se reconocieron los encabezados del archivo. Indicá cuál es la columna de concentración y cuál la de absorbancia.</p>
+          {% include "ui/errores_form.html" with form=elegir %}
+          <div class="overflow-x-auto">
+            <table class="tabla">
+              <thead><tr>{% for indice, titulo in vista_previa.columnas %}<th>{{ titulo }}</th>{% endfor %}</tr></thead>
+              <tbody>
+                {% for fila in vista_previa.filas %}
+                  <tr data-vista-previa-fila>{% for celda in fila %}<td>{{ celda|default:"—" }}</td>{% endfor %}</tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-4 grid gap-5 sm:grid-cols-2">
+            {% include "ui/campo.html" with field=elegir.columna_concentracion %}
+            {% include "ui/campo.html" with field=elegir.columna_absorbancia %}
+          </div>
+          <div class="mt-4 flex justify-end">
+            <button class="btn btn-primario" type="submit" name="accion" value="elegir_columnas">Usar estas columnas</button>
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="tarjeta seccion-form">
+        {% include "ui/seccion_titulo.html" with titulo="Puntos de los estándares" icono="clipboard-list" %}
+        <p class="mb-4 text-sm text-tinta-suave">Al menos 3 puntos. Las filas vacías no se tienen en cuenta.</p>
+        {{ formset.management_form }}
+        <div class="overflow-x-auto">
+          <table class="tabla" data-tabla-puntos>
+            <thead>
+              <tr><th>#</th><th>Concentración ({{ prueba.unidad }})</th><th>Absorbancia (Abs)</th><th><span class="sr-only">Quitar</span></th></tr>
+            </thead>
+            <tbody>
+              {% for fila in formset %}
+                <tr>
+                  <td class="numeros">{{ forloop.counter }}</td>
+                  <td>
+                    {{ fila.concentracion }}
+                    {% for error in fila.concentracion.errors %}<div class="campo-error" role="alert">{{ error }}</div>{% endfor %}
+                  </td>
+                  <td>
+                    {{ fila.absorbancia }}
+                    {% for error in fila.absorbancia.errors %}<div class="campo-error" role="alert">{{ error }}</div>{% endfor %}
+                  </td>
+                  <td><button class="btn btn-secundario btn-chico" type="submit" name="accion" value="quitar_{{ forloop.counter0 }}" aria-label="Quitar el punto {{ forloop.counter }}">{% include "ui/icono.html" with nombre="x" clase="size-4" %}</button></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button class="btn btn-secundario" type="submit" name="accion" value="agregar_fila">{% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Agregar fila</button>
+          <button class="btn btn-primario" type="submit" name="accion" value="calcular">{% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Calcular recta</button>
+        </div>
+      </section>
+
+      {% if ajuste %}
+        <section class="tarjeta seccion-form" data-recta>
+          {% include "ui/seccion_titulo.html" with titulo="Recta" icono="chart-column" %}
+          {% if ajuste.r2_bajo %}
+            <div class="aviso aviso-advertencia mb-4" role="status" data-r2-bajo>
+              {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+              <div>R² menor que 0,995: revisá los puntos antes de guardar</div>
+            </div>
+          {% endif %}
+          <dl class="resumen">
+            {% include "ui/dato.html" with etiqueta="Pendiente" valor=ajuste.pendiente %}
+            {% include "ui/dato.html" with etiqueta="Ordenada al origen" valor=ajuste.ordenada %}
+            {% include "ui/dato.html" with etiqueta="R²" valor=ajuste.r2 %}
+            {% include "ui/dato.html" with etiqueta="Rango" valor=ajuste.rango %}
+          </dl>
+          <div class="mt-4 h-72"><canvas id="grafico-curva" role="img" aria-label="Gráfico de los puntos y la recta de calibración"></canvas></div>
+          {{ grafico|json_script:"datos-curva" }}
+          <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
+          <script src="{% static 'pruebas/curva.js' %}" defer></script>
+        </section>
+        <div class="flex flex-wrap justify-end gap-3">
+          <button class="btn btn-primario" type="submit" name="accion" value="guardar">Revisar resumen {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}</button>
+        </div>
+      {% endif %}
+    </form>
+    <a class="btn btn-secundario" href="{% url 'catalogo:ficha' prueba.pk %}">{% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver a la prueba</a>
+  </div>
+{% endblock %}

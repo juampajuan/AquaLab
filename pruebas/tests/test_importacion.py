@@ -252,8 +252,8 @@ CASOS_INVALIDOS = {
         "línea 3: el código «PH» está repetido (también en la línea 2)",
     ),
     "tipo de cálculo": (
-        caso([fila_prueba(tipo_calculo="CURVA")]),
-        "línea 2: tipo de cálculo «CURVA» inválido (DIRECTO o FORMULA)",
+        caso([fila_prueba(tipo_calculo="OTRO")]),
+        "línea 2: tipo de cálculo «OTRO» inválido (DIRECTO, FORMULA o CURVA)",
     ),
     "si/no": (caso([fila_prueba(activa="quizas")]), "activa: «quizas» inválido (si o no)"),
     "fórmula vacía": (
@@ -301,7 +301,7 @@ def test_reporta_todos_los_errores(tmp_path):
     with pytest.raises(CommandError) as error:
         importar_filas(
             tmp_path,
-            [fila_prueba(tipo_calculo="CURVA"), fila_prueba(codigo="OD", activa="tal vez")],
+            [fila_prueba(tipo_calculo="OTRO"), fila_prueba(codigo="OD", activa="tal vez")],
         )
     mensaje = str(error.value)
     assert "el archivo tiene 2 errores" in mensaje
@@ -350,5 +350,5 @@ def test_comando_informa_resumen_y_avisos():
 
 def test_comando_error_sale_con_command_error(tmp_path):
     with pytest.raises(CommandError) as error:
-        importar_filas(tmp_path, [fila_prueba(tipo_calculo="CURVA")])
+        importar_filas(tmp_path, [fila_prueba(tipo_calculo="OTRO")])
     assert str(error.value).startswith("No se importó nada: el archivo tiene 1 error.\n")

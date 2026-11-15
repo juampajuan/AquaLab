@@ -96,6 +96,8 @@ def ficha(request, pk):
             "dependientes": gestion.dependientes(prueba),
             "usa_inactivas": gestion.dependencias_inactivas().get(prueba.pk, []),
             "limites_vertido": prueba.limites_vertido.order_by("tipo_vertido"),
+            "es_por_curva": prueba.tipo_calculo == TipoCalculo.CURVA,
+            "curva_vigente": prueba.curva_vigente,
         },
     )
 

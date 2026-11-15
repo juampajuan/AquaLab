@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Confirmar curva · {{ prueba.codigo }} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'catalogo:ficha' prueba.pk as url_ficha %}
+  {% include "ui/encabezado.html" with seccion="Administración" anterior_texto=prueba.codigo anterior_url=url_ficha titulo="Confirmar curva de calibración · "|add:prueba.codigo %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl space-y-4" data-confirmacion="curva">
+    {% if ajuste.r2_bajo %}
+      <div class="aviso aviso-advertencia" role="status" data-r2-bajo>
+        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+        <div>R² menor que 0,995: revisá los puntos antes de guardar</div>
+      </div>
+    {% endif %}
+    {% if anterior %}
+      <div class="aviso aviso-info" role="status" data-anterior>
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>La curva vigente del {{ anterior.fecha_preparacion|date:"d/m/Y" }} pasa a histórica. Los resultados ya calculados no cambian.</div>
+      </div>
+    {% endif %}
+
+    {% if pendientes %}
+      <div class="aviso aviso-info" role="status" data-aviso-pendientes>
+        {% include "ui/icono.html" with nombre="info" clase="size-5 shrink-0" %}
+        <div>{{ pendientes }}. Marcá «Calcularlas con esta curva» para calcularlas al guardar; si no, se calculan después desde cada estudio.</div>
+      </div>
+    {% endif %}
+
+    <section class="tarjeta seccion-form">
+      {% include "ui/seccion_titulo.html" with titulo="Resumen" icono="clipboard-list" %}
+      <dl class="resumen">
+        {% include "ui/dato.html" with etiqueta="Prueba" valor=prueba.codigo extra="· "|add:prueba.nombre %}
+        {% include "ui/dato.html" with etiqueta="Fecha de preparación" valor=fecha|date:"d/m/Y" %}
+        {% with c=cantidad|stringformat:"d" %}{% include "ui/dato.html" with etiqueta="Puntos" valor=c|add:" puntos" %}{% endwith %}
+        {% include "ui/dato.html" with etiqueta="Rango de concentraciones" valor=ajuste.rango %}
+        {% include "ui/dato.html" with etiqueta="Pendiente" valor=ajuste.pendiente %}
+        {% include "ui/dato.html" with etiqueta="Ordenada al origen" valor=ajuste.ordenada %}
+        {% include "ui/dato.html" with etiqueta="R²" valor=ajuste.r2 %}
+        {% include "ui/dato.html" with etiqueta="Observación" valor=datos.observacion %}
+        {% if datos.archivo_origen %}
+          {% include "ui/dato.html" with etiqueta="Archivo" valor=datos.archivo_origen %}
+        {% endif %}
+      </dl>
+      <div class="mt-4 h-64"><canvas id="grafico-curva" role="img" aria-label="Gráfico de los puntos y la recta de calibración"></canvas></div>
+      {{ grafico|json_script:"datos-curva" }}
+      <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
+      <script src="{% static 'pruebas/curva.js' %}" defer></script>
+    </section>
+
+    <div class="mt-6 flex flex-wrap items-center justify-end gap-3" data-componente="acciones-confirmacion">
+      <a href="{{ url_volver }}" class="btn btn-secundario">{% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Volver y editar</a>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="token" value="{{ borrador.token }}">
+        <button name="accion" value="cancelar" class="btn btn-peligro">{% include "ui/icono.html" with nombre="x" clase="size-4" %} Cancelar</button>
+      </form>
+      <form method="post" data-confirmar-curva class="flex flex-wrap items-center gap-3">
+        {% csrf_token %}
+        <input type="hidden" name="token" value="{{ borrador.token }}">
+        {% if pendientes %}
+          <label class="flex items-center gap-2 text-sm" data-pendientes>
+            <input type="checkbox" name="calcular_pendientes" value="1"> Calcularlas con esta curva
+          </label>
+        {% endif %}
+        <button name="accion" value="confirmar" class="btn btn-primario">{% include "ui/icono.html" with nombre="check" clase="size-4" %} Guardar curva</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

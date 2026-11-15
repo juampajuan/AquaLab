@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Curva del {{ curva.fecha_preparacion|date:"d/m/Y" }} · {{ prueba.codigo }} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'curvas:listar' prueba.pk as url_lista %}
+  {% if curva.vigente %}
+    {% include "ui/encabezado.html" with seccion="Catálogo" anterior_texto="Curvas de "|add:prueba.codigo anterior_url=url_lista titulo="Curva del "|add:curva.fecha_preparacion|date:"d/m/Y" estado="Vigente" estado_tipo="success" %}
+  {% else %}
+    {% include "ui/encabezado.html" with seccion="Catálogo" anterior_texto="Curvas de "|add:prueba.codigo anterior_url=url_lista titulo="Curva del "|add:curva.fecha_preparacion|date:"d/m/Y" estado="Histórica" estado_tipo="neutral" %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl space-y-6" data-detalle-curva>
+    {% if ajuste.r2_bajo %}
+      <div class="aviso aviso-advertencia" role="status" data-r2-bajo>
+        {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+        <div>R² menor que 0,995.</div>
+      </div>
+    {% endif %}
+    <section class="tarjeta seccion-form">
+      {% include "ui/seccion_titulo.html" with titulo="Recta" icono="chart-column" %}
+      <dl class="resumen">
+        {% include "ui/dato.html" with etiqueta="Prueba" valor=prueba.codigo extra="· "|add:prueba.nombre %}
+        {% include "ui/dato.html" with etiqueta="Pendiente" valor=ajuste.pendiente %}
+        {% include "ui/dato.html" with etiqueta="Ordenada al origen" valor=ajuste.ordenada %}
+        {% include "ui/dato.html" with etiqueta="R²" valor=ajuste.r2 %}
+        {% include "ui/dato.html" with etiqueta="Rango" valor=ajuste.rango %}
+        {% include "ui/dato.html" with etiqueta="Cargada por" valor=curva.cargada_por.get_full_name|default:curva.cargada_por.email extra="· "|add:curva.fecha_carga|date:"d/m/Y H:i" %}
+        {% include "ui/dato.html" with etiqueta="Archivo de origen" valor=curva.archivo_origen %}
+        {% if curva.usada %}{% include "ui/dato.html" with etiqueta="Uso" valor="Usada en resultados" %}{% else %}{% include "ui/dato.html" with etiqueta="Uso" valor="Sin usar" %}{% endif %}
+      </dl>
+      {% if curva.observacion %}<p class="mt-4 text-sm text-tinta-suave">{{ curva.observacion|linebreaksbr }}</p>{% endif %}
+      <div class="mt-4 h-72"><canvas id="grafico-curva" role="img" aria-label="Gráfico de los puntos y la recta de calibración"></canvas></div>
+      {{ grafico|json_script:"datos-curva" }}
+      <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
+      <script src="{% static 'pruebas/curva.js' %}" defer></script>
+    </section>
+
+    <section class="tarjeta overflow-hidden" data-puntos>
+      <div class="p-5 pb-0">{% include "ui/seccion_titulo.html" with titulo="Puntos de los estándares (ver datos)" icono="clipboard-list" %}</div>
+      <div class="overflow-x-auto">
+        <table class="tabla">
+          <thead><tr><th>#</th><th>Concentración ({{ prueba.unidad }})</th><th>Absorbancia (Abs)</th></tr></thead>
+          <tbody>
+            {% for concentracion, absorbancia in puntos %}
+              <tr><td class="numeros">{{ forloop.counter }}</td><td class="numeros">{{ concentracion }}</td><td class="numeros">{{ absorbancia }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <a class="btn btn-secundario" href="{% url 'curvas:listar' prueba.pk %}">{% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver a las curvas</a>
+      {% if puede_borrar %}
+        <a class="btn btn-peligro" href="{% url 'catalogo:borrar_curva' curva.pk %}" data-borrar-curva>Borrar curva</a>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

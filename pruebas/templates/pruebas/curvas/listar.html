@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Curvas de calibración · {{ prueba.codigo }} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% include "ui/encabezado.html" with seccion="Catálogo" titulo="Curvas de calibración · "|add:prueba.codigo|add:" · "|add:prueba.nombre %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl space-y-6" data-curvas-prueba>
+    <section class="tarjeta seccion-form" data-vigente>
+      {% include "ui/seccion_titulo.html" with titulo="Curva vigente" icono="chart-column" %}
+      {% if vigente %}
+        {% include "pruebas/curvas/_fila.html" with curva=vigente %}
+      {% else %}
+        <p class="text-sm text-tinta-suave" data-sin-curva>Sin curva vigente.</p>
+      {% endif %}
+    </section>
+
+    {% if historicas %}
+      <section class="tarjeta overflow-hidden" data-historicas>
+        <div class="p-5 pb-0">{% include "ui/seccion_titulo.html" with titulo="Curvas históricas" icono="clock" %}</div>
+        <div class="overflow-x-auto">
+          <table class="tabla">
+            <thead><tr><th>Preparada</th><th>R²</th><th>Cargada por</th><th>Uso</th><th><span class="sr-only">Ver</span></th></tr></thead>
+            <tbody>
+              {% for curva in historicas %}
+                <tr>
+                  <td>{{ curva.fecha_preparacion|date:"d/m/Y" }}</td>
+                  <td class="numeros">{{ curva.r2_texto }}</td>
+                  <td>{{ curva.cargada_por.get_full_name|default:curva.cargada_por.email }} · {{ curva.fecha_carga|date:"d/m/Y H:i" }}</td>
+                  <td>{% if curva.usada %}Usada en resultados{% else %}Sin usar{% endif %}</td>
+                  <td><a class="btn btn-secundario btn-chico" href="{% url 'curvas:detalle' curva.pk %}">Ver</a></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endif %}
+
+    {% if puede_gestionar and es_por_curva %}
+      <div class="flex flex-wrap justify-end gap-3">
+        <a class="btn btn-primario" href="{% url 'catalogo:nueva_curva' prueba.pk %}" data-nueva-curva>{% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Nueva curva</a>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

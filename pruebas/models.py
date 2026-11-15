@@ -1,4 +1,5 @@
 import re
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -8,6 +9,8 @@ from django.db.models import Q
 from .formulas import FormulaInvalida, validar_formula
 
 REFERENCIA = re.compile(r"\{([^{}]+)\}")
+MENSAJE_UNIDAD_CURVA = "Indicá la unidad del resultado (la de la concentración)."
+UNIDAD_ABSORBANCIA = "Abs"
 
 
 def referencias_formula(formula):
@@ -18,6 +21,7 @@ def referencias_formula(formula):
 class TipoCalculo(models.TextChoices):
     DIRECTO = "DIRECTO", "Directo"
     FORMULA = "FORMULA", "Fórmula"
+    CURVA = "CURVA", "Curva de calibración"  # US 6.6
 
 
 class TipoVertido(models.TextChoices):
@@ -107,7 +111,7 @@ class Prueba(models.Model):
             models.CheckConstraint(condition=~Q(codigo=""), name="prueba_codigo_no_vacio"),
             models.CheckConstraint(condition=~Q(nombre=""), name="prueba_nombre_no_vacio"),
             models.CheckConstraint(
-                condition=Q(tipo_calculo=TipoCalculo.DIRECTO, formula="")
+                condition=Q(tipo_calculo__in=(TipoCalculo.DIRECTO, TipoCalculo.CURVA), formula="")
                 | (Q(tipo_calculo=TipoCalculo.FORMULA) & ~Q(formula="")),
                 name="prueba_formula_segun_tipo",
             ),
@@ -132,6 +136,13 @@ class Prueba(models.Model):
             raise ValidationError({"formula": "Una prueba de tipo Directo no lleva fórmula."})
         if self.tipo_calculo == TipoCalculo.FORMULA and not self.formula:
             raise ValidationError({"formula": "Una prueba de tipo Fórmula necesita una fórmula."})
+        if self.tipo_calculo == TipoCalculo.CURVA:
+            if self.formula:
+                raise ValidationError(
+                    {"formula": "Una prueba por curva de calibración no lleva fórmula."}
+                )
+            if not self.unidad:
+                raise ValidationError({"unidad": MENSAJE_UNIDAD_CURVA})
         if self.formula:
             try:
                 validar_formula(self.formula)
@@ -152,6 +163,11 @@ class Prueba(models.Model):
     def _normalizar(self):
         for campo in self.TEXTOS:
             setattr(self, campo, getattr(self, campo).strip())
+
+    @property
+    def curva_vigente(self):
+        """La curva de calibración vigente (US 6.6), o None."""
+        return self.curvas.filter(vigente=True).first()
 
     def esta_en_uso(self):
         """Asignada a algún tipo de estudio o estudio: no se borra ni cambia código o nombre."""
@@ -193,3 +209,104 @@ class LimiteVertido(models.Model):
     def _normalizar(self):
         for campo in self.TEXTOS:
             setattr(self, campo, getattr(self, campo).strip())
+
+
+class CurvaCalibracion(models.Model):
+    """Curva de calibración de una prueba por absorbancia (US 6.6).
+
+    La recta es absorbancia = pendiente × concentración + ordenada. Nunca se edita; a lo sumo una
+    vigente por prueba. Una curva usada en algún resultado (`usada`) no se borra.
+    """
+
+    prueba = models.ForeignKey(
+        Prueba, on_delete=models.CASCADE, related_name="curvas", verbose_name="prueba"
+    )
+    fecha_preparacion = models.DateField("fecha de preparación")
+    observacion = models.TextField("observación", blank=True, default="")
+    archivo_origen = models.CharField("archivo de origen", max_length=255, blank=True, default="")
+    pendiente = models.DecimalField("pendiente", max_digits=24, decimal_places=12)
+    ordenada = models.DecimalField("ordenada al origen", max_digits=24, decimal_places=12)
+    r2 = models.DecimalField("R²", max_digits=11, decimal_places=10)
+    concentracion_min = models.DecimalField("concentración mínima", max_digits=18, decimal_places=6)
+    concentracion_max = models.DecimalField("concentración máxima", max_digits=18, decimal_places=6)
+    absorbancia_min = models.DecimalField("absorbancia mínima", max_digits=18, decimal_places=6)
+    absorbancia_max = models.DecimalField("absorbancia máxima", max_digits=18, decimal_places=6)
+    vigente = models.BooleanField("vigente", default=False)
+    usada = models.BooleanField("usada en resultados", default=False)
+    cargada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name="cargada por",
+    )
+    fecha_carga = models.DateTimeField("fecha de carga")
+    clave = models.UUIDField("clave de confirmación", unique=True)
+
+    class Meta:
+        verbose_name = "curva de calibración"
+        verbose_name_plural = "curvas de calibración"
+        ordering = ("-fecha_carga", "-pk")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("prueba",), condition=Q(vigente=True), name="curva_vigente_unica"
+            ),
+            models.CheckConstraint(condition=~Q(pendiente=0), name="curva_pendiente_no_cero"),
+            models.CheckConstraint(
+                condition=Q(r2__gte=0) & Q(r2__lte=1), name="curva_r2_entre_0_y_1"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.prueba.codigo} · curva del {self.fecha_preparacion:%d/%m/%Y}"
+
+    @property
+    def r2_bajo(self):
+        from .curvas import R2_MINIMO
+
+        return self.r2 < R2_MINIMO
+
+    @property
+    def r2_texto(self):
+        """R² con 4 decimales y coma (0,9996)."""
+        from .curvas import texto_numero
+
+        return texto_numero(self.r2, Decimal("0.0001"))
+
+    @property
+    def rango_texto(self):
+        """Rango de concentraciones de los estándares con la unidad: «0–0,4 mg/l»."""
+        from .curvas import texto_numero
+
+        desde, hasta = texto_numero(self.concentracion_min), texto_numero(self.concentracion_max)
+        return f"{desde}–{hasta} {self.prueba.unidad}".rstrip()
+
+    def concentracion(self, absorbancia):
+        """Concentración que corresponde a una absorbancia: (absorbancia − ordenada) / pendiente."""
+        return (absorbancia - self.ordenada) / self.pendiente
+
+
+class PuntoCurva(models.Model):
+    """Estándar de una curva: concentración conocida y absorbancia leída."""
+
+    curva = models.ForeignKey(
+        CurvaCalibracion, on_delete=models.CASCADE, related_name="puntos", verbose_name="curva"
+    )
+    orden = models.PositiveSmallIntegerField("orden")
+    concentracion = models.DecimalField("concentración", max_digits=18, decimal_places=6)
+    absorbancia = models.DecimalField("absorbancia", max_digits=18, decimal_places=6)
+
+    class Meta:
+        verbose_name = "punto de la curva"
+        verbose_name_plural = "puntos de la curva"
+        ordering = ("orden",)
+        constraints = [
+            models.UniqueConstraint(fields=("curva", "orden"), name="punto_curva_orden_unico"),
+            models.CheckConstraint(condition=Q(orden__gte=1), name="punto_curva_orden_positivo"),
+            models.CheckConstraint(
+                condition=Q(concentracion__gte=0) & Q(absorbancia__gte=0),
+                name="punto_curva_no_negativo",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.curva} · punto {self.orden}"

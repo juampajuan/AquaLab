@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Borrar curva · {{ prueba.codigo }} · AquaLab{% endblock %}
+
+{% block encabezado %}
+  {% url 'curvas:detalle' curva.pk as url_curva %}
+  {% include "ui/encabezado.html" with seccion="Administración" anterior_texto="Curva del "|add:curva.fecha_preparacion|date:"d/m/Y" anterior_url=url_curva titulo="Borrar curva de "|add:prueba.codigo %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-3xl">
+    <div class="aviso aviso-advertencia mb-6" role="alert">
+      {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
+      <div>Se va a borrar la curva del {{ curva.fecha_preparacion|date:"d/m/Y" }} de {{ prueba.codigo }}. Todavía no se usó en ningún resultado.{% if curva.vigente %} Es la vigente: vuelve a quedar vigente la anterior, si hay.{% endif %}</div>
+    </div>
+    <div class="tarjeta p-6 sm:p-7">
+      {% include "pruebas/curvas/_fila.html" %}
+    </div>
+    <div class="mt-6 flex flex-wrap items-center justify-end gap-3" data-componente="acciones-confirmacion">
+      <a href="{% url 'curvas:detalle' curva.pk %}" class="btn btn-secundario">Cancelar</a>
+      <form method="post" onsubmit="this.querySelector('button').disabled = true;">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="confirmar">
+        <button type="submit" class="btn btn-peligro">{% include "ui/icono.html" with nombre="x" clase="size-4" %} Borrar curva</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

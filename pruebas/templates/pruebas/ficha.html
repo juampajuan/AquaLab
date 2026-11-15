@@ -58,6 +58,25 @@
       {% if prueba.observacion %}<p class="mt-4 text-sm text-tinta-suave">{{ prueba.observacion|linebreaksbr }}</p>{% endif %}
     </section>
 
+    {% if es_por_curva %}
+      <section class="tarjeta seccion-form" data-curvas>
+        {% include "ui/seccion_titulo.html" with titulo="Curvas de calibración" icono="chart-column" %}
+        {% if curva_vigente %}
+          <dl class="resumen">
+            {% include "ui/dato.html" with etiqueta="Vigente" valor=curva_vigente.fecha_preparacion|date:"d/m/Y" %}
+            {% include "ui/dato.html" with etiqueta="R²" valor=curva_vigente.r2|floatformat:4 %}
+            {% include "ui/dato.html" with etiqueta="Puntos" valor=curva_vigente.puntos.count %}
+          </dl>
+        {% else %}
+          <p class="text-sm text-tinta-suave" data-sin-curva>Sin curva vigente: las mediciones de esta prueba no se calculan hasta cargar una.</p>
+        {% endif %}
+        <div class="mt-4 flex flex-wrap gap-3">
+          <a class="btn btn-secundario" href="{% url 'curvas:listar' prueba.pk %}" data-ver-curvas>{% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Ver curvas</a>
+          <a class="btn btn-secundario" href="{% url 'catalogo:nueva_curva' prueba.pk %}" data-nueva-curva>{% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Nueva curva</a>
+        </div>
+      </section>
+    {% endif %}
+
     {% if dependientes %}
       <p class="text-sm text-tinta-suave" data-dependientes>La usan en su fórmula: {% for d in dependientes %}<a class="text-cian-texto hover:underline" href="{% url 'catalogo:ficha' d.pk %}">{{ d.codigo }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
     {% endif %}
