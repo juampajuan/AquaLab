@@ -69,7 +69,7 @@ Decisiones técnicas de la US 6.6 (SCRUM-38). Formato: decisión, motivo y alter
 - **Efecto**: una curva no se puede borrar mientras alguien calcula con ella (sin `IntegrityError`
   por la FK); una carga que empezó antes de confirmar una curva nueva calcula con la vigente de ese
   momento y queda registrada. Una medición que llega sin curva entre la lista de candidatos y el lock
-  no se calcula en esa operación: sigue esperando (edge case de la spec). `UniqueConstraint`
+  no se calcula en esa operación: queda para «Calcular con la curva vigente» (R14). `UniqueConstraint`
   (`prueba`, `vigente=True`) es la red de seguridad de FR-014.
 - **Alternativas**: `select_for_update` sobre la curva vigente en la carga (deadlock con
   `guardar_curva`, que bloquea la vieja y después los estudios); bloquear la fila de la `Prueba` en
@@ -140,7 +140,7 @@ Decisiones técnicas de la US 6.6 (SCRUM-38). Formato: decisión, motivo y alter
   Requiere acuerdo del equipo: se avisa en el PR.
 
 ## R10 – Mediciones que esperan curva (aclaración 1)
-- **Decisión**: `curvas.pendientes_de_curva(prueba)` devuelve las asignaciones de la prueba con
+- **Decisión**: `curvas.pendientes_de_curva(*, prueba=None, estudio=None)` devuelve las asignaciones (de la prueba o del estudio) con
   medición y sin resultado en estudios que admiten mediciones (`Estudio.admite_mediciones`: los que
   tienen informe o están Finalizados no pueden tener una prueba sin resultado). La confirmación
   muestra «N mediciones en M estudios esperan curva» y la casilla «Calcularlas con esta curva»
