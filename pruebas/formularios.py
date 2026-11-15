@@ -20,6 +20,10 @@ AYUDA_FORMULA = (
     "Solo si el tipo de cálculo es Fórmula. x es el valor medido y {CODIGO} el resultado de otra "
     "prueba. Ejemplo: {DUREZA-T}-{CA}*2.5"
 )
+AYUDA_TIPO = (
+    "Curva de calibración: la medición es la absorbancia y el resultado se calcula con la curva "
+    "vigente. Si la unidad de medición queda vacía, se usa «Abs»."
+)
 AYUDA_LD = "Por debajo de este valor el resultado se informa como «< LD»."
 AYUDA_VERTIDO = (
     "Si se completa, reemplaza a los límites generales para las muestras de este vertido."
@@ -40,7 +44,10 @@ class PruebaForm(forms.Form):
     codigo = texto("Código", 50, requerido=True)
     nombre = texto("Nombre", 150, requerido=True)
     tipo_calculo = forms.ChoiceField(
-        label="Tipo de cálculo", choices=TipoCalculo.choices, initial=TipoCalculo.DIRECTO
+        label="Tipo de cálculo",
+        choices=TipoCalculo.choices,
+        initial=TipoCalculo.DIRECTO,
+        help_text=AYUDA_TIPO,
     )
     formula = texto("Fórmula", 255, ayuda=AYUDA_FORMULA)
     unidad_medicion = texto("Unidad de medición", 50, ayuda="La unidad de lo que se mide.")

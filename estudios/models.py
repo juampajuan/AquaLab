@@ -195,6 +195,16 @@ class Resultado(models.Model):
     unidad = models.CharField("unidad", max_length=50, blank=True, default="")
     formula = models.CharField("fórmula", max_length=255, blank=True, default="")
     fecha_calculo = models.DateTimeField("fecha de cálculo", auto_now=True)
+    # Curva de calibración con la que se calculó (US 6.6); nula si la prueba no es por curva.
+    curva = models.ForeignKey(
+        "pruebas.CurvaCalibracion",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="resultados",
+        verbose_name="curva de calibración",
+    )
 
     class Meta:
         verbose_name = "resultado"

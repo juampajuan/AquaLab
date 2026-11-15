@@ -11,6 +11,7 @@ from django.views.decorators.http import require_GET
 
 from config.volver import url_volver
 from muestras.models import Muestra
+from pruebas import curvas
 from pruebas.limites import (
     Evaluacion,
     LimitesAplicables,
@@ -335,7 +336,12 @@ def detalle(request, pk):
     )
     pruebas_asignadas = list(
         estudio.pruebas_asignadas.select_related(
-            "prueba", "medicion", "medicion__cargada_por", "medicion__corregida_por", "resultado"
+            "prueba",
+            "medicion",
+            "medicion__cargada_por",
+            "medicion__corregida_por",
+            "resultado",
+            "resultado__curva__prueba",
         )
         .prefetch_related("prueba__limites_vertido", validaciones_vigentes())
         .order_by("prueba__codigo", "pk")
@@ -343,6 +349,10 @@ def detalle(request, pk):
     todas = {a.prueba.codigo: a for a in pruebas_asignadas}
     for asignacion in pruebas_asignadas:
         asignacion.motivo_sin_resultado = calculo.motivo_sin_resultado(asignacion, todas)
+        asignacion.fuera_de_rango = curvas.fuera_de_rango(asignacion)
+    calcular_con_curva = estudio.admite_mediciones and any(
+        a.motivo_sin_resultado == curvas.MENSAJE_ANTES_DE_LA_CURVA for a in pruebas_asignadas
+    )
     evaluar_asignaciones(estudio, pruebas_asignadas)
     marcar_desvios(estudio, pruebas_asignadas)
     total_pruebas = len(pruebas_asignadas)
@@ -373,6 +383,7 @@ def detalle(request, pk):
                 request, reverse("muestras:detalle", args=[estudio.muestra_id])
             ),
             "pruebas_asignadas": pruebas_asignadas,
+            "calcular_con_curva": calcular_con_curva,
             "total_pruebas": total_pruebas,
             "pruebas_completadas": pruebas_completadas,
             "pruebas_cargadas": pruebas_cargadas,
@@ -511,6 +522,42 @@ def quitar_prueba(request, pk, asignacion_pk):
         messages.error(request, "No se pudo quitar la prueba. Intentá nuevamente.")
     else:
         messages.success(request, f"Prueba {prueba} quitada del estudio {estudio.pk}.")
+    return redirect("estudios:detalle", pk=estudio.pk)
+
+
+def calcular_con_curva(request, pk):
+    """«Calcular con la curva vigente» (US 6.6, FR-026): confirmación (GET) y cálculo (POST)."""
+    estudio = get_object_or_404(Estudio.objects.select_related("muestra"), pk=pk)
+    if not estudio.admite_mediciones:
+        messages.error(
+            request, "El estudio ya no admite mediciones: no se pueden calcular resultados nuevos."
+        )
+        return redirect("estudios:detalle", pk=estudio.pk)
+    if request.method != "POST":
+        pendientes = curvas.pendientes_de_curva(estudio=estudio)
+        if not pendientes:
+            messages.info(request, "No quedaban mediciones para calcular: ya se calcularon.")
+            return redirect("estudios:detalle", pk=estudio.pk)
+        return render(
+            request,
+            "estudios/calcular_con_curva_confirmar.html",
+            {"estudio": estudio, "pendientes": pendientes},
+        )
+    try:
+        calculadas = servicios.calcular_con_curva(estudio.pk, request.user)
+    except servicios.CalcularConCurvaError as exc:
+        messages.error(request, str(exc))
+    except DatabaseError:
+        messages.error(request, "No se pudieron calcular los resultados. Intentá nuevamente.")
+    else:
+        if not calculadas:
+            messages.info(request, "No quedaban mediciones para calcular: ya se calcularon.")
+        elif calculadas == 1:
+            messages.success(request, "Se calculó 1 resultado con la curva vigente.")
+        else:
+            messages.success(
+                request, f"Se calcularon {calculadas} resultados con la curva vigente."
+            )
     return redirect("estudios:detalle", pk=estudio.pk)
 
 
@@ -757,7 +804,9 @@ def validar_resultados(request, pk):
         messages.error(request, "La acción no es válida.")
         return redirect("estudios:detalle", pk=estudio.pk)
     asignaciones = (
-        estudio.pruebas_asignadas.select_related("prueba", "resultado")
+        estudio.pruebas_asignadas.select_related(
+            "prueba", "medicion", "resultado", "resultado__curva__prueba"
+        )
         .prefetch_related("prueba__limites_vertido", validaciones_vigentes())
         .order_by("prueba__codigo", "pk")
     )
@@ -772,6 +821,8 @@ def validar_resultados(request, pk):
             estado=EstadoPruebaEstudio.CARGADA, resultado__isnull=False
         )
     filas = list(asignaciones)
+    for asignacion in filas:
+        asignacion.fuera_de_rango = curvas.fuera_de_rango(asignacion)  # US 6.6
     evaluar_asignaciones(estudio, filas)
     marcar_desvios(estudio, filas)
     if accion == "marcar_todas":

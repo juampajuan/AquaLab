@@ -93,7 +93,7 @@ def preparar_pruebas(filas, ruta, existentes, en_uso, errores, avisos):
                 errores,
                 ruta,
                 linea,
-                f"tipo de cálculo «{fila['tipo_calculo']}» inválido (DIRECTO o FORMULA)",
+                f"tipo de cálculo «{fila['tipo_calculo']}» inválido (DIRECTO, FORMULA o CURVA)",
             )
             validos = False
         for columna in ("es_calculada", "activa"):

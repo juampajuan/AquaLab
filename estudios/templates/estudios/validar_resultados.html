@@ -64,6 +64,7 @@
                     <td>{{ asignacion.prueba.nombre }}</td>
                     <td>
                       <span class="numeros font-semibold text-tinta">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}{% if not asignacion.resultado.unidad|es_presencia %} {{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
+                      {% include "estudios/_curva_resultado.html" %}
                       {% if observacion %}
                         {% include "estudios/desvio.html" with deteccion=asignacion.deteccion validacion=None codigo=asignacion.prueba.codigo %}
                         {% include "ui/campo.html" with field=observacion clase="mt-2" %}

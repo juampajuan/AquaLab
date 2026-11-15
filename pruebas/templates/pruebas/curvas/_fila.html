@@ -1,0 +1,8 @@
+{# Resumen de una curva (vigente o histórica) con enlace a su detalle. #}
+<dl class="resumen">
+  {% include "ui/dato.html" with etiqueta="Preparada" valor=curva.fecha_preparacion|date:"d/m/Y" %}
+  {% include "ui/dato.html" with etiqueta="R²" valor=curva.r2_texto %}
+  {% include "ui/dato.html" with etiqueta="Cargada por" valor=curva.cargada_por.get_full_name|default:curva.cargada_por.email extra="· "|add:curva.fecha_carga|date:"d/m/Y H:i" %}
+  {% if curva.usada %}{% include "ui/dato.html" with etiqueta="Uso" valor="Usada en resultados" %}{% else %}{% include "ui/dato.html" with etiqueta="Uso" valor="Sin usar" %}{% endif %}
+</dl>
+<a class="mt-4 inline-flex text-sm text-cian-texto hover:underline" href="{% url 'curvas:detalle' curva.pk %}">Ver el detalle de la curva</a>

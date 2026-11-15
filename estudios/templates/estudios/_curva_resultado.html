@@ -1,0 +1,9 @@
+{# Curva con la que se calculó un resultado (US 6.6) y el aviso de fuera de rango. #}
+{% if asignacion.resultado.curva %}
+  {% with curva=asignacion.resultado.curva %}
+    <a class="block text-xs text-cian-texto hover:underline" href="{% url 'curvas:detalle' curva.pk %}" data-curva-usada>Curva del {{ curva.fecha_preparacion|date:"d/m/Y" }} · R² {{ curva.r2_texto }}</a>
+    {% if asignacion.fuera_de_rango %}
+      <span class="mt-1 block text-xs font-semibold text-advertencia" data-fuera-de-rango>{% include "ui/icono.html" with nombre="triangle-alert" clase="inline size-3.5" %} Fuera del rango de la curva ({{ curva.rango_texto }})</span>
+    {% endif %}
+  {% endwith %}
+{% endif %}

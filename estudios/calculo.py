@@ -5,6 +5,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.utils import timezone
 
+from pruebas import curvas
 from pruebas.formulas import CalculoImposible, evaluar_formula
 from pruebas.models import Prueba, TipoCalculo, referencias_formula
 
@@ -20,7 +21,9 @@ class FaltanDatos(Exception):
 
 
 def por_codigo(estudio):
-    asignaciones = estudio.pruebas_asignadas.select_related("prueba", "medicion", "resultado")
+    asignaciones = estudio.pruebas_asignadas.select_related(
+        "prueba", "medicion", "resultado", "resultado__curva"
+    )
     return {a.prueba.codigo: a for a in asignaciones}
 
 
@@ -61,15 +64,21 @@ def listado(codigos):
     return ", ".join(f"{c} · {nombres[c]}" if c in nombres else c for c in sorted(codigos))
 
 
-def calcular(asignacion, todas, valores):
+def calcular(asignacion, todas, valores, curva=None):
     """Valor del resultado con los resultados `valores` ya obtenidos en el estudio.
 
-    FaltanDatos si espera una medición u otros resultados; CalculoImposible si la fórmula no se
-    puede evaluar.
+    FaltanDatos si espera una medición, otros resultados o la curva de calibración;
+    CalculoImposible si la fórmula no se puede evaluar. Una prueba por curva (US 6.6) usa `curva`
+    o, si no se pasa, `curvas.curva_para` (la del resultado o la vigente).
     """
     prueba = asignacion.prueba
     if not prueba.es_calculada and not tiene_medicion(asignacion):
         raise FaltanDatos("Falta la medición.")
+    if prueba.tipo_calculo == TipoCalculo.CURVA:
+        curva = curva or curvas.curva_para(asignacion)
+        if curva is None:
+            raise FaltanDatos(curvas.MENSAJE_FALTA_CURVA)
+        return limitar(curva.concentracion(asignacion.medicion.valor))
     referencias = referencias_en_estudio(prueba, todas)
     if ausentes := {r for r, c in referencias.items() if c not in todas}:
         raise FaltanDatos(f"No forma parte del estudio: {listado(ausentes)}.")
@@ -80,6 +89,10 @@ def calcular(asignacion, todas, valores):
         valor = x
     else:
         valor = evaluar_formula(prueba.formula, x, {r: valores[c] for r, c in referencias.items()})
+    return limitar(valor)
+
+
+def limitar(valor):
     if valor and valor.adjusted() >= MAX_ENTEROS:
         raise CalculoImposible("el resultado es demasiado grande")
     return valor.quantize(DECIMALES, ROUND_HALF_UP)
@@ -164,10 +177,13 @@ def recalcular(estudio, asignaciones):
     fallas = []
     for codigo in orden + ciclo:
         asignacion = todas[codigo]
+        curva = None
         try:
             if codigo in ciclo:
                 raise CalculoImposible(CIRCULARES)
-            valor = calcular(asignacion, todas, valores)
+            if asignacion.prueba.tipo_calculo == TipoCalculo.CURVA and tiene_medicion(asignacion):
+                curva = curvas.curva_para(asignacion, bloquear=True)
+            valor = calcular(asignacion, todas, valores, curva)
         except (FaltanDatos, CalculoImposible) as exc:
             if isinstance(exc, CalculoImposible):
                 fallas.append((asignacion.prueba, exc.motivo))
@@ -181,8 +197,11 @@ def recalcular(estudio, asignaciones):
                 "valor": valor,
                 "unidad": asignacion.prueba.unidad,
                 "formula": asignacion.prueba.formula,
+                "curva": curva,
             },
         )
+        if curva is not None and not curva.usada:  # US 6.6: una curva usada ya no se borra
+            type(curva).objects.filter(pk=curva.pk, usada=False).update(usada=True)
         # Un resultado recalculado pierde la validación (excepción al principio IV, plan.md).
         if asignacion.estado != EstadoPruebaEstudio.CARGADA:
             cambiar_estado(asignacion, EstadoPruebaEstudio.CARGADA)
@@ -224,6 +243,8 @@ def motivo_sin_resultado(asignacion, todas):
     """Por qué la prueba no tiene resultado, o None si lo tiene. No escribe nada."""
     if tiene_resultado(asignacion):
         return None
+    if motivo := curvas.motivo_curva(asignacion):
+        return motivo
     if en_ciclo(asignacion.prueba.codigo, todas):
         return f"No se pudo calcular: {CIRCULARES}."
     valores = {c: a.resultado.valor for c, a in todas.items() if tiene_resultado(a)}

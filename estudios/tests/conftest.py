@@ -419,3 +419,72 @@ def estudio_en_origen(empleado, catalogo):
         return estudio
 
     return crear
+
+
+@pytest.fixture
+def prueba_curva():
+    """Prueba por curva de calibración (US 6.6): la medición es la absorbancia."""
+    from pruebas.models import Prueba, TipoCalculo
+
+    return Prueba.objects.create(
+        codigo="NO2-C",
+        nombre="Nitritos (curva)",
+        tipo_calculo=TipoCalculo.CURVA,
+        unidad="mg/l",
+        unidad_medicion="Abs",
+    )
+
+
+PUNTOS_CURVA = [("0", "0.001"), ("0.2", "0.101"), ("0.4", "0.201")]
+
+
+@pytest.fixture
+def curva_de(empleado):
+    """Crea una curva directamente en la base, sin `curvas.ajustar` (US 6.6).
+
+    Por defecto, los puntos de `PUNTOS_CURVA` con pendiente 0,5, ordenada 0,001 y R² 1; con otros
+    `puntos` hay que pasar también `pendiente`, `ordenada` y `r2`. Los rangos salen de los puntos.
+    Una curva vigente pasa a histórica la vigente anterior de la prueba.
+    """
+    from decimal import Decimal
+
+    from pruebas.models import CurvaCalibracion, PuntoCurva
+
+    def crear(
+        prueba,
+        puntos=None,
+        *,
+        pendiente="0.5",
+        ordenada="0.001",
+        r2="1",
+        vigente=True,
+        usuario=None,
+        fecha=None,
+        archivo_origen="",
+    ):
+        puntos = [(Decimal(c), Decimal(a)) for c, a in (puntos or PUNTOS_CURVA)]
+        if vigente:
+            prueba.curvas.filter(vigente=True).update(vigente=False)
+        curva = CurvaCalibracion.objects.create(
+            prueba=prueba,
+            fecha_preparacion=fecha or timezone.localdate(),
+            archivo_origen=archivo_origen,
+            pendiente=Decimal(pendiente),
+            ordenada=Decimal(ordenada),
+            r2=Decimal(r2),
+            concentracion_min=min(c for c, _ in puntos),
+            concentracion_max=max(c for c, _ in puntos),
+            absorbancia_min=min(a for _, a in puntos),
+            absorbancia_max=max(a for _, a in puntos),
+            vigente=vigente,
+            cargada_por=usuario or empleado,
+            fecha_carga=timezone.now(),
+            clave=uuid.uuid4(),
+        )
+        PuntoCurva.objects.bulk_create(
+            PuntoCurva(curva=curva, orden=n, concentracion=c, absorbancia=a)
+            for n, (c, a) in enumerate(puntos, start=1)
+        )
+        return curva
+
+    return crear
