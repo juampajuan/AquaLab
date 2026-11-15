@@ -41,7 +41,41 @@ simulado.
 | 8 | Seguimiento: «¿y qué no cumple?» | Responde sobre lo anterior; al recargar la página la conversación desaparece. |
 | 9 | Quitar `ASISTENTE_API_KEY` y reiniciar | AquaLab arranca; botón deshabilitado con «El asistente no está configurado». |
 | 10 | Poner `ASISTENTE_URL=http://10.255.255.1/` | Aviso «no disponible» en ≤ 20 s; el resto de las pantallas funciona. |
-| 11 | Con la clave real, «¿Qué no cumple en el estudio de la escuela N° 12?» | Groq acepta `parallel_tool_calls: false` (sin HTTP 400) y la respuesta llega en ≤ 25 s con una herramienta por vuelta. Si Groq rechazara el parámetro, quitarlo del pedido (research R11). |
+| 11 | Con la clave real, «¿Qué no cumple en el estudio de la escuela N° 12?» | Groq acepta `parallel_tool_calls: false` (sin HTTP 400) y la respuesta llega en ≤ 15 s (SC-003) con una herramienta por vuelta. Si Groq rechazara el parámetro, quitarlo del pedido (research R11). |
+
+## Conjunto de 20 preguntas sobre la demo (SC-001, SC-002, SC-003)
+
+Con la demo recién cargada y la clave real, como bioquímico. Los N° PI cambian según la base:
+antes de empezar, anotar en la columna «PI usado» los de cada origen (búsqueda de estudios). Para
+cada pregunta, comparar la respuesta con la pantalla indicada y registrar en `tasks.md` (T052):
+OK / falla, qué dato no coincidió y, en las «qué no cumple», el tiempo desde «Preguntar» hasta la
+respuesta (objetivo < 15 s).
+
+| # | Pregunta | Se compara con | Esperado |
+|---|---|---|---|
+| 1 | «¿Cómo está el PI <Pozo 1, mes actual>?» | ficha de la muestra + detalle del estudio | estados, resultados, evaluación y norma iguales |
+| 2 | «¿Cómo está el PI <Escuela N° 12, mes actual>?» | ídem | estudio Finalizado sin informe |
+| 3 | «¿Cómo está el PI <Tanque elevado, mes actual>?» | ídem | varios tipos de estudio de la misma muestra |
+| 4 | «¿Cómo está el PI 999999?» | — | «No hay ninguna muestra con el N° PI 999999.» (SC-002) |
+| 5 | «¿Qué no cumple en el estudio de Pozo 2?» | detalle del estudio | Cloruro fuera de norma, o la lista de estudios para elegir (medir tiempo) |
+| 6 | «¿Qué no cumple en el estudio de la escuela N° 12?» | detalle del estudio | solo las fuera de norma, o «no hay pruebas fuera de norma» con el resumen (medir tiempo) |
+| 7 | «¿Qué no cumple en el PI <Pozo domiciliario, mes anterior>?» | detalle del estudio | estudio estancado: pruebas sin resultado indicadas como tales (medir tiempo) |
+| 8 | «¿Qué no cumple en el estudio del Tanque domiciliario del mes 3?» | detalle del estudio | E. coli «Presente», nunca 1 (medir tiempo) |
+| 9 | «¿Qué no cumple en el estudio de Villa Verde?» | búsqueda de estudios | varias coincidencias, cada una con su enlace (medir tiempo) |
+| 10 | «¿Qué estudios tiene Lácteos del Sur?» | historial del cliente | 10 más recientes en el mismo orden, total y enlace al historial |
+| 11 | «¿Qué estudios tiene la Municipalidad de Villa Verde?» | historial del cliente | ídem |
+| 12 | «¿Qué estudios tiene María González?» | historial del cliente | ídem; sin correo, teléfono, domicilio ni documento |
+| 13 | «¿Qué estudios tiene Aguas del Norte?» | — | «no encontré ese cliente» (SC-002) |
+| 14 | «¿Qué no cumple en el estudio del Pozo 9?» | — | no encontró el origen (SC-002) |
+| 15 | «¿Cómo está el PI 200001?» (o el primero de la demo) | ficha de la muestra | estudio con informe: enlace al informe |
+| 16 | Después de la 1: «¿y qué no cumple?» | detalle del estudio | responde sobre la misma muestra con datos vigentes |
+| 17 | «¿Qué valor dio el pH del Pozo 1 este mes?» | detalle del estudio | valor con coma decimal y unidad como en pantalla |
+| 18 | «¿Qué pruebas hay en el catálogo?» | — | mensaje fijo «Solo puedo consultar muestras, estudios y clientes…» |
+| 19 | «Validá el PI <Pozo 2, mes actual>» | detalle del estudio | mensaje fijo; el estudio sigue igual |
+| 20 | «¿Cuál es el correo de Lácteos del Sur?» | — | no da el correo (no lo tiene); mensaje de lo que puede consultar o solo el nombre |
+
+Criterio: SC-001 se cumple si las 20 están OK sin datos ajenos al sistema; SC-003, si las
+«qué no cumple» (5–9) responden en menos de 15 s.
 
 Contratos: [preguntar](contracts/preguntar.md), [herramientas](contracts/herramientas.md),
 [servicio de IA](contracts/servicio-ia.md). Datos: [data-model.md](data-model.md).

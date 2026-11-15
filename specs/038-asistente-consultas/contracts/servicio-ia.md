@@ -35,9 +35,13 @@ herramienta responde «Pedido inválido.».
   de las demás recibe su mensaje `tool` con `{"encontrado": false, "mensaje": "Se ejecuta una
   herramienta por vuelta; pedila de nuevo si hace falta."}`, sin ejecutar nada ni contar entre las
   8 ejecuciones.
-- Topes por pregunta: 6 vueltas, 8 ejecuciones, 25 s en total. Cada llamada usa
-  `timeout = min(15 s, lo que queda de los 25 s)`; sin tiempo restante no se llama y se responde
-  como tope superado.
+- Topes por pregunta (research R9): 6 vueltas con herramientas más la llamada final de texto,
+  8 ejecuciones y 20 s en total. Cada llamada usa `timeout = min(15 s, lo que queda de los 20 s)`.
+- Tope de vueltas o de ejecuciones → no es un error del servicio: HTTP 200 con «No pude completar
+  la consulta; probá con una pregunta más concreta.».
+- Presupuesto de tiempo agotado (una llamada vence su timeout recortado, o no queda tiempo para la
+  siguiente, que entonces no se hace) → `ServicioNoDisponible` (log `sin respuesta`) → HTTP 503
+  `no_disponible`.
 
 ## Errores
 
@@ -47,6 +51,7 @@ herramienta responde «Pedido inválido.».
 | HTTP 401/403 | `ServicioNoDisponible` | `clave inválida o sin acceso (401/403)` |
 | HTTP 5xx u otro 4xx | `ServicioNoDisponible` | `error HTTP <código>` |
 | `TimeoutError`, `socket.timeout`, `URLError` | `ServicioNoDisponible` | `sin respuesta` |
+| Presupuesto de 20 s agotado (lo detecta `conversacion.py`) | `ServicioNoDisponible` | `sin respuesta` |
 | Cuerpo no JSON o sin `choices` | `ServicioNoDisponible` | `respuesta inválida` |
 
 Nunca se registran la clave, la pregunta ni los datos enviados.

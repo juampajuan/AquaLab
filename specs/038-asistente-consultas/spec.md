@@ -6,9 +6,9 @@
 
 **Status**: Borrador
 
-**Input**: User description: "US 10.1 (SCRUM-??) – Asistente de consultas en lenguaje natural. Como bioquímico quiero preguntar en lenguaje natural por una muestra, un estudio o un cliente, para ver estados, resultados y qué no cumple sin recorrer pantallas. Criterios de aceptación: (1) Desde AquaLab se abre el asistente y se puede preguntar, por ejemplo: «¿Cómo está el PI 200417?», «¿Qué estudios tiene Lácteos del Sur?», «¿Qué no cumple en el estudio de la escuela N° 12?». (2) La respuesta usa solo datos del sistema: estado de la muestra y de sus estudios, pruebas con su estado, resultados y evaluación (cumple / fuera de norma / sin límite comparable) y la norma usada. (3) Si no encuentra lo que se pregunta (un N° PI inexistente, un cliente que no está), lo dice. No inventa datos. (4) Cada muestra, estudio o cliente mencionado tiene un enlace a su pantalla. (5) Respeta los permisos de quien pregunta: solo muestra lo que esa persona puede ver en las pantallas. (6) El asistente solo consulta: no crea, modifica ni borra nada. (7) Si el servicio de IA no responde o se agotó la cuota, muestra un aviso claro y el resto de AquaLab funciona igual. (8) Al servicio externo no se mandan datos de contacto del cliente (correo, teléfono, dirección). Fuera de alcance: guardar el historial de conversaciones; preguntas sobre el catálogo de pruebas o los usuarios; crear o modificar datos (US 10.3). Depende de: las consultas existentes de muestras, estudios, clientes y validación (US 5.2, 3.3, 6.4). Servicio de IA con plan gratuito (Groq), configurable por variable de entorno."
+**Input**: User description: "US 10.1 (SCRUM-83) – Asistente de consultas en lenguaje natural. Como bioquímico quiero preguntar en lenguaje natural por una muestra, un estudio o un cliente, para ver estados, resultados y qué no cumple sin recorrer pantallas. Criterios de aceptación: (1) Desde AquaLab se abre el asistente y se puede preguntar, por ejemplo: «¿Cómo está el PI 200417?», «¿Qué estudios tiene Lácteos del Sur?», «¿Qué no cumple en el estudio de la escuela N° 12?». (2) La respuesta usa solo datos del sistema: estado de la muestra y de sus estudios, pruebas con su estado, resultados y evaluación (cumple / fuera de norma / sin límite comparable) y la norma usada. (3) Si no encuentra lo que se pregunta (un N° PI inexistente, un cliente que no está), lo dice. No inventa datos. (4) Cada muestra, estudio o cliente mencionado tiene un enlace a su pantalla. (5) Respeta los permisos de quien pregunta: solo muestra lo que esa persona puede ver en las pantallas. (6) El asistente solo consulta: no crea, modifica ni borra nada. (7) Si el servicio de IA no responde o se agotó la cuota, muestra un aviso claro y el resto de AquaLab funciona igual. (8) Al servicio externo no se mandan datos de contacto del cliente (correo, teléfono, dirección). Fuera de alcance: guardar el historial de conversaciones; preguntas sobre el catálogo de pruebas o los usuarios; crear o modificar datos (US 10.3). Depende de: las consultas existentes de muestras, estudios, clientes y validación (US 5.2, 3.3, 6.4). Servicio de IA con plan gratuito (Groq), configurable por variable de entorno."
 
-**Trazabilidad**: US 10.1. Clave Jira pendiente (SCRUM-??): completar cuando esté disponible.
+**Trazabilidad**: US 10.1, Jira SCRUM-83.
 
 ## Clarifications
 
@@ -21,7 +21,7 @@
 
 ### User Story 1 - Preguntar por una muestra (Priority: P1)
 
-Como bioquímico abro el asistente desde cualquier pantalla de AquaLab y pregunto por una muestra por su N° PI («¿Cómo está el PI 200417?»). El asistente responde con el estado de la muestra, sus estudios con su estado y, para cada estudio, las pruebas con su estado, su resultado y la evaluación contra la norma, con enlaces a la ficha de la muestra y de cada estudio.
+Como bioquímico abro el asistente desde cualquier pantalla de AquaLab (no el admin) y pregunto por una muestra por su N° PI («¿Cómo está el PI 200417?»). El asistente responde con el estado de la muestra, sus estudios con su estado y, para cada estudio, las pruebas con su estado, su resultado y la evaluación contra la norma, con enlaces a la ficha de la muestra y de cada estudio.
 
 **Why this priority**: Es la consulta más frecuente del laboratorio y la que más pantallas ahorra (muestra → estudio → pruebas). Sola ya entrega el valor de la historia.
 
@@ -29,12 +29,13 @@ Como bioquímico abro el asistente desde cualquier pantalla de AquaLab y pregunt
 
 **Acceptance Scenarios**:
 
-1. **Dado** un empleado con sesión iniciada en cualquier pantalla de AquaLab, **cuando** toca «Asistente», **entonces** se abre un panel con un campo para escribir la pregunta y ejemplos de preguntas posibles.
+1. **Dado** un empleado con sesión iniciada en cualquier pantalla de AquaLab (no el admin), **cuando** toca «Asistente», **entonces** se abre un panel con un campo para escribir la pregunta y ejemplos de preguntas posibles.
 2. **Dada** una muestra existente, **cuando** se pregunta «¿Cómo está el PI 200417?», **entonces** la respuesta indica el N° PI, el cliente, el origen, la fecha de ingreso y, por cada estudio, su tipo, su estado y sus pruebas con estado (Pendiente / Cargada / Completada), resultado con su unidad y evaluación (cumple / fuera de norma / sin límite comparable) con la norma usada.
 3. **Dada** la respuesta, **cuando** se mira, **entonces** la muestra y cada estudio mencionados tienen un enlace a su pantalla (ficha de la muestra, detalle del estudio).
 4. **Dado** un N° PI que no existe, **cuando** se pregunta por él, **entonces** el asistente responde que no hay ninguna muestra con ese N° PI, sin mostrar datos de otra muestra.
 5. **Dada** una prueba sin resultado (Pendiente, o sin curva o fórmula calculable), **cuando** aparece en la respuesta, **entonces** se indica que no tiene resultado (y el motivo que muestra el sistema), nunca un valor estimado.
 6. **Dada** una prueba con resultado todavía no validado, **cuando** aparece en la respuesta, **entonces** se indica que no está validada y su evaluación se presenta igual que en el detalle del estudio.
+7. **Dada** una muestra con más estudios de los que el asistente puede detallar en una respuesta (más de 5), **cuando** se pregunta por ella, **entonces** se detallan los 5 más recientes, la respuesta avisa cuántos estudios tiene en total y que el resto está en la ficha de la muestra, y siempre incluye el enlace a esa ficha.
 
 ---
 
@@ -70,7 +71,7 @@ Como bioquímico pregunto por un cliente («¿Qué estudios tiene Lácteos del S
 3. **Dado** un nombre de cliente que no existe, **cuando** se pregunta, **entonces** el asistente dice que no encontró ese cliente.
 4. **Dado** un nombre que coincide con varios clientes, **cuando** se pregunta, **entonces** el asistente lista los clientes encontrados (cada uno con su enlace) y pide elegir.
 5. **Dado** un cliente inactivo, **cuando** se pregunta por él, **entonces** el asistente indica que el cliente está inactivo y no muestra más datos que los que muestran las pantallas para un cliente inactivo.
-6. **Dada** cualquier respuesta sobre un cliente, **cuando** se mira, **entonces** no incluye su correo, teléfono ni dirección.
+6. **Dada** cualquier respuesta sobre un cliente, **cuando** se mira, **entonces** no incluye su correo, teléfono ni domicilio.
 
 ---
 
@@ -95,9 +96,9 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 ### Edge Cases
 
 - Pregunta fuera de alcance (catálogo de pruebas, usuarios, temas ajenos al laboratorio): el asistente responde que solo consulta muestras, estudios y clientes, y no contesta lo otro.
-- Pedido de crear, modificar, validar, borrar o emitir algo («validá el PI 200417», «borrá ese estudio»): el asistente responde que solo consulta y, si corresponde, ofrece el enlace a la pantalla donde se hace; no cambia nada.
+- Pedido de crear, modificar, validar, borrar o emitir algo («validá el PI 200417», «borrá ese estudio»): el asistente responde que solo consulta; no cambia nada.
 - Pregunta vacía o demasiado larga: se rechaza antes de consultar, con el motivo.
-- Instrucciones incrustadas en la pregunta o en datos del sistema (por ejemplo, una observación de muestra que dice «ignorá las reglas»): no cambian lo que el asistente puede hacer ni le permiten mostrar datos fuera de lo permitido.
+- Instrucciones incrustadas en la pregunta o en datos del sistema (por ejemplo, el nombre o el sitio de extracción de una muestra con el texto «ignorá las reglas»): no cambian lo que el asistente puede hacer ni le permiten mostrar datos fuera de lo permitido.
 - N° PI con formato inválido («PI 12»): se responde que no hay una muestra con ese número.
 - Estudio con informe emitido: se muestran los datos del sistema igual que en sus pantallas y el enlace al informe si quien pregunta puede verlo.
 - Resultados Ausente/Presente y por debajo del límite de detección: se muestran con el mismo texto que en las pantallas («Ausente», «Presente», «< LD»), nunca como 0 o 1.
@@ -111,7 +112,7 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 
 **Acceso y uso**
 
-- **FR-001**: AquaLab DEBE ofrecer un acceso al asistente desde el layout común, disponible para cualquier empleado con sesión iniciada (técnicos incluidos), sin un permiso propio: cada uno ve en las respuestas lo mismo que en las pantallas (FR-010).
+- **FR-001**: AquaLab DEBE ofrecer un acceso al asistente desde el layout común de las pantallas de AquaLab (no el admin), disponible para cualquier empleado con sesión iniciada (técnicos incluidos), sin un permiso propio: cada uno ve en las respuestas lo mismo que en las pantallas (FR-010).
 - **FR-002**: El asistente DEBE aceptar preguntas en español escritas libremente, de hasta 500 caracteres, y rechazar las vacías o más largas sin consultar.
 - **FR-003**: El asistente DEBE responder preguntas sobre: una muestra (por N° PI), un estudio (por N° PI, cliente, origen o tipo de estudio), un cliente (por nombre o razón social), y qué no cumple en cualquiera de ellos.
 
@@ -123,17 +124,18 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 - **FR-007**: Si la pregunta coincide con varios registros, el asistente DEBE mostrar las coincidencias identificables (con enlace) y pedir precisión, o responder por uno indicando explícitamente cuál eligió y por qué.
 - **FR-008**: Cada muestra, estudio, cliente e informe mencionado en una respuesta DEBE tener un enlace a su pantalla en AquaLab.
 - **FR-009**: Las respuestas sobre un cliente con muchas muestras DEBEN limitarse a los estudios más recientes (hasta 10), indicando el total y enlazando al historial completo.
+- **FR-009a**: Las respuestas sobre una muestra con más de 5 estudios DEBEN detallar los 5 más recientes, avisar el total y que el resto está en la ficha de la muestra, e incluir siempre el enlace a esa ficha.
 
 **Permisos y solo lectura**
 
 - **FR-010**: El asistente DEBE mostrar solo lo que quien pregunta puede ver en las pantallas de AquaLab, con sus permisos vigentes (por ejemplo, el enlace a un informe solo si puede verlo; un cliente inactivo como lo muestran las pantallas).
 - **FR-011**: El asistente NO DEBE crear, modificar ni borrar ningún dato del laboratorio, aunque se lo pidan; ante un pedido de cambio, DEBE responder que solo consulta.
-- **FR-012**: Las preguntas fuera de alcance (catálogo de pruebas, usuarios, otros temas) DEBEN responderse indicando qué consultas admite el asistente.
+- **FR-012**: Las preguntas fuera de alcance (catálogo de pruebas, usuarios, otros temas) y los pedidos de cambio DEBEN responderse con un mensaje fijo de AquaLab que indica que el asistente solo consulta y qué consultas admite. Toda respuesta que no se apoye en datos consultados en esa misma pregunta DEBE reemplazarse por ese mensaje fijo, sin importar lo que haya redactado el servicio de IA.
 - **FR-013**: Ninguna instrucción incluida en la pregunta o en los datos del sistema DEBE ampliar lo que el asistente puede consultar, mostrar o hacer.
 
 **Servicio externo y privacidad**
 
-- **FR-014**: Al servicio de IA externo NO DEBEN enviarse el correo, el teléfono ni la dirección de ningún cliente, ni datos de los usuarios de AquaLab (correo, contraseña, sesión).
+- **FR-014**: Al servicio de IA externo NO DEBEN enviarse el correo, el teléfono ni el domicilio de ningún cliente, ni datos de los usuarios de AquaLab (correo, contraseña, sesión).
 - **FR-015**: La clave, la dirección del servicio y el modelo DEBEN configurarse por variables de entorno (en `.env`), con Groq como servicio por defecto: sin indicar dirección ni modelo se usa Groq, y basta con la clave. Sin la clave, AquaLab DEBE arrancar igual y el asistente se muestra deshabilitado con un aviso; el resto de AquaLab funciona igual.
 - **FR-016**: Si el servicio no responde dentro de un tiempo de espera, responde con error o informa cuota agotada, el asistente DEBE mostrar un aviso claro (distinguiendo «no disponible» de «límite de consultas alcanzado») y permitir volver a preguntar; la falla DEBE quedar registrada en el log de la aplicación sin el texto de la pregunta.
 - **FR-017**: Una falla o demora del asistente NO DEBE afectar la carga ni el funcionamiento de ninguna otra pantalla de AquaLab.
@@ -158,7 +160,7 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 - **SC-003**: Un bioquímico obtiene qué no cumple en un estudio con una sola pregunta, sin abrir pantallas, en menos de 15 segundos desde que envía la pregunta (con el servicio disponible).
 - **SC-004**: El 100 % de los registros mencionados en las respuestas tiene un enlace que lleva a su pantalla.
 - **SC-005**: Ninguna consulta al asistente cambia datos del laboratorio (verificable: la base queda igual antes y después de cualquier pregunta, incluidas las que piden cambios).
-- **SC-006**: Ningún envío al servicio externo contiene correo, teléfono o dirección de un cliente.
+- **SC-006**: Ningún envío al servicio externo contiene correo, teléfono o domicilio de un cliente.
 - **SC-007**: Con el servicio caído, sin cuota o sin configurar, el 100 % de las demás pantallas funciona igual y el asistente muestra el aviso correspondiente en menos de 20 segundos.
 
 ## Assumptions

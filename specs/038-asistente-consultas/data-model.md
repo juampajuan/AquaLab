@@ -13,7 +13,7 @@ en la página abierta del navegador (FR-019).
 | `url` | `ASISTENTE_URL` | `https://api.groq.com/openai/v1/chat/completions` |
 | `modelo` | `ASISTENTE_MODELO` | `openai/gpt-oss-120b` |
 | `timeout` | constante | 15 s por llamada |
-| `presupuesto` | constante | 25 s por pregunta |
+| `presupuesto` | constante | 20 s por pregunta (SC-007) |
 | `max_vueltas` / `max_herramientas` | constantes | 6 / 8 |
 
 `habilitado` = `bool(clave)`.
@@ -22,7 +22,8 @@ en la página abierta del navegador (FR-019).
 
 - `pregunta`: texto, obligatorio, recortado, 1–500 caracteres.
 - `historial`: lista de a lo sumo 6 `{rol: "usuario"|"asistente", texto: str ≤ 4000}`; roles
-  desconocidos o de más se rechazan (400).
+  desconocidos o de más se rechazan (400). El navegador ya recorta cada texto a 4000 caracteres
+  antes de mandarlo.
 
 ### Referencia (`asistente/enlaces.py`)
 
@@ -33,7 +34,9 @@ no se generan (sus pantallas los rechazan).
 
 ### Respuesta (salida al navegador)
 
-- `texto`: texto plano del modelo (se muestra con `textContent`).
+- `texto`: texto plano del modelo (se muestra con `textContent`), o `MENSAJE_SOLO_CONSULTA` si no
+  se usó ninguna herramienta (research R3); con una muestra de más de 5 estudios, termina con el
+  aviso de FR-009a.
 - `enlaces`: lista ≤ 10 de `{etiqueta, url}` armada con las referencias (research R8).
 
 ## Datos leídos (existentes, solo lectura)

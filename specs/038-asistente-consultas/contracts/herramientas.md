@@ -23,8 +23,11 @@ devuelve `{"encontrado": false, "mensaje": "No se pudo consultar."}`.
 - **Con `texto`**: muestras cuyo nombre, origen o cliente coinciden (sin acentos ni mayúsculas),
   más recientes primero, hasta 10, con `total`.
 - **Datos por muestra**: `numero_pi`, nombre, cliente (nombre), origen, estado, fecha de
-  ingreso, tipo de vertido, y `estudios`: `[{numero, tipo, estado, pruebas_completadas,
-  total_pruebas, con_informe}]` (orden `-pk`, como la ficha).
+  ingreso, tipo de vertido, `total_estudios` y `estudios`: `[{numero, tipo, estado,
+  pruebas_completadas, total_pruebas, con_informe}]` de `muestras.views.estudios_de_la_ficha`
+  (orden `-pk`, como la ficha), solo los 5 más recientes (`ESTUDIOS_POR_MUESTRA`). Con
+  `total_estudios > 5`, `mensaje`: «La muestra tiene T estudios; se detallan los 5 más recientes.»
+  y AquaLab agrega el aviso y el enlace a la ficha a la respuesta final (FR-009a).
 - **Referencias**: muestra, cada estudio, el cliente (si activo).
 
 ## `buscar_cliente`
