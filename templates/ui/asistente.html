@@ -1,0 +1,46 @@
+{% comment %}
+  Asistente de consultas (US 10.1, contracts/preguntar.md): botón flotante y panel. Lo incluye
+  base.html solo con sesión. El comportamiento está en static/js/aqualab.js (fetch a
+  asistente:preguntar); la conversación vive solo en la página abierta.
+  Ganchos que usan aqualab.js y los tests (no cambiar): data-asistente, data-asistente-abrir,
+  data-asistente-cerrar, data-asistente-ejemplo, data-asistente-mensajes, data-asistente-form,
+  data-asistente-pregunta, data-asistente-contador, data-asistente-enviar y data-url.
+  El panel queda por debajo de la barra superior (z-30) y del menú (z-40): no tapa la navegación.
+{% endcomment %}
+<div class="fixed right-4 bottom-4 z-20 flex items-center gap-2 sm:right-6 sm:bottom-6">
+  {% if not asistente_habilitado %}
+    {% include "ui/ayuda.html" with texto="El asistente no está configurado." id="asistente_no_configurado" etiqueta="Asistente" lado="derecha" %}
+  {% endif %}
+  <button type="button" class="btn btn-primario rounded-full shadow-nivel3{% if not asistente_habilitado %} cursor-not-allowed opacity-60{% endif %}" data-asistente-abrir aria-controls="asistente-panel" aria-expanded="false"{% if not asistente_habilitado %} aria-disabled="true" aria-describedby="asistente_no_configurado"{% endif %}>
+    {% include "ui/icono.html" with nombre="search" clase="size-4" %} Asistente
+  </button>
+</div>
+{% if asistente_habilitado %}
+<section id="asistente-panel" class="tarjeta fixed right-4 bottom-20 z-20 flex max-h-[calc(100vh-10rem)] w-[min(26rem,calc(100vw-2rem))] flex-col shadow-nivel3 sm:right-6 sm:bottom-22" role="dialog" aria-label="Asistente" data-asistente data-url="{% url 'asistente:preguntar' %}" hidden>
+  <header class="flex items-center justify-between border-b border-borde px-4 py-3">
+    <h2 class="text-sm font-semibold text-tinta">Asistente de consultas</h2>
+    <button type="button" class="rounded-md p-1 text-tinta-suave hover:bg-fondo-hundido" data-asistente-cerrar aria-label="Cerrar">
+      {% include "ui/icono.html" with nombre="x" clase="size-4" %}
+    </button>
+  </header>
+  <ol class="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm" aria-live="polite" data-asistente-mensajes>
+    <li class="text-tinta-suave">
+      <p>Preguntá por una muestra, un estudio o un cliente. Respondo solo con datos de AquaLab y no cambio nada. Por ejemplo:</p>
+      <ul class="mt-2 space-y-1">
+        <li><button type="button" class="btn-link text-left" data-asistente-ejemplo>¿Cómo está el PI 200417?</button></li>
+        <li><button type="button" class="btn-link text-left" data-asistente-ejemplo>¿Qué estudios tiene Lácteos del Sur?</button></li>
+        <li><button type="button" class="btn-link text-left" data-asistente-ejemplo>¿Qué no cumple en el estudio de la escuela N° 12?</button></li>
+      </ul>
+    </li>
+  </ol>
+  <form class="border-t border-borde p-3" data-asistente-form novalidate>
+    {% csrf_token %}
+    <label for="asistente-pregunta" class="campo-etiqueta">Pregunta</label>
+    <textarea id="asistente-pregunta" name="pregunta" rows="2" maxlength="500" class="form-control resize-none" aria-describedby="asistente-contador" data-asistente-pregunta></textarea>
+    <div class="mt-2 flex items-center justify-between gap-3">
+      <span id="asistente-contador" class="text-xs text-tinta-suave" data-asistente-contador>0/500</span>
+      <button type="submit" class="btn btn-primario btn-chico" data-asistente-enviar>Preguntar</button>
+    </div>
+  </form>
+</section>
+{% endif %}

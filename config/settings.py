@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "pruebas",
     "estudios",
     "informes",
+    "asistente",  # US 10.1
 ]
 
 MIDDLEWARE = [
@@ -62,6 +63,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "usuarios.context_processors.contexto_sesion",
+                "asistente.context_processors.asistente",
             ],
             # Filtros compartidos de la interfaz: {% load ui %}.
             "libraries": {"ui": "config.ui"},
@@ -119,6 +121,7 @@ LOGGING = {
         "usuarios.notificaciones": {"handlers": ["console"], "level": "INFO"},
         "estudios.notificaciones": {"handlers": ["console"], "level": "INFO"},
         "informes.envios": {"handlers": ["console"], "level": "INFO"},
+        "asistente": {"handlers": ["console"], "level": "INFO"},
     },
 }
 
@@ -142,3 +145,12 @@ AQUALAB_DESVIOS = {"umbral": "30", "cantidad": 3}
 # Base de los enlaces absolutos de los correos que se generan fuera de un pedido web (aviso de
 # desvíos, US 8.2). En Render se configura con la URL pública del sitio.
 AQUALAB_URL_BASE = os.environ.get("AQUALAB_URL_BASE", "http://localhost:8000")
+
+# Asistente de consultas (US 10.1). Groq por defecto (API compatible con OpenAI, plan gratuito para
+# la demo): alcanza con la clave en `.env`. Sin `ASISTENTE_API_KEY`, AquaLab funciona igual y el
+# asistente aparece deshabilitado. Los tests nunca llaman al servicio.
+ASISTENTE = {
+    "clave": os.environ.get("ASISTENTE_API_KEY", ""),
+    "url": os.environ.get("ASISTENTE_URL", "https://api.groq.com/openai/v1/chat/completions"),
+    "modelo": os.environ.get("ASISTENTE_MODELO", "openai/gpt-oss-120b"),
+}

@@ -73,6 +73,8 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+  {# Asistente de consultas (US 10.1): dentro del contenido sensible, se oculta con la sesión. #}
+  {% if user.is_authenticated %}{% include "ui/asistente.html" %}{% endif %}
 </div>
 {% include "includes/guardia_sesion.html" %}
 </body>

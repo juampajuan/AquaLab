@@ -16,5 +16,6 @@ urlpatterns = [
     path("muestras/", include("muestras.urls")),
     path("estudios/", include("estudios.urls")),
     path("informes/", include("informes.urls")),
+    path("asistente/", include("asistente.urls")),  # US 10.1
     path("", views.inicio, name="inicio"),
 ]
