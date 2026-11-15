@@ -251,15 +251,21 @@ def historial(request, pk):
     return render(request, "clientes/historial.html", contexto)
 
 
+def filtro_clientes(texto):
+    """Coincidencia de la búsqueda de clientes: nombre o razón social (sin acentos ni mayúsculas)
+    o número de documento. La usan `buscar_clientes` y el asistente (US 10.1)."""
+    filtro = Q(nombre__unaccent__icontains=texto) | Q(razon_social__unaccent__icontains=texto)
+    documento = normalizar_numero_documento(texto)
+    if documento.isdigit():
+        filtro |= Q(numero_documento__contains=documento)
+    return filtro
+
+
 def buscar_clientes(texto=""):
     """Clientes activos (todos si `texto` está vacío, o los que coinciden con `texto`)."""
     qs = Cliente.objects.filter(activo=True)
     if texto:
-        filtro = Q(nombre__unaccent__icontains=texto) | Q(razon_social__unaccent__icontains=texto)
-        documento = normalizar_numero_documento(texto)
-        if documento.isdigit():
-            filtro |= Q(numero_documento__contains=documento)
-        qs = qs.filter(filtro)
+        qs = qs.filter(filtro_clientes(texto))
     return qs.order_by(*Cliente._meta.ordering)
 
 

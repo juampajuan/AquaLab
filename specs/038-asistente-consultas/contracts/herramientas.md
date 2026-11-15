@@ -43,18 +43,27 @@ devuelve `{"encontrado": false, "mensaje": "No se pudo consultar."}`.
 ## `buscar_cliente`
 
 - **Parámetros**: `texto` (string, obligatorio).
-- **Datos**: `[{nombre, activo}]` hasta 10, de `buscar_clientes(texto)` (activos) más los
-  inactivos que coinciden, marcados `activo: false` sin más datos.
+- **Datos**: `clientes: [{id, nombre, activo}]` hasta 10: primero los activos de
+  `buscar_clientes(texto)` y después los inactivos que coinciden con el mismo
+  `clientes.views.filtro_clientes` (nombre, razón social o documento), marcados `activo: false`
+  sin más datos. El `id` es el que acepta `estudios_de_cliente`. Sin coincidencias: «No hay
+  clientes que coincidan con «texto».».
 - **Referencias**: ficha e historial de cada cliente activo.
 
 ## `estudios_de_cliente`
 
-- **Parámetros**: `cliente` (string: nombre) o `cliente_id` (entero devuelto antes; opcional).
-- **Varias coincidencias**: `encontrado: true`, `datos.coincidencias: [{nombre}]` y
-  `mensaje: "Hay varios clientes con ese nombre; pedí cuál."`.
-- **Cliente inactivo**: `encontrado: false`, «El cliente X está inactivo.».
-- **Datos**: los 10 estudios más recientes según `muestras_del_historial` (`numero_pi`, origen,
-  tipo, fecha de ingreso, estado, `con_informe`), con `total`.
+- **Parámetros**: `cliente` (string: nombre o razón social) o `cliente_id` (entero devuelto por
+  `buscar_cliente`).
+- **No encontrado**: «No hay ningún cliente que coincida con «texto».» o «No hay ningún cliente
+  con ese identificador.».
+- **Varias coincidencias**: `encontrado: true`, `datos.coincidencias: [{id, nombre, activo}]`
+  (hasta 10) y `mensaje: "Hay varios clientes con ese nombre; pedí cuál."`, sin estudios.
+- **Cliente inactivo**: `encontrado: false`, «El cliente X está inactivo.», sin referencias.
+- **Datos**: `cliente` (nombre) y `estudios`: los 10 más recientes según
+  `muestras_del_historial` (`numero`, `numero_pi`, origen, tipo, fecha de ingreso, estado,
+  `con_informe`), con `total` y `mostrados`. Con `total > 10`, AquaLab agrega «X tiene T
+  estudios; se muestran los 10 más recientes. El resto está en su historial.» y pone primero el
+  enlace al historial (FR-009).
 - **Referencias**: cliente, historial, cada muestra y estudio, informes emitidos.
 
 ## `detalle_estudio`

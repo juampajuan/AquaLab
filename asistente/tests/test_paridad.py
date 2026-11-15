@@ -52,3 +52,29 @@ def test_buscar_muestra_igual_a_la_ficha(cliente_http, empleado, estudio_complet
         assert estudio["tipo"] in texto
         assert estudio["estado"] in texto
         assert f"{estudio['pruebas_completadas']} / {estudio['total_pruebas']}" in texto
+
+
+def test_fuera_de_norma_igual_a_la_pantalla(cliente_http, empleado, estudio_completo):
+    """Las que devuelve `solo_fuera_de_norma` son las marcadas «Fuera de norma» en el detalle."""
+    salida = ejecutar(
+        empleado, "detalle_estudio", numero=estudio_completo.pk, solo_fuera_de_norma=True
+    ).salida
+    html = cliente_http.get(
+        reverse("estudios:detalle", args=[estudio_completo.pk])
+    ).content.decode()
+    codigos = ["PH", "CL-", "COND", "ECOLI", "TURBIDEZ", "TEMPERATURA"]
+    en_pantalla = [c for c in codigos if "Fuera de norma" in fila(html, c)]
+    assert [p["codigo"] for p in salida["datos"]["pruebas"]] == en_pantalla == ["CL-"]
+
+
+def test_estudios_de_cliente_igual_al_historial(cliente_http, empleado, lacteos):
+    """El orden y los estados son los de `clientes:historial`."""
+    cliente = lacteos["cliente"]
+    datos = ejecutar(empleado, "estudios_de_cliente", cliente_id=cliente.pk).salida["datos"]
+    contexto = cliente_http.get(reverse("clientes:historial", args=[cliente.pk])).context
+    del_historial = [
+        (e.pk, e.get_estado_display())
+        for muestra in contexto["page_obj"].object_list
+        for e in muestra.estudios_historial
+    ]
+    assert [(e["numero"], e["estado"]) for e in datos["estudios"]] == del_historial[:10]

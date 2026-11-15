@@ -309,3 +309,253 @@ def test_definiciones_de_us1():
 
 def test_referencia_url():
     assert Referencia("muestra", 3, "PI 1").url() == "/muestras/3/"
+
+
+# --- detalle_estudio: qué no cumple (US2) ---
+
+
+def test_solo_fuera_de_norma(empleado, estudio_completo):
+    """US2 Esc. 1: solo las fuera de norma, con resultado, unidad, límite y norma."""
+    salida = ejecutar(
+        empleado, "detalle_estudio", numero=estudio_completo.pk, solo_fuera_de_norma=True
+    ).salida
+    datos = salida["datos"]
+    assert [p["codigo"] for p in datos["pruebas"]] == ["CL-"]
+    [cloruro] = datos["pruebas"]
+    assert (cloruro["resultado"], cloruro["unidad"]) == ("400", "mg/l")
+    assert (cloruro["limite"], cloruro["evaluacion"]) == ("máx. 350.0", "Fuera de norma")
+    assert cloruro["norma"]
+    assert datos["resumen"] == {"sin_resultado": 1, "sin_limite_comparable": 1, "total": 6}
+
+
+def test_nada_fuera_de_norma(empleado, estudio_de):
+    """US2 Esc. 2: ninguna fuera de norma; el resumen cuenta las que no se pudieron evaluar."""
+    from estudios.tests.utiles import cargar
+
+    estudio = estudio_de("PH", "COND", "TEMPERATURA")
+    cargar(estudio, empleado, {"PH": "7.2", "COND": "500"})
+    datos = ejecutar(
+        empleado, "detalle_estudio", numero=estudio.pk, solo_fuera_de_norma=True
+    ).salida["datos"]
+    assert datos["pruebas"] == []
+    assert datos["resumen"] == {"sin_resultado": 1, "sin_limite_comparable": 1, "total": 3}
+
+
+def test_sin_filtro_no_hay_resumen(empleado, estudio_completo):
+    datos = ejecutar(empleado, "detalle_estudio", numero=estudio_completo.pk).salida["datos"]
+    assert "resumen" not in datos
+    assert len(datos["pruebas"]) == 6
+
+
+def test_detalle_por_texto_origen(empleado, escuela):
+    """Por el origen, sin acentos ni mayúsculas; con una sola coincidencia, el detalle."""
+    salida = ejecutar(empleado, "detalle_estudio", texto="ESCUELA TECNICA").salida
+    assert len(salida["datos"]["coincidencias"]) == 2
+    salida = ejecutar(empleado, "detalle_estudio", texto="200101").salida
+    assert salida["datos"]["numero"] == escuela["viejo"].pk
+    assert {p["codigo"] for p in salida["datos"]["pruebas"]} == {"PH", "CL-"}
+
+
+def test_detalle_varias_coincidencias(empleado, escuela):
+    """US2 Esc. 3: las coincidencias, más recientes primero, con referencias y pedido de elegir."""
+    ejecucion = ejecutar(empleado, "detalle_estudio", texto="escuela técnica n° 12")
+    salida = ejecucion.salida
+    assert salida["encontrado"] is True
+    assert salida["mensaje"] == "Hay varios estudios que coinciden; pedí cuál."
+    assert (salida["total"], salida["mostrados"]) == (2, 2)
+    coincidencias = salida["datos"]["coincidencias"]
+    assert [c["numero"] for c in coincidencias] == [escuela["nuevo"].pk, escuela["viejo"].pk]
+    assert coincidencias[0] == {
+        "numero": escuela["nuevo"].pk,
+        "numero_pi": 200102,
+        "origen": "Escuela Técnica N° 12",
+        "tipo": escuela["nuevo"].tipo_nombre_snapshot,
+        "fecha": HOY,
+        "estado": "Finalizado",
+    }
+    assert referencias(ejecucion) == [
+        ("estudio", escuela["nuevo"].pk),
+        ("estudio", escuela["viejo"].pk),
+    ]
+
+
+def test_detalle_varias_coincidencias_por_pi(empleado, estudio_completo, muestra):
+    _otro_estudio(muestra, empleado)
+    salida = ejecutar(empleado, "detalle_estudio", numero_pi=200001).salida
+    assert len(salida["datos"]["coincidencias"]) == 2
+
+
+def test_detalle_coincidencias_hasta_10(empleado, muestra, catalogo):
+    for _ in range(12):
+        _otro_estudio(muestra, empleado)
+    salida = ejecutar(empleado, "detalle_estudio", texto="Muestra test").salida
+    assert (salida["total"], salida["mostrados"]) == (12, 10)
+    assert len(salida["datos"]["coincidencias"]) == 10
+
+
+def test_detalle_texto_sin_coincidencias(empleado, escuela):
+    """US2 Esc. 4."""
+    salida = ejecutar(empleado, "detalle_estudio", texto="Pozo 9").salida
+    assert salida == {
+        "encontrado": False,
+        "mensaje": "No hay estudios que coincidan con «Pozo 9».",
+    }
+
+
+# --- clientes (US3) ---
+
+
+def test_buscar_cliente(empleado, lacteos, cliente_a):
+    from clientes.models import Cliente
+
+    inactivo = Cliente.objects.create(
+        razon_social="Lácteos del Norte",
+        tipo_documento="CUIT",
+        numero_documento="30711111112",
+        email="norte@lacteos.test",
+        activo=False,
+    )
+    ejecucion = ejecutar(empleado, "buscar_cliente", texto="lacteos")
+    salida = ejecucion.salida
+    assert salida["encontrado"] is True
+    assert salida["datos"]["clientes"] == [
+        {"id": lacteos["cliente"].pk, "nombre": "Lácteos del Sur S.A.", "activo": True},
+        {"id": inactivo.pk, "nombre": "Lácteos del Norte", "activo": False},
+    ]
+    assert referencias(ejecucion) == [
+        ("cliente", lacteos["cliente"].pk),
+        ("historial", lacteos["cliente"].pk),
+    ]
+
+
+def test_buscar_cliente_inexistente(empleado, lacteos):
+    salida = ejecutar(empleado, "buscar_cliente", texto="Aguas del Norte").salida
+    assert salida == {
+        "encontrado": False,
+        "mensaje": "No hay clientes que coincidan con «Aguas del Norte».",
+    }
+
+
+def test_estudios_de_cliente(empleado, lacteos):
+    """US3 Esc. 1–2: los 10 más recientes en el orden del historial, con el total."""
+    ejecucion = ejecutar(empleado, "estudios_de_cliente", cliente="Lácteos del Sur")
+    salida = ejecucion.salida
+    assert salida["encontrado"] is True
+    assert (salida["total"], salida["mostrados"]) == (12, 10)
+    datos = salida["datos"]
+    assert datos["cliente"] == "Lácteos del Sur S.A."
+    estudios = lacteos["estudios"]
+    assert [e["numero"] for e in datos["estudios"]] == [e.pk for e in estudios[:10]]
+    primero = datos["estudios"][0]
+    assert primero == {
+        "numero": estudios[0].pk,
+        "numero_pi": 200200,
+        "origen": "Pozo de la planta",
+        "tipo": estudios[0].tipo_nombre_snapshot,
+        "fecha_ingreso": HOY,
+        "estado": "Finalizado",
+        "con_informe": False,
+    }
+    assert datos["estudios"][1]["estado"] == "En proceso"
+    assert ejecucion.avisos == [
+        "Lácteos del Sur S.A. tiene 12 estudios; se muestran los 10 más recientes. "
+        "El resto está en su historial."
+    ]
+    assert [(r.tipo, r.pk) for r in ejecucion.primeras] == [("historial", lacteos["cliente"].pk)]
+    tipos = [r.tipo for r in ejecucion.referencias]
+    assert tipos[:2] == ["cliente", "historial"]
+    assert tipos.count("estudio") == 10
+
+
+def test_estudios_de_cliente_pocos_sin_aviso(empleado, estudio_completo, cliente_a):
+    ejecucion = ejecutar(empleado, "estudios_de_cliente", cliente_id=cliente_a.pk)
+    assert (ejecucion.salida["total"], ejecucion.salida["mostrados"]) == (1, 1)
+    assert ejecucion.avisos == []
+    assert ejecucion.primeras == []
+
+
+def test_cliente_inexistente(empleado, lacteos):
+    """US3 Esc. 3."""
+    assert ejecutar(empleado, "estudios_de_cliente", cliente="Aguas del Norte").salida == {
+        "encontrado": False,
+        "mensaje": "No hay ningún cliente que coincida con «Aguas del Norte».",
+    }
+    assert ejecutar(empleado, "estudios_de_cliente", cliente_id=999999).salida == {
+        "encontrado": False,
+        "mensaje": "No hay ningún cliente con ese identificador.",
+    }
+    assert ejecutar(empleado, "estudios_de_cliente").salida["encontrado"] is False
+
+
+def test_varios_clientes(empleado, lacteos):
+    """US3 Esc. 4: se listan para elegir, sin estudios."""
+    from clientes.models import Cliente
+
+    otro = Cliente.objects.create(
+        razon_social="Lácteos del Sur Norte",
+        tipo_documento="CUIT",
+        numero_documento="30722222223",
+        email="otro@lacteos.test",
+    )
+    ejecucion = ejecutar(empleado, "estudios_de_cliente", cliente="lacteos del sur")
+    salida = ejecucion.salida
+    assert salida["encontrado"] is True
+    assert salida["mensaje"] == "Hay varios clientes con ese nombre; pedí cuál."
+    assert [c["id"] for c in salida["datos"]["coincidencias"]] == sorted(
+        [lacteos["cliente"].pk, otro.pk],
+        key=lambda pk: Cliente.objects.get(pk=pk).razon_social,
+    )
+    assert "estudios" not in salida["datos"]
+
+
+def test_cliente_inactivo(empleado, lacteos):
+    """US3 Esc. 5: ni estudios ni enlaces a su ficha o historial."""
+    cliente = lacteos["cliente"]
+    cliente.activo = False
+    cliente.save()
+    ejecucion = ejecutar(empleado, "estudios_de_cliente", cliente_id=cliente.pk)
+    assert ejecucion.salida == {
+        "encontrado": False,
+        "mensaje": "El cliente Lácteos del Sur S.A. está inactivo.",
+    }
+    assert ejecucion.referencias == []
+
+
+def test_por_cliente_id(empleado, lacteos):
+    buscado = ejecutar(empleado, "buscar_cliente", texto="Lácteos").salida
+    cliente_id = buscado["datos"]["clientes"][0]["id"]
+    salida = ejecutar(empleado, "estudios_de_cliente", cliente_id=cliente_id).salida
+    assert salida["total"] == 12
+
+
+def test_permisos_como_pantallas(cliente_http, empleado, lacteos):
+    """FR-010: cada herramienta da acceso o rechazo igual que su pantalla."""
+    from django.urls import reverse
+
+    cliente = lacteos["cliente"]
+    estudio = lacteos["estudios"][0]
+    cliente.activo = False
+    cliente.save()
+    assert cliente_http.get(reverse("clientes:detalle", args=[cliente.pk])).status_code == 302
+    assert cliente_http.get(reverse("clientes:historial", args=[cliente.pk])).status_code == 302
+    assert (
+        ejecutar(empleado, "estudios_de_cliente", cliente_id=cliente.pk).salida["encontrado"]
+        is False
+    )
+    assert (
+        cliente_http.get(reverse("muestras:detalle", args=[estudio.muestra_id])).status_code == 200
+    )
+    assert ejecutar(empleado, "buscar_muestra", numero_pi=200200).salida["encontrado"] is True
+    assert cliente_http.get(reverse("estudios:detalle", args=[estudio.pk])).status_code == 200
+    assert ejecutar(empleado, "detalle_estudio", numero=estudio.pk).salida["encontrado"] is True
+
+
+def test_herramientas_rechazan_usuario_inactivo(empleado, estudio_completo, cliente_a):
+    empleado.is_active = False
+    empleado.save()
+    for nombre, argumentos in (
+        ("buscar_muestra", {"numero_pi": 200001}),
+        ("detalle_estudio", {"numero": estudio_completo.pk}),
+        ("estudios_de_cliente", {"cliente_id": cliente_a.pk}),
+    ):
+        assert ejecutar(empleado, nombre, **argumentos).salida["encontrado"] is False, nombre

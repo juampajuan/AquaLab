@@ -4,6 +4,7 @@ import json
 import urllib.request
 
 import pytest
+from django.utils import timezone
 
 from asistente import cliente_ia
 from estudios.tests.conftest import *  # noqa: F401,F403
@@ -139,3 +140,51 @@ def ejecutar(usuario, nombre, **argumentos):
     from asistente import herramientas
 
     return herramientas.ejecutar(usuario, nombre, json.dumps(argumentos))
+
+
+@pytest.fixture
+def escuela(cliente_a, estudio_en_origen):
+    """Dos estudios de «Escuela Técnica N° 12» (US2): el más viejo con CL- fuera de norma."""
+    import datetime
+
+    from muestras.models import Origen
+
+    origen = Origen.objects.create(cliente=cliente_a, nombre="Escuela Técnica N° 12")
+    hoy = timezone.localdate()
+    viejo = estudio_en_origen(
+        origen, hoy - datetime.timedelta(days=30), 200101, {"PH": "7.2", "CL-": "40"}
+    )
+    nuevo = estudio_en_origen(origen, hoy, 200102, {"PH": "7.0"})
+    return {"origen": origen, "viejo": viejo, "nuevo": nuevo}
+
+
+@pytest.fixture
+def lacteos(empleado, estudio_en_origen):
+    """«Lácteos del Sur S.A.» con 12 estudios en dos orígenes (US3), con contacto completo."""
+    import datetime
+
+    from clientes.models import Cliente
+    from muestras.models import Origen
+
+    cliente = Cliente.objects.create(
+        razon_social="Lácteos del Sur S.A.",
+        tipo_documento="CUIT",
+        numero_documento="30712345675",
+        email="contacto@lacteos.test",
+        telefono="+54 11 5555-0101",
+        domicilio="Ruta 5 km 112",
+    )
+    planta = Origen.objects.create(cliente=cliente, nombre="Planta")
+    pozo = Origen.objects.create(cliente=cliente, nombre="Pozo de la planta")
+    hoy = timezone.localdate()
+    estudios = [
+        estudio_en_origen(
+            planta if i % 2 else pozo,
+            hoy - datetime.timedelta(days=i),
+            200200 + i,
+            {"PH": "7.1"},
+            validar_todo=i % 3 == 0,
+        )
+        for i in range(12)
+    ]
+    return {"cliente": cliente, "estudios": estudios}

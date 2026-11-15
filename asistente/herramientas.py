@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 
 from django.db import connection, transaction
 
+from pruebas.limites import Evaluacion
+
 logger = logging.getLogger("asistente")
 
 PEDIDO_INVALIDO = {"encontrado": False, "mensaje": "Pedido inválido."}
@@ -145,6 +147,8 @@ FORMATO_FECHA = "%d/%m/%Y"
 ESTUDIOS_POR_MUESTRA = 5  # una vuelta para la muestra y una por estudio (max_vueltas − 1)
 MAX_LISTA = 10
 MAX_NUMERO_SQL = 2_147_483_647
+FUERA_DE_NORMA = Evaluacion.FUERA_DE_NORMA.label
+SIN_LIMITE = Evaluacion.SIN_LIMITE.label
 
 
 def fecha(valor):
@@ -379,48 +383,73 @@ def datos_prueba(asignacion, tipo_vertido):
             "description": (
                 "Detalle de un estudio: estado y cada prueba con su estado, resultado, unidad, "
                 "evaluación (cumple / fuera de norma / sin límite comparable), límite y norma. "
-                "Indicá el número de estudio o el N° PI de la muestra."
+                "Indicá el número de estudio, el N° PI de la muestra o un texto (muestra, origen, "
+                "cliente o tipo de estudio). Si hay varias coincidencias, devuelve la lista para "
+                "elegir. Para «qué no cumple», pasá solo_fuera_de_norma=true."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "numero": {"type": "integer", "description": "Número del estudio."},
                     "numero_pi": {"type": "integer", "description": "N° PI de la muestra."},
+                    "texto": {
+                        "type": "string",
+                        "description": "Muestra, origen, cliente o tipo de estudio.",
+                    },
+                    "solo_fuera_de_norma": {
+                        "type": "boolean",
+                        "description": "Solo las pruebas fuera de norma, con un resumen.",
+                    },
                 },
             },
         },
     }
 )
-def detalle_estudio(usuario, numero=None, numero_pi=None):
+def detalle_estudio(usuario, numero=None, numero_pi=None, texto=None, solo_fuera_de_norma=False):
+    from django.db.models import Q
+
+    from estudios.busqueda import filtro_busqueda
     from estudios.models import Estudio
 
-    qs = Estudio.objects.select_related("muestra", "muestra__cliente", "muestra__origen")
+    if not puede_ver(usuario, "estudio"):
+        return no_encontrado("No se pudo consultar.")
+    qs = Estudio.objects.select_related("muestra", "muestra__cliente", "muestra__origen").order_by(
+        *Estudio._meta.ordering
+    )
     if numero is not None:
         estudio = qs.filter(pk=numero).first() if 0 < numero <= MAX_NUMERO_SQL else None
-        if estudio is None or not puede_ver(usuario, "estudio", estudio):
+        if estudio is None:
             return no_encontrado(f"No hay ningún estudio con el número {numero}.")
-        return salida_detalle(usuario, estudio)
+        return salida_detalle(usuario, estudio, solo_fuera_de_norma)
     if numero_pi is not None:
-        mensaje = f"No hay ninguna muestra con el N° PI {numero_pi}."
         if not 0 < numero_pi <= MAX_NUMERO_SQL:
-            return no_encontrado(mensaje)
-        estudios = list(qs.filter(muestra__numero_pi=numero_pi).order_by(*Estudio._meta.ordering))
-        if not estudios:
-            return no_encontrado(mensaje)
-        if len(estudios) == 1:
-            return salida_detalle(usuario, estudios[0])
-        return coincidencias(estudios)
-    return no_encontrado("Indicá el número de estudio o el N° PI de la muestra.")
+            return no_encontrado(f"No hay ninguna muestra con el N° PI {numero_pi}.")
+        elegidos = qs.filter(muestra__numero_pi=numero_pi)
+        sin_coincidencias = f"No hay ninguna muestra con el N° PI {numero_pi}."
+    elif (texto or "").strip():
+        texto = texto.strip()
+        # La búsqueda de estudios (US 5.2) más el origen («la escuela N° 12», research R4).
+        elegidos = qs.filter(
+            filtro_busqueda(texto) | Q(muestra__origen__nombre__unaccent__icontains=texto)
+        )
+        sin_coincidencias = f"No hay estudios que coincidan con «{texto}»."
+    else:
+        return no_encontrado("Indicá el número de estudio, el N° PI de la muestra o un texto.")
+    total = elegidos.count()
+    if not total:
+        return no_encontrado(sin_coincidencias)
+    if total == 1:
+        return salida_detalle(usuario, elegidos.get(), solo_fuera_de_norma)
+    return coincidencias(list(elegidos[:MAX_LISTA]), total)
 
 
-def coincidencias(estudios):
-    """Varios estudios: se listan para elegir (FR-007). Se completa en la US2 del asistente."""
-    mostrados = estudios[:MAX_LISTA]
+def coincidencias(mostrados, total):
+    """Varios estudios: se listan para elegir, más recientes primero (FR-007)."""
     return Salida(
         {
             "encontrado": True,
             "mensaje": "Hay varios estudios que coinciden; pedí cuál.",
-            "total": len(estudios),
+            "total": total,
             "mostrados": len(mostrados),
             "datos": {
                 "coincidencias": [
@@ -440,11 +469,12 @@ def coincidencias(estudios):
     )
 
 
-def salida_detalle(usuario, estudio):
+def salida_detalle(usuario, estudio, solo_fuera_de_norma=False):
     from estudios.views import pruebas_del_detalle
 
     muestra = estudio.muestra
     con_informe = tiene_informe(estudio)
+    pruebas = [datos_prueba(a, muestra.tipo_vertido) for a in pruebas_del_detalle(estudio)]
     datos = {
         "numero": estudio.pk,
         "numero_pi": muestra.numero_pi,
@@ -455,8 +485,15 @@ def salida_detalle(usuario, estudio):
         "fecha_creacion": fecha(estudio.fecha_creacion),
         "tipo_vertido": muestra.get_tipo_vertido_display(),
         "con_informe": con_informe,
-        "pruebas": [datos_prueba(a, muestra.tipo_vertido) for a in pruebas_del_detalle(estudio)],
+        "pruebas": pruebas,
     }
+    if solo_fuera_de_norma:
+        datos["pruebas"] = [p for p in pruebas if p["evaluacion"] == FUERA_DE_NORMA]
+        datos["resumen"] = {
+            "sin_resultado": sum(1 for p in pruebas if not p["resultado"]),
+            "sin_limite_comparable": sum(1 for p in pruebas if p["evaluacion"] == SIN_LIMITE),
+            "total": len(pruebas),
+        }
     referencias = [
         referencia_estudio(estudio),
         referencia_muestra(muestra),
@@ -464,3 +501,172 @@ def salida_detalle(usuario, estudio):
         *([referencia_informe(estudio)] if con_informe else []),
     ]
     return Salida({"encontrado": True, "datos": datos}, referencias)
+
+
+# --- Clientes (US3) ---
+
+
+def referencia_historial(cliente):
+    from .enlaces import Referencia
+
+    return Referencia(
+        "historial",
+        cliente.pk,
+        f"Historial de {cliente.nombre_completo}",
+        claves=(f"Historial de {cliente.nombre_completo}", "historial"),
+    )
+
+
+def referencias_del_cliente(usuario, cliente):
+    if not puede_ver(usuario, "cliente", cliente):
+        return []
+    return [*referencia_cliente(usuario, cliente), referencia_historial(cliente)]
+
+
+def datos_cliente_con_id(cliente):
+    return {"id": cliente.pk, **datos_cliente(cliente)}
+
+
+@registrar(
+    {
+        "type": "function",
+        "function": {
+            "name": "buscar_cliente",
+            "description": (
+                "Busca clientes por nombre, razón social o número de documento. Devuelve su "
+                "identificador, nombre y si está activo (nunca datos de contacto)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {"texto": {"type": "string", "description": "Nombre del cliente."}},
+                "required": ["texto"],
+            },
+        },
+    }
+)
+def buscar_cliente(usuario, texto):
+    from clientes.models import Cliente
+    from clientes.views import buscar_clientes, filtro_clientes
+
+    texto = texto.strip()
+    if not texto or not puede_ver(usuario, "busqueda"):
+        return no_encontrado("Indicá el nombre del cliente.")
+    activos = list(buscar_clientes(texto)[:MAX_LISTA])
+    inactivos = list(
+        Cliente.objects.filter(filtro_clientes(texto), activo=False).order_by(
+            *Cliente._meta.ordering
+        )[: MAX_LISTA - len(activos)]
+    )
+    clientes = activos + inactivos
+    if not clientes:
+        return no_encontrado(f"No hay clientes que coincidan con «{texto}».")
+    return Salida(
+        {"encontrado": True, "datos": {"clientes": [datos_cliente_con_id(c) for c in clientes]}},
+        [r for c in clientes for r in referencias_del_cliente(usuario, c)],
+    )
+
+
+@registrar(
+    {
+        "type": "function",
+        "function": {
+            "name": "estudios_de_cliente",
+            "description": (
+                "Estudios más recientes de un cliente, en el orden de su historial: N° PI, origen, "
+                "tipo, fecha de ingreso y estado. Indicá el nombre del cliente o el id que "
+                "devolvió buscar_cliente."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "cliente": {"type": "string", "description": "Nombre o razón social."},
+                    "cliente_id": {"type": "integer", "description": "Id de buscar_cliente."},
+                },
+            },
+        },
+    }
+)
+def estudios_de_cliente(usuario, cliente=None, cliente_id=None):
+    from clientes.historial import muestras_del_historial
+    from clientes.models import Cliente
+    from clientes.views import filtro_clientes
+    from estudios.models import Estudio
+
+    if not puede_ver(usuario, "busqueda"):
+        return no_encontrado("No se pudo consultar.")
+    if cliente_id is not None:
+        elegido = (
+            Cliente.objects.filter(pk=cliente_id).first()
+            if 0 < cliente_id <= MAX_NUMERO_SQL
+            else None
+        )
+        if elegido is None:
+            return no_encontrado("No hay ningún cliente con ese identificador.")
+    elif (cliente or "").strip():
+        texto = cliente.strip()
+        encontrados = list(
+            Cliente.objects.filter(filtro_clientes(texto)).order_by(*Cliente._meta.ordering)[
+                : MAX_LISTA + 1
+            ]
+        )
+        if not encontrados:
+            return no_encontrado(f"No hay ningún cliente que coincida con «{texto}».")
+        if len(encontrados) > 1:
+            mostrados = encontrados[:MAX_LISTA]
+            return Salida(
+                {
+                    "encontrado": True,
+                    "mensaje": "Hay varios clientes con ese nombre; pedí cuál.",
+                    "datos": {"coincidencias": [datos_cliente_con_id(c) for c in mostrados]},
+                },
+                [r for c in mostrados for r in referencias_del_cliente(usuario, c)],
+            )
+        elegido = encontrados[0]
+    else:
+        return no_encontrado("Indicá el nombre del cliente.")
+    # La ficha y el historial de un cliente inactivo no se abren (US 3.3): tampoco acá.
+    if not puede_ver(usuario, "historial", elegido):
+        return no_encontrado(f"El cliente {elegido.nombre_completo} está inactivo.")
+    total = Estudio.objects.filter(muestra__cliente=elegido).count()
+    estudios = []
+    for muestra in muestras_del_historial(elegido):
+        for estudio in muestra.estudios_historial:
+            estudios.append((muestra, estudio))
+            if len(estudios) == MAX_LISTA:
+                break
+        if len(estudios) == MAX_LISTA:
+            break
+    datos = {
+        "cliente": elegido.nombre_completo,
+        "estudios": [
+            {
+                "numero": estudio.pk,
+                "numero_pi": muestra.numero_pi,
+                "origen": muestra.origen.nombre,
+                "tipo": estudio.tipo_nombre_snapshot,
+                "fecha_ingreso": fecha(muestra.fecha_ingreso),
+                "estado": estudio.get_estado_display(),
+                "con_informe": tiene_informe(estudio),
+            }
+            for muestra, estudio in estudios
+        ],
+    }
+    referencias = referencias_del_cliente(usuario, elegido)
+    for muestra, estudio in estudios:
+        referencias.append(referencia_muestra(muestra))
+        referencias.append(referencia_estudio(estudio))
+        if tiene_informe(estudio):
+            referencias.append(referencia_informe(estudio))
+    avisos, primeras = [], []
+    if total > len(estudios):
+        avisos.append(
+            f"{elegido.nombre_completo} tiene {total} estudios; se muestran los "
+            f"{len(estudios)} más recientes. El resto está en su historial."
+        )
+        primeras.append(referencia_historial(elegido))
+    return Salida(
+        {"encontrado": True, "total": total, "mostrados": len(estudios), "datos": datos},
+        referencias,
+        avisos,
+        primeras,
+    )

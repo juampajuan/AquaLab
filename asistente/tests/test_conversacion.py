@@ -283,3 +283,41 @@ def test_muestra_con_muchos_estudios(empleado, muestra, catalogo, servicio_simul
         "El resto está en la ficha de la muestra."
     )
     assert respuesta.enlaces[0] == {"etiqueta": "PI 200001", "url": f"/muestras/{muestra.pk}/"}
+
+
+# --- US2: qué no cumple ---
+
+
+def test_que_no_cumple(empleado, escuela, servicio_simulado):
+    """Buscar el estudio por texto, elegir el viejo y pedir solo lo fuera de norma."""
+    viejo = escuela["viejo"]
+    servicio_simulado.guion(
+        herramienta("detalle_estudio", {"texto": "escuela técnica"}),
+        herramienta("detalle_estudio", {"numero": viejo.pk, "solo_fuera_de_norma": True}),
+        texto(f"En el Estudio {viejo.pk} no cumple el Cloruro: 400 mg/l (máx. 350.0)."),
+    )
+    respuesta = conversacion.responder(
+        empleado, "¿Qué no cumple en la escuela técnica?", [], reloj=servicio_simulado.reloj
+    )
+    assert respuesta.enlaces[0] == {
+        "etiqueta": f"Estudio {viejo.pk}",
+        "url": f"/estudios/{viejo.pk}/",
+    }
+    ultima = servicio_simulado.llamadas[2]["mensajes"][-1]["content"]
+    assert '"codigo": "CL-"' in ultima
+    assert '"codigo": "PH"' not in ultima
+
+
+def test_varias_coincidencias_enlaces(empleado, escuela, servicio_simulado):
+    nuevo, viejo = escuela["nuevo"], escuela["viejo"]
+    servicio_simulado.guion(
+        herramienta("detalle_estudio", {"texto": "escuela"}),
+        texto(f"Hay dos estudios: el Estudio {nuevo.pk} y el Estudio {viejo.pk}. ¿Cuál?"),
+    )
+    respuesta = conversacion.responder(
+        empleado, "¿Qué no cumple?", [], reloj=servicio_simulado.reloj
+    )
+    assert [e["url"] for e in respuesta.enlaces] == [
+        f"/estudios/{nuevo.pk}/",
+        f"/estudios/{viejo.pk}/",
+    ]

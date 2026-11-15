@@ -330,7 +330,7 @@ por el origen.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T033 [P] [US2] En `asistente/tests/test_herramientas.py`: `test_solo_fuera_de_norma`
+- [X] T033 [P] [US2] En `asistente/tests/test_herramientas.py`: `test_solo_fuera_de_norma`
   (`solo_fuera_de_norma: true` → solo las `fuera_de_norma` con resultado, unidad, límite y norma, y
   `resumen` `{sin_resultado, sin_limite_comparable, total}`; US2 Esc. 1);
   `test_nada_fuera_de_norma` (lista vacía y el `resumen` con los conteos; US2 Esc. 2);
@@ -339,19 +339,19 @@ por el origen.
   estudios → `coincidencias` con `numero`, `numero_pi`, origen, tipo, fecha y estado, más recientes
   primero, hasta 10, y el mensaje de elegir; referencias de cada uno; US2 Esc. 3);
   `test_detalle_texto_sin_coincidencias` (no encontrado; US2 Esc. 4).
-- [ ] T034 [P] [US2] En `asistente/tests/test_conversacion.py`: `test_que_no_cumple` (guion
+- [X] T034 [P] [US2] En `asistente/tests/test_conversacion.py`: `test_que_no_cumple` (guion
   `detalle_estudio` con `texto` → `detalle_estudio` con `numero` y `solo_fuera_de_norma` → texto;
   dos vueltas, enlace al estudio); `test_varias_coincidencias_enlaces` (la respuesta lista las
   coincidencias y cada una tiene su enlace).
-- [ ] T035 [P] [US2] En `asistente/tests/test_paridad.py`: las pruebas que `solo_fuera_de_norma`
+- [X] T035 [P] [US2] En `asistente/tests/test_paridad.py`: las pruebas que `solo_fuera_de_norma`
   devuelve son exactamente las marcadas «Fuera de norma» en `estudios:detalle`.
 
 ### Implementation for User Story 2
 
-- [ ] T036 [US2] En `detalle_estudio` (`asistente/herramientas.py`): parámetro `texto` con
+- [X] T036 [US2] En `detalle_estudio` (`asistente/herramientas.py`): parámetro `texto` con
   `estudios.busqueda.filtro_busqueda(texto) | Q(muestra__origen__nombre__unaccent__icontains=texto)`,
   orden de `Estudio._meta.ordering`; parámetro `solo_fuera_de_norma` con el `resumen`.
-- [ ] T037 [US2] Coincidencias múltiples en `detalle_estudio` (por `numero_pi` con varios estudios
+- [X] T037 [US2] Coincidencias múltiples en `detalle_estudio` (por `numero_pi` con varios estudios
   o por `texto`): `encontrado: true`, `datos.coincidencias` hasta 10 con `total` y `mensaje` «Hay
   varios estudios que coinciden; pedí cuál.»; con una sola coincidencia devuelve directamente el
   detalle.
@@ -371,7 +371,7 @@ teléfono, domicilio ni documento.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T038 [P] [US3] En `asistente/tests/test_herramientas.py`: `test_buscar_cliente` (activos de
+- [X] T038 [P] [US3] En `asistente/tests/test_herramientas.py`: `test_buscar_cliente` (activos de
   `buscar_clientes` más inactivos marcados `activo: false`, hasta 10; referencias a ficha e historial
   solo de los activos); `test_estudios_de_cliente` (10 más recientes según
   `muestras_del_historial`: `numero_pi`, origen, tipo, fecha de ingreso, estado, `con_informe`;
@@ -379,25 +379,25 @@ teléfono, domicilio ni documento.
   `test_varios_clientes` (`coincidencias` con nombre y el mensaje de elegir; US3 Esc. 4);
   `test_cliente_inactivo` («El cliente X está inactivo.» sin estudios ni enlaces a su ficha; US3
   Esc. 5); `test_por_cliente_id` (con el `cliente_id` devuelto antes).
-- [ ] T039 [P] [US3] `asistente/tests/test_privacidad.py`: cliente con correo, teléfono, domicilio
+- [X] T039 [P] [US3] `asistente/tests/test_privacidad.py`: cliente con correo, teléfono, domicilio
   y CUIT conocidos; recorrido con el servicio simulado pidiendo `buscar_cliente`,
   `estudios_de_cliente`, `buscar_muestra` y `detalle_estudio`; ninguno de esos valores aparece en
   `json.dumps` de ningún `mensajes` de `servicio_simulado.llamadas` ni en la respuesta al navegador
   (US3 Esc. 6, FR-014, SC-006); tampoco aparecen el correo ni el nombre de usuario de quien cargó o
   validó.
-- [ ] T040 [P] [US3] En `asistente/tests/test_paridad.py`: el orden y los estados de
+- [X] T040 [P] [US3] En `asistente/tests/test_paridad.py`: el orden y los estados de
   `estudios_de_cliente` son los de `clientes:historial` para el mismo cliente.
-- [ ] T041 [P] [US3] En `asistente/tests/test_herramientas.py`: `test_permisos_como_pantallas` (para
+- [X] T041 [P] [US3] En `asistente/tests/test_herramientas.py`: `test_permisos_como_pantallas` (para
   el mismo usuario, cada herramienta da acceso o rechazo igual que su vista: cliente inactivo
   rechazado en `clientes:detalle`/`clientes:historial` y por `estudios_de_cliente`; muestra y estudio
   de ese cliente visibles en sus pantallas y en las herramientas; FR-010).
 
 ### Implementation for User Story 3
 
-- [ ] T042 [US3] Herramienta `buscar_cliente` en `asistente/herramientas.py`: `buscar_clientes(texto)`
+- [X] T042 [US3] Herramienta `buscar_cliente` en `asistente/herramientas.py`: `buscar_clientes(texto)`
   (de `clientes.views`) más los inactivos que coinciden con el mismo filtro, hasta 10; salida con
   `datos_cliente`; referencias `cliente` e `historial` solo para activos (`puede_ver`).
-- [ ] T043 [US3] Herramienta `estudios_de_cliente` en `asistente/herramientas.py`: por `cliente_id`
+- [X] T043 [US3] Herramienta `estudios_de_cliente` en `asistente/herramientas.py`: por `cliente_id`
   o `cliente` (texto), varias coincidencias → `coincidencias` y «Hay varios clientes con ese nombre;
   pedí cuál.»; inactivo → `encontrado: false`, «El cliente X está inactivo.»; si no,
   `muestras_del_historial(cliente)` aplanado en estudios (`estudios_historial`), los 10 primeros y
