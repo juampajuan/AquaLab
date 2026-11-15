@@ -38,4 +38,6 @@
   «Calcularlas con esta curva». Actualizar la tarjeta SCRUM-38.
 - Como en las specs anteriores, se nombran el comando `importar_catalogo_pruebas` y los componentes
   `templates/ui/` solo para acotar el alcance; no definen la implementación.
+- 2026-11-15 (`/speckit-analyze`): aclaración 4 y FR-026 («Calcular con la curva vigente» desde el
+  estudio) para las mediciones que quedan sin resultado si no se marca la casilla.
 - Responsable de la US: a confirmar.

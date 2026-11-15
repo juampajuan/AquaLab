@@ -148,6 +148,25 @@ Decisiones técnicas de la US 6.6 (SCRUM-38). Formato: decisión, motivo y alter
   `calculo.recalcular` (que pasa el estudio a «En proceso» si hace falta, como cualquier cálculo,
   y avisa desvíos US 8.2). El mensaje dice cuántas se calcularon.
 - **Motivo**: un solo lugar de cálculo; misma transacción para que «calculadas» sea exacto.
+- **Sin la casilla**: quedan sin resultado y se calculan desde el estudio (R14).
+
+## R14 – «Calcular con la curva vigente» desde el estudio (aclaración 2026-11-15)
+- **Decisión**: `curvas.motivo_curva(asignacion)` devuelve «Se cargó antes de la curva vigente.» si
+  la prueba es `CURVA`, tiene medición, no tiene resultado y hay vigente; `calculo.motivo_sin_resultado`
+  lo consulta primero (si no, `calcular` lo daría por calculable y la fila quedaría sin motivo).
+  `estudios/servicios.py:calcular_con_curva(estudio_pk, usuario)`: sesión activa (como
+  `cargar_mediciones`) → estudio `select_for_update` → `admite_mediciones` → bajo el bloqueo,
+  `curvas.pendientes_de_curva(estudio=estudio)` (las del estudio con vigente) →
+  `calculo.recalcular(estudio, pendientes)`; devuelve cuántas calculó (0 → «No quedaban mediciones
+  para calcular: ya se calcularon.», sin cambios). Vista `estudios:calcular_con_curva`
+  (`<pk>/mediciones/calcular-con-curva/`, GET confirmación con la lista / POST), con `data-enviado`
+  contra el doble envío; el detalle muestra el botón solo si hay alguna y el estudio admite
+  mediciones. En los tests se parchea `estudios.servicios.calcular_con_curva` (CLAUDE.md, US 5.3).
+- **Motivo**: corregir con el mismo valor se omite («ya tenía ese valor», US 6.3) y borrar y volver a
+  cargar pierde la fecha de carga original. Toma el mismo bloqueo de estudio que la carga, y
+  `recalcular` el lock compartido de la prueba (R5): no agrega órdenes de bloqueo nuevos.
+- **Alternativas**: casilla marcada por defecto (no resuelve el caso desmarcado); solo un mensaje
+  que pida borrar y recargar (rompe la trazabilidad de la carga).
 
 ## R11 – Acceso y pantallas
 - **Decisión**: carga, importación, plantilla, confirmación y borrado bajo `catalogo:`

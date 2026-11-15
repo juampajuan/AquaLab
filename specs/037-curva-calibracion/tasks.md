@@ -99,10 +99,13 @@ la misma curva), US6 (P2, consulta y borrado) y US7 (P2, permisos).
   `pg_advisory_xact_lock[_shared](6_600_001, %s)` (research R5). Sin más lógica todavía.
 - [ ] T008 Fixtures en `estudios/tests/conftest.py` (así las ven `estudios` y `pruebas`):
   `prueba_curva` (crea `NO2-C` «Nitritos (curva)», `tipo_calculo=CURVA`, `unidad="mg/l"`,
-  `unidad_medicion="Abs"`) y `curva_de` (fábrica `curva_de(prueba, pendiente="0.5", ordenada="0.001",
-  absorbancias=("0", "0.2"), concentraciones=("0", "0.4"), vigente=True, usuario=None)` que crea la
-  `CurvaCalibracion` con 3 puntos coherentes directamente en la base, pasando a histórica la vigente
-  anterior). Comprobar que `pytest` sigue en verde tras T005–T008.
+  `unidad_medicion="Abs"`) y `curva_de` (fábrica `curva_de(prueba, puntos=None, *, vigente=True,
+  usuario=None, fecha=None)` que crea la `CurvaCalibracion` y sus `PuntoCurva` directamente en la
+  base, sin `ajustar`, pasando a histórica la vigente anterior). Por defecto `puntos = [("0",
+  "0.001"), ("0.2", "0.101"), ("0.4", "0.201")]` (concentración, absorbancia), con pendiente 0,5,
+  ordenada 0,001 y R² 1 escritos a mano; los rangos salen de los puntos: concentración 0–0,4 y
+  absorbancia 0,001–0,201. Con otros `puntos`, recibe también `pendiente`, `ordenada` y `r2`.
+  Comprobar que `pytest` sigue en verde tras T005–T008.
 
 **Checkpoint**: modelos, migraciones y fixtures listos; la suite existente pasa.
 
@@ -141,7 +144,7 @@ sin fórmula, con «Abs» y «Sin curva vigente».
   antes de cambiar el tipo de cálculo."})` (R12). `_eliminar` funciona con `CASCADE`.
 - [ ] T013 [US1] `pruebas/templates/pruebas/ficha.html` y `views.ficha`: sección «Curvas de
   calibración» solo para pruebas `CURVA`: vigente (fecha de preparación, R², cantidad de puntos) o
-  «Sin curva vigente»; botón «Nueva curva» (`catalogo:nueva_curva`, enlace inactivo hasta T021) y
+  «Sin curva vigente»; botón «Nueva curva» (`catalogo:nueva_curva`, enlace inactivo hasta T024) y
   «Ver curvas» (`curvas:listar`, hasta T044). Hace pasar T009.
 
 **Checkpoint**: US1 completa.
@@ -239,17 +242,31 @@ resultado 0,25 mg/l con «Curva del <fecha> · R² …» en el detalle.
   `curvas:detalle`, sin N+1 con `django_assert_max_num_queries`, Esc. 2); `test_sin_curva`
   (medición guardada, sin resultado, «Falta curva de calibración.» en el detalle, no aparece en
   `estudios:validar_resultados` y `validar_resultados` la omite, Esc. 3–4); `test_fuera_de_rango`
-  (parametrizado: debajo, encima, en el borde mínimo y máximo → aviso «Fuera del rango de la curva
-  (0–0,4 mg/l)» solo fuera; en detalle y validación; validar igual funciona, Esc. 5);
+  (parametrizado con la curva por defecto de `curva_de`: absorbancia 0,0005 y 0,25 → aviso «Fuera
+  del rango de la curva (0–0,4 mg/l)»; 0,001 y 0,201 (bordes) → sin aviso; en detalle y validación;
+  validar igual funciona, Esc. 5); `test_concentracion_negativa` (absorbancia 0 → concentración
+  −0,002, con aviso de fuera de rango y, con límite de detección en la prueba, «< LD» en el
+  informe como cualquier resultado; edge case); `test_prueba_desactivada_sigue_calculando`
+  (desactivar `NO2-C` con un estudio que la tiene → la carga sigue calculando con la vigente y sus
+  curvas siguen en `curvas:listar`; edge case);
   `test_formula_usa_concentracion` (prueba Fórmula `{NO2-C}*2` → 0,5, Esc. 6);
   `test_curva_nueva_no_recalcula` (resultado con curva A, validación e informe emitido; cargar la
   curva B no cambia `Resultado`, `Validacion` ni `Informe.contenido`, Esc. 7 y SC-006).
 - [ ] T026 [P] [US4] En `pruebas/tests/test_curvas_servicio.py`: `test_pendientes_resumen`
   (2 mediciones sin resultado en 2 estudios → «2 mediciones en 2 estudios esperan curva» y la
   casilla, Esc. 8); `test_pendientes_calcular` (con la casilla: resultados con la curva nueva,
-  estudio «En proceso», mensaje con la cantidad, Esc. 9); `test_pendientes_sin_casilla` (siguen con
-  «Falta curva…»); `test_pendientes_excluye_informados` (estudios que no admiten mediciones no se
-  cuentan ni se tocan, Esc. 10).
+  estudio «En proceso», mensaje con la cantidad, Esc. 9); `test_pendientes_sin_casilla` (siguen sin
+  resultado, ahora con «Se cargó antes de la curva vigente.»); `test_pendientes_excluye_informados`
+  (estudios Finalizados o con informe no se cuentan ni se tocan, Esc. 10).
+- [ ] T027a [P] [US4] En `estudios/tests/test_calculo_curva.py`: `test_calcular_con_curva_motivo`
+  (medición cargada sin curva, después curva vigente → el detalle muestra «Se cargó antes de la
+  curva vigente.» y el botón «Calcular con la curva vigente»; sin vigente sigue «Falta curva de
+  calibración.» y sin botón, US4 Esc. 11); `test_calcular_con_curva_confirmar` (GET lista los
+  códigos; POST → resultados con la vigente de cada prueba y sus dependientes, mensaje «Se
+  calcularon N resultados con la curva vigente.», Esc. 12); `test_calcular_con_curva_reenvio` (segundo
+  POST → «No quedaban mediciones para calcular: ya se calcularon.», sin cambios);
+  `test_calcular_con_curva_estudio_cerrado` (estudio que no admite mediciones → 302 al detalle con
+  el motivo y el servicio lo rechaza); `test_calcular_con_curva_sin_sesion` (login).
 - [ ] T027 [P] [US4] En `pruebas/tests/test_curvas_concurrencia.py` (`transaction=True`):
   `test_concurrencia_carga` (una carga de medición con el estudio bloqueado mientras otro hilo
   confirma una curva con «Calcularlas» → sin deadlock; la medición se calcula una sola vez y con una
@@ -273,14 +290,26 @@ resultado 0,25 mg/l con «Curva del <fecha> · R² …» en el detalle.
   «Curva del <dd/mm/aaaa> · R² <4 decimales>» enlazado a `curvas:detalle` y, si
   `curvas.fuera_de_rango`, el aviso del contrato con `ui/estado.html`; `select_related` de la
   curva en las consultas de asignaciones. Hace pasar T025.
-- [ ] T031 [US4] `pruebas/curvas.py:pendientes_de_curva(prueba)` (asignaciones de la prueba con
-  medición, sin resultado, en estudios con `admite_mediciones`) y la opción en `guardar_curva`
+- [ ] T031 [US4] `pruebas/curvas.py:pendientes_de_curva(*, prueba=None, estudio=None)`
+  (asignaciones de pruebas `CURVA` con medición, sin resultado, en estudios con `admite_mediciones`,
+  filtradas por prueba o por estudio; con `estudio`, solo las de pruebas con vigente) y la opción en `guardar_curva`
   (research R5/R10): si `calcular_pendientes`, antes del lock exclusivo bloquear los estudios
   candidatos ordenados por pk; tras crear la curva, por estudio volver a consultar sus pendientes y
   llamar a `calculo.recalcular(estudio, pendientes)`; devolver la cantidad calculada. En
   `confirmar_curva` y `confirmar.html`: «N mediciones en M estudios esperan curva» + casilla
   «Calcularlas con esta curva» (desmarcada) y mensaje « Se calcularon N resultados.». Hace pasar
   T026 y T027.
+- [ ] T031a [US4] `pruebas/curvas.py:motivo_curva(asignacion)` («Se cargó antes de la curva
+  vigente.» si la prueba es `CURVA`, tiene medición, no tiene resultado y hay vigente; si no,
+  `None`), consultado primero por `estudios/calculo.py:motivo_sin_resultado` (research R14).
+- [ ] T031b [US4] `estudios/servicios.py:calcular_con_curva(estudio_pk, usuario)` (R14: sesión
+  activa → estudio `select_for_update` → `admite_mediciones` o `CalcularConCurvaError` →
+  `pendientes_de_curva(estudio=…)` bajo el bloqueo → `calculo.recalcular` → cantidad); vista
+  `calcular_con_curva` en `estudios/views.py` (llama a `servicios.calcular_con_curva`), ruta
+  `<int:pk>/mediciones/calcular-con-curva/` en `estudios/urls.py`, template
+  `estudios/templates/estudios/calcular_con_curva_confirmar.html` (`ui/acciones_confirmacion`,
+  `data-enviado`) y el botón en `detalle.html` solo si hay pendientes y el estudio admite
+  mediciones. Hace pasar T027a.
 
 **Checkpoint**: MVP completo (US1 + US2 + US4): curva cargada a mano y resultados calculados con ella.
 
@@ -448,6 +477,7 @@ carga; consulta OK; sin sesión → login.
   `curva_para` (la del resultado o la vigente) y la rama `CURVA` de `calculo`; `usada` nunca vuelve
   a `False` y la usada no se borra; orden de bloqueos y advisory lock `6_600_001`; importación
   (`importacion_curvas`, `leer_valor`, `float` de openpyxl convertido); «Calcularlas con esta curva»;
+  `servicios.calcular_con_curva` y `curvas.motivo_curva` («Se cargó antes de la curva vigente.»);
   fuera de rango al vuelo; fixtures `prueba_curva` y `curva_de`.
 - [ ] T049 Comprobar que los tests existentes de `pruebas` (gestión, importación, admin), de
   `estudios` (cálculo, corrección, validación, desvíos, demo) y de `informes` siguen en verde.
@@ -468,9 +498,9 @@ carga; consulta OK; sin sesión → login.
 
 - **Setup (T001–T004)** → **Foundational (T005–T008)** → historias.
 - **US1 (T009–T013)** agrega el tipo y la sección de la ficha que usan las demás.
-- **US2 (T014–T024)** depende de US1 (prueba por curva). **US4 (T025–T031)** solo necesita las
+- **US2 (T014–T024)** depende de US1 (prueba por curva). **US4 (T025–T031b)** solo necesita las
   fixtures `curva_de` para el cálculo (T025, T028–T030) y puede empezar después de T008 en paralelo
-  con US2; T031 (pendientes) necesita `guardar_curva` (T019) y `confirmar_curva` (T023–T024).
+  con US2; T031 (pendientes) necesita `guardar_curva` (T019) y `confirmar_curva` (T023–T024); T031b necesita T031 y T031a.
 - **US3 (T032–T036)** depende de la pantalla de carga (T023–T024).
 - **US5 (T037–T038)** depende de T029.
 - **US6 (T039–T045)**: la consulta (T044) solo necesita los modelos; el borrado (T042–T043) necesita
@@ -485,7 +515,7 @@ carga; consulta OK; sin sesión → login.
 T003 (CI), T004 (urls_curvas)
 # Tests de cada historia (archivos distintos)
 T014 + T015 + T016 + T017      (US2)
-T025 + T026 + T027             (US4)
+T025 + T026 + T027 + T027a    (US4)
 T032 + T033                    (US3)
 T039 + T040 + T041             (US6)
 # Implementación independiente

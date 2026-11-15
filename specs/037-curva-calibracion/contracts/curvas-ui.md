@@ -58,4 +58,11 @@ Una prueba que no es por curva → 302 a la ficha con «Esta prueba no se calcul
 - Detalle del estudio (`estudios:detalle`), columna «Resultado» de una prueba por curva:
   «Curva del <dd/mm/aaaa> · R² <0,9996>» enlazado a `curvas:detalle`; si corresponde, el aviso
   «Fuera del rango de la curva (<mín>–<máx> <unidad>)». Sin curva: «Falta curva de calibración.»
+  Con medición cargada antes de la curva vigente: «Se cargó antes de la curva vigente.» y, en las
+  acciones del estudio, «Calcular con la curva vigente».
+- `GET/POST /estudios/<pk>/mediciones/calcular-con-curva/` (`estudios:calcular_con_curva`, cualquier
+  empleado con sesión; estudio que no admite mediciones → 302 al detalle con el motivo): GET lista
+  las pruebas («Se van a calcular con la curva vigente: <códigos>») con `ui/acciones_confirmacion`;
+  POST → «Se calcularon N resultados con la curva vigente.» o «No quedaban mediciones para calcular:
+  ya se calcularon.»
 - Validar resultados: el mismo aviso de fuera de rango junto al resultado; no bloquea.

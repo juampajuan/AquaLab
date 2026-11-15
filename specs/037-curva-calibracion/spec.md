@@ -16,6 +16,10 @@
 - Q: ¿Se exige un R² mínimo para guardar una curva? → A: No se bloquea. Con R² menor que 0,995 se muestra un aviso en el cálculo y en el resumen de confirmación, y se puede guardar igual.
 - Q: ¿Se puede borrar una curva cargada por error? → A: Sí, con confirmación, solo si no se usó en ningún resultado. Si era la vigente, vuelve a quedar vigente la anterior (o la prueba queda sin curva). Una curva usada nunca se borra.
 
+### Session 2026-11-15
+
+- Q: Si se confirma una curva sin marcar «Calcularlas con esta curva», ¿cómo se calculan después esas mediciones? (Corregir con el mismo valor no hace nada.) → A: En el detalle del estudio, esas pruebas muestran «Se cargó antes de la curva vigente» y la acción «Calcular con la curva vigente», con confirmación, para cualquier empleado que pueda cargar mediciones. Reemplaza el «quedan esperando hasta que se corrijan» de la primera aclaración.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Definir una prueba por curva de calibración (Priority: P1)
@@ -46,7 +50,7 @@ Como administrador, desde la ficha de una prueba por curva cargo una curva nueva
 **Acceptance Scenarios**:
 
 1. **Dada** la ficha de una prueba por curva, **cuando** el administrador toca «Nueva curva», **entonces** ve un formulario con fecha de preparación, observación opcional y una tabla de puntos (concentración y absorbancia) donde puede agregar y quitar filas.
-2. **Dados** al menos 3 puntos válidos, **cuando** se toca «Calcular», **entonces** el sistema muestra la pendiente, la ordenada al origen y el R² de la recta por mínimos cuadrados, y un gráfico con los puntos y la recta.
+2. **Dados** al menos 3 puntos válidos, **cuando** se toca «Calcular recta», **entonces** el sistema muestra la pendiente, la ordenada al origen y el R² de la recta por mínimos cuadrados, y un gráfico con los puntos y la recta.
 3. **Dados** menos de 3 puntos válidos, **cuando** se intenta calcular, **entonces** se indica que hacen falta al menos 3 puntos y no se avanza.
 4. **Dado** un punto con concentración o absorbancia vacía, no numérica o negativa, **cuando** se intenta calcular, **entonces** se marca el error junto a ese punto indicando qué falta o qué está mal.
 5. **Dados** puntos con todas las concentraciones iguales o con todas las absorbancias iguales, **cuando** se intenta calcular, **entonces** se rechaza explicando que la recta no permite convertir absorbancia en concentración.
@@ -97,8 +101,10 @@ Como empleado del laboratorio, cargo la absorbancia leída de una prueba por cur
 6. **Dada** una prueba de fórmula que usa una prueba por curva (ej. `{NO2}*1,5`), **cuando** la prueba por curva tiene resultado, **entonces** la fórmula usa la concentración calculada, no la absorbancia.
 7. **Dado** un resultado calculado con una curva, **cuando** después se carga una curva nueva para esa prueba, **entonces** el resultado no cambia y sigue mostrando la curva con la que se calculó.
 8. **Dadas** mediciones de la prueba sin resultado por falta de curva, **cuando** se va a confirmar una curva nueva, **entonces** el resumen indica cuántas mediciones esperan curva (y en cuántos estudios) y ofrece «Calcularlas con esta curva».
-9. **Dada** la opción «Calcularlas con esta curva» marcada, **cuando** se confirma, **entonces** en la misma operación esas mediciones se calculan con la curva nueva, que queda registrada en cada resultado, y el mensaje de éxito dice cuántas se calcularon; **sin marcarla**, quedan con «Falta curva de calibración» hasta que se corrijan (US5 Esc. 2).
-10. **Dado** un estudio con informe emitido, **cuando** se calculan las mediciones que esperaban curva, **entonces** ese estudio no se toca ni se cuenta.
+9. **Dada** la opción «Calcularlas con esta curva» marcada, **cuando** se confirma, **entonces** en la misma operación esas mediciones se calculan con la curva nueva, que queda registrada en cada resultado, y el mensaje de éxito dice cuántas se calcularon; **sin marcarla**, quedan sin resultado.
+10. **Dado** un estudio con informe emitido o Finalizado, **cuando** se calculan las mediciones que esperaban curva, **entonces** ese estudio no se toca ni se cuenta (solo cuentan los estudios Pendientes de análisis o En proceso).
+11. **Dada** una medición sin resultado cargada antes de que la prueba tuviera curva, **cuando** ya hay curva vigente y se abre el detalle del estudio, **entonces** la prueba muestra «Se cargó antes de la curva vigente» (no «Falta curva de calibración») y el estudio ofrece «Calcular con la curva vigente».
+12. **Dada** la acción «Calcular con la curva vigente», **cuando** se confirma, **entonces** se calculan con la curva vigente de cada prueba todas las mediciones del estudio en esa situación, con sus dependientes, y el mensaje dice cuántas; si al confirmar ya no queda ninguna (otra persona las calculó), se informa sin cambios.
 
 ---
 
@@ -113,7 +119,7 @@ Como empleado del laboratorio, corrijo la absorbancia de una prueba por curva (U
 **Acceptance Scenarios**:
 
 1. **Dado** un resultado calculado con la curva A y una curva B vigente, **cuando** se corrige la absorbancia, **entonces** el resultado se recalcula con la curva A.
-2. **Dada** una prueba que no tenía resultado por falta de curva, **cuando** se corrige su absorbancia y hay una curva vigente, **entonces** el resultado se calcula con la curva vigente.
+2. **Dada** una prueba que no tenía resultado por falta de curva, **cuando** se corrige su absorbancia a otro valor y hay una curva vigente, **entonces** el resultado se calcula con la curva vigente (para calcularla sin cambiar el valor está «Calcular con la curva vigente», US4 Esc. 12).
 3. **Dada** una medición borrada (US 6.5) de una prueba por curva, **cuando** se vuelve a cargar, **entonces** se calcula con la curva vigente en ese momento.
 4. **Dado** un resultado validado de una prueba por curva, **cuando** se corrige la absorbancia, **entonces** pierde la validación como cualquier otra corrección (US 6.3/6.4).
 
@@ -187,7 +193,7 @@ Como laboratorio, quiero que solo quien tiene permiso para gestionar el catálog
 - **FR-012**: Antes de guardar, el sistema MUST pedir confirmación con un resumen (prueba, fecha de preparación, cantidad de puntos, rango de concentraciones, pendiente, ordenada, R², observación y, si se importó, nombre del archivo) y permitir cancelar sin cambios.
 - **FR-013**: Cada curva MUST guardar quién la cargó y cuándo, sus puntos, pendiente, ordenada, R², rango de concentraciones, observación y, si se importó, el nombre del archivo de origen.
 - **FR-014**: Cada prueba MUST tener a lo sumo una curva vigente; al confirmar una nueva, la vigente anterior MUST pasar a histórica en la misma operación, también con confirmaciones simultáneas.
-- **FR-015**: Ninguna curva MUST poder editarse: para cambiar puntos se carga una curva nueva. Una curva no usada en ningún resultado MUST poder borrarse con confirmación por quien gestiona el catálogo; si era la vigente, la anterior más reciente MUST volver a quedar vigente (o la prueba queda sin curva vigente). Una curva usada MUST NOT poder borrarse, revalidándolo al confirmar.
+- **FR-015**: Una curva MUST NOT poder editarse: para cambiar puntos se carga una curva nueva. Una curva no usada en ningún resultado MUST poder borrarse con confirmación por quien gestiona el catálogo; si era la vigente, la anterior más reciente MUST volver a quedar vigente (o la prueba queda sin curva vigente). Una curva usada MUST NOT poder borrarse, revalidándolo al confirmar.
 - **FR-015a**: Si el R² es menor que 0,995, el sistema MUST mostrar un aviso al calcular y en el resumen de confirmación, y MUST permitir guardar igual.
 - **FR-016**: Al calcular el resultado de una prueba por curva sin curva asignada, el sistema MUST usar la curva vigente: concentración = (absorbancia − ordenada) / pendiente, con la unidad del resultado de la prueba y la misma precisión que el resto de los resultados (US 6.2).
 - **FR-017**: Cada resultado de una prueba por curva MUST guardar la curva con la que se calculó; la ficha del estudio MUST mostrarla junto al resultado (fecha de preparación y R²) con enlace a su detalle.
@@ -198,7 +204,8 @@ Como laboratorio, quiero que solo quien tiene permiso para gestionar el catálog
 - **FR-022**: Cargar una curva nueva MUST NOT modificar resultados ya calculados, validaciones ni informes emitidos.
 - **FR-023**: Solo los usuarios con permiso de gestionar el catálogo de pruebas (SCRUM-73) MUST poder cargar, importar, confirmar y borrar curvas; el resto MUST recibir 403 sin cambios.
 - **FR-024**: Cualquier empleado con sesión MUST poder consultar la curva vigente y las históricas de una prueba, con su detalle.
-- **FR-025**: Si hay mediciones de la prueba sin resultado por falta de curva en estudios sin informe emitido, el resumen de confirmación de una curva nueva MUST indicar cuántas son (y en cuántos estudios) y ofrecer «Calcularlas con esta curva». Marcada, MUST calcularlas con esa curva en la misma operación (con sus dependientes y el estado del estudio como cualquier cálculo de US 6.2), sin tocar mediciones que ya tengan resultado; sin marcar, MUST dejarlas esperando.
+- **FR-025**: Si hay mediciones de la prueba sin resultado por falta de curva en estudios Pendientes de análisis o En proceso, el resumen de confirmación de una curva nueva MUST indicar cuántas son (y en cuántos estudios) y ofrecer «Calcularlas con esta curva». Marcada, MUST calcularlas con esa curva en la misma operación (con sus dependientes y el estado del estudio como cualquier cálculo de US 6.2), sin tocar mediciones que ya tengan resultado; sin marcar, MUST dejarlas sin resultado.
+- **FR-026**: Una prueba por curva con medición y sin resultado, cuya prueba ya tiene curva vigente, MUST mostrar «Se cargó antes de la curva vigente» en el detalle del estudio, y el estudio MUST ofrecer «Calcular con la curva vigente», con confirmación, a quien puede cargar mediciones, mientras el estudio admita mediciones. Al confirmar, MUST calcular en una operación todas las de ese estudio en esa situación, con la vigente de cada prueba y sus dependientes, sin tocar las que ya tengan resultado e informando cuántas se calcularon.
 
 ### Key Entities *(include if feature involves data)*
 

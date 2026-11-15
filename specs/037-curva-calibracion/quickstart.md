@@ -22,6 +22,9 @@ y valores de referencia en [research.md](./research.md) (R2).
 4. «Guardar» → resumen con «1 medición en 1 estudio espera curva»; marcar «Calcularlas con esta
    curva» y confirmar → el mensaje informa 1 resultado calculado. En el estudio: 0,2501 mg/l y «Curva del
    <hoy> · R² 0,9996».
+   Variante sin la casilla: cargar otra absorbancia sin curva en un segundo estudio, guardar una
+   curva sin marcarla → el estudio muestra «Se cargó antes de la curva vigente.»; «Calcular con la
+   curva vigente» → confirmar → resultado calculado; repetir el envío → «No quedaban mediciones…».
 5. «Descargar plantilla», cambiar la absorbancia de 0,4 a 0,250 y agregar una fila de título;
    importarla → 5 puntos en la tabla; quitar la absorbancia de la fila 4 en el archivo → «La fila 4
    no tiene absorbancia.» y la tabla no cambia. Probar un `.ods` → rechazado. Probar un `.xlsx` con

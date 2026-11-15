@@ -71,3 +71,7 @@ Al menos 3 por curva (servicio); réplicas (concentración repetida) permitidas.
 | Corrección sin resultado previo (esperaba curva) | Vigente |
 | Medición borrada y vuelta a cargar | Vigente (el resultado se descartó) |
 | «Calcularlas con esta curva» al confirmar | La curva nueva |
+| «Calcular con la curva vigente» desde el estudio (R14) | Vigente de cada prueba |
+
+Motivos sin resultado de una prueba por curva con medición: sin vigente → «Falta curva de
+calibración.»; con vigente → «Se cargó antes de la curva vigente.» (`curvas.motivo_curva`).

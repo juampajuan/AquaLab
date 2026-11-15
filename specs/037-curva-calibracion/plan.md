@@ -51,7 +51,7 @@ formularios, vistas, URLs, 5 templates, `curva.js`); cambios puntuales en `estud
 (`Resultado.curva`, `calculo.calcular/recalcular`, detalle y validación) y en `pruebas/gestion.py`
 (R12); `requirements.txt`, CI (`node --test`), CLAUDE.md y tests.
 
-Decisiones en [research.md](./research.md) (R1–R13). No hay `NEEDS CLARIFICATION` pendientes.
+Decisiones en [research.md](./research.md) (R1–R14). No hay `NEEDS CLARIFICATION` pendientes.
 
 ## Constitution Check
 
@@ -121,6 +121,8 @@ Pantallas y mensajes en [contracts/curvas-ui.md](./contracts/curvas-ui.md); mode
 | FR-021, US4 Esc. 6 — fórmula que usa una prueba por curva toma la concentración | `test_formula_usa_concentracion` | idem |
 | FR-022, US4 Esc. 7, SC-006 — curva nueva no cambia resultados, validaciones ni informes | `test_curva_nueva_no_recalcula` | idem |
 | FR-025, US4 Esc. 8–10 — pendientes: cuenta en el resumen, calcular con la casilla, sin casilla esperan, estudios con informe excluidos | `test_pendientes_*` | `pruebas/tests/test_curvas_servicio.py` |
+| FR-026, US4 Esc. 11–12 — «Se cargó antes de la curva vigente», «Calcular con la curva vigente» (confirmación, reenvío sin cambios, estudio que no admite mediciones) | `test_calcular_con_curva_*` | `estudios/tests/test_calculo_curva.py` |
+| Edges — concentración negativa (fuera de rango, «< LD»); prueba por curva desactivada sigue calculando | `test_concentracion_negativa`, `test_prueba_desactivada_sigue_calculando` | idem |
 | FR-020, US5 Esc. 1–4 — corrección con la misma curva; sin resultado previo usa vigente; borrada y recargada usa vigente; pierde validación | `test_correccion_*` | `estudios/tests/test_calculo_curva.py` |
 | FR-015, US6 Esc. 4–5 — borrar sin usar (vuelve la anterior / queda sin curva); usada no se borra por ninguna vía | `test_borrar_curva_*` | `pruebas/tests/test_curvas_servicio.py` |
 | R5, edges — borrar mientras se calcula con ella; carga durante confirmación; sin deadlock | `test_concurrencia_borrar`, `test_concurrencia_carga` (`transaction=True`) | `pruebas/tests/test_curvas_concurrencia.py` |
@@ -165,9 +167,12 @@ pruebas/
 estudios/
 ├── models.py                                     # Resultado.curva
 ├── migrations/0012_resultado_curva.py
-├── calculo.py                                    # rama CURVA en calcular/recalcular
-├── views.py                                      # select_related de la curva; fuera de rango
-├── templates/estudios/{detalle,validar_resultados}.html  # curva usada y aviso
+├── calculo.py                                    # rama CURVA en calcular/recalcular; motivo_curva
+├── servicios.py                                  # calcular_con_curva (R14)
+├── views.py, urls.py                             # select_related de la curva; fuera de rango;
+│                                                 #   calcular_con_curva
+├── templates/estudios/{detalle,validar_resultados}.html  # curva usada, aviso y acción
+├── templates/estudios/calcular_con_curva_confirmar.html
 └── tests/test_calculo_curva.py
 ```
 
