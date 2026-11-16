@@ -43,11 +43,17 @@ herramienta responde «Pedido inválido.».
   siguiente, que entonces no se hace) → `ServicioNoDisponible` (log `sin respuesta`) → HTTP 503
   `no_disponible`.
 
+## Reintento ante 429
+
+Con `reintentar_en` ≤ 5 s (`max_espera_reintento`) y al menos 1 s del presupuesto después de
+esperar (`margen_reintento`), `conversacion.py` espera y repite la misma llamada **una sola vez por
+pregunta**. Si no se cumple, o el reintento vuelve a dar 429, sale `CuotaAgotada` → HTTP 429.
+
 ## Errores
 
 | Situación | Excepción | Log (`asistente`) |
 |---|---|---|
-| HTTP 429 | `CuotaAgotada` | `cuota agotada` |
+| HTTP 429 | `CuotaAgotada` (`reintentar_en` = segundos del `Retry-After`, o None si falta o es una fecha) | `cuota agotada` (y, si se reintenta, `cuota agotada; se reintenta en N s`) |
 | HTTP 401/403 | `ServicioNoDisponible` | `clave inválida o sin acceso (401/403)` |
 | HTTP 5xx u otro 4xx | `ServicioNoDisponible` | `error HTTP <código>` |
 | `TimeoutError`, `socket.timeout`, `URLError` | `ServicioNoDisponible` | `sin respuesta` |

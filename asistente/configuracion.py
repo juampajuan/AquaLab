@@ -20,6 +20,10 @@ class Configuracion:
     presupuesto: float = 20  # segundos por pregunta (SC-007)
     max_vueltas: int = 6  # vueltas con herramientas, más la llamada final de texto
     max_herramientas: int = 8  # ejecuciones por pregunta
+    # 429 con Retry-After de a lo sumo estos segundos: un reintento automático por pregunta, si
+    # después de esperar quedan al menos `margen_reintento` segundos del presupuesto.
+    max_espera_reintento: float = 5
+    margen_reintento: float = 1
 
     @property
     def habilitado(self):

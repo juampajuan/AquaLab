@@ -144,7 +144,7 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 
 - **FR-014**: Al servicio de IA externo NO DEBEN enviarse el correo, el teléfono ni el domicilio de ningún cliente, ni datos de los usuarios de AquaLab (correo, contraseña, sesión).
 - **FR-015**: La clave, la dirección del servicio y el modelo DEBEN configurarse por variables de entorno (en `.env`), con Groq como servicio por defecto: sin indicar dirección ni modelo se usa Groq, y basta con la clave. Sin la clave, AquaLab DEBE arrancar igual y el asistente se muestra deshabilitado con un aviso; el resto de AquaLab funciona igual.
-- **FR-016**: Si el servicio no responde dentro de un tiempo de espera, responde con error o informa cuota agotada, el asistente DEBE mostrar un aviso claro (distinguiendo «no disponible» de «límite de consultas alcanzado») y permitir volver a preguntar; la falla DEBE quedar registrada en el log de la aplicación sin el texto de la pregunta.
+- **FR-016**: Si el servicio no responde dentro de un tiempo de espera, responde con error o informa cuota agotada, el asistente DEBE mostrar un aviso claro (distinguiendo «no disponible» de «límite de consultas alcanzado») y permitir volver a preguntar; la falla DEBE quedar registrada en el log de la aplicación sin el texto de la pregunta. Si el servicio informa cuota agotada pero indica que se puede reintentar en pocos segundos (hasta 5) y queda tiempo de espera, el asistente reintenta una sola vez por pregunta antes de mostrar el aviso.
 - **FR-017**: Una falla o demora del asistente NO DEBE afectar la carga ni el funcionamiento de ninguna otra pantalla de AquaLab.
 
 **Conversación**

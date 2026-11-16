@@ -509,3 +509,90 @@ def test_mensaje_de_sistema_resumen_por_estudio():
     assert "listá solo las que no cumplen" in sistema
     assert "true/false" in sistema
     assert "nombres de campos" in sistema
+
+
+# --- 429 con Retry-After corto: un reintento automático ---
+
+
+@pytest.fixture
+def esperas(servicio_simulado):
+    """Espera simulada: avanza el reloj del servicio en vez de dormir."""
+    registradas = []
+
+    def dormir(segundos):
+        registradas.append(segundos)
+        servicio_simulado.reloj.ahora += segundos
+
+    return registradas, dormir
+
+
+def cuota(segundos=None):
+    error = cliente_ia.CuotaAgotada("cuota agotada")
+    error.reintentar_en = segundos
+    return error
+
+
+def test_429_con_retry_after_corto_reintenta(servicio_simulado, eco, esperas):
+    registradas, dormir = esperas
+    servicio_simulado.guion(
+        herramienta("eco", {"valor": "x"}), cuota(2), texto("La muestra PI 200417 está bien.")
+    )
+    respuesta = conversacion.responder(
+        None, "¿PI 200417?", [], reloj=servicio_simulado.reloj, dormir=dormir
+    )
+    assert respuesta.texto == "La muestra PI 200417 está bien."
+    assert registradas == [2]
+    # La llamada reintentada usa lo que queda del presupuesto: 20 − 2 de espera.
+    assert [ll["timeout"] for ll in servicio_simulado.llamadas] == [15, 15, 15]
+    assert servicio_simulado.llamadas[2]["mensajes"] == servicio_simulado.llamadas[1]["mensajes"]
+
+
+def test_429_reintento_recortado_al_presupuesto(servicio_simulado, eco, esperas):
+    from .conftest import Lenta
+
+    registradas, dormir = esperas
+    servicio_simulado.guion(
+        Lenta(10, herramienta("eco", {"valor": "x"})), cuota(4), texto("PI 200417")
+    )
+    conversacion.responder(None, "¿PI 200417?", [], reloj=servicio_simulado.reloj, dormir=dormir)
+    assert registradas == [4]
+    assert servicio_simulado.llamadas[2]["timeout"] == 6
+
+
+@pytest.mark.parametrize("segundos", [None, 6, 30])
+def test_429_sin_retry_after_o_largo_muestra_el_aviso(servicio_simulado, esperas, segundos):
+    registradas, dormir = esperas
+    servicio_simulado.guion(cuota(segundos), texto("nunca"))
+    with pytest.raises(cliente_ia.CuotaAgotada):
+        conversacion.responder(
+            None, "¿PI 200417?", [], reloj=servicio_simulado.reloj, dormir=dormir
+        )
+    assert registradas == []
+    assert len(servicio_simulado.llamadas) == 1
+
+
+def test_429_sin_tiempo_restante_muestra_el_aviso(servicio_simulado, eco, esperas):
+    """Retry-After corto, pero después de esperar no queda al menos 1 s del presupuesto."""
+    from .conftest import Lenta
+
+    registradas, dormir = esperas
+    # Quedan 5,5 s y el Retry-After (5 s, el máximo) dejaría 0,5 s: menos que el margen de 1 s.
+    servicio_simulado.guion(
+        Lenta(14.5, herramienta("eco", {"valor": "x"})), cuota(5), texto("nunca")
+    )
+    with pytest.raises(cliente_ia.CuotaAgotada):
+        conversacion.responder(
+            None, "¿PI 200417?", [], reloj=servicio_simulado.reloj, dormir=dormir
+        )
+    assert registradas == []
+
+
+def test_429_se_reintenta_una_sola_vez_por_pregunta(servicio_simulado, eco, esperas):
+    registradas, dormir = esperas
+    servicio_simulado.guion(cuota(1), herramienta("eco", {"valor": "x"}), cuota(1), texto("nunca"))
+    with pytest.raises(cliente_ia.CuotaAgotada):
+        conversacion.responder(
+            None, "¿PI 200417?", [], reloj=servicio_simulado.reloj, dormir=dormir
+        )
+    assert registradas == [1]
+    assert len(servicio_simulado.llamadas) == 3

@@ -165,3 +165,31 @@ def test_log_sin_datos_del_pedido(capturar, caplog, falla):
         cliente_ia.enviar(mensajes, HERRAMIENTAS, timeout=5)
     for prohibido in ("clave-test", "200417", "Lácteos", "buscar_muestra"):
         assert prohibido not in caplog.text
+
+
+# --- Retry-After del 429 (reintento automático) ---
+
+
+def error_429(retry_after=None):
+    cabeceras = {} if retry_after is None else {"Retry-After": retry_after}
+    return urllib.error.HTTPError("https://ia.test", 429, "error", cabeceras, io.BytesIO(b"{}"))
+
+
+@pytest.mark.parametrize(
+    "retry_after, segundos",
+    [
+        ("2", 2.0),
+        ("0.5", 0.5),
+        (" 3 ", 3.0),
+        (None, None),
+        ("pronto", None),
+        ("-1", None),
+        ("Wed, 21 Oct 2026 07:28:00 GMT", None),
+    ],
+)
+def test_429_lee_retry_after(capturar, retry_after, segundos):
+    """El 429 informa en cuántos segundos reintentar (solo la forma en segundos)."""
+    capturar(error_429(retry_after))
+    with pytest.raises(cliente_ia.CuotaAgotada) as error:
+        cliente_ia.enviar([], HERRAMIENTAS, timeout=5)
+    assert error.value.reintentar_en == segundos

@@ -459,7 +459,9 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   (`ASISTENTE_API_KEY`, `ASISTENTE_URL`, `ASISTENTE_MODELO`; Groq y `openai/gpt-oss-120b` por
   defecto); sin clave, el botón aparece deshabilitado y la vista responde 503 `no_configurado`.
 - `asistente/cliente_ia.py:enviar` es el único punto de red (urllib, sin dependencias). Traduce
-  429 → `CuotaAgotada` (vista 429) y todo lo demás → `ServicioNoDisponible` (503); el logger
+  429 → `CuotaAgotada` con `reintentar_en` (Retry-After en segundos); la conversación reintenta
+  una sola vez por pregunta si es ≤ 5 s y queda ≥ 1 s del presupuesto (en los tests se reemplaza
+  `conversacion.esperar` o se pasa `dormir`); si no, la vista responde 429 y todo lo demás → `ServicioNoDisponible` (503); el logger
   `asistente` registra solo el motivo. En los tests se parchea `asistente.cliente_ia.enviar`
   (fixture `servicio_simulado`); el conftest hace fallar cualquier `urlopen` no simulado.
 - El modelo solo redacta: los datos salen de las herramientas de `asistente/herramientas.py`

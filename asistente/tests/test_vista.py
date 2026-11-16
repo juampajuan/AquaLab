@@ -228,3 +228,33 @@ def test_pantallas_con_el_servicio_caido(cliente_http, servicio_simulado, ruta):
     preguntar(cliente_http, {"pregunta": "hola"})
     assert cliente_http.get(reverse(ruta)).status_code == 200
     assert servicio_simulado.llamadas[1:] == []
+
+
+def test_429_corto_reintenta_y_responde(cliente_http, servicio_simulado, monkeypatch):
+    """Un 429 con Retry-After corto no llega al usuario: se reintenta y se responde 200."""
+    from asistente import conversacion
+    from asistente.cliente_ia import CuotaAgotada
+
+    esperas = []
+    monkeypatch.setattr(conversacion, "esperar", esperas.append)
+    error = CuotaAgotada("cuota agotada")
+    error.reintentar_en = 2
+    servicio_simulado.guion(error, texto("Hola"))
+    respuesta = preguntar(cliente_http, {"pregunta": "hola"})
+    assert respuesta.status_code == 200
+    assert esperas == [2]
+
+
+def test_429_largo_muestra_el_aviso(cliente_http, servicio_simulado, monkeypatch):
+    from asistente import conversacion
+    from asistente.cliente_ia import CuotaAgotada
+
+    esperas = []
+    monkeypatch.setattr(conversacion, "esperar", esperas.append)
+    error = CuotaAgotada("cuota agotada")
+    error.reintentar_en = 40
+    servicio_simulado.guion(error)
+    respuesta = preguntar(cliente_http, {"pregunta": "hola"})
+    assert respuesta.status_code == 429
+    assert respuesta.json()["error"] == "cuota"
+    assert esperas == []

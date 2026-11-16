@@ -15,6 +15,7 @@ en el `sessionStorage` de la pestaña mientras el panel está abierto (FR-019): 
 | `timeout` | constante | 15 s por llamada |
 | `presupuesto` | constante | 20 s por pregunta (SC-007) |
 | `max_vueltas` / `max_herramientas` | constantes | 6 / 8 |
+| `max_espera_reintento` / `margen_reintento` | constantes | 5 s / 1 s (reintento único ante 429) |
 
 `habilitado` = `bool(clave)`.
 

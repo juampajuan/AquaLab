@@ -151,8 +151,12 @@
 ## R10. Errores del servicio
 
 - **Decision**: `cliente_ia.enviar` traduce:
-  - `HTTPError` 429 → `CuotaAgotada` → HTTP 429 al navegador, aviso «Se alcanzó el límite de
-    consultas del asistente. Probá más tarde; el resto de AquaLab funciona normalmente.».
+  - `HTTPError` 429 → `CuotaAgotada` (con `reintentar_en`: los segundos del `Retry-After`, o
+    None) → HTTP 429 al navegador, aviso «Se alcanzó el límite de consultas del asistente. Probá
+    más tarde; el resto de AquaLab funciona normalmente.». Antes del aviso, `conversacion.py`
+    reintenta **una sola vez por pregunta** si el `Retry-After` es de a lo sumo 5 s y, después de
+    esperarlo, quedan al menos 1 s de los 20 del presupuesto (el límite gratuito por tokens de
+    Groq se libera en segundos; ver la validación de T053).
   - Timeout, `URLError`, 5xx, 401/403, JSON inválido, respuesta sin `choices` o presupuesto de
     20 s agotado (R9) →
     `ServicioNoDisponible` → HTTP 503, aviso «El asistente no está disponible en este momento.
@@ -163,7 +167,8 @@
   clave). Ninguna excepción sale de la vista: la página queda igual.
 - **Rationale**: FR-016/FR-017. 401/403 se tratan como «no disponible» para el usuario, pero el
   log dice «clave inválida» para quien administra.
-- **Alternatives considered**: reintentos automáticos (gastan la cuota y alargan la espera).
+- **Alternatives considered**: reintentos automáticos sin condiciones (gastan la cuota y
+  alargan la espera): se limitan a uno, con espera corta y dentro del presupuesto.
 
 ## R11. Una herramienta por vuelta
 

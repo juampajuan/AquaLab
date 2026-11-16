@@ -58,6 +58,9 @@ MENSAJE_UNA_POR_VUELTA = "Se ejecuta una herramienta por vuelta; pedila de nuevo
 
 ROLES = {"usuario": "user", "asistente": "assistant"}
 
+# Espera antes del reintento por 429; los tests la reemplazan para no dormir.
+esperar = time.sleep
+
 # Verbos de cambio en imperativo (voseo y tuteo, sin acentos): si la pregunta empieza con uno, se
 # responde el mensaje fijo sin llamar al servicio (FR-011). Solo el comienzo: «¿qué falta
 # validar?» o «¿cuándo se emitió…?» son consultas.
@@ -106,9 +109,20 @@ def como_json(salida):
     return json.dumps(salida, ensure_ascii=False, default=str)
 
 
-def responder(usuario, pregunta, historial, config=None, reloj=time.monotonic):
+def puede_reintentar(error, restante, config):
+    """Un 429 con Retry-After corto se reintenta si después de esperar queda tiempo."""
+    espera = getattr(error, "reintentar_en", None)
+    return (
+        espera is not None
+        and espera <= config.max_espera_reintento
+        and restante - espera >= config.margen_reintento
+    )
+
+
+def responder(usuario, pregunta, historial, config=None, reloj=time.monotonic, dormir=None):
     """Responde una pregunta. Lanza `cliente_ia.ServicioNoDisponible` si el servicio falla o se
-    agota el presupuesto de tiempo, y `cliente_ia.CuotaAgotada` si el servicio lo informa."""
+    agota el presupuesto de tiempo, y `cliente_ia.CuotaAgotada` si el servicio lo informa y no se
+    pudo reintentar (a lo sumo un reintento por pregunta, con Retry-After corto)."""
     if es_pedido_de_cambio(pregunta):
         return Respuesta(MENSAJE_SOLO_CONSULTA)
     config = config or configuracion.actual()
@@ -116,18 +130,27 @@ def responder(usuario, pregunta, historial, config=None, reloj=time.monotonic):
     mensajes = mensajes_iniciales(pregunta, historial)
     referencias, ultimas, avisos, primeras, opciones = [], [], [], [], []
     vueltas = ejecuciones = 0
-    alguna_valida = False
+    alguna_valida = reintentado = False
     while True:
         restante = config.presupuesto - (reloj() - inicio)
         if restante <= 0:
             logger.warning("Asistente: se agotó el tiempo de la pregunta.")
             raise cliente_ia.ServicioNoDisponible("sin respuesta")
-        mensaje = cliente_ia.enviar(
-            mensajes,
-            herramientas.definiciones(),
-            timeout=min(config.timeout, restante),
-            config=config,
-        )
+        try:
+            mensaje = cliente_ia.enviar(
+                mensajes,
+                herramientas.definiciones(),
+                timeout=min(config.timeout, restante),
+                config=config,
+            )
+        except cliente_ia.CuotaAgotada as error:
+            restante = config.presupuesto - (reloj() - inicio)
+            if reintentado or not puede_reintentar(error, restante, config):
+                raise
+            reintentado = True
+            logger.info("Asistente: cuota agotada; se reintenta en %s s.", error.reintentar_en)
+            (dormir or esperar)(error.reintentar_en)
+            continue
         llamadas = mensaje.get("tool_calls") or []
         if not llamadas:
             break
