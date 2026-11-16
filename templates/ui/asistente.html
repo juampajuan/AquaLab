@@ -19,18 +19,18 @@
   </button>
 </div>
 {% if asistente_habilitado %}
-<section id="asistente-panel" class="tarjeta fixed right-4 bottom-20 z-20 flex max-h-[calc(100vh-10rem)] w-[min(26rem,calc(100vw-2rem))] flex-col shadow-nivel3 sm:right-6 sm:bottom-22" role="dialog" aria-label="Asistente" data-asistente data-url="{% url 'asistente:preguntar' %}" hidden>
-  <header class="flex items-center justify-between border-b border-borde px-4 py-3">
-    <h2 class="flex items-center gap-2 text-sm font-semibold text-tinta">
-      <span class="inline-flex size-7 items-center justify-center rounded-full bg-cian-suave text-marino">{% include "ui/icono.html" with nombre="bot" clase="size-4" %}</span>
+<section id="asistente-panel" class="tarjeta fixed right-4 bottom-20 z-20 flex max-h-[calc(100vh-10rem)] w-[min(26rem,calc(100vw-2rem))] flex-col overflow-hidden border-marino/25 shadow-2xl ring-1 ring-marino/10 sm:right-6 sm:bottom-22" role="dialog" aria-label="Asistente" data-asistente data-url="{% url 'asistente:preguntar' %}" hidden>
+  <header class="flex items-center justify-between bg-marino px-4 py-3 text-white">
+    <h2 class="flex items-center gap-2 text-sm font-semibold text-white">
+      <span class="inline-flex size-7 items-center justify-center rounded-full bg-white/15 text-white">{% include "ui/icono.html" with nombre="bot" clase="size-4" %}</span>
       Asistente de consultas
     </h2>
     {# Minimizar conserva la conversación; la ✕ la borra (FR-019). #}
     <div class="flex items-center gap-1">
-      <button type="button" class="rounded-md p-1 text-tinta-suave hover:bg-fondo-hundido" data-asistente-minimizar aria-label="Minimizar" title="Minimizar (conserva la conversación)">
+      <button type="button" class="rounded-md p-1 text-white/80 hover:bg-white/15 hover:text-white" data-asistente-minimizar aria-label="Minimizar" title="Minimizar (conserva la conversación)">
         {% include "ui/icono.html" with nombre="minus" clase="size-4" %}
       </button>
-      <button type="button" class="rounded-md p-1 text-tinta-suave hover:bg-fondo-hundido" data-asistente-cerrar aria-label="Cerrar" title="Cerrar y borrar la conversación">
+      <button type="button" class="rounded-md p-1 text-white/80 hover:bg-white/15 hover:text-white" data-asistente-cerrar aria-label="Cerrar" title="Cerrar y borrar la conversación">
         {% include "ui/icono.html" with nombre="x" clase="size-4" %}
       </button>
     </div>
