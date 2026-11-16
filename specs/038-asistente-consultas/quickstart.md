@@ -32,13 +32,13 @@ simulado.
 | # | Acción | Resultado esperado |
 |---|---|---|
 | 1 | Entrar como técnico y como bioquímico | Botón «Asistente» abajo a la derecha en todas las pantallas con sesión; no aparece en login ni registro. |
-| 2 | Preguntar por el N° PI de una muestra de «Escuela N° 12» | Estado de la muestra y de sus estudios, pruebas con resultado, evaluación y norma iguales al detalle del estudio; enlaces a la muestra y al estudio. |
+| 2 | Preguntar por el N° PI de una muestra de «Escuela N° 12» | Por estudio, estado y cuántas pruebas cumplen, están fuera de norma o sin límite, con las que no cumplen detalladas, igual que el detalle del estudio; enlaces a la muestra y al estudio. |
 | 3 | «¿Qué no cumple en el estudio de Pozo 2?» | Solo las pruebas fuera de norma (Cloruro), con valor, límite y norma; o la lista de estudios para elegir. |
 | 4 | «¿Qué estudios tiene <cliente demo>?» | Hasta 10 estudios en el orden del historial, total y enlace al historial. Sin correo, teléfono ni domicilio. |
 | 5 | «¿Cómo está el PI 999999?» | «No hay ninguna muestra con el N° PI 999999.» |
 | 6 | Preguntar por E. coli del Tanque domiciliario | «Ausente»/«Presente», nunca 0/1; un valor bajo el LD sale «< LD». |
 | 7 | «Validá el PI …» / «¿Qué pruebas hay en el catálogo?» | Dice que solo consulta muestras, estudios y clientes; nada cambia. |
-| 8 | Seguimiento: «¿y qué no cumple?» | Responde sobre lo anterior; al recargar la página la conversación desaparece. |
+| 8 | Seguimiento: «¿y qué no cumple?»; después tocar un enlace | Responde sobre lo anterior; en la pantalla nueva el panel se reabre con la conversación; con la ✕ o al cerrar sesión desaparece. |
 | 9 | Quitar `ASISTENTE_API_KEY` y reiniciar | AquaLab arranca; botón deshabilitado con «El asistente no está configurado». |
 | 10 | Poner `ASISTENTE_URL=http://10.255.255.1/` | Aviso «no disponible» en ≤ 20 s; el resto de las pantallas funciona. |
 | 11 | Con la clave real, «¿Qué no cumple en el estudio de la escuela N° 12?» | Groq acepta `parallel_tool_calls: false` (sin HTTP 400) y la respuesta llega en ≤ 15 s (SC-003) con una herramienta por vuelta. Si Groq rechazara el parámetro, quitarlo del pedido (research R11). |
@@ -60,7 +60,7 @@ respuesta (objetivo < 15 s).
 | 5 | «¿Qué no cumple en el estudio de Pozo 2?» | detalle del estudio | Cloruro fuera de norma, o la lista de estudios para elegir (medir tiempo) |
 | 6 | «¿Qué no cumple en el estudio de la escuela N° 12?» | detalle del estudio | solo las fuera de norma, o «no hay pruebas fuera de norma» con el resumen (medir tiempo) |
 | 7 | «¿Qué no cumple en el PI <Pozo domiciliario, mes anterior>?» | detalle del estudio | estudio estancado: pruebas sin resultado indicadas como tales (medir tiempo) |
-| 8 | «¿Qué no cumple en el estudio del Tanque domiciliario del mes 3?» | detalle del estudio | E. coli «Presente», nunca 1 (medir tiempo) |
+| 8 | «¿Qué no cumple en el estudio del Tanque domiciliario de agosto?» | detalle del estudio | E. coli «Presente», nunca 1, o la lista para elegir con su fecha (medir tiempo). Buscar por fecha está fuera de alcance: vale que elija por la fecha listada |
 | 9 | «¿Qué no cumple en el estudio de Villa Verde?» | búsqueda de estudios | varias coincidencias, cada una con su enlace (medir tiempo) |
 | 10 | «¿Qué estudios tiene Lácteos del Sur?» | historial del cliente | 10 más recientes en el mismo orden, total y enlace al historial |
 | 11 | «¿Qué estudios tiene la Municipalidad de Villa Verde?» | historial del cliente | ídem |

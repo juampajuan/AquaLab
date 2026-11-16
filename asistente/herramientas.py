@@ -8,7 +8,7 @@ se mandan al modelo. Cada historia registra sus herramientas con `@registrar`.
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from django.db import connection, transaction
 
@@ -45,6 +45,8 @@ class Salida:
     # Textos que AquaLab agrega al final de la respuesta y referencias que van primero (FR-009a).
     avisos: list = field(default_factory=list)
     primeras: list = field(default_factory=list)
+    # Coincidencias para elegir: `Referencia` con `pregunta` (T053).
+    opciones: list = field(default_factory=list)
 
 
 @dataclass
@@ -55,6 +57,7 @@ class Ejecucion:
     valida: bool = True
     avisos: list = field(default_factory=list)
     primeras: list = field(default_factory=list)
+    opciones: list = field(default_factory=list)
 
 
 REGISTRO = {}
@@ -122,6 +125,7 @@ def ejecutar(usuario, nombre, argumentos_json):
         list(resultado.referencias),
         avisos=list(resultado.avisos),
         primeras=list(resultado.primeras),
+        opciones=list(resultado.opciones),
     )
 
 
@@ -147,6 +151,7 @@ FORMATO_FECHA = "%d/%m/%Y"
 ESTUDIOS_POR_MUESTRA = 5  # una vuelta para la muestra y una por estudio (max_vueltas − 1)
 MAX_LISTA = 10
 MAX_NUMERO_SQL = 2_147_483_647
+CUMPLE = Evaluacion.CUMPLE.label
 FUERA_DE_NORMA = Evaluacion.FUERA_DE_NORMA.label
 SIN_LIMITE = Evaluacion.SIN_LIMITE.label
 
@@ -177,7 +182,20 @@ def referencia_estudio(estudio):
         numero,
         f"Estudio {numero}",
         claves=(f"Estudio {numero}", f"Estudio N° {numero}", f"Estudio Nº {numero}"),
+        patron=patron_estudio(numero),
     )
+
+
+# Formas de numerar que usa el modelo, sobre el texto normalizado (la «º» queda como «o»):
+# «n.º», «n°», «nº», «nro.», «número» y «#». Sin la palabra «estudio» solo valen las que no se
+# confunden con texto común («n.º 42», «n° 42», «número 42», «#42»): «N° PI 42» no es un estudio
+# y solo se enlazan estudios que una herramienta devolvió en esa pregunta.
+NUMERADORES = r"(?:n\.?\s*[o°]\.?|nro\.?|numero|#)"
+NUMERADORES_SUELTOS = r"(?:n\.\s*[o°]\.?|n°|nro\.?|numero|#)"
+
+
+def patron_estudio(numero):
+    return rf"(?<!\w)(?:estudio\s*(?:{NUMERADORES}\s*)?|{NUMERADORES_SUELTOS}\s*){numero}(?!\w)"
 
 
 def referencia_cliente(usuario, cliente):
@@ -222,7 +240,8 @@ def no_encontrado(mensaje):
             "description": (
                 "Busca una muestra por su N° PI (exacto) o por texto (nombre de la muestra, del "
                 "origen o del cliente). Con el N° PI devuelve la muestra y sus estudios más "
-                "recientes; para ver las pruebas de un estudio usá detalle_estudio."
+                "recientes, cada uno con sus pruebas (código, estado, resultado y evaluación); "
+                "para unidades, límites y normas usá detalle_estudio."
             ),
             "parameters": {
                 "type": "object",
@@ -262,6 +281,7 @@ def buscar_muestra(usuario, numero_pi=None, texto=None):
                     "pruebas_completadas": e.pruebas_completadas,
                     "total_pruebas": e.total_pruebas,
                     "con_informe": tiene_informe(e),
+                    **dict(zip(("pruebas", "resumen"), pruebas_resumidas(e, muestra), strict=True)),
                 }
                 for e in recientes
             ],
@@ -320,17 +340,42 @@ def buscar_muestra(usuario, numero_pi=None, texto=None):
     return Salida(
         {"encontrado": True, "total": total, "mostrados": len(muestras), "datos": datos},
         [referencia_muestra(m) for m in muestras],
+        opciones=[
+            replace(referencia_muestra(m), pregunta=f"¿Cómo está el PI {m.numero_pi}?")
+            for m in muestras
+        ],
     )
 
 
+CAMPOS_RESUMIDOS = ("codigo", "nombre", "estado", "resultado", "unidad", "evaluacion")
+
+
+def pruebas_resumidas(estudio, muestra):
+    """Las pruebas del estudio con 6 campos (cuidan la cuota de tokens) y el resumen que cuenta
+    AquaLab (el modelo no cuenta): los mismos valores que `detalle_estudio`, que agrega límite y
+    norma."""
+    from estudios.views import pruebas_del_detalle
+
+    estudio.muestra = muestra
+    completas = [datos_prueba(a, muestra.tipo_vertido) for a in pruebas_del_detalle(estudio)]
+    pruebas = [{campo: prueba[campo] for campo in CAMPOS_RESUMIDOS} for prueba in completas]
+    resumen = {
+        "cumple": sum(1 for p in completas if p["evaluacion"] == CUMPLE),
+        "fuera_de_norma": sum(1 for p in completas if p["evaluacion"] == FUERA_DE_NORMA),
+        "sin_limite_comparable": sum(1 for p in completas if p["evaluacion"] == SIN_LIMITE),
+        "sin_resultado": sum(1 for p in completas if not p["resultado"]),
+    }
+    return pruebas, resumen
+
+
 def datos_muestra(muestra):
-    """Lista blanca de una muestra (data-model.md): sin responsable ni quién la registró."""
+    """Lista blanca de una muestra (data-model.md): sin responsable ni quién la registró, y sin el
+    estado de la muestra (SCRUM-82 lo sacó de la ficha)."""
     return {
         "numero_pi": muestra.numero_pi,
         "nombre": muestra.nombre,
         "cliente": muestra.cliente.nombre_completo,
         "origen": muestra.origen.nombre,
-        "estado": muestra.get_estado_display(),
         "fecha_muestreo": fecha(muestra.fecha_muestreo),
         "fecha_ingreso": fecha(muestra.fecha_ingreso),
         "tipo_vertido": muestra.get_tipo_vertido_display(),
@@ -440,11 +485,15 @@ def detalle_estudio(usuario, numero=None, numero_pi=None, texto=None, solo_fuera
         return no_encontrado(sin_coincidencias)
     if total == 1:
         return salida_detalle(usuario, elegidos.get(), solo_fuera_de_norma)
-    return coincidencias(list(elegidos[:MAX_LISTA]), total)
+    return coincidencias(list(elegidos[:MAX_LISTA]), total, solo_fuera_de_norma)
 
 
-def coincidencias(mostrados, total):
-    """Varios estudios: se listan para elegir, más recientes primero (FR-007)."""
+def coincidencias(mostrados, total, solo_fuera_de_norma=False):
+    """Varios estudios: se listan para elegir, más recientes primero (FR-007). Cada uno es una
+    opción con la pregunta de seguimiento que corresponde a lo que se preguntó."""
+    plantilla = (
+        "¿Qué no cumple en el estudio {}?" if solo_fuera_de_norma else "¿Cómo está el estudio {}?"
+    )
     return Salida(
         {
             "encontrado": True,
@@ -466,6 +515,9 @@ def coincidencias(mostrados, total):
             },
         },
         [referencia_estudio(e) for e in mostrados],
+        opciones=[
+            replace(referencia_estudio(e), pregunta=plantilla.format(e.pk)) for e in mostrados
+        ],
     )
 
 
@@ -527,6 +579,15 @@ def datos_cliente_con_id(cliente):
     return {"id": cliente.pk, **datos_cliente(cliente)}
 
 
+def opciones_de_clientes(usuario, clientes):
+    """Cada cliente que se puede abrir es una opción «¿Qué estudios tiene…?» (T053)."""
+    return [
+        replace(r, pregunta=f"¿Qué estudios tiene {c.nombre_completo}?")
+        for c in clientes
+        for r in referencia_cliente(usuario, c)
+    ]
+
+
 @registrar(
     {
         "type": "function",
@@ -563,6 +624,7 @@ def buscar_cliente(usuario, texto):
     return Salida(
         {"encontrado": True, "datos": {"clientes": [datos_cliente_con_id(c) for c in clientes]}},
         [r for c in clientes for r in referencias_del_cliente(usuario, c)],
+        opciones=opciones_de_clientes(usuario, clientes),
     )
 
 
@@ -620,6 +682,7 @@ def estudios_de_cliente(usuario, cliente=None, cliente_id=None):
                     "datos": {"coincidencias": [datos_cliente_con_id(c) for c in mostrados]},
                 },
                 [r for c in mostrados for r in referencias_del_cliente(usuario, c)],
+                opciones=opciones_de_clientes(usuario, mostrados),
             )
         elegido = encontrados[0]
     else:

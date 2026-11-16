@@ -51,3 +51,11 @@ def test_sin_clave_deshabilitado(cliente_http, settings):
 def test_pantallas_funcionan_con_o_sin_clave(cliente_http, settings, clave, ruta):
     settings.ASISTENTE = {"clave": clave}
     assert cliente_http.get(reverse(ruta)).status_code == 200
+
+
+def test_cerrar_sesion_borra_la_conversacion(cliente_http, config_asistente):
+    """El formulario de cerrar sesión lleva el gancho con el que aqualab.js borra la conversación
+    guardada en sessionStorage (FR-019)."""
+    html = cliente_http.get(reverse("inicio")).content.decode()
+    formulario = re.search(rf'<form[^>]*action="{reverse("usuarios:logout")}"[^>]*>', html).group(0)
+    assert "data-cerrar-sesion" in formulario

@@ -35,7 +35,6 @@ def test_buscar_muestra_por_pi(empleado, estudio_completo, muestra):
         "nombre": "Muestra test",
         "cliente": "Cliente de test",
         "origen": "Origen de test",
-        "estado": "Ingresada",
         "fecha_muestreo": HOY,
         "fecha_ingreso": HOY,
         "tipo_vertido": "Agua",
@@ -49,6 +48,8 @@ def test_buscar_muestra_por_pi(empleado, estudio_completo, muestra):
                 "pruebas_completadas": 0,
                 "total_pruebas": 1,
                 "con_informe": False,
+                "resumen": RESUMEN_VACIO | {"sin_resultado": 1},
+                "pruebas": [prueba("PH", "pH", "Pendiente", "", "", "")],
             },
             {
                 "numero": estudio_completo.pk,
@@ -57,9 +58,70 @@ def test_buscar_muestra_por_pi(empleado, estudio_completo, muestra):
                 "pruebas_completadas": 2,
                 "total_pruebas": 6,
                 "con_informe": False,
+                "resumen": {
+                    "cumple": 3,
+                    "fuera_de_norma": 1,
+                    "sin_limite_comparable": 1,
+                    "sin_resultado": 1,
+                },
+                "pruebas": [
+                    prueba("CL-", "Cloruro", "Completada", "400", "mg/l", "Fuera de norma"),
+                    prueba(
+                        "COND",
+                        "Conductividad",
+                        "Por validar",
+                        "500",
+                        "microsiemens/cm2",
+                        "Sin límite comparable",
+                    ),
+                    prueba("ECOLI", "E. Coli", "Por validar", "Ausente", "", "Cumple"),
+                    prueba("PH", "pH", "Completada", "7,2", "UpH", "Cumple"),
+                    prueba("TEMPERATURA", "Temperatura", "Pendiente", "", "", ""),
+                    prueba("TURBIDEZ", "Turbidez", "Por validar", "< 0,1", "NTU", "Cumple"),
+                ],
             },
         ],
     }
+
+
+RESUMEN_VACIO = {"cumple": 0, "fuera_de_norma": 0, "sin_limite_comparable": 0, "sin_resultado": 0}
+
+
+def prueba(codigo, nombre, estado, resultado, unidad, evaluacion):
+    return {
+        "codigo": codigo,
+        "nombre": nombre,
+        "estado": estado,
+        "resultado": resultado,
+        "unidad": unidad,
+        "evaluacion": evaluacion,
+    }
+
+
+def test_buscar_muestra_sin_estado_de_la_muestra(empleado, estudio_completo):
+    """SCRUM-82 sacó el estado de la ficha de la muestra: el asistente tampoco lo manda."""
+    datos = ejecutar(empleado, "buscar_muestra", numero_pi=200001).salida["datos"]
+    assert "estado" not in datos
+    assert all("estado" in e for e in datos["estudios"])
+
+
+def test_buscar_muestra_pruebas_iguales_al_detalle(empleado, estudio_completo):
+    """Las pruebas de buscar_muestra son las del detalle, con 6 campos (T053, prueba visual)."""
+    estudio = ejecutar(empleado, "buscar_muestra", numero_pi=200001).salida["datos"]["estudios"][0]
+    detalle = ejecutar(empleado, "detalle_estudio", numero=estudio_completo.pk).salida["datos"]
+    campos = ("codigo", "nombre", "estado", "resultado", "unidad", "evaluacion")
+    assert estudio["pruebas"] == [{c: p[c] for c in campos} for p in detalle["pruebas"]]
+    for prueba in estudio["pruebas"]:
+        assert set(prueba) == set(campos)
+
+
+def test_buscar_muestra_por_texto_sin_pruebas(empleado, estudio_completo):
+    """El resumen por texto sigue sin estudios ni pruebas (cantidad fija de consultas)."""
+    [muestra] = ejecutar(empleado, "buscar_muestra", texto="Muestra test").salida["datos"][
+        "muestras"
+    ]
+    assert "estudios" not in muestra
+    assert "pruebas" not in muestra
 
 
 def _otro_estudio(muestra, empleado):
@@ -559,3 +621,54 @@ def test_herramientas_rechazan_usuario_inactivo(empleado, estudio_completo, clie
         ("estudios_de_cliente", {"cliente_id": cliente_a.pk}),
     ):
         assert ejecutar(empleado, nombre, **argumentos).salida["encontrado"] is False, nombre
+
+
+# --- Opciones para elegir (prueba visual, T053) ---
+
+
+def opciones(ejecucion):
+    return [(r.tipo, r.pk, r.pregunta) for r in ejecucion.opciones]
+
+
+def test_opciones_de_coincidencias_de_estudios(empleado, escuela):
+    nuevo, viejo = escuela["nuevo"].pk, escuela["viejo"].pk
+    ejecucion = ejecutar(empleado, "detalle_estudio", texto="escuela", solo_fuera_de_norma=True)
+    assert opciones(ejecucion) == [
+        ("estudio", nuevo, f"¿Qué no cumple en el estudio {nuevo}?"),
+        ("estudio", viejo, f"¿Qué no cumple en el estudio {viejo}?"),
+    ]
+    ejecucion = ejecutar(empleado, "detalle_estudio", texto="escuela")
+    assert opciones(ejecucion)[0] == ("estudio", nuevo, f"¿Cómo está el estudio {nuevo}?")
+
+
+def test_opciones_de_muestras_por_texto(empleado, escuela):
+    ejecucion = ejecutar(empleado, "buscar_muestra", texto="escuela")
+    assert [p for _, _, p in opciones(ejecucion)] == [
+        "¿Cómo está el PI 200102?",
+        "¿Cómo está el PI 200101?",
+    ]
+
+
+def test_opciones_de_clientes(empleado, lacteos):
+    from clientes.models import Cliente
+
+    Cliente.objects.create(
+        razon_social="Lácteos del Sur Norte",
+        tipo_documento="CUIT",
+        numero_documento="30722222223",
+        email="otro@lacteos.test",
+    )
+    for nombre, argumentos in (
+        ("estudios_de_cliente", {"cliente": "lacteos del sur"}),
+        ("buscar_cliente", {"texto": "lacteos del sur"}),
+    ):
+        preguntas = [p for _, _, p in opciones(ejecutar(empleado, nombre, **argumentos))]
+        assert preguntas == [
+            "¿Qué estudios tiene Lácteos del Sur Norte?",
+            "¿Qué estudios tiene Lácteos del Sur S.A.?",
+        ], nombre
+
+
+def test_sin_coincidencias_no_hay_opciones(empleado, estudio_completo):
+    assert ejecutar(empleado, "detalle_estudio", numero=estudio_completo.pk).opciones == []
+    assert ejecutar(empleado, "buscar_muestra", numero_pi=200001).opciones == []

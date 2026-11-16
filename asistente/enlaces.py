@@ -25,6 +25,12 @@ class Referencia:
     # Textos que, si aparecen en la respuesta, la mencionan («PI 200417», «200417»). Por
     # defecto, la etiqueta.
     claves: tuple = ()
+    # Expresión regular sobre el texto normalizado (sin acentos, minúsculas) para menciones con
+    # formas variables, como «estudio n.º 42» o «#42».
+    patron: str = ""
+    # Opción para elegir entre coincidencias (T053): el panel la muestra como un botón que manda
+    # esta pregunta de seguimiento, con un ↗ para abrir la pantalla. La pone AquaLab, no el modelo.
+    pregunta: str = ""
 
     def __post_init__(self):
         if self.tipo not in VISTAS:
@@ -38,7 +44,10 @@ class Referencia:
         return reverse(VISTAS[self.tipo], args=[self.pk])
 
     def enlace(self):
-        return {"etiqueta": self.etiqueta, "url": self.url()}
+        enlace = {"etiqueta": self.etiqueta, "url": self.url()}
+        if self.pregunta:
+            enlace["pregunta"] = self.pregunta
+        return enlace
 
 
 def normalizar(texto):
@@ -58,6 +67,8 @@ def posicion(texto, referencia):
         encontrada = re.search(rf"(?<!\w){re.escape(clave)}(?!\w)", normal)
         if encontrada:
             posiciones.append(encontrada.start())
+    if referencia.patron and (encontrada := re.search(referencia.patron, normal)):
+        posiciones.append(encontrada.start())
     return min(posiciones) if posiciones else None
 
 
@@ -70,9 +81,10 @@ def sin_duplicados(referencias):
     return unicas
 
 
-def elegir_enlaces(texto, referencias, ultimas, primeras=()):
+def elegir_enlaces(texto, referencias, ultimas, primeras=(), opciones=()):
     """Las referencias mencionadas en `texto`, en orden de aparición; si ninguna, las de la última
-    herramienta. `primeras` van adelante siempre. Sin duplicados y como mucho 10."""
+    herramienta. Adelante, siempre, `primeras` y después las `opciones` para elegir de la última
+    herramienta. Sin duplicados (gana la primera aparición) y como mucho 10."""
     mencionadas = [
         (pos, i, r)
         for i, r in enumerate(sin_duplicados(referencias))
@@ -81,4 +93,4 @@ def elegir_enlaces(texto, referencias, ultimas, primeras=()):
     elegidas = [r for _, _, r in sorted(mencionadas, key=lambda t: (t[0], t[1]))]
     if not elegidas:
         elegidas = list(ultimas)
-    return [r.enlace() for r in sin_duplicados([*primeras, *elegidas])[:MAX_ENLACES]]
+    return [r.enlace() for r in sin_duplicados([*primeras, *opciones, *elegidas])[:MAX_ENLACES]]

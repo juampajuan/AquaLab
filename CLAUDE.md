@@ -451,8 +451,11 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 
 ## Asistente de consultas (US 10.1)
 
-- App `asistente` sin modelos ni migraciones: no guarda conversaciones (la historia la manda el
-  navegador, últimos 6 mensajes de ≤ 4000 caracteres). Configuración en `settings.ASISTENTE`
+- App `asistente` sin modelos ni migraciones: no guarda conversaciones en la base. El panel las
+  guarda en `sessionStorage` (`aqualab.asistente`) mientras está abierto, para reabrirse al navegar;
+  se borran al cerrar el panel, en pantallas sin panel (login) y con `[data-cerrar-sesion]`
+  (formulario de cerrar sesión de `base.html`). El navegador manda los últimos 6 mensajes de
+  ≤ 4000 caracteres. Configuración en `settings.ASISTENTE`
   (`ASISTENTE_API_KEY`, `ASISTENTE_URL`, `ASISTENTE_MODELO`; Groq y `openai/gpt-oss-120b` por
   defecto); sin clave, el botón aparece deshabilitado y la vista responde 503 `no_configurado`.
 - `asistente/cliente_ia.py:enviar` es el único punto de red (urllib, sin dependencias). Traduce
@@ -473,8 +476,17 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   llegan varias, solo la primera), 6 vueltas + la llamada final, 8 ejecuciones, 20 s en total
   (timeout = min(15, lo que queda)). Tope de vueltas/ejecuciones → 200 «No pude completar…»;
   tiempo agotado → 503. Sin ninguna herramienta válida en la pregunta → `MENSAJE_SOLO_CONSULTA`.
+  Si la pregunta empieza con un verbo de cambio en imperativo (`VERBOS_DE_CAMBIO`: «validá»,
+  «borrá», «emití»…), el mismo mensaje sin llamar al servicio. AquaLab saca `**`, `__` y títulos
+  `#` del texto (`sin_markdown`).
 - Enlaces: los arma AquaLab con `enlaces.Referencia` + `reverse`, nunca del modelo; el panel
-  muestra todo con `textContent`. Avisos fijos de AquaLab (FR-009/009a): más de 5 estudios por
+  muestra todo con `textContent` y las líneas «- » como lista. Las menciones de estudio se
+  reconocen también como «n.º 42», «número 42» o «#42» (`herramientas.patron_estudio`). Las
+  coincidencias para elegir son `Referencia` con `pregunta` (`Salida.opciones`, solo las de la
+  última herramienta): el panel las muestra como botones `[data-asistente-elegir]` con un ↗.
+- `buscar_muestra` por N° PI trae por estudio `resumen` (contado por AquaLab) y `pruebas` con 6
+  campos (`CAMPOS_RESUMIDOS`), sin el estado de la muestra (SCRUM-82); el detalle completo, con
+  límite y norma, es `detalle_estudio`. Avisos fijos de AquaLab (FR-009/009a): más de 5 estudios por
   muestra o más de 10 por cliente, con el enlace a la ficha o al historial primero.
 - Panel: `templates/ui/asistente.html` (incluido en `base.html` con sesión) + `static/js/aqualab.js`
   (avisos por JSON, no con `messages`: excepción justificada en el plan). Tests JS en

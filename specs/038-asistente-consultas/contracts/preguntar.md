@@ -19,7 +19,7 @@ CSRF (cabecera `X-CSRFToken` desde la cookie `csrftoken`). Respuesta siempre JSO
 
 | HTTP | Cuerpo | Cuándo |
 |---|---|---|
-| 200 | `{"texto": "...", "enlaces": [{"etiqueta": "PI 200417", "url": "/muestras/12/"}]}` | Respuesta normal, apoyada en al menos una herramienta de esa pregunta (incluye «no encontré» y varias coincidencias). |
+| 200 | `{"texto": "...", "enlaces": [{"etiqueta": "PI 200417", "url": "/muestras/12/"}, {"etiqueta": "Estudio 43", "url": "/estudios/43/", "pregunta": "¿Qué no cumple en el estudio 43?"}]}` (`pregunta` solo en las opciones para elegir) | Respuesta normal, apoyada en al menos una herramienta de esa pregunta (incluye «no encontré» y varias coincidencias). |
 | 200 | `{"texto": "Solo puedo consultar muestras, estudios y clientes de AquaLab; no creo, modifico, valido, emito ni borro datos. Probá, por ejemplo: «¿Cómo está el PI 200417?», «¿Qué estudios tiene Lácteos del Sur?» o «¿Qué no cumple en el estudio de la escuela N° 12?».", "enlaces": []}` | La respuesta final no usó ninguna herramienta: fuera de alcance, pedido de cambio o respuesta «de memoria». AquaLab descarta el texto del modelo (research R3). |
 | 400 | `{"error": "pregunta_invalida", "mensaje": "Escribí una pregunta de hasta 500 caracteres."}` | Vacía, > 500, JSON mal formado o historial inválido. No llama al servicio. |
 | 429 | `{"error": "cuota", "mensaje": "Se alcanzó el límite de consultas del asistente. Probá más tarde; el resto de AquaLab funciona normalmente."}` | El servicio devolvió 429. |
@@ -49,6 +49,14 @@ GET devuelve 405. La vista no escribe en la base ni en la sesión.
   aviso «Tu sesión venció; volvé a iniciar sesión» y no agrega nada a la conversación.
 - Historial que se manda: los últimos 6 mensajes, cada texto recortado a sus primeros 4000
   caracteres (así una respuesta larga nunca hace fallar la pregunta siguiente con 400).
-- Mensajes con `textContent` y `white-space: pre-line`; enlaces como `<a>` con `href` del servidor
-  y `textContent` de la etiqueta. Avisos (`error`) con el estilo de alerta, sin cerrar el panel.
-- La conversación es un arreglo en memoria del script: recargar o cerrar el panel la borra.
+- Mensajes con `textContent` y `white-space: pre-line`; los bloques de líneas que empiezan con
+  «- » se muestran como lista (`<ul>`, cada `<li>` con `textContent`). Enlaces como `<a>` con
+  `href` del servidor y `textContent` de la etiqueta. Un enlace con `pregunta` es una opción para
+  elegir: botón `[data-asistente-elegir]` con la etiqueta, que manda esa pregunta en el panel, y
+  al lado un `<a>` «↗» (`aria-label="Abrir <etiqueta>"`) a su pantalla. Avisos (`error`) con el
+  estilo de alerta, sin cerrar el panel.
+- La conversación (mensajes mostrados, sin «Consultando…», e historial) se guarda en
+  `sessionStorage` (`aqualab.asistente`) mientras el panel está abierto: en la pantalla nueva el
+  panel se reabre con ella. Se borra al cerrar el panel (✕, Escape o el botón), en una pantalla sin
+  panel (login) y al enviar el formulario de cerrar sesión (`[data-cerrar-sesion]`). Si el
+  navegador bloquea el almacenamiento, el panel funciona igual solo en la página abierta.

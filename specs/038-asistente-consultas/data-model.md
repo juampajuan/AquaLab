@@ -1,7 +1,7 @@
 # Data Model: Asistente de consultas (US 10.1)
 
 **No hay modelos ni migraciones nuevas.** Todo vive en memoria durante un pedido; la conversación,
-en la página abierta del navegador (FR-019).
+en el `sessionStorage` de la pestaña mientras el panel está abierto (FR-019): nada va a la base.
 
 ## Estructuras en memoria
 
@@ -27,8 +27,9 @@ en la página abierta del navegador (FR-019).
 
 ### Referencia (`asistente/enlaces.py`)
 
-`Referencia(tipo, pk, etiqueta)` con `tipo` ∈ {`muestra`, `estudio`, `cliente`, `historial`,
-`informe`}. `url()` con `reverse`: `muestras:detalle`, `estudios:detalle`, `clientes:detalle`,
+`Referencia(tipo, pk, etiqueta, claves, patron, pregunta)` con `tipo` ∈ {`muestra`, `estudio`,
+`cliente`, `historial`, `informe`}. `pregunta` (opcional) la marca como opción para elegir: el
+enlace sale con `{"pregunta": …}` y el panel lo muestra como botón (research R12). `url()` con `reverse`: `muestras:detalle`, `estudios:detalle`, `clientes:detalle`,
 `clientes:historial`, `informes:ver` (este último con el pk del estudio). Las de clientes inactivos
 no se generan (sus pantallas los rechazan).
 
@@ -45,7 +46,7 @@ no se generan (sus pantallas los rechazan).
 |---|---|---|
 | Cliente | `pk`, nombre para mostrar, `activo` | `email`, `telefono`, `domicilio`, `numero_documento`, `tipo_documento` |
 | Origen | nombre | — |
-| Muestra | `pk`, `numero_pi`, nombre, estado (etiqueta), fechas de muestreo e ingreso, tipo de vertido (etiqueta), sitio de extracción | `responsable_muestreo`, `registrada_por`, `clave_borrador` |
+| Muestra | `pk`, `numero_pi`, nombre, fechas de muestreo e ingreso, tipo de vertido (etiqueta), sitio de extracción | estado (SCRUM-82 lo sacó de la ficha), `responsable_muestreo`, `registrada_por`, `clave_borrador` |
 | Estudio | `pk`, `tipo_nombre_snapshot`, estado (etiqueta), fecha de creación, si tiene informe (y su número) | `creado_por` |
 | Prueba del estudio | código, nombre, estado (etiqueta), resultado como texto de pantalla + unidad (`|unidad`), motivo sin resultado, aviso fuera de rango de curva, evaluación (etiqueta), límite como texto, norma, origen de los límites, validada sí/no y fecha | quién cargó, corrigió o validó; observaciones de validación |
 

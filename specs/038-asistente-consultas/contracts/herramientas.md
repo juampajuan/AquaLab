@@ -12,6 +12,12 @@ lectura, se ejecutan con el usuario que pregunta (research R5) dentro de una tra
 - `total` / `mostrados` cuando se recorta una lista.
 
 Las referencias para los enlaces se guardan del lado de AquaLab y no se envían al modelo.
+Las **opciones** (research R12) son referencias con una `pregunta` de seguimiento: las devuelven
+las herramientas cuando listan coincidencias para elegir (`detalle_estudio` con varios estudios:
+«¿Qué no cumple en el estudio N?» con `solo_fuera_de_norma`, si no «¿Cómo está el estudio N?»;
+`buscar_muestra` por texto: «¿Cómo está el PI N?»; `buscar_cliente` y `estudios_de_cliente` con
+varios: «¿Qué estudios tiene X?», solo clientes activos). Solo cuentan las de la última
+herramienta y van primero en los enlaces.
 Argumentos inválidos (tipo incorrecto, faltantes) → `{"encontrado": false, "mensaje": "Pedido
 inválido."}`; una herramienta desconocida → igual. Una excepción inesperada se registra y se
 devuelve `{"encontrado": false, "mensaje": "No se pudo consultar."}`.
@@ -23,11 +29,14 @@ devuelve `{"encontrado": false, "mensaje": "No se pudo consultar."}`.
   muestra.».
 - **Con `numero_pi`**: la muestra exacta o «No hay ninguna muestra con el N° PI N.» (también
   para números ≤ 0 o fuera de rango).
-  - **Datos**: `numero_pi`, nombre, cliente (nombre), origen, estado, fechas de muestreo e
-    ingreso, tipo de vertido, sitio de extracción, `total_estudios` y `estudios`: `[{numero,
-    tipo, estado, pruebas_completadas, total_pruebas, con_informe}]` de
-    `muestras.views.estudios_de_la_ficha` (orden `-pk`, como la ficha), solo los 5 más recientes
-    (`ESTUDIOS_POR_MUESTRA`). Con `total_estudios > 5`, `mensaje`: «La muestra tiene T estudios;
+  - **Datos**: `numero_pi`, nombre, cliente (nombre), origen, fechas de muestreo e ingreso, tipo
+    de vertido, sitio de extracción (sin el estado de la muestra, SCRUM-82), `total_estudios` y
+    `estudios`: `[{numero, tipo, estado, pruebas_completadas, total_pruebas, con_informe,
+    resumen, pruebas}]` de `muestras.views.estudios_de_la_ficha` (orden `-pk`, como la ficha),
+    solo los 5 más recientes (`ESTUDIOS_POR_MUESTRA`). `pruebas`: `[{codigo, nombre, estado,
+    resultado, unidad, evaluacion}]` (los valores de `detalle_estudio`, sin límite ni norma);
+    `resumen`: `{cumple, fuera_de_norma, sin_limite_comparable, sin_resultado}`, contado por
+    AquaLab. Con `total_estudios > 5`, `mensaje`: «La muestra tiene T estudios;
     se detallan los 5 más recientes.» y AquaLab agrega el aviso y el enlace a la ficha a la
     respuesta final (FR-009a).
   - **Referencias**: muestra, cada estudio listado, el cliente (si activo).
@@ -38,7 +47,7 @@ devuelve `{"encontrado": false, "mensaje": "No se pudo consultar."}`.
   - **Datos**: `muestras: [{numero_pi, nombre, cliente, origen, fecha_ingreso,
     total_estudios}]`, sin los estudios de cada una (cantidad fija de consultas); para verlos, el
     modelo vuelve a llamar con el `numero_pi` elegido.
-  - **Referencias**: cada muestra listada.
+  - **Referencias**: cada muestra listada. **Opciones**: cada muestra, con «¿Cómo está el PI N?».
 
 ## `buscar_cliente`
 

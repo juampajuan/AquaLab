@@ -123,7 +123,10 @@
 
 ## R9. Conversación y topes
 
-- **Decision**: el navegador guarda la conversación en memoria (no `localStorage`) y en cada
+- **Decision**: el navegador guarda la conversación en `sessionStorage` de la pestaña (nunca
+  `localStorage` ni la base) mientras el panel está abierto, así se reabre al navegar con un
+  enlace; cerrar el panel, una pantalla sin panel (login) o el formulario de cerrar sesión
+  (`data-cerrar-sesion`) la borran (FR-019, ajuste de la prueba visual de T053). En cada
   pregunta manda los últimos 6 mensajes de texto (`usuario`/`asistente`, cada uno ≤ 4000
   caracteres) más la pregunta nueva (≤ 500). El servidor rearma: sistema + historial + pregunta;
   no se reenvían resultados de herramientas viejos (las preguntas de seguimiento vuelven a
@@ -178,3 +181,28 @@
 - **Alternatives considered**: ejecutar en orden todas las que lleguen (depende del paralelo que
   el modelo no garantiza y gasta las 8 ejecuciones más rápido); rechazar la vuelta entera (el
   modelo entraría en un bucle sin avanzar).
+
+## R12. Ajustes de la validación con Groq y la prueba visual (T053)
+
+- **Decision**:
+  - `buscar_muestra` por N° PI trae por estudio sus pruebas con 6 campos (código, nombre,
+    estado, resultado, unidad, evaluación) y un `resumen` que cuenta AquaLab (cumplen, fuera de
+    norma, sin límite comparable, sin resultado); sin el estado de la muestra (SCRUM-82). El
+    mensaje de sistema pide resumir por estudio y listar solo las que no cumplen.
+  - Las coincidencias (`detalle_estudio`, `buscar_muestra` por texto, `buscar_cliente`,
+    `estudios_de_cliente`) llevan opciones: `Referencia.pregunta` con la pregunta de seguimiento
+    («¿Qué no cumple en el estudio 43?» si se pidió `solo_fuera_de_norma`, si no «¿Cómo está el
+    estudio 43?»; «¿Cómo está el PI N?»; «¿Qué estudios tiene X?»). Solo valen las de la última
+    herramienta y van primero en los enlaces; el panel las muestra como botones con un ↗.
+  - AquaLab reconoce más formas de mencionar un estudio («n.º», «nro.», «número», «#»), saca
+    `**`, `__` y los títulos `#` del texto, y responde el mensaje fijo sin llamar al servicio si la
+    pregunta empieza con un verbo de cambio en imperativo.
+  - El panel muestra como lista las líneas que empiezan con «- » (cada ítem con `textContent`).
+- **Rationale**: en la validación con Groq el modelo resumía «7 pruebas completadas» sin
+  detalle, no enlazaba «n.º 42», usaba Markdown y ante «Validá…» mostraba datos. En la prueba
+  visual, las respuestas largas se leían mal y los enlaces de las coincidencias sacaban de la
+  conversación. Lo que se puede garantizar lo garantiza AquaLab; el resto (cómo redacta) queda en
+  el mensaje de sistema.
+- **Alternatives considered**: mandar todas las pruebas completas en `buscar_muestra` (más
+  tokens: el plan gratuito cortó con 429); que el modelo marque las opciones (no es confiable).
+

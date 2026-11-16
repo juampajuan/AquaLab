@@ -86,15 +86,27 @@ function respuestaJson(status, datos, { redirected = false, tipo = "application/
   };
 }
 
-function entorno({ deshabilitado = false, respuestas = [] } = {}) {
+function almacenNuevo() {
+  const datos = new Map();
+  return {
+    datos,
+    getItem: (clave) => (datos.has(clave) ? datos.get(clave) : null),
+    setItem: (clave, valor) => datos.set(clave, String(valor)),
+    removeItem: (clave) => datos.delete(clave),
+  };
+}
+
+function entorno({ deshabilitado = false, respuestas = [], almacen = almacenNuevo(), conPanel = true } = {}) {
   const eventos = {};
   const cuerpo = new Elemento("body");
+  const salir = new Elemento("form", { "data-cerrar-sesion": "" });
+  cuerpo.append(salir);
   const boton = new Elemento("button", { "data-asistente-abrir": "", "aria-expanded": "false" });
   if (deshabilitado) boton.setAttribute("aria-disabled", "true");
   cuerpo.append(boton);
   const panel = new Elemento("section", { "data-asistente": "", "data-url": "/asistente/preguntar/" });
   panel.hidden = true;
-  cuerpo.append(panel);
+  if (conPanel) cuerpo.append(panel);
   const cerrar = new Elemento("button", { "data-asistente-cerrar": "" });
   panel.append(cerrar);
   const mensajes = new Elemento("ol", { "data-asistente-mensajes": "" });
@@ -135,7 +147,7 @@ function entorno({ deshabilitado = false, respuestas = [] } = {}) {
       throw new Error("No debe usar localStorage");
     },
   };
-  vm.runInNewContext(fuente, { document, fetch, localStorage, JSON, Promise });
+  vm.runInNewContext(fuente, { document, fetch, localStorage, sessionStorage: almacen, JSON, Promise });
   const despachar = (tipo, datos) => {
     const evento = { preventDefault() { this.prevenido = true; }, ...datos };
     for (const fn of eventos[tipo] || []) fn(evento);
@@ -149,7 +161,10 @@ function entorno({ deshabilitado = false, respuestas = [] } = {}) {
     await esperar();
   };
   const textos = () => mensajes.querySelectorAll("[data-asistente-mensaje]").map((m) => m.hijos[0].textContent);
-  return { boton, panel, campo, contador, enviar, ejemplo, cerrar, mensajes, pedidos, despachar, preguntar, textos, esperar };
+  return {
+    boton, panel, campo, contador, enviar, ejemplo, cerrar, mensajes, pedidos, despachar, preguntar,
+    textos, esperar, almacen, salir,
+  };
 }
 
 test("el botón abre el panel y Escape lo cierra devolviendo el foco", () => {
@@ -321,4 +336,144 @@ test("cerrar el panel borra la conversación y no usa localStorage", async () =>
   despachar("click", { target: boton });
   await preguntar("otra");
   assert.deepEqual(pedidos[1].cuerpo.historial, []);
+});
+
+
+// --- Prueba visual (T053): listas, opciones para elegir y conversación al navegar ---
+
+const CLAVE = "aqualab.asistente";
+
+test("las líneas que empiezan con «- » se muestran como lista, cada ítem como texto", async () => {
+  const { preguntar, mensajes } = entorno({
+    respuestas: [
+      respuestaJson(200, { texto: "Estudio 45:\n- PH: 7 Cumple\n- CL-: <b>400</b> Fuera de norma\nNada más.", enlaces: [] }),
+    ],
+  });
+  await preguntar("¿Cómo está el PI 200042?");
+  const respuesta = mensajes.querySelectorAll("[data-asistente-mensaje=asistente]")[0];
+  const [antes, lista, despues] = respuesta.hijos;
+  assert.equal(antes.etiqueta, "p");
+  assert.equal(antes.textContent, "Estudio 45:");
+  assert.equal(lista.etiqueta, "ul");
+  assert.deepEqual(lista.hijos.map((li) => [li.etiqueta, li.textContent]), [
+    ["li", "PH: 7 Cumple"],
+    ["li", "CL-: <b>400</b> Fuera de norma"],
+  ]);
+  assert.equal(despues.textContent, "Nada más.");
+});
+
+test("un texto sin «- » sigue siendo un solo párrafo con sus saltos de línea", async () => {
+  const { preguntar, mensajes } = entorno({ respuestas: [respuestaJson(200, { texto: "Uno\nDos -3", enlaces: [] })] });
+  await preguntar("hola");
+  const respuesta = mensajes.querySelectorAll("[data-asistente-mensaje=asistente]")[0];
+  assert.equal(respuesta.hijos.length, 1);
+  assert.equal(respuesta.hijos[0].textContent, "Uno\nDos -3");
+});
+
+test("las opciones para elegir son botones que preguntan, con un enlace ↗ a su pantalla", async () => {
+  const { preguntar, mensajes, despachar, pedidos, esperar } = entorno({
+    respuestas: [
+      respuestaJson(200, {
+        texto: "Hay dos estudios; ¿cuál?",
+        enlaces: [
+          { etiqueta: "Estudio 43", url: "/estudios/43/", pregunta: "¿Qué no cumple en el estudio 43?" },
+          { etiqueta: "PI 200040", url: "/muestras/40/" },
+        ],
+      }),
+      respuestaJson(200, { texto: "Cloruro fuera de norma.", enlaces: [] }),
+    ],
+  });
+  await preguntar("¿Qué no cumple en el Pozo 2?");
+  const respuesta = mensajes.querySelectorAll("[data-asistente-mensaje=asistente]")[0];
+  const [opcion, enlace] = respuesta.hijos[1].hijos;
+  const [boton, abrir] = opcion.hijos;
+  assert.equal(boton.etiqueta, "button");
+  assert.equal(boton.textContent, "Estudio 43");
+  assert.equal(boton.getAttribute("data-asistente-elegir"), "¿Qué no cumple en el estudio 43?");
+  assert.equal(abrir.etiqueta, "a");
+  assert.equal(abrir.href, "/estudios/43/");
+  assert.equal(abrir.textContent, "↗");
+  assert.equal(abrir.getAttribute("aria-label"), "Abrir Estudio 43");
+  // Un enlace común sigue siendo un enlace.
+  assert.equal(enlace.hijos[0].etiqueta, "a");
+  assert.equal(enlace.hijos[0].textContent, "PI 200040");
+  despachar("click", { target: boton });
+  await esperar();
+  await esperar();
+  assert.equal(pedidos[1].cuerpo.pregunta, "¿Qué no cumple en el estudio 43?");
+  assert.equal(pedidos[1].cuerpo.historial.length, 2);
+});
+
+test("al navegar, la pantalla nueva reabre el panel con la conversación", async () => {
+  const almacen = almacenNuevo();
+  const primera = entorno({
+    almacen,
+    respuestas: [respuestaJson(200, { texto: "Está bien.\n- PH: 7", enlaces: [{ etiqueta: "PI 1", url: "/muestras/1/" }] })],
+  });
+  primera.despachar("click", { target: primera.boton });
+  await primera.preguntar("¿Cómo está el PI 1?");
+  assert.ok(almacen.getItem(CLAVE));
+  const segunda = entorno({ almacen, respuestas: [respuestaJson(200, { texto: "ok", enlaces: [] })] });
+  assert.equal(segunda.panel.hidden, false);
+  assert.equal(segunda.boton.getAttribute("aria-expanded"), "true");
+  assert.deepEqual(segunda.textos(), ["¿Cómo está el PI 1?", "Está bien."]);
+  const respuesta = segunda.mensajes.querySelectorAll("[data-asistente-mensaje=asistente]")[0];
+  assert.equal(respuesta.hijos[1].etiqueta, "ul");
+  await segunda.preguntar("¿y qué no cumple?");
+  assert.deepEqual(segunda.pedidos[0].cuerpo.historial, [
+    { rol: "usuario", texto: "¿Cómo está el PI 1?" },
+    { rol: "asistente", texto: "Está bien.\n- PH: 7" },
+  ]);
+});
+
+test("no guarda «Consultando…» y sí los avisos", async () => {
+  const almacen = almacenNuevo();
+  const primera = entorno({ almacen, respuestas: [respuestaJson(429, { error: "cuota", mensaje: "Límite." })] });
+  primera.despachar("click", { target: primera.boton });
+  await primera.preguntar("hola");
+  const guardado = JSON.parse(almacen.getItem(CLAVE));
+  assert.deepEqual(guardado.mensajes.map((m) => m.rol), ["usuario", "aviso"]);
+  assert.deepEqual(guardado.historial, []);
+});
+
+test("cerrar con la ✕ borra la conversación guardada", async () => {
+  const almacen = almacenNuevo();
+  const primera = entorno({ almacen, respuestas: [respuestaJson(200, { texto: "ok", enlaces: [] })] });
+  primera.despachar("click", { target: primera.boton });
+  await primera.preguntar("hola");
+  primera.despachar("click", { target: primera.cerrar });
+  assert.equal(almacen.getItem(CLAVE), null);
+  const segunda = entorno({ almacen });
+  assert.equal(segunda.panel.hidden, true);
+  assert.deepEqual(segunda.textos(), []);
+});
+
+test("una pantalla sin panel (login) y cerrar sesión borran la conversación guardada", async () => {
+  const almacen = almacenNuevo();
+  const primera = entorno({ almacen, respuestas: [respuestaJson(200, { texto: "ok", enlaces: [] })] });
+  primera.despachar("click", { target: primera.boton });
+  await primera.preguntar("hola");
+  entorno({ almacen, conPanel: false });
+  assert.equal(almacen.getItem(CLAVE), null);
+
+  const otra = entorno({ almacen, respuestas: [respuestaJson(200, { texto: "ok", enlaces: [] })] });
+  otra.despachar("click", { target: otra.boton });
+  await otra.preguntar("hola");
+  otra.despachar("submit", { target: otra.salir });
+  assert.equal(almacen.getItem(CLAVE), null);
+});
+
+test("un sessionStorage que falla no rompe el panel", async () => {
+  const roto = {
+    getItem() { throw new Error("bloqueado"); },
+    setItem() { throw new Error("bloqueado"); },
+    removeItem() { throw new Error("bloqueado"); },
+  };
+  const { boton, preguntar, despachar, textos } = entorno({
+    almacen: roto,
+    respuestas: [respuestaJson(200, { texto: "ok", enlaces: [] })],
+  });
+  despachar("click", { target: boton });
+  await preguntar("hola");
+  assert.deepEqual(textos(), ["hola", "ok"]);
 });

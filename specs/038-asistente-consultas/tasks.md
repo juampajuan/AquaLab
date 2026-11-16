@@ -482,29 +482,54 @@ aviso y las demás pantallas responden igual.
   informe de «Escuela N° 12» es el del mes anterior) y la #15 (la numeración de la demo sigue
   desde la última muestra de la base: se usa «Pozo domiciliario», mes actual, que tiene informe).
 
+  Corrida del 2026-11-16 con Groq real (`openai/gpt-oss-120b`), como `bioquimico@demo.aqualab`
+  (script en `.local-validacion/`, fuera del repo). Groq aceptó `parallel_tool_calls: false`
+  (ningún 400) y pidió siempre una herramienta por vuelta. 5 preguntas recibieron 429 (límite
+  gratuito por tokens) con 8 s de pausa y se repitieron con 40 s. La base quedó igual en las dos
+  corridas. Ningún dato numérico difirió de la base (el Cl⁻ 470 de la #19 es una corrección
+  posterior a la demo). Resultado: 12 OK, 4 parciales y 4 fallas → SC-001 no se cumple todavía;
+  SC-003 sí (las «qué no cumple» respondieron en 1,5–3,0 s).
+
+  Segunda corrida (2026-11-16), después de los ajustes A–F (pruebas resumidas en
+  `buscar_muestra`, más formas de mencionar un estudio, sin Markdown, pedidos de cambio sin
+  llamar al servicio y mensaje de sistema reforzado), con 45 s entre preguntas: ningún 429, la
+  base quedó igual. Resultado: 16 OK, 3 parciales y 1 falla (tabla de abajo). SC-003 se cumple
+  (las «qué no cumple» en 1,6–2,2 s); SC-001 todavía no (#1, #2, #8 y #15).
+
+  Tercera corrida (2026-11-16), después de los ajustes de la prueba visual (resumen por estudio
+  contado por AquaLab, pruebas con nombre y unidad, sin estado de la muestra, opciones para
+  elegir, «número» suelto, #8 con «de agosto»), solo con las afectadas y las que piden elegir
+  (1, 2, 3, 5, 5b, 6, 8, 9, 12, 15 y 16; las demás quedan de la segunda corrida), con 45 s entre
+  preguntas: ningún 429, la base quedó igual, ningún dato difirió de la base. Resultado final:
+  17 OK, 3 parciales y 0 fallas. SC-003 se cumple (1,7–4,0 s). Las 3 parciales (#1, #2, #15)
+  dependen de cómo redacta el modelo, no de los datos: tiene el N° PI, el cliente y el origen pero
+  no siempre los nombra, y a veces pone una prueba «sin límite comparable» bajo «no cumplen»
+  (el resumen que cuenta AquaLab sí la separa). Queda así por decisión del responsable; no se
+  puede garantizar sin que AquaLab arme el texto.
+
   | # | PI usado | OK / falla | Dato que no coincidió | Tiempo (s) |
   |---|---|---|---|---|
-  | 1 | | | | |
-  | 2 | | | | |
-  | 3 | | | | |
-  | 4 | | | | |
-  | 5 | | | | |
-  | 6 | | | | |
-  | 7 | | | | |
-  | 8 | | | | |
-  | 9 | | | | |
-  | 10 | | | | |
-  | 11 | | | | |
-  | 12 | | | | |
-  | 13 | | | | |
-  | 14 | | | | |
-  | 15 | | | | |
-  | 16 | | | | |
-  | 17 | | | | |
-  | 18 | | | | |
-  | 19 | | | | |
-  | 20 | | | | |
-- [ ] T053 Validación manual con la demo y una clave real de Groq según `quickstart.md`: pruebas
+  | 1 | 200039 | Parcial (modelo) | Resumen del estudio 42 correcto (6 cumplen, 1 sin límite) y enlace; no nombra PI, cliente ni origen, y lista COND (sin límite comparable) bajo «no cumplen» | 2,4 |
+  | 2 | 200036 | Parcial (modelo) | Resumen del estudio 39 correcto (4 cumplen) con enlaces; no nombra cliente ni origen | 1,8 |
+  | 3 | 200042 | OK | Dos estudios con estado y resumen correctos (4/0/0 y 6/0/1), cliente y origen; enlaces a ambos (sin fecha de ingreso) | 1,8 |
+  | 4 | 999999 | OK | — | 1,5 |
+  | 5 | — | OK | 6 muestras de Pozo 2 como opciones «¿Cómo está el PI N?» (usó `buscar_muestra`); 5b: el clic en la primera da el estudio 43 con Cl⁻ 470 mg/l fuera de norma (2,4 s). Repite la lista en el texto (cosmético) | 2,1 |
+  | 6 | — | OK | 6 estudios de Escuela N° 12 como opciones «¿Qué no cumple en el estudio N?» | 1,7 |
+  | 7 | 200037 | OK | 0 fuera de norma; 4 sin resultado, 1 sin límite de 7 | 1,7 |
+  | 8 | 200024 | OK | «de agosto»: elige el PI 200024 por la fecha listada; Coliformes totales 12 UFC/100 ml (máx. 3) y E. Coli Presente, igual a la base; enlace al informe | 4,0 |
+  | 9 | — | OK | 15 estudios; 10 como opciones para elegir | 1,9 |
+  | 10 | — | OK | 10 más recientes, orden del historial, aviso de 18 y enlace | 3,7 |
+  | 11 | — | OK | 10 de 15, aviso y enlace (sin 429) | 3,6 |
+  | 12 | — | OK | 10 de 12 en el orden del historial, aviso y enlace; ya sin true/false | 3,3 |
+  | 13 | — | OK | «No hay clientes que coincidan…» | 1,5 |
+  | 14 | — | OK | «No se encontró ningún estudio…» (ahora vía `detalle_estudio`) | 1,4 |
+  | 15 | 200044 | Parcial (modelo) | Resumen del estudio 48 correcto (6/0/1) con enlace; no nombra cliente ni origen, y lista COND (sin límite comparable) bajo «no cumplen» | 2,3 |
+  | 16 | 200039 | OK | Seguimiento: «No hay pruebas fuera de norma en el estudio 42», sin claves crudas | 2,0 |
+  | 17 | 200039 | OK | pH 7,3 UpH, sin `**` | 2,6 |
+  | 18 | — | OK | Mensaje fijo | 0,9 |
+  | 19 | 200040 | OK | Mensaje fijo sin llamar al servicio (D) | 0,0 |
+  | 20 | — | OK | No da el correo (mensaje fijo) | 0,8 |
+- [X] T053 Validación manual con la demo y una clave real de Groq según `quickstart.md`: pruebas
   1–11 y las 20 preguntas (SC-001, SC-002), registrando el resultado y el tiempo de las «qué no
   cumple» (SC-003, objetivo < 15 s) en la tabla de T052; incluye confirmar que Groq acepta
   `parallel_tool_calls: false` con `openai/gpt-oss-120b` (si devuelve 400, quitar el parámetro de

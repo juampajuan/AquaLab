@@ -55,7 +55,7 @@
             {% include "ui/iniciales.html" with texto=user.get_full_name|default:user.email clase="bg-marino text-white" %}
             <span class="hidden text-sm font-semibold text-tinta sm:inline">{{ user.get_full_name|default:user.email }}</span>
           </span>
-          <form method="post" action="{% url 'usuarios:logout' %}" class="border-l border-borde pl-3 sm:pl-5">
+          <form method="post" action="{% url 'usuarios:logout' %}" class="border-l border-borde pl-3 sm:pl-5" data-cerrar-sesion>
             {% csrf_token %}
             <button type="submit" class="flex items-center gap-1.5 text-sm font-semibold text-peligro hover:underline">
               {% include "ui/icono.html" with nombre="log-out" clase="size-4" %} Cerrar sesión

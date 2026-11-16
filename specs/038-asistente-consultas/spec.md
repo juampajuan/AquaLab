@@ -12,6 +12,13 @@
 
 ## Clarifications
 
+### Session 2026-11-16 (validación con Groq y prueba visual)
+
+- Q: ¿Qué muestra «¿Cómo está el PI…?»? → A: Por estudio, su estado y cuántas pruebas cumplen, están fuera de norma o sin límite comparable (los cuenta AquaLab), y solo las que no cumplen; el detalle completo queda en el enlace al estudio. El estado de la muestra no se muestra (SCRUM-82).
+- Q: ¿Qué pasa con los enlaces cuando el asistente pide elegir entre varias coincidencias? → A: Son opciones que mandan la pregunta de seguimiento sin salir del panel, con un ↗ para abrir la pantalla. Las marca AquaLab desde la herramienta.
+- Q: ¿Se pierde la conversación al seguir un enlace? → A: No: se guarda en el almacenamiento de la pestaña mientras el panel está abierto y se reabre en la pantalla nueva. Cerrar el panel, la pestaña o la sesión la borra. Nada va a la base (reemplaza «solo en la página abierta»).
+- Q: ¿Se busca por fecha («el del mes 3»)? → A: No, queda fuera de alcance.
+
 ### Session 2026-11-15
 
 - Q: ¿Quién puede usar el asistente? → A: Cualquier empleado con sesión iniciada (técnicos incluidos), sin permiso propio; las respuestas respetan los permisos de cada uno como las pantallas.
@@ -21,7 +28,7 @@
 
 ### User Story 1 - Preguntar por una muestra (Priority: P1)
 
-Como bioquímico abro el asistente desde cualquier pantalla de AquaLab (no el admin) y pregunto por una muestra por su N° PI («¿Cómo está el PI 200417?»). El asistente responde con el estado de la muestra, sus estudios con su estado y, para cada estudio, las pruebas con su estado, su resultado y la evaluación contra la norma, con enlaces a la ficha de la muestra y de cada estudio.
+Como bioquímico abro el asistente desde cualquier pantalla de AquaLab (no el admin) y pregunto por una muestra por su N° PI («¿Cómo está el PI 200417?»). El asistente responde con sus estudios y, para cada uno, su estado y un resumen de sus pruebas (cuántas cumplen, están fuera de norma o sin límite comparable), detallando las que no cumplen, con enlaces a la ficha de la muestra y de cada estudio, donde está el detalle completo.
 
 **Why this priority**: Es la consulta más frecuente del laboratorio y la que más pantallas ahorra (muestra → estudio → pruebas). Sola ya entrega el valor de la historia.
 
@@ -30,7 +37,7 @@ Como bioquímico abro el asistente desde cualquier pantalla de AquaLab (no el ad
 **Acceptance Scenarios**:
 
 1. **Dado** un empleado con sesión iniciada en cualquier pantalla de AquaLab (no el admin), **cuando** toca «Asistente», **entonces** se abre un panel con un campo para escribir la pregunta y ejemplos de preguntas posibles.
-2. **Dada** una muestra existente, **cuando** se pregunta «¿Cómo está el PI 200417?», **entonces** la respuesta indica el N° PI, el cliente, el origen, la fecha de ingreso y, por cada estudio, su tipo, su estado y sus pruebas con estado (Pendiente / Cargada / Completada), resultado con su unidad y evaluación (cumple / fuera de norma / sin límite comparable) con la norma usada.
+2. **Dada** una muestra existente, **cuando** se pregunta «¿Cómo está el PI 200417?», **entonces** la respuesta indica el N° PI, el cliente, el origen, la fecha de ingreso y, por cada estudio, su tipo, su estado y cuántas pruebas cumplen, están fuera de norma o sin límite comparable (contadas por AquaLab), con las que no cumplen detalladas (nombre, resultado con su unidad); el detalle de todas las pruebas (estado, resultado, evaluación, límite y norma) está en el estudio enlazado y se obtiene preguntando por el estudio. El estado de la muestra no se muestra (SCRUM-82 lo sacó de la ficha).
 3. **Dada** la respuesta, **cuando** se mira, **entonces** la muestra y cada estudio mencionados tienen un enlace a su pantalla (ficha de la muestra, detalle del estudio).
 4. **Dado** un N° PI que no existe, **cuando** se pregunta por él, **entonces** el asistente responde que no hay ninguna muestra con ese N° PI, sin mostrar datos de otra muestra.
 5. **Dada** una prueba sin resultado (Pendiente, o sin curva o fórmula calculable), **cuando** aparece en la respuesta, **entonces** se indica que no tiene resultado (y el motivo que muestra el sistema), nunca un valor estimado.
@@ -103,7 +110,7 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 - Estudio con informe emitido: se muestran los datos del sistema igual que en sus pantallas y el enlace al informe si quien pregunta puede verlo.
 - Resultados Ausente/Presente y por debajo del límite de detección: se muestran con el mismo texto que en las pantallas («Ausente», «Presente», «< LD»), nunca como 0 o 1.
 - Valores con decimales: se muestran como en las pantallas (coma decimal, mismos decimales), sin redondeos distintos.
-- Preguntas encadenadas («¿y qué no cumple?» después de preguntar por un PI): se entienden sobre lo último consultado mientras el panel siga abierto; al cerrarlo o recargar la página, la conversación se pierde.
+- Preguntas encadenadas («¿y qué no cumple?» después de preguntar por un PI): se entienden sobre lo último consultado mientras el panel siga abierto en esa pestaña, también al navegar con un enlace o recargar; al cerrar el panel, la pestaña o la sesión, la conversación se pierde.
 - Datos que cambian mientras se conversa: cada respuesta usa los datos vigentes al momento de esa pregunta.
 
 ## Requirements *(mandatory)*
@@ -121,7 +128,7 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 - **FR-004**: Toda la información de una respuesta (estados, resultados, unidades, evaluaciones, límites, normas, fechas, nombres) DEBE salir de los datos del sistema al momento de la pregunta; el asistente NO DEBE completar, estimar ni inventar datos.
 - **FR-005**: Los datos que muestra una respuesta DEBEN coincidir con los que muestran las pantallas correspondientes (ficha de la muestra, detalle del estudio, historial del cliente): mismos estados, resultado con el mismo formato y unidad, la evaluación de la validación vigente (o la del detalle si aún no está validada) y la norma usada.
 - **FR-006**: Si lo preguntado no existe o no se encuentra, el asistente DEBE decirlo explícitamente y NO DEBE presentar otro registro como si fuera el pedido.
-- **FR-007**: Si la pregunta coincide con varios registros, el asistente DEBE mostrar las coincidencias identificables (con enlace) y pedir precisión, o responder por uno indicando explícitamente cuál eligió y por qué.
+- **FR-007**: Si la pregunta coincide con varios registros, el asistente DEBE mostrar las coincidencias identificables (con enlace) y pedir precisión, o responder por uno indicando explícitamente cuál eligió y por qué. Las coincidencias que lista AquaLab se muestran como opciones para elegir: cada una manda la pregunta de seguimiento sobre ese registro sin salir del panel y tiene además un acceso a su pantalla.
 - **FR-008**: Cada muestra, estudio, cliente e informe mencionado en una respuesta DEBE tener un enlace a su pantalla en AquaLab.
 - **FR-009**: Las respuestas sobre un cliente con muchas muestras DEBEN limitarse a los estudios más recientes (hasta 10), indicando el total y enlazando al historial completo.
 - **FR-009a**: Las respuestas sobre una muestra con más de 5 estudios DEBEN detallar los 5 más recientes, avisar el total y que el resto está en la ficha de la muestra, e incluir siempre el enlace a esa ficha.
@@ -142,8 +149,8 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 
 **Conversación**
 
-- **FR-018**: El asistente DEBE entender preguntas de seguimiento sobre lo consultado antes mientras el panel siga abierto en esa página.
-- **FR-019**: Las conversaciones NO DEBEN guardarse en AquaLab: al cerrar el panel o recargar la página se pierden.
+- **FR-018**: El asistente DEBE entender preguntas de seguimiento sobre lo consultado antes mientras el panel siga abierto en esa pestaña del navegador, también después de navegar a otra pantalla con un enlace de la respuesta (el panel se reabre con la conversación).
+- **FR-019**: Las conversaciones NO DEBEN guardarse en AquaLab (ni en la base ni en el servidor). Solo el navegador las guarda, en el almacenamiento de esa pestaña y mientras el panel esté abierto, para seguirlas al navegar; se borran al cerrar el panel, al cerrar la pestaña o la sesión, y en cualquier pantalla sin panel (inicio de sesión).
 
 ### Key Entities *(include if feature involves data)*
 
@@ -173,4 +180,4 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 - No se pide un límite de preguntas por usuario: la cuota es la del servicio gratuito.
 - Los tests automatizados simulan el servicio de IA (respuestas, demoras, errores y cuota agotada) y nunca llaman a Groq: corren sin clave y sin conexión, también en el CI.
 - Interfaz orientada a escritorio, como el resto de AquaLab.
-- Fuera de alcance: guardar conversaciones, preguntas sobre el catálogo de pruebas o los usuarios, la comparación histórica y los desvíos (US 8.1 y 8.2), el dashboard, y crear o modificar datos (US 10.3).
+- Fuera de alcance: guardar conversaciones en AquaLab, búsquedas por fecha o período («el estudio de agosto», «el del mes 3»: el asistente solo puede elegir entre las coincidencias listadas, que traen su fecha), preguntas sobre el catálogo de pruebas o los usuarios, la comparación histórica y los desvíos (US 8.1 y 8.2), el dashboard, y crear o modificar datos (US 10.3).

@@ -394,3 +394,118 @@ def test_pregunta_de_seguimiento_vuelve_a_consultar(empleado, estudio_completo, 
     assert [m["content"] for m in primera[1:3]] == [h["texto"] for h in historial]
     resultado = json.loads(servicio_simulado.llamadas[1]["mensajes"][-1]["content"])
     assert resultado["datos"]["estado"] == "Finalizado"
+
+
+# --- Ajustes de la validación con Groq (T053) ---
+
+
+def test_sin_marcas_de_markdown(servicio_simulado, eco):
+    """C: el panel muestra texto plano; AquaLab saca `**`, `__` y los títulos con `#`."""
+    servicio_simulado.guion(
+        herramienta("eco", {"valor": "x"}),
+        texto("### Resumen\nEl PI 200417 está **Ingresada** y el pH __cumple__.\nEstudio #43 ok."),
+    )
+    respuesta = responder(servicio_simulado)
+    assert respuesta.texto == (
+        "Resumen\nEl PI 200417 está Ingresada y el pH cumple.\nEstudio #43 ok."
+    )
+
+
+@pytest.mark.parametrize(
+    "pregunta",
+    [
+        "Validá el PI 200417",
+        "validá los resultados del estudio 43",
+        "¡Borrá el estudio 31!",
+        "Emití el informe del PI 200042",
+        "Modificá el pH del PI 200040",
+        "Cargá la medición de cloruro",
+        "Corregí el valor de turbidez",
+        "Eliminá la muestra 200045",
+        "Por favor, validá el PI 200417",
+        "valida el PI 200417",
+        "  CARGÁ las mediciones",
+    ],
+)
+def test_pedido_de_cambio_sin_llamar_al_servicio(servicio_simulado, pregunta):
+    """D: un verbo de cambio en imperativo al comienzo → mensaje fijo, sin llamar al servicio."""
+    respuesta = conversacion.responder(None, pregunta, [], reloj=servicio_simulado.reloj)
+    assert respuesta.texto == conversacion.MENSAJE_SOLO_CONSULTA
+    assert respuesta.enlaces == []
+    assert servicio_simulado.llamadas == []
+
+
+@pytest.mark.parametrize(
+    "pregunta",
+    [
+        "¿qué falta validar?",
+        "¿qué estudios hay para cargar?",
+        "¿cuándo se emitió el informe del PI 200042?",
+        "¿Cómo está el PI 200417?",
+        "¿Quién validó el estudio 43?",
+        "Cargas pendientes del PI 200040",
+        "¿Validaron el PI 200040?",
+    ],
+)
+def test_no_son_pedidos_de_cambio(servicio_simulado, eco, pregunta):
+    """D: falsos positivos que tienen que llegar al servicio."""
+    servicio_simulado.guion(herramienta("eco", {"valor": "x"}), texto("PI 200417"))
+    respuesta = conversacion.responder(None, pregunta, [], reloj=servicio_simulado.reloj)
+    assert len(servicio_simulado.llamadas) == 2
+    assert respuesta.texto == "PI 200417"
+
+
+def test_mensaje_de_sistema_guia_herramientas_y_unidades():
+    """E y F: elegir la herramienta por lo que se busca, texto corto y unidades tal cual."""
+    sistema = conversacion.MENSAJE_SISTEMA
+    assert "buscar_cliente solo para clientes" in sistema
+    assert "detalle_estudio con texto" in sistema
+    assert "solo el nombre" in sistema
+    assert "unidades y los códigos tal cual" in sistema
+    assert "Markdown" in sistema
+
+
+def test_opciones_de_la_ultima_herramienta(empleado, escuela, servicio_simulado):
+    """5: las coincidencias de la última herramienta van como opciones para elegir."""
+    nuevo, viejo = escuela["nuevo"].pk, escuela["viejo"].pk
+    servicio_simulado.guion(
+        herramienta("detalle_estudio", {"texto": "escuela", "solo_fuera_de_norma": True}),
+        texto("Hay dos estudios; ¿cuál querés?"),
+    )
+    respuesta = conversacion.responder(
+        empleado, "¿Qué no cumple?", [], reloj=servicio_simulado.reloj
+    )
+    assert respuesta.enlaces == [
+        {
+            "etiqueta": f"Estudio {nuevo}",
+            "url": f"/estudios/{nuevo}/",
+            "pregunta": f"¿Qué no cumple en el estudio {nuevo}?",
+        },
+        {
+            "etiqueta": f"Estudio {viejo}",
+            "url": f"/estudios/{viejo}/",
+            "pregunta": f"¿Qué no cumple en el estudio {viejo}?",
+        },
+    ]
+
+
+def test_opciones_viejas_no_quedan(empleado, escuela, servicio_simulado):
+    """Si después de listar el modelo pide el detalle de uno, ya no hay opciones."""
+    viejo = escuela["viejo"].pk
+    servicio_simulado.guion(
+        herramienta("detalle_estudio", {"texto": "escuela"}),
+        herramienta("detalle_estudio", {"numero": viejo}),
+        texto(f"El Estudio {viejo} está Finalizado."),
+    )
+    respuesta = conversacion.responder(empleado, "¿Cómo está?", [], reloj=servicio_simulado.reloj)
+    assert all("pregunta" not in e for e in respuesta.enlaces)
+    assert respuesta.enlaces[0]["url"] == f"/estudios/{viejo}/"
+
+
+def test_mensaje_de_sistema_resumen_por_estudio():
+    """4 y refuerzos de la validación: resumir por estudio y sin claves ni true/false."""
+    sistema = conversacion.MENSAJE_SISTEMA
+    assert "resumí cada estudio" in sistema
+    assert "listá solo las que no cumplen" in sistema
+    assert "true/false" in sistema
+    assert "nombres de campos" in sistema
