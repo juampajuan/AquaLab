@@ -124,15 +124,15 @@ document.addEventListener("input", (evento) => {
 // Asistente de consultas (US 10.1, contracts/preguntar.md): panel de ui/asistente.html. Se
 // mandan los últimos 6 mensajes, cada uno recortado a 4000 caracteres. Todo texto se agrega con
 // textContent: nunca HTML del servicio. La conversación se guarda en sessionStorage de la pestaña
-// mientras el panel está abierto, para seguirla al navegar con un enlace (FR-019): cerrar el
-// panel, una pantalla sin panel (login) o cerrar sesión la borran. Nada va a la base.
+// para seguirla al navegar (FR-019). Minimizar (el «–», el botón flotante o Escape) oculta el panel
+// y la conserva; la ✕, una pantalla sin panel (login) o cerrar sesión la borran. Nada va a la base.
 const ASISTENTE_MAX_HISTORIAL = 6;
 const ASISTENTE_MAX_TEXTO = 4000;
 const ASISTENTE_CLAVE = "aqualab.asistente";
 const ASISTENTE_NO_DISPONIBLE =
   "El asistente no está disponible en este momento. Probá de nuevo más tarde o usá las pantallas de AquaLab.";
 const ASISTENTE_SESION_VENCIDA = "Tu sesión venció; volvé a iniciar sesión";
-const asistente = { historial: [], mensajes: [], enviando: false };
+const asistente = { historial: [], mensajes: [], enviando: false, abierto: false };
 
 function asistenteAlmacen() {
   try {
@@ -148,7 +148,11 @@ function asistenteGuardar() {
   try {
     almacen.setItem(
       ASISTENTE_CLAVE,
-      JSON.stringify({ mensajes: asistente.mensajes, historial: asistente.historial }),
+      JSON.stringify({
+        mensajes: asistente.mensajes,
+        historial: asistente.historial,
+        abierto: asistente.abierto,
+      }),
     );
   } catch {
     // Sin almacenamiento la conversación sigue en la página abierta.
@@ -181,7 +185,23 @@ function asistenteCsrf(panel) {
 
 function asistenteMostrar(panel, boton) {
   panel.hidden = false;
+  asistente.abierto = true;
   if (boton) boton.setAttribute("aria-expanded", "true");
+}
+
+// Minimizar: oculta el panel y conserva la conversación (también al navegar).
+function asistenteMinimizar() {
+  const panel = document.querySelector("[data-asistente]");
+  if (!panel || panel.hidden) return false;
+  panel.hidden = true;
+  asistente.abierto = false;
+  asistenteGuardar();
+  const boton = document.querySelector("[data-asistente-abrir]");
+  if (boton) {
+    boton.setAttribute("aria-expanded", "false");
+    boton.focus();
+  }
+  return true;
 }
 
 function asistenteAbrir(boton) {
@@ -197,7 +217,8 @@ function asistenteCerrar() {
   const panel = document.querySelector("[data-asistente]");
   if (!panel || panel.hidden) return false;
   panel.hidden = true;
-  // Cerrar el panel borra la conversación (FR-019).
+  asistente.abierto = false;
+  // Cerrar con la ✕ borra la conversación (FR-019).
   asistente.historial = [];
   asistente.mensajes = [];
   asistenteOlvidar();
@@ -382,15 +403,20 @@ function asistenteRestaurar() {
     asistenteAgregar(panel, mensaje.rol, mensaje.texto, mensaje.enlaces || [], { guardar: false });
   }
   asistente.mensajes = guardado.mensajes;
-  asistenteMostrar(panel, document.querySelector("[data-asistente-abrir]"));
+  // Se reabre solo si estaba abierto; minimizado, la conversación queda lista para cuando se abra.
+  if (guardado.abierto !== false) asistenteMostrar(panel, document.querySelector("[data-asistente-abrir]"));
 }
 
 document.addEventListener("click", (evento) => {
   const abrir = evento.target.closest("[data-asistente-abrir]");
   if (abrir) {
     const panel = document.querySelector("[data-asistente]");
-    if (panel && !panel.hidden) asistenteCerrar();
+    if (panel && !panel.hidden) asistenteMinimizar();
     else asistenteAbrir(abrir);
+    return;
+  }
+  if (evento.target.closest("[data-asistente-minimizar]")) {
+    asistenteMinimizar();
     return;
   }
   if (evento.target.closest("[data-asistente-cerrar]")) {
@@ -434,7 +460,7 @@ document.addEventListener("keydown", (evento) => {
     asistentePreguntar(campo.closest("[data-asistente-form]"));
     return;
   }
-  if (evento.key === "Escape" && document.querySelector("[data-asistente]")) asistenteCerrar();
+  if (evento.key === "Escape" && document.querySelector("[data-asistente]")) asistenteMinimizar();
 });
 
 document.addEventListener("input", (evento) => {

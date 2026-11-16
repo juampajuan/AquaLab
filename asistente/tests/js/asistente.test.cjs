@@ -167,7 +167,7 @@ function entorno({ deshabilitado = false, respuestas = [], almacen = almacenNuev
   };
 }
 
-test("el botón abre el panel y Escape lo cierra devolviendo el foco", () => {
+test("el botón abre el panel y Escape lo minimiza devolviendo el foco", () => {
   const { boton, panel, campo, despachar } = entorno();
   despachar("click", { target: boton });
   assert.equal(panel.hidden, false);
@@ -179,7 +179,7 @@ test("el botón abre el panel y Escape lo cierra devolviendo el foco", () => {
   assert.equal(boton.enfocado, true);
 });
 
-test("el botón «Cerrar» y un segundo clic en el botón cierran el panel", () => {
+test("el botón «Cerrar» y un segundo clic en el botón ocultan el panel", () => {
   const { boton, panel, cerrar, despachar } = entorno();
   despachar("click", { target: boton });
   despachar("click", { target: cerrar });
@@ -326,12 +326,12 @@ for (const [nombre, respuesta] of [
 }
 
 test("cerrar el panel borra la conversación y no usa localStorage", async () => {
-  const { boton, preguntar, despachar, pedidos, textos } = entorno({
+  const { boton, cerrar, preguntar, despachar, pedidos, textos } = entorno({
     respuestas: [respuestaJson(200, { texto: "ok", enlaces: [] }), respuestaJson(200, { texto: "ok", enlaces: [] })],
   });
   despachar("click", { target: boton });
   await preguntar("hola");
-  despachar("keydown", { key: "Escape" });
+  despachar("click", { target: cerrar });
   assert.deepEqual(textos(), []);
   despachar("click", { target: boton });
   await preguntar("otra");

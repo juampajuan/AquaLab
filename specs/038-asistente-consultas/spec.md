@@ -16,7 +16,8 @@
 
 - Q: ¿Qué muestra «¿Cómo está el PI…?»? → A: Por estudio, su estado y cuántas pruebas cumplen, están fuera de norma o sin límite comparable (los cuenta AquaLab), y solo las que no cumplen; el detalle completo queda en el enlace al estudio. El estado de la muestra no se muestra (SCRUM-82).
 - Q: ¿Qué pasa con los enlaces cuando el asistente pide elegir entre varias coincidencias? → A: Son opciones que mandan la pregunta de seguimiento sin salir del panel, con un ↗ para abrir la pantalla. Las marca AquaLab desde la herramienta.
-- Q: ¿Se pierde la conversación al seguir un enlace? → A: No: se guarda en el almacenamiento de la pestaña mientras el panel está abierto y se reabre en la pantalla nueva. Cerrar el panel, la pestaña o la sesión la borra. Nada va a la base (reemplaza «solo en la página abierta»).
+- Q: ¿Se pierde la conversación al seguir un enlace? → A: No: se guarda en el almacenamiento de la pestaña mientras el panel está abierto y se reabre en la pantalla nueva. Cerrar el panel con la ✕, la pestaña o la sesión la borra; minimizarlo la conserva. Nada va a la base (reemplaza «solo en la página abierta»).
+- Q: ¿Se puede ocultar el panel sin perder la conversación? → A: Sí: «Minimizar» (el «–» del encabezado, el botón flotante o Escape) lo oculta y la conserva, también al navegar; la ✕ la borra.
 - Q: ¿Se busca por fecha («el del mes 3»)? → A: No, queda fuera de alcance.
 
 ### Session 2026-11-15
@@ -110,7 +111,7 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 - Estudio con informe emitido: se muestran los datos del sistema igual que en sus pantallas y el enlace al informe si quien pregunta puede verlo.
 - Resultados Ausente/Presente y por debajo del límite de detección: se muestran con el mismo texto que en las pantallas («Ausente», «Presente», «< LD»), nunca como 0 o 1.
 - Valores con decimales: se muestran como en las pantallas (coma decimal, mismos decimales), sin redondeos distintos.
-- Preguntas encadenadas («¿y qué no cumple?» después de preguntar por un PI): se entienden sobre lo último consultado mientras el panel siga abierto en esa pestaña, también al navegar con un enlace o recargar; al cerrar el panel, la pestaña o la sesión, la conversación se pierde.
+- Preguntas encadenadas («¿y qué no cumple?» después de preguntar por un PI): se entienden sobre lo último consultado mientras la conversación siga en esa pestaña (panel abierto o minimizado), también al navegar con un enlace o recargar; al cerrar el panel con la ✕, la pestaña o la sesión, la conversación se pierde.
 - Datos que cambian mientras se conversa: cada respuesta usa los datos vigentes al momento de esa pregunta.
 
 ## Requirements *(mandatory)*
@@ -150,7 +151,7 @@ Si el servicio de IA no responde, rechaza la consulta o se agotó la cuota, el a
 **Conversación**
 
 - **FR-018**: El asistente DEBE entender preguntas de seguimiento sobre lo consultado antes mientras el panel siga abierto en esa pestaña del navegador, también después de navegar a otra pantalla con un enlace de la respuesta (el panel se reabre con la conversación).
-- **FR-019**: Las conversaciones NO DEBEN guardarse en AquaLab (ni en la base ni en el servidor). Solo el navegador las guarda, en el almacenamiento de esa pestaña y mientras el panel esté abierto, para seguirlas al navegar; se borran al cerrar el panel, al cerrar la pestaña o la sesión, y en cualquier pantalla sin panel (inicio de sesión).
+- **FR-019**: Las conversaciones NO DEBEN guardarse en AquaLab (ni en la base ni en el servidor). Solo el navegador las guarda, en el almacenamiento de esa pestaña, para seguirlas al navegar. Minimizar el panel (el «–», el botón flotante o Escape) lo oculta y conserva la conversación; se borran al cerrar el panel con la ✕, al cerrar la pestaña o la sesión, y en cualquier pantalla sin panel (inicio de sesión).
 
 ### Key Entities *(include if feature involves data)*
 

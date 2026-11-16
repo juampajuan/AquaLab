@@ -56,7 +56,8 @@ GET devuelve 405. La vista no escribe en la base ni en la sesión.
   al lado un `<a>` «↗» (`aria-label="Abrir <etiqueta>"`) a su pantalla. Avisos (`error`) con el
   estilo de alerta, sin cerrar el panel.
 - La conversación (mensajes mostrados, sin «Consultando…», e historial) se guarda en
-  `sessionStorage` (`aqualab.asistente`) mientras el panel está abierto: en la pantalla nueva el
-  panel se reabre con ella. Se borra al cerrar el panel (✕, Escape o el botón), en una pantalla sin
+  `sessionStorage` (`aqualab.asistente`), junto con si el panel estaba abierto: en la pantalla
+  nueva el panel se reabre con ella, o queda minimizado con la conversación lista. Minimizar (el
+  «–», el botón flotante o Escape) la conserva. Se borra al cerrar con la ✕, en una pantalla sin
   panel (login) y al enviar el formulario de cerrar sesión (`[data-cerrar-sesion]`). Si el
   navegador bloquea el almacenamiento, el panel funciona igual solo en la página abierta.

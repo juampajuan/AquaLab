@@ -452,8 +452,9 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 ## Asistente de consultas (US 10.1)
 
 - App `asistente` sin modelos ni migraciones: no guarda conversaciones en la base. El panel las
-  guarda en `sessionStorage` (`aqualab.asistente`) mientras está abierto, para reabrirse al navegar;
-  se borran al cerrar el panel, en pantallas sin panel (login) y con `[data-cerrar-sesion]`
+  guarda en `sessionStorage` (`aqualab.asistente`), para reabrirse al navegar. Minimizar (el «–»,
+  el botón flotante o Escape) la conserva; se borran al cerrar con la ✕, en pantallas sin panel
+  (login) y con `[data-cerrar-sesion]`
   (formulario de cerrar sesión de `base.html`). El navegador manda los últimos 6 mensajes de
   ≤ 4000 caracteres. Configuración en `settings.ASISTENTE`
   (`ASISTENTE_API_KEY`, `ASISTENTE_URL`, `ASISTENTE_MODELO`; Groq y `openai/gpt-oss-120b` por
