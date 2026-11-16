@@ -95,6 +95,21 @@ Solo si querés una base limpia, solo con la demo, recreala (esto **borra todos 
 `docker compose down -v`, `docker compose up -d`, `migrate` y `cargar_demo`.
 
 
+## Asistente de consultas (US 10.1)
+
+El botón «Asistente» (abajo a la derecha, con sesión) responde preguntas sobre muestras, estudios
+y clientes con datos de AquaLab; no cambia nada. Usa Groq (plan gratuito) por defecto:
+
+1. Crear una clave gratuita en https://console.groq.com.
+2. Ponerla en el `.env`: `ASISTENTE_API_KEY=...` (opcionales: `ASISTENTE_URL` y
+   `ASISTENTE_MODELO`, ver `.env.example`).
+3. Reiniciar: `docker compose up -d web`.
+
+**Sin la clave, AquaLab funciona igual**: el botón aparece deshabilitado con el aviso «El
+asistente no está configurado». Los tests nunca llaman a Groq: simulan el servicio.
+Al servicio externo no se mandan el correo, el teléfono, el domicilio ni el documento de los
+clientes.
+
 ## Inicio y cierre de sesión
 
 Las cuentas nuevas se registran en `/usuarios/registro/` y quedan pendientes de aprobación.

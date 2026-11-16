@@ -349,6 +349,33 @@
     }
   }
 
+  /* Panel del asistente (ui/asistente.html): aparece y se va con un fundido y un leve
+     desplazamiento desde el botón. Solo CSS: aqualab.js sigue alternando el atributo hidden y
+     el display se anima como discreto, así al cerrar espera a que termine el fundido. */
+  [data-asistente] {
+    transform-origin: bottom right;
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      display 180ms allow-discrete;
+  }
+  [data-asistente][hidden] {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.97);
+    transition-timing-function: ease-in;
+  }
+  @starting-style {
+    [data-asistente]:not([hidden]) {
+      opacity: 0;
+      transform: translateY(0.75rem) scale(0.97);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-asistente] {
+      transition: none;
+    }
+  }
+
   /* Círculo con iniciales */
   .iniciales {
     @apply inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-cian-suave text-xs font-bold text-marino;

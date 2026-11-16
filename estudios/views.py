@@ -334,27 +334,10 @@ def detalle(request, pk):
         ),
         pk=pk,
     )
-    pruebas_asignadas = list(
-        estudio.pruebas_asignadas.select_related(
-            "prueba",
-            "medicion",
-            "medicion__cargada_por",
-            "medicion__corregida_por",
-            "resultado",
-            "resultado__curva__prueba",
-        )
-        .prefetch_related("prueba__limites_vertido", validaciones_vigentes())
-        .order_by("prueba__codigo", "pk")
-    )
-    todas = {a.prueba.codigo: a for a in pruebas_asignadas}
-    for asignacion in pruebas_asignadas:
-        asignacion.motivo_sin_resultado = calculo.motivo_sin_resultado(asignacion, todas)
-        asignacion.fuera_de_rango = curvas.fuera_de_rango(asignacion)
+    pruebas_asignadas = pruebas_del_detalle(estudio)
     calcular_con_curva = estudio.admite_mediciones and any(
         a.motivo_sin_resultado == curvas.MENSAJE_ANTES_DE_LA_CURVA for a in pruebas_asignadas
     )
-    evaluar_asignaciones(estudio, pruebas_asignadas)
-    marcar_desvios(estudio, pruebas_asignadas)
     total_pruebas = len(pruebas_asignadas)
     pruebas_completadas = sum(
         1 for a in pruebas_asignadas if a.estado == EstadoPruebaEstudio.COMPLETADA
@@ -400,6 +383,31 @@ def detalle(request, pk):
             "regla_desvio": desvios.texto_regla(desvios.regla()),
         },
     )
+
+
+def pruebas_del_detalle(estudio):
+    """Las pruebas del estudio como las muestra su detalle (US 5.2), con el motivo sin resultado,
+    el aviso de curva, la evaluación (US 6.4) y los desvíos (US 8.2) ya adjuntos. Única consulta
+    del detalle: la usan `detalle` y el asistente (US 10.1), así dicen lo mismo."""
+    pruebas_asignadas = list(
+        estudio.pruebas_asignadas.select_related(
+            "prueba",
+            "medicion",
+            "medicion__cargada_por",
+            "medicion__corregida_por",
+            "resultado",
+            "resultado__curva__prueba",
+        )
+        .prefetch_related("prueba__limites_vertido", validaciones_vigentes())
+        .order_by("prueba__codigo", "pk")
+    )
+    todas = {a.prueba.codigo: a for a in pruebas_asignadas}
+    for asignacion in pruebas_asignadas:
+        asignacion.motivo_sin_resultado = calculo.motivo_sin_resultado(asignacion, todas)
+        asignacion.fuera_de_rango = curvas.fuera_de_rango(asignacion)
+    evaluar_asignaciones(estudio, pruebas_asignadas)
+    marcar_desvios(estudio, pruebas_asignadas)
+    return pruebas_asignadas
 
 
 def proximo_paso(

@@ -6,7 +6,9 @@
   - lado="derecha" alinea el texto al borde derecho del ícono (por defecto, al izquierdo).
   - posicion="abajo" abre el texto debajo del ícono (por defecto, arriba): para los encabezados de
     tabla, donde el contenedor con desplazamiento recortaría el texto de arriba.
+  - icono_clase (opc.) cambia el tamaño del ícono (por defecto size-4); ej. size-6 junto al botón
+    flotante del asistente, donde el ícono chico pasaba desapercibido.
   Ganchos que usan aqualab.js y los tests (no cambiar): data-ayuda, .ayuda-boton, .ayuda-texto,
   data-abierta y data-cerrada. El ícono va al lado de <label>/<legend>, nunca adentro.
 {% endcomment %}
-<span class="ayuda" data-ayuda data-lado="{{ lado|default:'izquierda' }}" data-posicion="{{ posicion|default:'arriba' }}"><button type="button" class="ayuda-boton" aria-label="Ayuda: {{ etiqueta }}" aria-describedby="{{ id }}">{% include "ui/icono.html" with nombre="circle-help" clase="size-4" %}</button><span role="tooltip" id="{{ id }}" class="ayuda-texto">{{ texto }}</span></span>
+<span class="ayuda" data-ayuda data-lado="{{ lado|default:'izquierda' }}" data-posicion="{{ posicion|default:'arriba' }}"><button type="button" class="ayuda-boton" aria-label="Ayuda: {{ etiqueta }}" aria-describedby="{{ id }}">{% include "ui/icono.html" with nombre="circle-help" clase=icono_clase|default:"size-4" %}</button><span role="tooltip" id="{{ id }}" class="ayuda-texto">{{ texto }}</span></span>

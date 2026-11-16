@@ -227,3 +227,38 @@ def test_ficha_muestra_requiere_sesion_y_valida_existencia(
 
     resp_404 = cliente_autenticado.get(reverse("muestras:detalle", args=[999999]))
     assert resp_404.status_code == 404
+
+
+def test_estudios_de_la_ficha_igual_a_la_vista(
+    cliente_autenticado, crear_muestra, empleado, catalogo_pruebas
+):
+    """`estudios_de_la_ficha` (US 10.1) es la consulta de la ficha, compartida con el asistente."""
+    from muestras.views import estudios_de_la_ficha
+
+    muestra = crear_muestra(200001)
+    tipo = catalogo_pruebas["tipo_fq"]
+    p1 = catalogo_pruebas["pruebas"][0]
+    for _ in range(3):
+        crear_estudio(
+            {
+                "clave": str(uuid.uuid4()),
+                "muestra": muestra.pk,
+                "tipo": tipo.pk,
+                "version": tipo.version,
+            },
+            empleado,
+        )
+    PruebaEstudio.objects.filter(estudio__muestra=muestra, prueba=p1).update(
+        estado=EstadoPruebaEstudio.COMPLETADA
+    )
+    contexto = cliente_autenticado.get(reverse("muestras:detalle", args=[muestra.pk])).context
+    de_la_vista = contexto["estudios"]
+    compartidos = list(estudios_de_la_ficha(muestra))
+    assert [e.pk for e in compartidos] == [e.pk for e in de_la_vista]
+    assert [e.pk for e in compartidos] == sorted((e.pk for e in compartidos), reverse=True)
+    for propio, vista in zip(compartidos, de_la_vista, strict=True):
+        assert (propio.total_pruebas, propio.pruebas_completadas) == (
+            vista.total_pruebas,
+            vista.pruebas_completadas,
+        )
+        assert (propio.total_pruebas, propio.pruebas_completadas) == (2, 1)

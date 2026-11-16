@@ -120,3 +120,352 @@ document.addEventListener("input", (evento) => {
   if (!campo || evento.inputType === "deleteContentBackward") return;
   campo.value = formatearFecha(campo.value);
 });
+
+// Asistente de consultas (US 10.1, contracts/preguntar.md): panel de ui/asistente.html. Se
+// mandan los últimos 6 mensajes, cada uno recortado a 4000 caracteres. Todo texto se agrega con
+// textContent: nunca HTML del servicio. La conversación se guarda en sessionStorage de la pestaña
+// para seguirla al navegar (FR-019). Minimizar (el «–», el botón flotante o Escape) oculta el panel
+// y la conserva; la ✕, una pantalla sin panel (login) o cerrar sesión la borran. Nada va a la base.
+const ASISTENTE_MAX_HISTORIAL = 6;
+const ASISTENTE_MAX_TEXTO = 4000;
+const ASISTENTE_CLAVE = "aqualab.asistente";
+const ASISTENTE_NO_DISPONIBLE =
+  "El asistente no está disponible en este momento. Probá de nuevo más tarde o usá las pantallas de AquaLab.";
+const ASISTENTE_SESION_VENCIDA = "Tu sesión venció; volvé a iniciar sesión";
+const asistente = { historial: [], mensajes: [], enviando: false, abierto: false };
+
+function asistenteAlmacen() {
+  try {
+    return typeof sessionStorage === "undefined" ? null : sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+function asistenteGuardar() {
+  const almacen = asistenteAlmacen();
+  if (!almacen) return;
+  try {
+    almacen.setItem(
+      ASISTENTE_CLAVE,
+      JSON.stringify({
+        mensajes: asistente.mensajes,
+        historial: asistente.historial,
+        abierto: asistente.abierto,
+      }),
+    );
+  } catch {
+    // Sin almacenamiento la conversación sigue en la página abierta.
+  }
+}
+
+function asistenteOlvidar() {
+  const almacen = asistenteAlmacen();
+  if (!almacen) return;
+  try {
+    almacen.removeItem(ASISTENTE_CLAVE);
+  } catch {
+    // Nada que borrar.
+  }
+}
+
+function asistenteHistorial() {
+  return asistente.historial
+    .slice(-ASISTENTE_MAX_HISTORIAL)
+    .map((m) => ({ rol: m.rol, texto: m.texto.slice(0, ASISTENTE_MAX_TEXTO) }));
+}
+
+function asistenteCsrf(panel) {
+  const campo = panel.querySelector("[name=csrfmiddlewaretoken]");
+  if (campo && campo.value) return campo.value;
+  const cookie = (document.cookie || "").split(";").map((c) => c.trim());
+  const valor = cookie.find((c) => c.startsWith("csrftoken="));
+  return valor ? decodeURIComponent(valor.slice("csrftoken=".length)) : "";
+}
+
+function asistenteMostrar(panel, boton) {
+  panel.hidden = false;
+  asistente.abierto = true;
+  if (boton) boton.setAttribute("aria-expanded", "true");
+}
+
+// Minimizar: oculta el panel y conserva la conversación (también al navegar).
+function asistenteMinimizar() {
+  const panel = document.querySelector("[data-asistente]");
+  if (!panel || panel.hidden) return false;
+  panel.hidden = true;
+  asistente.abierto = false;
+  asistenteGuardar();
+  const boton = document.querySelector("[data-asistente-abrir]");
+  if (boton) {
+    boton.setAttribute("aria-expanded", "false");
+    boton.focus();
+  }
+  return true;
+}
+
+function asistenteAbrir(boton) {
+  const panel = document.querySelector("[data-asistente]");
+  if (!panel || boton.getAttribute("aria-disabled") === "true") return;
+  asistenteMostrar(panel, boton);
+  asistenteGuardar();
+  const campo = panel.querySelector("[data-asistente-pregunta]");
+  if (campo) campo.focus();
+}
+
+function asistenteCerrar() {
+  const panel = document.querySelector("[data-asistente]");
+  if (!panel || panel.hidden) return false;
+  panel.hidden = true;
+  asistente.abierto = false;
+  // Cerrar con la ✕ borra la conversación (FR-019).
+  asistente.historial = [];
+  asistente.mensajes = [];
+  asistenteOlvidar();
+  const lista = panel.querySelector("[data-asistente-mensajes]");
+  if (lista) {
+    for (const mensaje of lista.querySelectorAll("[data-asistente-mensaje]")) mensaje.remove();
+  }
+  const boton = document.querySelector("[data-asistente-abrir]");
+  if (boton) {
+    boton.setAttribute("aria-expanded", "false");
+    boton.focus();
+  }
+  return true;
+}
+
+// El texto del modelo: los bloques de líneas que empiezan con «- » van como lista; el resto,
+// como párrafos que conservan sus saltos de línea. Siempre con textContent.
+function asistenteTexto(item, texto) {
+  let parrafo = [];
+  let lista = null;
+  const cerrarParrafo = () => {
+    if (!parrafo.length) return;
+    const p = document.createElement("p");
+    p.className = "whitespace-pre-line";
+    p.textContent = parrafo.join("\n");
+    item.append(p);
+    parrafo = [];
+  };
+  for (const linea of String(texto).split("\n")) {
+    if (linea.startsWith("- ")) {
+      cerrarParrafo();
+      if (!lista) {
+        lista = document.createElement("ul");
+        lista.className = "my-1 list-disc space-y-0.5 pl-5";
+        item.append(lista);
+      }
+      const li = document.createElement("li");
+      li.textContent = linea.slice(2);
+      lista.append(li);
+    } else {
+      lista = null;
+      parrafo.push(linea);
+    }
+  }
+  cerrarParrafo();
+}
+
+// Enlaces de la respuesta: los comunes llevan a su pantalla; las opciones para elegir (con
+// `pregunta`, las marca AquaLab) son botones que siguen la conversación, con un ↗ para abrir.
+function asistenteEnlaces(item, enlaces) {
+  const lista = document.createElement("ul");
+  lista.className = "mt-2 flex flex-wrap gap-x-3 gap-y-1";
+  for (const enlace of enlaces) {
+    const elemento = document.createElement("li");
+    if (enlace.pregunta) {
+      elemento.className = "inline-flex items-center gap-1";
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "btn btn-secundario btn-chico";
+      boton.setAttribute("data-asistente-elegir", enlace.pregunta);
+      boton.setAttribute("title", enlace.pregunta);
+      boton.textContent = enlace.etiqueta;
+      const abrir = document.createElement("a");
+      abrir.className = "btn-link";
+      abrir.href = enlace.url;
+      abrir.setAttribute("aria-label", `Abrir ${enlace.etiqueta}`);
+      abrir.textContent = "↗";
+      elemento.append(boton);
+      elemento.append(abrir);
+    } else {
+      const a = document.createElement("a");
+      a.className = "btn-link";
+      a.href = enlace.url;
+      a.textContent = enlace.etiqueta;
+      elemento.append(a);
+    }
+    lista.append(elemento);
+  }
+  item.append(lista);
+}
+
+function asistenteAgregar(panel, rol, texto, enlaces = [], { guardar = true } = {}) {
+  const lista = panel.querySelector("[data-asistente-mensajes]");
+  const item = document.createElement("li");
+  item.setAttribute("data-asistente-mensaje", rol);
+  item.className =
+    rol === "usuario"
+      ? "ml-8 rounded-lg bg-marino px-3 py-2 text-white"
+      : rol === "aviso"
+        ? "aviso aviso-error"
+        : "mr-4 rounded-lg bg-fondo-hundido px-3 py-2 text-tinta";
+  if (rol === "aviso") item.setAttribute("role", "alert");
+  if (rol === "asistente") {
+    asistenteTexto(item, texto);
+  } else {
+    const parrafo = document.createElement("p");
+    parrafo.className = "whitespace-pre-line";
+    parrafo.textContent = texto;
+    item.append(parrafo);
+  }
+  if (enlaces.length) asistenteEnlaces(item, enlaces);
+  lista.append(item);
+  if (typeof item.scrollIntoView === "function") item.scrollIntoView({ block: "end" });
+  if (guardar && rol !== "esperando") {
+    asistente.mensajes.push({ rol, texto, enlaces });
+    asistenteGuardar();
+  }
+  return item;
+}
+
+async function asistentePreguntar(formulario) {
+  const panel = formulario.closest("[data-asistente]");
+  const campo = formulario.querySelector("[data-asistente-pregunta]");
+  const enviar = formulario.querySelector("[data-asistente-enviar]");
+  const pregunta = campo.value.trim();
+  if (!pregunta || asistente.enviando) return;
+  asistente.enviando = true;
+  enviar.disabled = true;
+  asistenteAgregar(panel, "usuario", pregunta);
+  const esperando = asistenteAgregar(panel, "esperando", "Consultando…");
+  try {
+    const respuesta = await fetch(panel.getAttribute("data-url"), {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": asistenteCsrf(panel) },
+      body: JSON.stringify({ pregunta, historial: asistenteHistorial() }),
+    });
+    const tipo = (respuesta.headers && respuesta.headers.get("Content-Type")) || "";
+    let datos = null;
+    if (!respuesta.redirected && tipo.includes("application/json")) {
+      try {
+        datos = await respuesta.json();
+      } catch {
+        datos = null;
+      }
+    }
+    esperando.remove();
+    if (!datos) {
+      asistenteAgregar(panel, "aviso", ASISTENTE_SESION_VENCIDA);
+    } else if (respuesta.ok) {
+      asistente.historial.push({ rol: "usuario", texto: pregunta });
+      asistente.historial.push({ rol: "asistente", texto: datos.texto });
+      asistenteAgregar(panel, "asistente", datos.texto, datos.enlaces || []);
+      campo.value = "";
+    } else {
+      asistenteAgregar(panel, "aviso", datos.mensaje || ASISTENTE_NO_DISPONIBLE);
+    }
+  } catch {
+    esperando.remove();
+    asistenteAgregar(panel, "aviso", ASISTENTE_NO_DISPONIBLE);
+  } finally {
+    asistente.enviando = false;
+    enviar.disabled = false;
+    asistenteContar(campo);
+  }
+}
+
+function asistenteContar(campo) {
+  const panel = campo.closest("[data-asistente]");
+  const contador = panel && panel.querySelector("[data-asistente-contador]");
+  if (contador) contador.textContent = `${campo.value.length}/500`;
+}
+
+// Al cargar la página: si la pestaña tenía el panel abierto, se reabre con la conversación. Una
+// pantalla sin panel (login, registro, asistente sin configurar) la borra.
+function asistenteRestaurar() {
+  const panel = document.querySelector("[data-asistente]");
+  if (!panel) {
+    asistenteOlvidar();
+    return;
+  }
+  const almacen = asistenteAlmacen();
+  let guardado = null;
+  try {
+    guardado = almacen && JSON.parse(almacen.getItem(ASISTENTE_CLAVE) || "null");
+  } catch {
+    guardado = null;
+  }
+  if (!guardado || !Array.isArray(guardado.mensajes)) return;
+  asistente.historial = Array.isArray(guardado.historial) ? guardado.historial : [];
+  for (const mensaje of guardado.mensajes) {
+    asistenteAgregar(panel, mensaje.rol, mensaje.texto, mensaje.enlaces || [], { guardar: false });
+  }
+  asistente.mensajes = guardado.mensajes;
+  // Se reabre solo si estaba abierto; minimizado, la conversación queda lista para cuando se abra.
+  if (guardado.abierto !== false) asistenteMostrar(panel, document.querySelector("[data-asistente-abrir]"));
+}
+
+document.addEventListener("click", (evento) => {
+  const abrir = evento.target.closest("[data-asistente-abrir]");
+  if (abrir) {
+    const panel = document.querySelector("[data-asistente]");
+    if (panel && !panel.hidden) asistenteMinimizar();
+    else asistenteAbrir(abrir);
+    return;
+  }
+  if (evento.target.closest("[data-asistente-minimizar]")) {
+    asistenteMinimizar();
+    return;
+  }
+  if (evento.target.closest("[data-asistente-cerrar]")) {
+    asistenteCerrar();
+    return;
+  }
+  const elegir = evento.target.closest("[data-asistente-elegir]");
+  if (elegir) {
+    const panel = elegir.closest("[data-asistente]") || document.querySelector("[data-asistente]");
+    const campo = panel.querySelector("[data-asistente-pregunta]");
+    campo.value = elegir.getAttribute("data-asistente-elegir");
+    asistentePreguntar(campo.closest("[data-asistente-form]"));
+    return;
+  }
+  const ejemplo = evento.target.closest("[data-asistente-ejemplo]");
+  if (ejemplo) {
+    const panel = ejemplo.closest("[data-asistente]");
+    const campo = panel.querySelector("[data-asistente-pregunta]");
+    campo.value = ejemplo.textContent.trim();
+    asistenteContar(campo);
+    campo.focus();
+  }
+});
+
+document.addEventListener("submit", (evento) => {
+  if (evento.target.closest("[data-cerrar-sesion]")) {
+    asistenteOlvidar();
+    return;
+  }
+  const formulario = evento.target.closest("[data-asistente-form]");
+  if (!formulario) return;
+  evento.preventDefault();
+  asistentePreguntar(formulario);
+});
+
+document.addEventListener("keydown", (evento) => {
+  // Enter pregunta; Shift+Enter agrega un salto de línea.
+  const campo = evento.target && evento.target.closest && evento.target.closest("[data-asistente-pregunta]");
+  if (campo && evento.key === "Enter" && !evento.shiftKey) {
+    evento.preventDefault();
+    asistentePreguntar(campo.closest("[data-asistente-form]"));
+    return;
+  }
+  if (evento.key === "Escape" && document.querySelector("[data-asistente]")) asistenteMinimizar();
+});
+
+document.addEventListener("input", (evento) => {
+  const campo = evento.target.closest("[data-asistente-pregunta]");
+  if (campo) asistenteContar(campo);
+});
+
+asistenteRestaurar();

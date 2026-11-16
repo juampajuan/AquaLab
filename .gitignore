@@ -28,3 +28,4 @@ Thumbs.db
 
 # Respaldos locales, nunca publicar
 .local-backups/
+.local-validacion/
