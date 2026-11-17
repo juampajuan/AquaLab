@@ -190,6 +190,11 @@ def test_comparacion_tiene_ancla(cliente_bioquimico):
     assert 'id="comparacion"' in html_de(cliente_bioquimico.get(URL))
 
 
+def test_recuerda_la_posicion_al_volver(cliente_bioquimico):
+    """Al volver con «atrás» se repone la posición (lo prueba informes/tests/js)."""
+    assert "informes/dashboard_posicion.js" in html_de(cliente_bioquimico.get(URL))
+
+
 def test_secciones_agrupadas_por_periodo(cliente_bioquimico):
     """Lo que usa el período va junto, arriba; lo demás, en un bloque aparte con una sola
     aclaración (en vez de repetir «no depende del período» en cada sección)."""
