@@ -79,27 +79,13 @@ class Periodo:
     def rango_anterior_texto(self):
         return texto_rango(self.inicio_anterior, self.fin_anterior)
 
-    @property
-    def rango_anterior_corto(self):
-        """Para el «vs. …» de cada indicador: «1–13 oct» o «1 sep–30 nov»."""
-        return texto_rango(self.inicio_anterior, self.fin_anterior, corto=True)
 
-
-def texto_rango(inicio, fin, *, corto=False):
+def texto_rango(inicio, fin):
     """Rango de fechas legible, sin depender del idioma del servidor (observación del sprint 4).
 
-    Largo: «1 al 13 de noviembre de 2026», «1 de septiembre al 17 de noviembre de 2026» o
-    «1 de diciembre de 2025 al 17 de febrero de 2026». Corto: «1–13 nov», «1 sep–17 nov» o
-    «1 dic 2025–17 feb 2026».
+    «1 al 13 de noviembre de 2026», «1 de septiembre al 17 de noviembre de 2026» o
+    «1 de diciembre de 2025 al 17 de febrero de 2026».
     """
-    if corto:
-        mes_fin = MESES_ABREVIADOS[fin.month - 1]
-        if (inicio.year, inicio.month) == (fin.year, fin.month):
-            return f"{inicio.day}–{fin.day} {mes_fin}"
-        mes_inicio = MESES_ABREVIADOS[inicio.month - 1]
-        if inicio.year == fin.year:
-            return f"{inicio.day} {mes_inicio}–{fin.day} {mes_fin}"
-        return f"{inicio.day} {mes_inicio} {inicio.year}–{fin.day} {mes_fin} {fin.year}"
     mes_fin = MESES[fin.month - 1]
     if (inicio.year, inicio.month) == (fin.year, fin.month):
         return f"{inicio.day} al {fin.day} de {mes_fin} de {fin.year}"
@@ -157,8 +143,13 @@ class Variacion:
         """«▲ +5 (+12 %)», «▼ −2 (−8 %)» o «= 0 (0 %)». Si antes era 0 no hay porcentaje: «▲ +3»
         (el dashboard muestra al lado «antes: 0»)."""
         if self.porcentaje is None:
-            return f"{self.simbolo} {con_signo(self.diferencia)}"
-        return f"{self.simbolo} {con_signo(self.diferencia)} ({con_signo(self.porcentaje)} %)"
+            return self.texto_corto
+        return f"{self.texto_corto} ({con_signo(self.porcentaje)} %)"
+
+    @property
+    def texto_corto(self):
+        """Solo flecha y diferencia («▲ +1»): las tarjetas muestran al lado el valor anterior."""
+        return f"{self.simbolo} {con_signo(self.diferencia)}"
 
 
 def con_signo(numero):

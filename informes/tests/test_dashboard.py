@@ -120,7 +120,7 @@ def test_rango_del_periodo_legible(cliente_bioquimico):
     html = html_de(cliente_bioquimico.get(URL))
     assert f'Período:</dt> <dd class="inline" data-rango-actual>{periodo.rango_texto}' in html
     assert (
-        f'Se compara con:</dt> <dd class="inline" data-rango-anterior>'
+        f'Comparado con:</dt> <dd class="inline" data-rango-anterior>'
         f"{periodo.rango_anterior_texto}" in html
     )
 
@@ -136,31 +136,30 @@ def test_indicadores_en_pantalla(cliente_bioquimico, con_demo):
         assert f'data-indicador="{nombre}"' in html
         assert titulo in html
     assert re.search(r'data-tono="(exito|peligro|neutro)"', html)
-    assert "antes: 0" in html  # la demo no tiene datos 6 meses antes
+    assert "antes 0" in html  # la demo no tiene datos 6 meses antes
     assert "sin datos previos" not in html
     assert "Estudios por estado" in html
     for estado in ("Sin iniciar", "En proceso", "Finalizado", "Informe generado"):
         assert estado in html
 
 
-def test_cada_indicador_dice_contra_que_compara(cliente_bioquimico, con_demo):
-    """Observación del sprint 4: «vs. <período anterior>», el valor anterior y una ayuda."""
-    periodo = tablero.periodo("ultimos_3", timezone.localdate())
+def test_cada_indicador_muestra_el_valor_anterior(cliente_bioquimico, con_demo):
+    """Observación del sprint 4: una sola línea corta, «antes 7 · ▲ +1»; el período de
+    comparación se lee una vez, arriba."""
     html = html_de(cliente_bioquimico.get(URL + "?periodo=ultimos_3"))
+    for nombre in ("muestras", "estudios", "informes", "respuesta"):
+        tarjeta = bloque(html, f'data-indicador="{nombre}"')
+        assert f'id="ayuda-indicador-{nombre}"' in tarjeta
+        assert "vs." not in tarjeta
     for nombre in ("muestras", "estudios", "informes"):
         tarjeta = bloque(html, f'data-indicador="{nombre}"')
-        assert f"vs. {periodo.rango_anterior_corto}" in tarjeta
-        assert "data-antes" in tarjeta and "antes: " in tarjeta
-        assert f'id="ayuda-indicador-{nombre}"' in tarjeta
-    respuesta = bloque(html, 'data-indicador="respuesta"')
-    assert 'id="ayuda-indicador-respuesta"' in respuesta
-    assert periodo.rango_anterior_corto in respuesta
+        assert re.search(r"data-antes>antes \d+</span> ·", tarjeta)
+        assert re.search(r'data-tono="(exito|peligro|neutro)">[▲▼=] [+−]?\d+<', tarjeta)
 
 
 def test_sin_datos_para_comparar(cliente_bioquimico):
-    periodo = tablero.periodo("este_mes", timezone.localdate())
     tarjeta = bloque(html_de(cliente_bioquimico.get(URL)), 'data-indicador="respuesta"')
-    assert f"Sin datos para comparar con {periodo.rango_anterior_corto}" in tarjeta
+    assert "Sin datos para comparar" in tarjeta
     assert "data-antes" not in tarjeta
 
 
@@ -364,21 +363,19 @@ def test_indicador_calidad_en_pantalla(cliente_bioquimico, evaluadas):
     assert seccion.index('aria-labelledby="titulo-calidad"') < seccion.index("Calidad")
     assert 'id="ayuda-calidad"' in seccion
     indicador = bloque(seccion, 'data-indicador="calidad"')
-    assert "10,0 % fuera de norma" in indicador
+    assert "data-valor>10,0 %</span>" in indicador
     assert "4 de 40 resultados" in indicador
     assert "% de resultados fuera de norma" in indicador
     assert "Nivel de cumplimiento" not in indicador
     assert 'id="ayuda-indicador-calidad"' in indicador
     assert re.search(r'data-tono="(exito|peligro|neutro)"', indicador)
-    assert "Sin datos para comparar con" in indicador
+    assert "Sin datos para comparar" in indicador
     assert "ayuda-puntos-porcentuales" not in indicador  # sin variación no hace falta
-    assert "3 resultados sin límite comparable, fuera del cálculo" in bloque(
-        seccion, "data-sin-limite"
-    )
+    assert "3 sin límite para comparar (no se cuentan)" in bloque(seccion, "data-sin-limite")
 
     seccion = seccion_calidad(html_de(cliente_bioquimico.get(URL + "?periodo=ultimos_6")))
     indicador = bloque(seccion, 'data-indicador="calidad"')
-    assert "12,2 % fuera de norma" in indicador
+    assert "data-valor>12,2 %</span>" in indicador
     assert "5 de 41 resultados" in indicador
 
 
@@ -391,12 +388,10 @@ def test_variacion_de_calidad_explicada(cliente_bioquimico, evaluadas):
         {"PH": (1, 10)},
         momento=ahora.replace(year=mes_pasado.year, month=mes_pasado.month, day=mes_pasado.day),
     )
-    periodo = tablero.periodo("este_mes", ahora.date())
     seccion = seccion_calidad(html_de(cliente_bioquimico.get(URL)))
     indicador = bloque(seccion, 'data-indicador="calidad"')
     assert "▲ +4,9 p. p." in indicador
-    assert f"vs. {periodo.rango_anterior_corto}" in indicador
-    assert "antes: 10,0 % (1 de 10)" in indicador
+    assert "data-antes>antes 10,0 %</span> ·" in indicador
     assert 'id="ayuda-puntos-porcentuales"' in indicador
     assert "10 % → 14,9 % = +4,9 p. p." in indicador
 

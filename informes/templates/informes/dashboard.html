@@ -25,7 +25,7 @@
     <button type="submit" class="btn btn-secundario">Ver</button>
     <dl class="grid gap-1 text-sm sm:ml-auto sm:text-right" data-rango>
       <div><dt class="inline font-semibold text-marino">Período:</dt> <dd class="inline" data-rango-actual>{{ periodo.rango_texto }}</dd></div>
-      <div class="text-tinta-suave"><dt class="inline font-semibold">Se compara con:</dt> <dd class="inline" data-rango-anterior>{{ periodo.rango_anterior_texto }}</dd></div>
+      <div class="text-tinta-suave"><dt class="inline font-semibold">Comparado con:</dt> <dd class="inline" data-rango-anterior>{{ periodo.rango_anterior_texto }}</dd></div>
     </dl>
   </form>
 
@@ -50,14 +50,10 @@
           {% else %}
             <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ tarjeta.indicador.actual }}</span>
           {% endif %}
-          {% if tarjeta.nombre == "respuesta" %}
-            {% if tarjeta.indicador.anterior is None %}
-              {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion vs=periodo.rango_anterior_corto %}
-            {% else %}
-              {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion vs=periodo.rango_anterior_corto antes=tarjeta.indicador.texto_anterior|add:" días" %}
-            {% endif %}
+          {% if tarjeta.nombre == "respuesta" and tarjeta.indicador.anterior is not None %}
+            {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion antes=tarjeta.indicador.texto_anterior|add:" días" %}
           {% else %}
-            {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion vs=periodo.rango_anterior_corto antes=tarjeta.indicador.texto_anterior %}
+            {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion antes=tarjeta.indicador.texto_anterior %}
           {% endif %}
         </span>
       </div>

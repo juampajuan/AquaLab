@@ -114,27 +114,24 @@ def test_periodos(clave, hoy, esperado):
 
 
 @pytest.mark.parametrize(
-    ("inicio", "fin", "largo", "corto"),
+    ("inicio", "fin", "texto"),
     [
-        (D(2026, 11, 1), D(2026, 11, 13), "1 al 13 de noviembre de 2026", "1–13 nov"),
+        (D(2026, 11, 1), D(2026, 11, 13), "1 al 13 de noviembre de 2026"),
         (
             D(2026, 9, 1),
             D(2026, 11, 17),
             "1 de septiembre al 17 de noviembre de 2026",
-            "1 sep–17 nov",
         ),
         (
             D(2025, 12, 1),
             D(2026, 2, 17),
             "1 de diciembre de 2025 al 17 de febrero de 2026",
-            "1 dic 2025–17 feb 2026",
         ),
     ],
 )
-def test_texto_rango(inicio, fin, largo, corto):
+def test_texto_rango(inicio, fin, texto):
     """Observación del sprint 4: el rango se lee como fecha, no como «01/11/2026»."""
-    assert tablero.texto_rango(inicio, fin) == largo
-    assert tablero.texto_rango(inicio, fin, corto=True) == corto
+    assert tablero.texto_rango(inicio, fin) == texto
 
 
 @pytest.mark.parametrize(
@@ -150,7 +147,6 @@ def test_periodo_con_textos():
     periodo = tablero.periodo("este_mes", D(2026, 11, 13))
     assert periodo.rango_texto == "1 al 13 de noviembre de 2026"
     assert periodo.rango_anterior_texto == "1 al 13 de octubre de 2026"
-    assert periodo.rango_anterior_corto == "1–13 oct"
 
 
 @pytest.mark.parametrize(

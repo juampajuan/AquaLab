@@ -18,24 +18,14 @@
           {% include "ui/ayuda.html" with texto="De los resultados validados en el período que tienen límite para comparar, qué porcentaje quedó fuera de norma. Menos es mejor." id="ayuda-indicador-calidad" etiqueta="% de resultados fuera de norma" %}
         </span>
         {% if indicador.actual.evaluados %}
-          <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ indicador.actual.porcentaje_texto }} fuera de norma</span>
+          <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ indicador.actual.porcentaje_texto }}</span>
           <span class="numeros block text-sm text-tinta-suave">{{ indicador.actual.fuera }} de {{ indicador.actual.evaluados }} resultados</span>
-          {% if indicador.anterior.evaluados %}
-            {% with antes=indicador.anterior.texto %}
-              {% include "informes/variacion.html" with variacion=indicador.variacion vs=periodo.rango_anterior_corto antes=antes %}
-            {% endwith %}
-            <span class="mt-1 flex items-center gap-1 text-xs text-tinta-suave" data-ayuda-pp>
-              ¿Qué es «p. p.»?
-              {% include "ui/ayuda.html" with texto="Puntos porcentuales: la diferencia entre los dos porcentajes. Ej.: 10 % → 14,9 % = +4,9 p. p. No es un aumento del 4,9 %." id="ayuda-puntos-porcentuales" etiqueta="Puntos porcentuales" %}
-            </span>
-          {% else %}
-            {% include "informes/variacion.html" with variacion=None vs=periodo.rango_anterior_corto %}
-          {% endif %}
+          {% include "informes/variacion.html" with variacion=indicador.variacion antes=indicador.anterior.porcentaje_texto puntos=True %}
         {% else %}
           <span class="block text-base font-semibold text-tinta-suave" data-valor>Sin resultados validados en el período</span>
         {% endif %}
         {% if indicador.sin_limite %}
-          <p class="mt-2 text-xs text-tinta-suave" data-sin-limite>{{ indicador.sin_limite }} resultado{{ indicador.sin_limite|pluralize }} sin límite comparable, fuera del cálculo</p>
+          <p class="mt-2 text-xs text-tinta-suave" data-sin-limite>{{ indicador.sin_limite }} sin límite para comparar (no se cuentan)</p>
         {% endif %}
       </div>
     </div>
