@@ -5,6 +5,35 @@ from estudios.tests.conftest import *  # noqa: F401,F403
 
 
 @pytest.fixture
+def conclusion_estudio(estudio_de, bioquimico):
+    from estudios.tests.utiles import cargar, validar
+    from pruebas.models import Prueba
+
+    def crear(valores=None, *, sin_norma=(), sin_limite=()):
+        valores = valores or {"PH": "9.2", "CL-": "40"}
+        Prueba.objects.filter(codigo__in=valores).update(norma="Norma sintética US10.2")
+        Prueba.objects.filter(codigo__in=sin_norma).update(norma="")
+        Prueba.objects.filter(codigo__in=sin_limite).update(limite_min="", limite_max="")
+        estudio = estudio_de(*valores)
+        cargar(estudio, bioquimico, valores)
+        validar(estudio, bioquimico, *valores)
+        return estudio
+
+    return crear
+
+
+@pytest.fixture
+def conclusion_propuesta(conclusion_estudio, bioquimico):
+    from informes import conclusion_hechos, conclusiones
+
+    estudio = conclusion_estudio()
+    estado = conclusiones.proponer_conclusion(
+        estudio.pk, bioquimico, 0, conclusion_hechos.huella(conclusion_hechos.recolectar(estudio))
+    )
+    return estudio, estado
+
+
+@pytest.fixture
 def completar():
     """Pasa a Completada las asignaciones de esos códigos (todas si no se indican).
 

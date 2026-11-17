@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load ui %}
+{% load ui static %}
 
 {% block title %}Vista previa del informe · AquaLab{% endblock %}
 
@@ -8,7 +8,11 @@
 {% endblock %}
 
 {% block content %}
-  <div class="max-w-5xl space-y-6">
+  <div class="max-w-5xl space-y-6 pb-24"{% if conclusion_estado %}
+       data-conclusion data-estudio="{{ estudio.pk }}" data-usuario="{{ user.pk }}" data-sesion="{{ huella_sesion }}"
+       data-url-proponer="{% url 'informes:conclusion_proponer' estudio.pk %}"
+       data-url-guardar="{% url 'informes:conclusion_guardar' estudio.pk %}"
+       data-url-aprobar="{% url 'informes:conclusion_aprobar' estudio.pk %}"{% endif %}>
     <div class="aviso aviso-advertencia" role="status">
       {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
       <div class="flex-1">Vista previa: este informe todavía no fue emitido.</div>
@@ -16,9 +20,16 @@
 
     {% include "informes/documento.html" %}
 
+    {% if conclusion_estado %}
+      {% include "informes/_editor_conclusion.html" %}
+      <script src="{% static 'informes/conclusion.js' %}" defer></script>
+    {% elif error_conclusion %}
+      <p class="aviso aviso-advertencia" role="alert">{{ error_conclusion }}</p>
+    {% endif %}
+
     {# Volver a la izquierda y la acción principal a la derecha (SCRUM-82). #}
     <div class="flex flex-wrap items-center justify-between gap-3" data-componente="acciones-confirmacion">
-      <a href="{{ volver_url }}" class="btn btn-secundario">
+      <a href="{{ volver_url }}" class="btn btn-secundario"{% if conclusion_estado %} data-conclusion-volver{% endif %}>
         {% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver
       </a>
       {% if falta_firma %}
@@ -28,12 +39,23 @@
         </div>
       {% elif perms.informes.emitir_informes %}
         {# Evita el doble envío sin deshabilitar el botón: deshabilitado no se envía. #}
-        <form method="post" action="{% url 'informes:generar' estudio.pk %}" onsubmit="if (this.dataset.enviado) return false; this.dataset.enviado = '1';">
+        <form method="post" action="{% url 'informes:generar' estudio.pk %}"{% if conclusion_estado %} data-conclusion-emitir{% else %} onsubmit="if (this.dataset.enviado) return false; this.dataset.enviado = '1';"{% endif %}>
           {% csrf_token %}
-          <button type="submit" class="btn btn-primario">
-            {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Emitir informe
+          {% if conclusion_estado %}
+            <input type="hidden" name="incluir_conclusion" value="1">
+            <input type="hidden" name="revision_conclusion" value="{{ conclusion_estado.revision }}" data-conclusion-revision disabled>
+          {% endif %}
+          <button type="submit" class="btn btn-primario"{% if conclusion_estado %} data-conclusion-emitir-boton{% if not conclusion_estado.aprobada %} disabled{% endif %}{% endif %}>
+            {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} {% if conclusion_estado %}Emitir con conclusión aprobada{% else %}Emitir informe{% endif %}
           </button>
         </form>
+        {% if conclusion_estado %}
+          <form method="post" action="{% url 'informes:generar' estudio.pk %}" data-conclusion-sin
+                onsubmit="return this.dataset.confirmado === '1' || confirm('Se emitirá el informe sin conclusión. ¿Continuar?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secundario">Emitir sin conclusión</button>
+          </form>
+        {% endif %}
       {% else %}
         <p class="text-sm text-tinta-suave">Solo un integrante del grupo Bioquímicos puede emitir el informe.</p>
       {% endif %}

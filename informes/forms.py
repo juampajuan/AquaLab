@@ -1,9 +1,73 @@
 from django import forms
+from django.core.validators import RegexValidator
 
 from muestras.forms import FORMATOS_FECHA, SelectorFecha
 
 from .firmas import leer_firma
 from .models import FirmaProfesional
+
+
+class RevisionConclusionForm(forms.Form):
+    revision_esperada = forms.IntegerField(min_value=0)
+    huella_hechos_vista = forms.CharField(
+        min_length=64, max_length=64, validators=[RegexValidator(r"\A[0-9a-f]{64}\Z")]
+    )
+
+    def clean_revision_esperada(self):
+        if isinstance(self.data.get("revision_esperada"), bool):
+            raise forms.ValidationError("La revisión debe ser un número entero.")
+        return self.cleaned_data["revision_esperada"]
+
+
+class GuardarConclusionForm(RevisionConclusionForm):
+    texto = forms.CharField(
+        label="Borrador de conclusión",
+        required=False,
+        strip=False,
+        widget=forms.Textarea,
+        help_text="Se conserva como borrador. Editarlo invalida la aprobación anterior.",
+    )
+
+    def clean_texto(self):
+        return self.cleaned_data["texto"].replace("\r\n", "\n")
+
+
+class AprobarConclusionForm(RevisionConclusionForm):
+    huella_texto_visto = forms.CharField(
+        min_length=64, max_length=64, validators=[RegexValidator(r"\A[0-9a-f]{64}\Z")]
+    )
+    confirmacion = forms.BooleanField(
+        label="Apruebo el texto final y sus advertencias",
+        help_text="La aprobación corresponde exactamente al texto y a los hechos revisados.",
+        error_messages={"required": "Confirmá expresamente la aprobación del texto revisado."},
+    )
+
+
+class EmitirConclusionForm(forms.Form):
+    incluir_conclusion = forms.CharField(required=False)
+    revision_conclusion = forms.IntegerField(required=False, min_value=1)
+
+    def clean_incluir_conclusion(self):
+        valor = self.data.get("incluir_conclusion", "")
+        if type(valor) is bool:
+            return valor
+        if valor not in ("", "0", "1"):
+            raise forms.ValidationError("La opción de conclusión no es válida.")
+        return valor == "1"
+
+    def clean_revision_conclusion(self):
+        valor = self.data.get("revision_conclusion")
+        if valor not in (None, "") and (
+            type(valor) is not int and (not isinstance(valor, str) or not valor.isdecimal())
+        ):
+            raise forms.ValidationError("La revisión debe ser un número entero.")
+        return self.cleaned_data["revision_conclusion"]
+
+    def clean(self):
+        datos = super().clean()
+        if datos.get("incluir_conclusion") and datos.get("revision_conclusion") is None:
+            self.add_error("revision_conclusion", "Indicá la revisión aprobada para emitir.")
+        return datos
 
 
 class BuscarInformeForm(forms.Form):

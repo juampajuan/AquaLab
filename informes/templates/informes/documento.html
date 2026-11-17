@@ -87,7 +87,7 @@
       </div>
     </section>
 
-    <footer class="flex flex-wrap items-end justify-between gap-6 border-t border-borde pt-4 text-xs text-tinta-suave">
+    {% if contenido.conclusion %}{% include "informes/_conclusion.html" %}{% endif %}<footer class="flex flex-wrap items-end justify-between gap-6 border-t border-borde pt-4 text-xs text-tinta-suave">
       <div class="space-y-1">
         {% if informe %}
           <p>Emitido por {{ contenido.firma.nombre|default:informe.emitido_por.get_full_name|default:informe.emitido_por.email }} el {{ informe.fecha_emision|date:"d/m/Y H:i" }}</p>

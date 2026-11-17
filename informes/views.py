@@ -1,14 +1,17 @@
+import json
 import logging
 import uuid
 from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import DatabaseError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from estudios import calculo, desvios
@@ -16,10 +19,10 @@ from estudios.forms import BuscarEstudioForm, ElegirOrigenForm
 from estudios.models import EstadoEstudio, EstadoPruebaEstudio, Estudio
 from estudios.views import RESULTADOS_POR_PAGINA
 
-from . import calidad, envios, pdf, servicios, tablero
+from . import calidad, conclusion_hechos, conclusiones, envios, pdf, servicios, tablero
 from .busqueda import informes_emitidos
 from .contenido import armar_contenido
-from .forms import BuscarInformeForm, FirmaForm
+from .forms import BuscarInformeForm, EmitirConclusionForm, FirmaForm, GuardarConclusionForm
 from .models import FirmaProfesional, Informe, ResultadoEnvio
 from .servicios import EmitirInformeError, InformeNoDisponible
 
@@ -92,8 +95,9 @@ def enlaces_del_informe(estudio):
     return {clave: f"{url}?desde=informe" if url else "" for clave, url in enlaces.items()}
 
 
+@never_cache
+@require_GET
 def vista_previa(request, pk):
-    """Borrador del informe (US 7.2): cualquier empleado lo ve; no cambia nada."""
     estudio = get_object_or_404(
         Estudio.objects.select_related("muestra", "muestra__cliente", "muestra__origen"), pk=pk
     )
@@ -117,16 +121,83 @@ def vista_previa(request, pk):
         "falta_firma": puede_emitir
         and not FirmaProfesional.objects.filter(usuario=request.user).exists(),
     }
+    if conclusiones.puede_concluir(request.user):
+        try:
+            estado = conclusiones.cargar_borrador_previa(estudio.pk, request.user)
+        except PermissionDenied:
+            pass
+        except InformeNoDisponible as exc:
+            messages.error(request, str(exc))
+            return redirect("informes:control", pk=estudio.pk)
+        except conclusion_hechos.FuentesAmbiguas:
+            contexto["error_conclusion"] = (
+                "La conclusión no está disponible: las validaciones son ambiguas."
+            )
+        else:
+            contexto["conclusion_estado"] = estado
+            form = GuardarConclusionForm(initial={"texto": estado["texto_editorial"]})
+            form.fields["texto"].widget.attrs.update(
+                {"data-conclusion-editor": "", "class": "form-control"}
+            )
+            form.fields["texto"].label = "Conclusión"
+            form.fields["texto"].help_text = "Revisá el texto y las advertencias antes de aprobar."
+            contexto["conclusion_form"] = form
     return render(request, "informes/vista_previa.html", contexto)
 
 
 @permission_required("informes.emitir_informes", raise_exception=True)
 @require_POST
+@never_cache
 def generar(request, pk):
     """Emite el informe (US 7.2), confirmado desde la vista previa."""
-    get_object_or_404(Estudio, pk=pk)
+    estudio = get_object_or_404(Estudio, pk=pk)
+    datos = request.POST
+    if request.content_type == "application/json":
+        try:
+            datos = json.loads(request.body)
+            if not isinstance(datos, dict):
+                raise ValueError
+        except (ValueError, UnicodeDecodeError):
+            return render(
+                request,
+                "informes/conclusion_conflicto.html",
+                {"estudio": estudio, "error_conclusion": "La solicitud de emisión no es válida."},
+                status=400,
+            )
+    form = EmitirConclusionForm(datos)
+    valido = form.is_valid()
+    incluir = form.cleaned_data.get("incluir_conclusion", False)
+    if incluir:
+        conclusiones.autorizar_conclusion(request.user)
+    if not valido:
+        return render(
+            request,
+            "informes/conclusion_conflicto.html",
+            {
+                "estudio": estudio,
+                "error_conclusion": "Revisá la opción y la revisión de la conclusión.",
+                "errores_emision": form.errors,
+            },
+            status=400,
+        )
     try:
-        informe = servicios.emitir_informe(pk, request.user)
+        if incluir:
+            informe = servicios.emitir_informe(
+                pk,
+                request.user,
+                incluir_conclusion=True,
+                revision_conclusion=form.cleaned_data["revision_conclusion"],
+            )
+        else:
+            informe = servicios.emitir_informe(pk, request.user)
+    except conclusiones.ConflictoConclusion as exc:
+        messages.error(request, str(exc))
+        return render(
+            request,
+            "informes/conclusion_conflicto.html",
+            {"estudio": estudio, "error_conclusion": str(exc)},
+            status=409,
+        )
     except (InformeNoDisponible, EmitirInformeError) as exc:
         messages.error(request, str(exc))
     except DatabaseError:

@@ -1,0 +1,22 @@
+<section class="space-y-4 rounded-lg border border-borde bg-superficie p-6">
+  <h2 class="text-lg font-semibold">Conclusión del informe</h2>
+  <p class="text-sm text-tinta-suave" data-conclusion-respaldo>{% if conclusion_estado.origen_propuesta == "plantilla" %}Se usó una plantilla de respaldo{% if conclusion_estado.hechos.clase == "parcial" %} parcial{% endif %}.{% endif %}</p>
+  <div data-conclusion-csrf hidden>{% csrf_token %}</div>
+  <div data-conclusion-inicial hidden>{{ conclusion_estado|json_script:"conclusion-inicial" }}</div>
+  <div class="flex flex-wrap gap-3">
+    <button type="button" class="btn btn-secundario" data-conclusion-proponer>Proponer conclusión</button>
+  </div>
+  {% include "ui/campo.html" with field=conclusion_form.texto clase="[&_.ayuda-texto]:max-w-[calc(100vw-15rem)] sm:[&_.ayuda-texto]:max-w-72" %}
+  <div class="campo-error" data-conclusion-errores role="alert"></div>
+  <aside class="rounded-lg border border-borde p-4" data-conclusion-avisos{% if not conclusion_estado.advertencias %} hidden{% endif %}>
+    <h3 class="text-sm font-semibold">Pruebas no evaluables</h3>
+    <div class="whitespace-pre-wrap text-sm" data-conclusion-advertencias>{% for aviso in conclusion_estado.advertencias %}{{ aviso }}{% if not forloop.last %}
+{% endif %}{% endfor %}</div>
+  </aside>
+  <div class="flex flex-wrap gap-3">
+    <button type="button" class="btn btn-primario" data-conclusion-aprobar{% if not conclusion_estado.texto_final or conclusion_estado.aprobada %} disabled{% endif %}>Aprobar conclusión</button>
+  </div>
+  <p role="status" aria-live="polite" class="text-sm text-tinta-suave" data-conclusion-estado>
+    {% if conclusion_estado.aprobada %}Aprobada{% else %}Pendiente{% endif %}
+  </p>
+</section>

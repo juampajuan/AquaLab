@@ -81,7 +81,9 @@ def test_vista_previa_emitir_solo_con_permiso(cliente_bioquimico, estudio_listo,
     accion = reverse("informes:generar", args=[estudio_listo.pk])
     html = cliente_bioquimico.get(url(estudio_listo)).content.decode()
     assert f'action="{accion}"' in html
-    assert "data-enviado" in html or "dataset.enviado" in html
+    # La emisión del editor usa el guardado y la barrera de envío de conclusion.js.
+    assert "data-conclusion-emitir" in html
+    assert "informes/conclusion.js" in html
     comun = django_user_model.objects.create_user(
         email="comun-informes@ejemplo.com", password="Clave-Valida-123", is_active=True
     )
@@ -106,7 +108,8 @@ def test_vista_previa_muestra_firma(cliente_bioquimico, estudio_listo, bioquimic
     html = cliente_bioquimico.get(url(estudio_listo)).content.decode()
     assert bioquimico.firma_profesional.data_url in html
     assert "Mat. MP 1234" in html
-    assert "Emitir informe" in html
+    assert "Emitir con conclusión aprobada" in html
+    assert "Emitir sin conclusión" in html
 
 
 def test_vista_previa_sin_firma_ofrece_cargarla(estudio_de, completar, bioquimico_sin_firma):

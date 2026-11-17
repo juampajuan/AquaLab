@@ -267,6 +267,17 @@ body {
   }
 }
 
+.inf-conclusion {
+  /* El texto puede ocupar varias páginas; no mantener el bloque entero unido. */
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.inf-conclusion h2 {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
 @media print {
   .inf-barra {
     display: none;

@@ -99,7 +99,7 @@
       </table>
     </section>
 
-    <table class="inf-pie">
+    {% if contenido.conclusion %}{% include "informes/_conclusion.html" %}{% endif %}<table class="inf-pie">
       <tr>
         <td>
           <p>Emitido el {{ informe.fecha_emision|date:"d/m/Y H:i" }}</p>

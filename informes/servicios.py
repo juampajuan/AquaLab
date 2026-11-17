@@ -68,7 +68,7 @@ def siguiente_numero():
     return (ultimo or 0) + 1
 
 
-def emitir_informe(estudio_pk, usuario):
+def emitir_informe(estudio_pk, usuario, *, incluir_conclusion=False, revision_conclusion=None):
     """Emite el informe del estudio (US 7.2) y lo devuelve.
 
     En una transacción: bloquea el estudio y revalida la regla de la US 7.1, toma el lock de la
@@ -77,24 +77,47 @@ def emitir_informe(estudio_pk, usuario):
     el contenido (nombre, matrícula e imagen). Una segunda emisión del mismo estudio espera el
     bloqueo y recibe el motivo «ya fue generado».
     """
+    if incluir_conclusion:
+        from . import conclusiones
+
+        usuario = conclusiones.autorizar_conclusion(usuario)
     if not usuario.is_authenticated or not usuario.is_active:
         raise EmitirInformeError("Se requiere una sesión activa.")
     if not usuario.has_perm("informes.emitir_informes"):
         raise EmitirInformeError("Se requiere permiso para emitir informes.")
     if not FirmaProfesional.objects.filter(usuario=usuario).exists():
         raise EmitirInformeError("Cargá tu firma y matrícula en «Mi firma» antes de emitir.")
+    conflicto = None
     with transaction.atomic():
-        estudio = estudio_listo_bloqueado(estudio_pk)
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT pg_advisory_xact_lock(%s)", [CLAVE_LOCK_NUMERO_INFORME])
-        informe = Informe.objects.create(
-            numero=siguiente_numero(),
-            estudio=estudio,
-            emitido_por=usuario,
-            contenido=armar_contenido(estudio, usuario),
-        )
-        estudio.estado = EstadoEstudio.INFORME_GENERADO
-        estudio.save(update_fields=["estado"])
+        if incluir_conclusion:
+            usuario = conclusiones.autorizar_conclusion(usuario)
+            estudio, borrador, motivo = conclusiones.bloquear(estudio_pk)
+            if estudio.estado == EstadoEstudio.INFORME_GENERADO:
+                raise InformeNoDisponible(motivo)
+            hechos = conclusiones.hechos_actuales(estudio, borrador)
+            conclusion, conflicto = conclusiones.conclusion_para_emitir_bloqueada(
+                borrador, hechos, revision_conclusion, motivo
+            )
+        else:
+            estudio = estudio_listo_bloqueado(estudio_pk)
+        if conflicto is None:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(%s)", [CLAVE_LOCK_NUMERO_INFORME])
+            contenido = (
+                armar_contenido(estudio, usuario, conclusion=conclusion)
+                if incluir_conclusion
+                else armar_contenido(estudio, usuario)
+            )
+            informe = Informe.objects.create(
+                numero=siguiente_numero(),
+                estudio=estudio,
+                emitido_por=usuario,
+                contenido=contenido,
+            )
+            estudio.estado = EstadoEstudio.INFORME_GENERADO
+            estudio.save(update_fields=["estado"])
+    if conflicto:
+        raise conflicto
     return informe
 
 
