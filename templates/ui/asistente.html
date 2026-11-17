@@ -23,7 +23,7 @@
   <header class="flex items-center justify-between bg-marino px-4 py-3 text-white">
     <h2 class="flex items-center gap-2 text-sm font-semibold text-white">
       <span class="inline-flex size-7 items-center justify-center rounded-full bg-white/15 text-white">{% include "ui/icono.html" with nombre="bot" clase="size-4" %}</span>
-      Asistente de consultas
+      Asistente de AquaLab
     </h2>
     {# Minimizar conserva la conversación; la ✕ la borra (FR-019). #}
     <div class="flex items-center gap-1">
@@ -37,11 +37,12 @@
   </header>
   <ol class="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm" aria-live="polite" data-asistente-mensajes>
     <li class="text-tinta-suave">
-      <p>Preguntá por una muestra, un estudio o un cliente. Respondo solo con datos de AquaLab y no cambio nada. Por ejemplo:</p>
+      <p>Preguntá por una muestra, un estudio o un cliente, o pedime que prepare el registro de una muestra o un estudio. Respondo solo con datos de AquaLab y no creo nada: el registro lo confirmás vos en el formulario. Por ejemplo:</p>
       <ul class="mt-2 space-y-1">
         <li><button type="button" class="btn-link text-left" data-asistente-ejemplo>¿Cómo está el PI 200417?</button></li>
         <li><button type="button" class="btn-link text-left" data-asistente-ejemplo>¿Qué estudios tiene Lácteos del Sur?</button></li>
         <li><button type="button" class="btn-link text-left" data-asistente-ejemplo>¿Qué no cumple en el estudio de la escuela N° 12?</button></li>
+        <li><button type="button" class="btn-link text-left" data-asistente-ejemplo>Registrá una muestra de Lácteos del Sur, pozo 2</button></li>
       </ul>
     </li>
   </ol>

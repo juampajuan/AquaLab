@@ -28,8 +28,11 @@ def test_boton_y_panel_con_sesion(cliente_http, config_asistente):
         "¿Cómo está el PI 200417?",
         "¿Qué estudios tiene Lácteos del Sur?",
         "¿Qué no cumple en el estudio de la escuela N° 12?",
+        "Registrá una muestra de Lácteos del Sur, pozo 2",
     ):
         assert ejemplo in html
+    assert "pedime que prepare el registro de una muestra o un estudio" in html
+    assert "no cambio nada" not in html
     # Botón de envío con el ícono de enviar (Lucide send-horizontal) y nombre accesible.
     enviar = re.search(r"<button[^>]*data-asistente-enviar[^>]*>(.*?)</button>", html, re.S)
     assert 'aria-label="Enviar pregunta"' in enviar.group(0)
