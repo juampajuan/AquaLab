@@ -42,6 +42,20 @@ MESES_ABREVIADOS = (
     "nov",
     "dic",
 )
+MESES = (
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+)
 UN_DECIMAL = Decimal("0.1")
 
 
@@ -56,6 +70,43 @@ class Periodo:
     fin: dt.date
     inicio_anterior: dt.date
     fin_anterior: dt.date
+
+    @property
+    def rango_texto(self):
+        return texto_rango(self.inicio, self.fin)
+
+    @property
+    def rango_anterior_texto(self):
+        return texto_rango(self.inicio_anterior, self.fin_anterior)
+
+    @property
+    def rango_anterior_corto(self):
+        """Para el «vs. …» de cada indicador: «1–13 oct» o «1 sep–30 nov»."""
+        return texto_rango(self.inicio_anterior, self.fin_anterior, corto=True)
+
+
+def texto_rango(inicio, fin, *, corto=False):
+    """Rango de fechas legible, sin depender del idioma del servidor (observación del sprint 4).
+
+    Largo: «1 al 13 de noviembre de 2026», «1 de septiembre al 17 de noviembre de 2026» o
+    «1 de diciembre de 2025 al 17 de febrero de 2026». Corto: «1–13 nov», «1 sep–17 nov» o
+    «1 dic 2025–17 feb 2026».
+    """
+    if corto:
+        mes_fin = MESES_ABREVIADOS[fin.month - 1]
+        if (inicio.year, inicio.month) == (fin.year, fin.month):
+            return f"{inicio.day}–{fin.day} {mes_fin}"
+        mes_inicio = MESES_ABREVIADOS[inicio.month - 1]
+        if inicio.year == fin.year:
+            return f"{inicio.day} {mes_inicio}–{fin.day} {mes_fin}"
+        return f"{inicio.day} {mes_inicio} {inicio.year}–{fin.day} {mes_fin} {fin.year}"
+    mes_fin = MESES[fin.month - 1]
+    if (inicio.year, inicio.month) == (fin.year, fin.month):
+        return f"{inicio.day} al {fin.day} de {mes_fin} de {fin.year}"
+    mes_inicio = MESES[inicio.month - 1]
+    if inicio.year == fin.year:
+        return f"{inicio.day} de {mes_inicio} al {fin.day} de {mes_fin} de {fin.year}"
+    return f"{inicio.day} de {mes_inicio} de {inicio.year} al {fin.day} de {mes_fin} de {fin.year}"
 
 
 def correr_meses(fecha, meses):
@@ -103,11 +154,11 @@ class Variacion:
 
     @property
     def texto(self):
-        """«▲ +5 (+12 %)», «▼ −2 (−8 %)», «= 0 (0 %)» o «▲ +3 (sin datos previos)»."""
-        relativo = (
-            "sin datos previos" if self.porcentaje is None else f"{con_signo(self.porcentaje)} %"
-        )
-        return f"{self.simbolo} {con_signo(self.diferencia)} ({relativo})"
+        """«▲ +5 (+12 %)», «▼ −2 (−8 %)» o «= 0 (0 %)». Si antes era 0 no hay porcentaje: «▲ +3»
+        (el dashboard muestra al lado «antes: 0»)."""
+        if self.porcentaje is None:
+            return f"{self.simbolo} {con_signo(self.diferencia)}"
+        return f"{self.simbolo} {con_signo(self.diferencia)} ({con_signo(self.porcentaje)} %)"
 
 
 def con_signo(numero):
@@ -156,6 +207,10 @@ class Indicador:
     @property
     def texto(self):
         return "—" if self.actual is None else con_coma(self.actual)
+
+    @property
+    def texto_anterior(self):
+        return None if self.anterior is None else con_coma(self.anterior)
 
 
 def fecha_local(campo):
@@ -356,10 +411,31 @@ def alertas(ahora):
 
 
 TARJETAS = (
-    ("muestras", "Muestras ingresadas", "flask-conical"),
-    ("estudios", "Estudios creados", "microscope"),
-    ("informes", "Informes emitidos", "file-text"),
-    ("respuesta", "Tiempo de respuesta", "clock"),
+    (
+        "muestras",
+        "Muestras ingresadas",
+        "flask-conical",
+        "Muestras registradas con fecha de ingreso dentro del período.",
+    ),
+    (
+        "estudios",
+        "Estudios creados",
+        "microscope",
+        "Estudios creados dentro del período (fecha de creación del estudio).",
+    ),
+    (
+        "informes",
+        "Informes emitidos",
+        "file-text",
+        "Informes emitidos dentro del período (fecha de emisión).",
+    ),
+    (
+        "respuesta",
+        "Tiempo de respuesta",
+        "clock",
+        "Promedio de días corridos desde el ingreso de la muestra hasta la emisión del informe, "
+        "de los informes emitidos dentro del período.",
+    ),
 )
 
 
@@ -375,8 +451,14 @@ def armar(clave, ahora=None):
         "periodo": p,
         "periodos": PERIODOS,
         "tarjetas": [
-            {"nombre": nombre, "titulo": titulo, "icono": icono, "indicador": datos[nombre]}
-            for nombre, titulo, icono in TARJETAS
+            {
+                "nombre": nombre,
+                "titulo": titulo,
+                "icono": icono,
+                "ayuda": ayuda,
+                "indicador": datos[nombre],
+            }
+            for nombre, titulo, icono, ayuda in TARJETAS
         ],
         "estados": estudios_por_estado(),
         "serie_mensual": mensual,

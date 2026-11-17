@@ -12,6 +12,7 @@ from django.utils import timezone
 
 from estudios import demo
 from estudios.models import Estudio, Medicion, Validacion
+from informes import tablero
 from informes.models import Informe
 from muestras.models import Muestra, Origen
 
@@ -111,7 +112,17 @@ def test_selector_de_periodo(cliente_bioquimico):
     assert re.search(r'<option value="ultimos_6" selected', html)
     for etiqueta in ("Este mes", "Mes anterior", "Últimos 3 meses", "Últimos 6 meses"):
         assert etiqueta in html
-    assert "comparado con" in html
+
+
+def test_rango_del_periodo_legible(cliente_bioquimico):
+    """Observación del sprint 4: arriba se lee el período y contra cuál se compara."""
+    periodo = tablero.periodo("este_mes", timezone.localdate())
+    html = html_de(cliente_bioquimico.get(URL))
+    assert f'Período:</dt> <dd class="inline" data-rango-actual>{periodo.rango_texto}' in html
+    assert (
+        f'Se compara con:</dt> <dd class="inline" data-rango-anterior>'
+        f"{periodo.rango_anterior_texto}" in html
+    )
 
 
 def test_indicadores_en_pantalla(cliente_bioquimico, con_demo):
@@ -125,10 +136,47 @@ def test_indicadores_en_pantalla(cliente_bioquimico, con_demo):
         assert f'data-indicador="{nombre}"' in html
         assert titulo in html
     assert re.search(r'data-tono="(exito|peligro|neutro)"', html)
-    assert "sin datos previos" in html  # la demo no tiene datos 6 meses antes
+    assert "antes: 0" in html  # la demo no tiene datos 6 meses antes
+    assert "sin datos previos" not in html
     assert "Estudios por estado" in html
+    assert "Situación de hoy · no depende del período" in html
     for estado in ("Sin iniciar", "En proceso", "Finalizado", "Informe generado"):
         assert estado in html
+
+
+def test_cada_indicador_dice_contra_que_compara(cliente_bioquimico, con_demo):
+    """Observación del sprint 4: «vs. <período anterior>», el valor anterior y una ayuda."""
+    periodo = tablero.periodo("ultimos_3", timezone.localdate())
+    html = html_de(cliente_bioquimico.get(URL + "?periodo=ultimos_3"))
+    for nombre in ("muestras", "estudios", "informes"):
+        tarjeta = bloque(html, f'data-indicador="{nombre}"')
+        assert f"vs. {periodo.rango_anterior_corto}" in tarjeta
+        assert "data-antes" in tarjeta and "antes: " in tarjeta
+        assert f'id="ayuda-indicador-{nombre}"' in tarjeta
+    respuesta = bloque(html, 'data-indicador="respuesta"')
+    assert 'id="ayuda-indicador-respuesta"' in respuesta
+    assert periodo.rango_anterior_corto in respuesta
+
+
+def test_sin_datos_para_comparar(cliente_bioquimico):
+    periodo = tablero.periodo("este_mes", timezone.localdate())
+    tarjeta = bloque(html_de(cliente_bioquimico.get(URL)), 'data-indicador="respuesta"')
+    assert f"Sin datos para comparar con {periodo.rango_anterior_corto}" in tarjeta
+    assert "data-antes" not in tarjeta
+
+
+def test_graficos_y_secciones_con_ayuda(cliente_bioquimico):
+    html = html_de(cliente_bioquimico.get(URL))
+    for ayuda in (
+        "ayuda-estados",
+        "ayuda-grafico-respuesta",
+        "ayuda-grafico-actividad",
+        "ayuda-calidad",
+        "ayuda-desvios-dashboard",
+    ):
+        assert f'id="{ayuda}"' in html
+    assert "por fecha de emisión" in html and "por fecha de ingreso" in html
+    assert html.count("no depende del período") >= 4
 
 
 # --- US2: gráficos -----------------------------------------------------------------------------
@@ -301,8 +349,12 @@ def test_indicador_calidad_en_pantalla(cliente_bioquimico, evaluadas):
     indicador = bloque(seccion, 'data-indicador="calidad"')
     assert "10,0 % fuera de norma" in indicador
     assert "4 de 40 resultados" in indicador
+    assert "% de resultados fuera de norma" in indicador
+    assert "Nivel de cumplimiento" not in indicador
+    assert 'id="ayuda-indicador-calidad"' in indicador
     assert re.search(r'data-tono="(exito|peligro|neutro)"', indicador)
-    assert "Sin datos previos" in indicador
+    assert "Sin datos para comparar con" in indicador
+    assert "ayuda-puntos-porcentuales" not in indicador  # sin variación no hace falta
     assert "3 resultados sin límite comparable, fuera del cálculo" in bloque(
         seccion, "data-sin-limite"
     )
@@ -311,6 +363,25 @@ def test_indicador_calidad_en_pantalla(cliente_bioquimico, evaluadas):
     indicador = bloque(seccion, 'data-indicador="calidad"')
     assert "12,2 % fuera de norma" in indicador
     assert "5 de 41 resultados" in indicador
+
+
+def test_variacion_de_calidad_explicada(cliente_bioquimico, evaluadas):
+    """Observación del sprint 4: «▲ +4,9 p. p.» con el valor anterior y qué es «p. p.»."""
+    ahora = timezone.localtime().replace(hour=12, minute=0, second=0, microsecond=0)
+    evaluadas({"CL-": (149, 1000)}, momento=ahora)
+    mes_pasado = tablero.correr_meses(ahora.date(), -1)  # dentro de «los mismos días» del anterior
+    evaluadas(
+        {"PH": (10, 100)},
+        momento=ahora.replace(year=mes_pasado.year, month=mes_pasado.month, day=mes_pasado.day),
+    )
+    periodo = tablero.periodo("este_mes", ahora.date())
+    seccion = seccion_calidad(html_de(cliente_bioquimico.get(URL)))
+    indicador = bloque(seccion, 'data-indicador="calidad"')
+    assert "▲ +4,9 p. p." in indicador
+    assert f"vs. {periodo.rango_anterior_corto}" in indicador
+    assert "antes: 10,0 % (10 de 100)" in indicador
+    assert 'id="ayuda-puntos-porcentuales"' in indicador
+    assert "10 % → 14,9 % = +4,9 p. p." in indicador
 
 
 def test_seccion_calidad_ubicacion(cliente_bioquimico):

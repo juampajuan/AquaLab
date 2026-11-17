@@ -19,10 +19,11 @@
       </select>
     </div>
     <button type="submit" class="btn btn-secundario">Ver</button>
-    <p class="text-sm text-tinta-suave" data-rango>
-      Del {{ periodo.inicio|date:"d/m/Y" }} al {{ periodo.fin|date:"d/m/Y" }} · comparado con
-      {{ periodo.inicio_anterior|date:"d/m/Y" }} al {{ periodo.fin_anterior|date:"d/m/Y" }}
-    </p>
+    <dl class="grid gap-1 text-sm sm:ml-auto sm:text-right" data-rango>
+      <div><dt class="inline font-semibold text-marino">Período:</dt> <dd class="inline" data-rango-actual>{{ periodo.rango_texto }}</dd></div>
+      <div class="text-tinta-suave"><dt class="inline font-semibold">Se compara con:</dt> <dd class="inline" data-rango-anterior>{{ periodo.rango_anterior_texto }}</dd></div>
+    </dl>
+    <p class="w-full text-xs text-tinta-suave">Las tarjetas de arriba y la sección «Calidad» usan este período. Los gráficos, los estados, los desvíos y las alertas indican su propio alcance.</p>
   </form>
 
   {# 2. Indicadores #}
@@ -33,7 +34,10 @@
           {% include "ui/icono.html" with nombre=tarjeta.icono clase="size-6" %}
         </span>
         <span>
-          <span class="block text-[11px] font-semibold tracking-wide text-tinta-suave uppercase">{{ tarjeta.titulo }}</span>
+          <span class="flex items-center gap-1 text-[11px] font-semibold tracking-wide text-tinta-suave uppercase">
+            {{ tarjeta.titulo }}
+            {% include "ui/ayuda.html" with texto=tarjeta.ayuda id="ayuda-indicador-"|add:tarjeta.nombre etiqueta=tarjeta.titulo %}
+          </span>
           {% if tarjeta.nombre == "respuesta" %}
             {% if tarjeta.indicador.actual is None %}
               <span class="block text-base font-semibold text-tinta-suave" data-valor>Sin informes en el período</span>
@@ -43,7 +47,15 @@
           {% else %}
             <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ tarjeta.indicador.actual }}</span>
           {% endif %}
-          {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion %}
+          {% if tarjeta.nombre == "respuesta" %}
+            {% if tarjeta.indicador.anterior is None %}
+              {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion vs=periodo.rango_anterior_corto %}
+            {% else %}
+              {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion vs=periodo.rango_anterior_corto antes=tarjeta.indicador.texto_anterior|add:" días" %}
+            {% endif %}
+          {% else %}
+            {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion vs=periodo.rango_anterior_corto antes=tarjeta.indicador.texto_anterior %}
+          {% endif %}
         </span>
       </div>
     {% endfor %}
@@ -51,7 +63,11 @@
 
   {# 3. Estudios por estado #}
   <section class="tarjeta mb-6 p-5" aria-labelledby="titulo-estados">
-    <h2 id="titulo-estados" class="mb-4 text-sm font-semibold text-marino">Estudios por estado</h2>
+    <h2 id="titulo-estados" class="flex items-center gap-2 text-sm font-semibold text-marino">
+      Estudios por estado
+      {% include "ui/ayuda.html" with texto="Cuántos estudios hay hoy en cada estado, sin importar cuándo se crearon. No depende del período elegido ni se compara." id="ayuda-estados" etiqueta="Estudios por estado" %}
+    </h2>
+    <p class="mb-4 text-xs text-tinta-suave">Situación de hoy · no depende del período</p>
     <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {% for etiqueta, total, valor in estados %}
         <li class="flex items-center justify-between rounded-lg border border-borde px-4 py-3" data-estado-total="{{ valor }}">
@@ -65,8 +81,11 @@
   <div class="mb-6 grid gap-6 xl:grid-cols-2">
     {# 4. Tiempo de respuesta por mes #}
     <section class="tarjeta p-5" aria-labelledby="titulo-respuesta">
-      <h2 id="titulo-respuesta" class="text-sm font-semibold text-marino">Tiempo de respuesta por mes</h2>
-      <p class="mb-4 text-xs text-tinta-suave">Días promedio desde el ingreso de la muestra hasta la emisión del informe · últimos 6 meses</p>
+      <h2 id="titulo-respuesta" class="flex items-center gap-2 text-sm font-semibold text-marino">
+        Tiempo de respuesta por mes
+        {% include "ui/ayuda.html" with texto="Cada barra es el promedio de días corridos entre el ingreso de la muestra y la emisión del informe, de los informes emitidos en ese mes (por fecha de emisión). Siempre muestra los últimos 6 meses, sin importar el período elegido." id="ayuda-grafico-respuesta" etiqueta="Tiempo de respuesta por mes" %}
+      </h2>
+      <p class="mb-4 text-xs text-tinta-suave">Días promedio desde el ingreso de la muestra hasta la emisión del informe · últimos 6 meses, no depende del período</p>
       <div class="relative h-64">
         <canvas id="grafico-respuesta" role="img" aria-label="Tiempo de respuesta promedio de los últimos 6 meses"></canvas>
       </div>
@@ -85,8 +104,11 @@
 
     {# 5. Actividad semanal #}
     <section class="tarjeta p-5" aria-labelledby="titulo-actividad">
-      <h2 id="titulo-actividad" class="text-sm font-semibold text-marino">Actividad semanal</h2>
-      <p class="mb-4 text-xs text-tinta-suave">Muestras ingresadas e informes emitidos por semana · últimas 12 semanas</p>
+      <h2 id="titulo-actividad" class="flex items-center gap-2 text-sm font-semibold text-marino">
+        Actividad semanal
+        {% include "ui/ayuda.html" with texto="Por semana de lunes a domingo: muestras por fecha de ingreso e informes por fecha de emisión. Siempre muestra las últimas 12 semanas, sin importar el período elegido." id="ayuda-grafico-actividad" etiqueta="Actividad semanal" %}
+      </h2>
+      <p class="mb-4 text-xs text-tinta-suave">Muestras ingresadas e informes emitidos por semana · últimas 12 semanas, no depende del período</p>
       <div class="relative h-64">
         <canvas id="grafico-actividad" role="img" aria-label="Muestras ingresadas e informes emitidos por semana"></canvas>
       </div>
@@ -110,7 +132,7 @@
   {# 7. Comparación histórica de un origen (US 8.1) #}
   <section class="tarjeta mb-6 p-5" aria-labelledby="titulo-comparacion" data-comparacion-historica>
     <h2 id="titulo-comparacion" class="text-sm font-semibold text-marino">Comparación histórica</h2>
-    <p class="mb-4 text-xs text-tinta-suave">Evolución de los resultados validados de un origen, prueba por prueba.</p>
+    <p class="mb-4 text-xs text-tinta-suave">Evolución de los resultados validados de un origen, prueba por prueba · todo el historial, no depende del período</p>
     {% include "estudios/elegir_origen.html" with form=form_origen %}
   </section>
 
@@ -122,7 +144,7 @@
         <div>
           <h2 id="titulo-desvios" class="flex items-center gap-2 text-sm font-semibold text-marino">
             Desvíos sin revisar
-            {% include "ui/ayuda.html" with texto="Hay desvío si el resultado sin validar difiere en "|add:regla_desvio|add:". Se revisan al validar la prueba." id="ayuda-desvios-dashboard" etiqueta="Desvíos sin revisar" %}
+            {% include "ui/ayuda.html" with texto="Hay desvío si el resultado sin validar difiere en "|add:regla_desvio|add:". Se revisan al validar la prueba. Muestra todos los pendientes de hoy, sin importar el período elegido." id="ayuda-desvios-dashboard" etiqueta="Desvíos sin revisar" %}
           </h2>
           <p class="text-xs text-tinta-suave"><span class="numeros font-semibold text-tinta">{{ desvios_cantidad }} pendiente{{ desvios_cantidad|pluralize }}</span>{% if desvios_cantidad > 10 %} · los 10 más recientes{% endif %}</p>
         </div>

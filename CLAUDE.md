@@ -283,6 +283,11 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   cuentan en la zona del laboratorio (`TruncDate`/`TruncMonth`/`TruncWeek` con `tzinfo`).
 - «Este mes» se compara con los mismos días del mes anterior. `variacion` decide el tono: subir es
   favorable salvo en el tiempo de respuesta; el template siempre muestra flecha y signo.
+- Rangos legibles con `tablero.texto_rango` (`Periodo.rango_texto`, `rango_anterior_texto` y
+  `rango_anterior_corto`, sin depender del idioma del servidor). `informes/variacion.html` recibe
+  `vs` (el período anterior en corto) y `antes` (el valor anterior): cada indicador dice «vs. 1–13
+  oct» y su valor previo; sin valor anterior, «Sin datos para comparar con …». Cada tarjeta, gráfico
+  y sección lleva su ayuda (qué cuenta y con qué fecha); los que no dependen del período lo dicen.
 - Alertas: «sin avanzar» = Pendiente de análisis o En proceso cuya última actividad (creación, carga,
   corrección o validación) tiene más de 7 días; borrar una medición no deja fecha y no cuenta.
   «Finalizados sin informe» cuenta días desde la última validación vigente.
