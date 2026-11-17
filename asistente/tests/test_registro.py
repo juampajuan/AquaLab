@@ -457,3 +457,51 @@ def test_pi_inexistente(empleado, datos):
     assert resultado.salida["problemas"] == ["No hay ninguna muestra con el N° PI 123456."]
     assert resultado.opciones == [] and resultado.primeras == []
     assert resultado.salida["listo"] is False
+
+
+# --- Ajuste de la prueba manual: el modelo manda null en lo que no se dijo ---
+
+
+def test_argumentos_en_null_son_no_dichos(empleado, datos):
+    from asistente import herramientas
+
+    campos = herramientas.REGISTRO["preparar_muestra"].definicion["function"]["parameters"]
+    todos_null = {nombre: None for nombre in campos["properties"]}
+    resultado = herramientas.ejecutar(empleado, "preparar_muestra", json.dumps(todos_null))
+    assert resultado.valida is True
+    assert resultado.salida["faltan"][0] == "cliente"
+    assert len(resultado.salida["faltan"]) == 7
+    con_null = {**completo(), "nombre": None, "origen_nuevo": None, "solo_muestra": None}
+    resultado = herramientas.ejecutar(empleado, "preparar_muestra", json.dumps(con_null))
+    assert resultado.salida["listo"] is True
+    resultado = herramientas.ejecutar(
+        empleado, "preparar_estudio", json.dumps({"numero_pi": None, "tipo_estudio": None})
+    )
+    assert resultado.valida is True
+    assert resultado.salida["faltan"] == ["N° PI de la muestra", "tipo de estudio"]
+
+
+def test_esquemas_admiten_null_y_siguen_validando_tipos(empleado, datos):
+    from asistente import herramientas
+
+    for nombre in ("preparar_muestra", "preparar_estudio"):
+        propiedades = herramientas.REGISTRO[nombre].definicion["function"]["parameters"][
+            "properties"
+        ]
+        assert all("null" in p["type"] for p in propiedades.values())
+    invalida = herramientas.ejecutar(empleado, "preparar_muestra", json.dumps({"cliente": 3}))
+    assert invalida.valida is False
+    invalida = herramientas.ejecutar(empleado, "preparar_estudio", json.dumps({"numero_pi": True}))
+    assert invalida.valida is False
+
+
+def test_sin_cliente_ni_origen_no_ofrece_tipo_ni_vertido(empleado, datos):
+    """Prueba manual: con «quiero registrar una muestra» se pide primero cliente y origen."""
+    resultado = ejecutar(empleado, "preparar_muestra")
+    assert resultado.salida["elegir"] is None
+    assert resultado.opciones == []
+    resultado = ejecutar(empleado, "preparar_muestra", cliente="Lácteos del Sur")
+    assert resultado.salida["faltan"][0] == "origen"
+    assert resultado.salida["elegir"] is None
+    resultado = ejecutar(empleado, "preparar_muestra", cliente="Lácteos del Sur", origen="pozo 2")
+    assert resultado.salida["elegir"] == "tipo_estudio"

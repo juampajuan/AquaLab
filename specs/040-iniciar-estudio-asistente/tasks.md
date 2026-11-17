@@ -330,6 +330,9 @@ asistente/tests/js`).
   pregunta también el sitio de extracción (con las fechas) y el tipo de vertido (opción para
   elegir: Agua, Cloacal, Canal) en `asistente/registro.py` (`resolver_vertido`, `faltan`,
   `RegistroMuestraForm` valida sitio y vertido), `MENSAJE_SISTEMA` y sus tests.
+- [X] T033 Ajustes con Groq real: los argumentos de `preparar_*` admiten `null` (Groq valida el
+  esquema y devolvía 400 `tool_use_failed`; `argumentos_validos` acepta tipos en lista); el modelo
+  llama la herramienta aunque no haya datos; tipo y vertido se ofrecen recién con cliente y origen.
 - [ ] T031 Prueba manual del quickstart completo (pasos 1 a 9) con Groq y la demo; anotar los
   ajustes del mensaje de sistema que hagan falta.
 

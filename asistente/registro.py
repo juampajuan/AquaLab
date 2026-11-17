@@ -204,11 +204,12 @@ class Pedido:
     def listo(self):
         return not (self.faltan or self.problemas or self.elegir)
 
-    def anotar(self, campo, resolucion):
-        """Registra un problema o las opciones (solo las de la primera elección pendiente)."""
+    def anotar(self, campo, resolucion, ofrecer=True):
+        """Registra un problema o las opciones (solo las de la primera elección pendiente, y si
+        `ofrecer`: el tipo y el vertido se ofrecen recién con cliente y origen resueltos)."""
         if resolucion.problema:
             self.problemas.append(resolucion.problema)
-        if resolucion.opciones and self.elegir is None:
+        if resolucion.opciones and ofrecer and self.elegir is None:
             self.elegir = campo
             self.opciones = resolucion.opciones
 
@@ -280,7 +281,10 @@ def _parametros_opcionales(argumentos):
     return parametros
 
 
-TEXTO = {"type": "string"}
+# Todos los argumentos admiten null: el modelo manda null en los datos que no se dijeron y el
+# servicio valida el esquema antes de responder (un 400 si no coincide). null = no dicho.
+TEXTO = {"type": ["string", "null"]}
+SI_NO = {"type": ["boolean", "null"]}
 
 
 @registrar(
@@ -290,9 +294,10 @@ TEXTO = {"type": "string"}
             "name": "preparar_muestra",
             "description": (
                 "Prepara el registro de una muestra. Llamala con todos los datos que el empleado "
-                "dijo hasta ahora en la conversación, como texto, aunque ya la hayas llamado. "
-                "AquaLab los busca en el sistema y dice qué falta o qué no coincide. No crea "
-                "nada: cuando está todo, AquaLab agrega el enlace al formulario."
+                "dijo hasta ahora en la conversación, como texto, aunque ya la hayas llamado; "
+                "llamala también si todavía no dijo ningún dato. Omití (o mandá null) lo que no "
+                "dijo. AquaLab los busca en el sistema y dice qué falta o qué no coincide. No "
+                "crea nada: cuando está todo, AquaLab agrega el enlace al formulario."
             ),
             "parameters": {
                 "type": "object",
@@ -300,14 +305,14 @@ TEXTO = {"type": "string"}
                     "cliente": {**TEXTO, "description": "Nombre o razón social."},
                     "origen": {**TEXTO, "description": "Origen, como «pozo 2»."},
                     "origen_nuevo": {
-                        "type": "boolean",
+                        **SI_NO,
                         "description": "true solo si eligió «Registrarlo como origen nuevo».",
                     },
                     "fecha_muestreo": {**TEXTO, "description": "Tal cual: «ayer», «12/11»."},
                     "fecha_ingreso": {**TEXTO, "description": "Tal cual: «hoy», «12/11»."},
                     "tipo_estudio": {**TEXTO, "description": "Nombre del tipo de estudio."},
                     "solo_muestra": {
-                        "type": "boolean",
+                        **SI_NO,
                         "description": "true si eligió «Solo registrar la muestra».",
                     },
                     "sitio_extraccion": {**TEXTO, "description": "Tal cual lo dijo."},
@@ -351,13 +356,15 @@ def preparar_muestra(usuario, **argumentos):
         elif origen:
             pedido.resuelto["origen"] = f"{origen} (origen nuevo)"
 
+    # Primero se pide el cliente y el origen; sin ellos no se ofrece elegir tipo ni vertido.
+    ofrecer = cliente is not None and bool(origen)
     if solo_muestra:
         pedido.resuelto["tipo_estudio"] = "sin estudio"
     else:
         resolucion = resolver_tipo(texto_tipo, con_solo_muestra=True)
         if not texto_tipo:
             pedido.faltan.append("tipo de estudio")
-        pedido.anotar("tipo_estudio", resolucion)
+        pedido.anotar("tipo_estudio", resolucion, ofrecer)
         if resolucion.valor is not None:
             tipo = resolucion.valor
             pedido.resuelto["tipo_estudio"] = tipo.nombre
@@ -366,7 +373,7 @@ def preparar_muestra(usuario, **argumentos):
     resolucion = resolver_vertido(texto_vertido)
     if not texto_vertido:
         pedido.faltan.append("tipo de vertido")
-    pedido.anotar("tipo_vertido", resolucion)
+    pedido.anotar("tipo_vertido", resolucion, ofrecer)
     vertido = resolucion.valor
     if vertido is not None:
         pedido.resuelto["tipo_vertido"] = vertido.label
@@ -427,7 +434,10 @@ def preparar_muestra(usuario, **argumentos):
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "numero_pi": {"type": "integer", "description": "N° PI de la muestra."},
+                    "numero_pi": {
+                        "type": ["integer", "null"],
+                        "description": "N° PI de la muestra.",
+                    },
                     "tipo_estudio": {**TEXTO, "description": "Nombre del tipo de estudio."},
                 },
             },

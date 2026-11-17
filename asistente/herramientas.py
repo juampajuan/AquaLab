@@ -23,6 +23,7 @@ TIPOS_JSON = {
     "string": (str,),
     "integer": (int,),
     "boolean": (bool,),
+    "null": (type(None),),
 }
 
 
@@ -85,7 +86,13 @@ def argumentos_validos(definicion, argumentos):
     if any(nombre not in argumentos for nombre in esquema.get("required", [])):
         return False
     for nombre, valor in argumentos.items():
-        tipos = TIPOS_JSON.get(propiedades[nombre].get("type"), (object,))
+        # El tipo puede ser una lista, como ["string", "null"] (US 10.3).
+        tipo = propiedades[nombre].get("type")
+        nombres = tipo if isinstance(tipo, list) else [tipo]
+        if any(n not in TIPOS_JSON for n in nombres):
+            tipos = (object,)
+        else:
+            tipos = tuple(t for n in nombres for t in TIPOS_JSON[n])
         # En JSON, true no es un entero.
         if not isinstance(valor, tipos) or (bool not in tipos and isinstance(valor, bool)):
             return False
