@@ -333,7 +333,7 @@ asistente/tests/js`).
 - [X] T033 Ajustes con Groq real: los argumentos de `preparar_*` admiten `null` (Groq valida el
   esquema y devolvía 400 `tool_use_failed`; `argumentos_validos` acepta tipos en lista); el modelo
   llama la herramienta aunque no haya datos; tipo y vertido se ofrecen recién con cliente y origen.
-- [ ] T031 Prueba manual del quickstart completo (pasos 1 a 9) con Groq y la demo; anotar los
+- [X] T031 Prueba manual del quickstart completo (pasos 1 a 9) con Groq y la demo; anotar los
   ajustes del mensaje de sistema que hagan falta.
 
 ---
