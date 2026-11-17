@@ -51,7 +51,7 @@ sin dejar nada).
 
 ## Phase 1: Setup
 
-- [ ] T001 Verificar la base: `docker compose exec web pytest asistente muestras estudios -q` y
+- [X] T001 Verificar la base: `docker compose exec web pytest asistente muestras estudios -q` y
   `node --test asistente/tests/js` pasan en la rama antes de empezar; anotar el resultado en el PR.
 
 ---
@@ -63,18 +63,18 @@ pedidos de registro por el corte de verbos.
 
 ### Tests
 
-- [ ] T002 [P] Tests de `leer_fecha(texto, hoy)` en `asistente/tests/test_fechas.py` con `hoy =
+- [X] T002 [P] Tests de `leer_fecha(texto, hoy)` en `asistente/tests/test_fechas.py` con `hoy =
   date(2026, 11, 17)`: «hoy» → 17/11/2026, «ayer» → 16/11, «anteayer» → 15/11, «12/11» →
   12/11/2026, «12/11/2025», «2026-11-12», «12 de noviembre», «3 de marzo de 2025», mayúsculas y
   acentos («Hoy», «Ayer.»); «el martes», «xx», «31/02», «» → `None`.
-- [ ] T003 [P] Tests de `Referencia` en `asistente/tests/test_enlaces.py`: `Referencia(
+- [X] T003 [P] Tests de `Referencia` en `asistente/tests/test_enlaces.py`: `Referencia(
   "registrar_muestra", None, "Revisar y registrar la muestra", parametros=(("cliente", "3"),
   ("fecha_muestreo", "2026-11-16")), minimizar=True).enlace()` →
   `{"etiqueta": …, "url": "/muestras/registrar/?cliente=3&fecha_muestreo=2026-11-16",
   "minimizar": True}`; `Referencia("opcion", None, "Pozo 2", pregunta="El origen es Pozo 2")
   .enlace()` → sin la clave `url`; dos opciones con distinta `pregunta` no se toman como
   duplicadas en `sin_duplicados`; las de la 10.1 siguen igual (tipo desconocido → `ValueError`).
-- [ ] T004 [P] Tests de `es_pedido_de_registro` y del corte en
+- [X] T004 [P] Tests de `es_pedido_de_registro` y del corte en
   `asistente/tests/test_conversacion_registro.py`: «Registrá una muestra de…», «Creá un estudio
   para el PI 200417», «cargá una muestra…», «Por favor, registrá un estudio…» **no** se cortan
   (se llama a `cliente_ia.enviar`); «Registrá el cliente Juan Pérez» → `MENSAJE_ALTA_CLIENTE` con
@@ -86,18 +86,18 @@ pedidos de registro por el corte de verbos.
 
 ### Implementación
 
-- [ ] T005 [P] Crear `asistente/fechas.py` con `leer_fecha(texto, hoy) -> date | None` (R4):
+- [X] T005 [P] Crear `asistente/fechas.py` con `leer_fecha(texto, hoy) -> date | None` (R4):
   normaliza con `enlaces.normalizar`, quita puntuación final; «hoy»/«ayer»/«anteayer»;
   `d/m[/aaaa]` (sin año → `hoy.year`); `aaaa-mm-dd`; «d de <mes>[ de aaaa]» con los 12 meses en
   español. Fecha imposible → `None`. No valida futuro ni orden (eso lo hace el formulario).
-- [ ] T006 [P] Ampliar `asistente/enlaces.py` (R7, data-model): `VISTAS` suma
+- [X] T006 [P] Ampliar `asistente/enlaces.py` (R7, data-model): `VISTAS` suma
   `"registrar_muestra": "muestras:registrar"`, `"crear_estudio": "estudios:crear"`,
   `"registrar_cliente": "clientes:registrar"` y `"opcion": None`; `Referencia.pk` admite `None`;
   campos nuevos `parametros: tuple = ()` y `minimizar: bool = False`; `url()` → `None` para
   `opcion`, `reverse` sin `args` si `pk is None` y `?` + `urlencode(parametros)` si hay; `enlace()`
   omite `url` si es `None` y agrega `"minimizar": True` si corresponde; `clave` →
   `(tipo, pk, parametros, pregunta)`. `posicion` no cambia.
-- [ ] T007 En `asistente/conversacion.py` (R2): `VERBOS_DE_REGISTRO = {"registra", "crea",
+- [X] T007 En `asistente/conversacion.py` (R2): `VERBOS_DE_REGISTRO = {"registra", "crea",
   "agrega", "carga"}`; `es_pedido_de_registro(pregunta)`: sobre el texto normalizado (sin cortesía ni signos
   iniciales, como `es_pedido_de_cambio`) coincide con
   `^(registra|crea|agrega|carga)\s+((un|una|la|el|otra|otro|nueva|nuevo)\s+)*(muestra|estudio)\b`
@@ -114,7 +114,7 @@ pedidos de registro por el corte de verbos.
   dos fechas juntas en un mismo mensaje; si hay opciones, pedí que elijan sin repetirlas.
   No digas que la muestra o el estudio quedaron creados: se crean cuando el empleado confirma en
   el formulario. No cargás mediciones, no validás ni das de alta clientes.»
-- [ ] T008 En `static/js/aqualab.js` (`asistenteEnlaces`): una opción sin `url` se dibuja solo como
+- [X] T008 En `static/js/aqualab.js` (`asistenteEnlaces`): una opción sin `url` se dibuja solo como
   botón `[data-asistente-elegir]`, sin el ↗; un enlace con `minimizar` se dibuja como
   `<a class="btn btn-primario btn-chico" data-asistente-minimizar-al-seguir>`, y al hacer clic
   minimiza el panel con la misma función del «–» (la conversación queda en `sessionStorage`)
