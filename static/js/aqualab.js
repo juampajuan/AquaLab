@@ -267,7 +267,9 @@ function asistenteTexto(item, texto) {
 }
 
 // Enlaces de la respuesta: los comunes llevan a su pantalla; las opciones para elegir (con
-// `pregunta`, las marca AquaLab) son botones que siguen la conversación, con un ↗ para abrir.
+// `pregunta`, las marca AquaLab) son botones que siguen la conversación, con un ↗ para abrir si
+// tienen pantalla (un origen o un tipo de estudio no la tienen: US 10.3). El enlace al formulario
+// precargado (`minimizar`) es el botón principal y minimiza el panel al seguirlo.
 function asistenteEnlaces(item, enlaces) {
   const lista = document.createElement("ul");
   lista.className = "mt-2 flex flex-wrap gap-x-3 gap-y-1";
@@ -281,13 +283,22 @@ function asistenteEnlaces(item, enlaces) {
       boton.setAttribute("data-asistente-elegir", enlace.pregunta);
       boton.setAttribute("title", enlace.pregunta);
       boton.textContent = enlace.etiqueta;
-      const abrir = document.createElement("a");
-      abrir.className = "btn-link";
-      abrir.href = enlace.url;
-      abrir.setAttribute("aria-label", `Abrir ${enlace.etiqueta}`);
-      abrir.textContent = "↗";
       elemento.append(boton);
-      elemento.append(abrir);
+      if (enlace.url) {
+        const abrir = document.createElement("a");
+        abrir.className = "btn-link";
+        abrir.href = enlace.url;
+        abrir.setAttribute("aria-label", `Abrir ${enlace.etiqueta}`);
+        abrir.textContent = "↗";
+        elemento.append(abrir);
+      }
+    } else if (enlace.minimizar) {
+      const a = document.createElement("a");
+      a.className = "btn btn-primario btn-chico";
+      a.href = enlace.url;
+      a.setAttribute("data-asistente-minimizar-al-seguir", "");
+      a.textContent = enlace.etiqueta;
+      elemento.append(a);
     } else {
       const a = document.createElement("a");
       a.className = "btn-link";
@@ -416,6 +427,12 @@ document.addEventListener("click", (evento) => {
     return;
   }
   if (evento.target.closest("[data-asistente-minimizar]")) {
+    asistenteMinimizar();
+    return;
+  }
+  // El formulario precargado queda a la vista; la conversación se conserva (US 10.3). No se
+  // previene la navegación.
+  if (evento.target.closest("[data-asistente-minimizar-al-seguir]")) {
     asistenteMinimizar();
     return;
   }

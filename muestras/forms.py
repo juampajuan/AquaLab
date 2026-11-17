@@ -63,6 +63,24 @@ class SelectorFecha(forms.DateInput):
         return super().format_value(value)
 
 
+class TipoEstudioOpcional(forms.ModelChoiceField):
+    """Tipo de estudio pedido para crear después de registrar la muestra (US 10.3). Un valor
+    inválido o un tipo desactivado se descarta en silencio: es un dato oculto que no se edita
+    (un `clean_tipo_estudio` no alcanza, el error salta antes)."""
+
+    def clean(self, value):
+        try:
+            return super().clean(value)
+        except forms.ValidationError:
+            return None
+
+
+def tipos_activos():
+    from estudios.models import TipoEstudio
+
+    return TipoEstudio.objects.filter(activo=True)
+
+
 class RegistroMuestraForm(forms.Form):
     """Paso 1 del registro: valida y normaliza los datos sin guardar en la base."""
 
@@ -138,9 +156,13 @@ class RegistroMuestraForm(forms.Form):
         strip=True,
         help_text="Persona que tomó la muestra.",
     )
+    tipo_estudio = TipoEstudioOpcional(
+        queryset=None, required=False, widget=forms.HiddenInput, label="Tipo de estudio"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["tipo_estudio"].queryset = tipos_activos()
         self._cliente_elegido = None
         pk_cliente = self._pk_cliente()
         if pk_cliente is not None:
@@ -215,8 +237,72 @@ class RegistroMuestraForm(forms.Form):
             "tipo_vertido": datos["tipo_vertido"],
             "nombre": datos["nombre"],
             "responsable_muestreo": datos["responsable_muestreo"],
+            "tipo_estudio": datos["tipo_estudio"].pk if datos.get("tipo_estudio") else None,
             "clave_borrador": str(uuid.uuid4()),
         }
+
+    @property
+    def tipo_estudio_elegido(self):
+        """Tipo activo pedido para el estudio siguiente (nota del formulario), o `None`."""
+        if self.is_bound:
+            valor = self.data.get("tipo_estudio")
+        else:
+            valor = self.initial.get("tipo_estudio")
+        return tipo_activo(valor)
+
+
+def tipo_activo(valor):
+    """El tipo de estudio activo con ese pk, o `None` (también para valores inválidos)."""
+    try:
+        pk = int(valor)
+    except (TypeError, ValueError):
+        return None
+    return tipos_activos().filter(pk=pk).first()
+
+
+def _texto(valor, largo):
+    valor = (valor or "").strip()
+    return valor if valor and len(valor) <= largo else None
+
+
+def _fecha_iso(valor):
+    try:
+        return datetime.date.fromisoformat(valor or "").isoformat()
+    except ValueError:
+        return None
+
+
+def valores_iniciales(parametros):
+    """Valores iniciales del registro a partir de un GET (US 10.3,
+    contracts/enlaces-precargados.md). Única función de saneo: lo que no existe o no está
+    disponible se descarta en silencio. Nunca crea nada."""
+    iniciales = {}
+    try:
+        pk_cliente = int(parametros.get("cliente", ""))
+    except ValueError:
+        pk_cliente = None
+    cliente = Cliente.objects.filter(pk=pk_cliente, activo=True).first() if pk_cliente else None
+    if cliente is not None:
+        iniciales["cliente"] = cliente.pk
+        try:
+            pk_origen = int(parametros.get("origen", ""))
+        except ValueError:
+            pk_origen = None
+        if pk_origen and Origen.objects.filter(pk=pk_origen, cliente=cliente).exists():
+            iniciales["origen"] = pk_origen
+    if "origen" not in iniciales and (nuevo := _texto(parametros.get("origen_nuevo"), 150)):
+        iniciales["origen_nuevo"] = nuevo
+    for campo in ("fecha_muestreo", "fecha_ingreso"):
+        if fecha := _fecha_iso(parametros.get(campo)):
+            iniciales[campo] = fecha
+    for campo, largo in (("sitio_extraccion", 200), ("nombre", 100), ("responsable_muestreo", 150)):
+        if valor := _texto(parametros.get(campo), largo):
+            iniciales[campo] = valor
+    if parametros.get("tipo_vertido") in TipoVertido.values:
+        iniciales["tipo_vertido"] = parametros["tipo_vertido"]
+    if tipo := tipo_activo(parametros.get("tipo_estudio")):
+        iniciales["tipo_estudio"] = tipo.pk
+    return iniciales
 
 
 def datos_clientes():

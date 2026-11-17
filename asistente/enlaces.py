@@ -4,6 +4,7 @@ devolvieron las herramientas; el modelo nunca escribe URLs."""
 import re
 import unicodedata
 from dataclasses import dataclass
+from urllib.parse import urlencode
 
 from django.urls import reverse
 
@@ -13,6 +14,12 @@ VISTAS = {
     "cliente": "clientes:detalle",
     "historial": "clientes:historial",
     "informe": "informes:ver",  # con el pk del estudio
+    # Formularios precargados (US 10.3): sin pk, con `parametros` como valores iniciales.
+    "registrar_muestra": "muestras:registrar",
+    "crear_estudio": "estudios:crear",
+    "registrar_cliente": "clientes:registrar",
+    # Opción para elegir que no tiene pantalla (un origen, un tipo): un botón sin URL.
+    "opcion": None,
 }
 MAX_ENLACES = 10
 
@@ -20,7 +27,7 @@ MAX_ENLACES = 10
 @dataclass(frozen=True)
 class Referencia:
     tipo: str
-    pk: int
+    pk: int | None
     etiqueta: str
     # Textos que, si aparecen en la respuesta, la mencionan («PI 200417», «200417»). Por
     # defecto, la etiqueta.
@@ -31,6 +38,10 @@ class Referencia:
     # Opción para elegir entre coincidencias (T053): el panel la muestra como un botón que manda
     # esta pregunta de seguimiento, con un ↗ para abrir la pantalla. La pone AquaLab, no el modelo.
     pregunta: str = ""
+    # Querystring del formulario precargado (US 10.3): pares (nombre, valor).
+    parametros: tuple = ()
+    # El panel se minimiza al seguir el enlace, para no tapar el formulario (US 10.3, R7).
+    minimizar: bool = False
 
     def __post_init__(self):
         if self.tipo not in VISTAS:
@@ -38,15 +49,23 @@ class Referencia:
 
     @property
     def clave(self):
-        return (self.tipo, self.pk)
+        return (self.tipo, self.pk, self.parametros, self.pregunta if self.pk is None else "")
 
     def url(self):
-        return reverse(VISTAS[self.tipo], args=[self.pk])
+        vista = VISTAS[self.tipo]
+        if vista is None:
+            return None
+        url = reverse(vista) if self.pk is None else reverse(vista, args=[self.pk])
+        return f"{url}?{urlencode(self.parametros)}" if self.parametros else url
 
     def enlace(self):
-        enlace = {"etiqueta": self.etiqueta, "url": self.url()}
+        enlace = {"etiqueta": self.etiqueta}
+        if (url := self.url()) is not None:
+            enlace["url"] = url
         if self.pregunta:
             enlace["pregunta"] = self.pregunta
+        if self.minimizar:
+            enlace["minimizar"] = True
         return enlace
 
 

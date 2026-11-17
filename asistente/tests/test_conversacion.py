@@ -342,17 +342,26 @@ def test_fuera_de_alcance_y_pedidos_de_cambio(servicio_simulado, pregunta, respu
     servicio_simulado.guion(texto(respuesta_modelo))
     respuesta = conversacion.responder(None, pregunta, [], reloj=servicio_simulado.reloj)
     assert respuesta.texto == (
-        "Solo puedo consultar muestras, estudios y clientes de AquaLab; no creo, modifico, "
-        "valido, emito ni borro datos. Probá, por ejemplo: «¿Cómo está el PI 200417?», «¿Qué "
-        "estudios tiene Lácteos del Sur?» o «¿Qué no cumple en el estudio de la escuela N° 12?»."
+        "Puedo consultar muestras, estudios y clientes, y preparar el registro de una muestra o "
+        "de un estudio para que lo confirmes. No cargo mediciones, no valido, no emito ni borro "
+        "datos. Probá, por ejemplo: «¿Cómo está el PI 200417?», «¿Qué estudios tiene Lácteos del "
+        "Sur?» o «Registrá una muestra de Lácteos del Sur, pozo 2, para un físico-químico básico»."
     )
     assert respuesta.enlaces == []
 
 
 def test_solo_herramientas_de_lectura():
-    """El modelo solo recibe las cuatro herramientas de consulta (ninguna escribe)."""
+    """El modelo recibe las cuatro herramientas de consulta y las dos de la US 10.3, que solo
+    preparan el registro: ninguna escribe (todas corren en la transacción READ ONLY)."""
     nombres = sorted(d["function"]["name"] for d in herramientas.definiciones())
-    assert nombres == ["buscar_cliente", "buscar_muestra", "detalle_estudio", "estudios_de_cliente"]
+    assert nombres == [
+        "buscar_cliente",
+        "buscar_muestra",
+        "detalle_estudio",
+        "estudios_de_cliente",
+        "preparar_estudio",
+        "preparar_muestra",
+    ]
 
 
 def test_instrucciones_incrustadas_son_datos(

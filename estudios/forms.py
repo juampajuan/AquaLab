@@ -42,6 +42,22 @@ class CrearEstudioForm(forms.Form):
             campo.widget.attrs["class"] = "form-select"
 
 
+def valores_iniciales_estudio(parametros):
+    """Valores iniciales de crear estudio a partir de un GET (US 10.3,
+    contracts/enlaces-precargados.md), o `None`. La muestra se toma como siempre; el tipo, solo
+    si es un tipo activo. Lo demás se descarta en silencio."""
+    iniciales = {}
+    if parametros.get("muestra"):
+        iniciales["muestra"] = parametros.get("muestra")
+    try:
+        pk_tipo = int(parametros.get("tipo", ""))
+    except ValueError:
+        pk_tipo = None
+    if pk_tipo and TipoEstudio.objects.filter(pk=pk_tipo, activo=True).exists():
+        iniciales["tipo"] = pk_tipo
+    return iniciales or None
+
+
 class AgregarPruebaForm(forms.Form):
     def __init__(self, *args, estudio, **kwargs):
         super().__init__(*args, **kwargs)

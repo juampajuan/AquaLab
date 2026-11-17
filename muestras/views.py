@@ -11,7 +11,13 @@ from clientes.models import Cliente
 from config.volver import url_volver as volver_de_ficha
 from estudios.models import EstadoPruebaEstudio
 
-from .forms import CAMPOS_MUESTRA, RegistroMuestraForm, datos_clientes
+from .forms import (
+    CAMPOS_MUESTRA,
+    RegistroMuestraForm,
+    datos_clientes,
+    tipo_activo,
+    valores_iniciales,
+)
 from .models import Muestra, Origen, TipoVertido
 from .servicios import (
     MENSAJE_CLIENTE_NO_DISPONIBLE,
@@ -27,11 +33,24 @@ MENSAJE_CANCELADO = "Registro de muestra cancelado."
 MENSAJE_ERROR_BD = "No se pudo registrar la muestra. Intentá nuevamente."
 
 
-def mensaje_exito_muestra(muestra):
-    return format_html(
+def mensaje_exito_muestra(muestra, tipo=None):
+    """Mensaje de éxito; con el pk de un tipo de estudio pedido y todavía activo, ofrece crearlo
+    para la muestra recién registrada (US 10.3: el estudio se crea al confirmar en esa pantalla)."""
+    mensaje = format_html(
         'Muestra registrada con N° PI {}. <a href="{}">Ver ficha de la muestra</a>.',
         muestra.numero_pi,
         reverse("muestras:detalle", args=[muestra.pk]),
+    )
+    tipo = tipo_activo(tipo)
+    if tipo is None:
+        return mensaje
+    return format_html(
+        '{} <a href="{}?muestra={}&amp;tipo={}">Crear el estudio {}</a>.',
+        mensaje,
+        reverse("estudios:crear"),
+        muestra.pk,
+        tipo.pk,
+        tipo.nombre,
     )
 
 
@@ -56,6 +75,7 @@ def armar_resumen(datos):
         "nombre": datos["nombre"] or nombre_por_defecto(cliente),
         "nombre_es_por_defecto": not datos["nombre"],
         "responsable_muestreo": datos["responsable_muestreo"],
+        "tipo_estudio": tipo_activo(datos.get("tipo_estudio")),
     }
 
 
@@ -70,17 +90,22 @@ def registrar(request):
         datos = request.session.get(CLAVE_SESION) if request.GET.get("volver") == "1" else None
         if datos is not None:
             form = RegistroMuestraForm(
-                initial={campo: datos.get(campo, "") for campo in CAMPOS_MUESTRA}
+                initial={
+                    **{campo: datos.get(campo, "") for campo in CAMPOS_MUESTRA},
+                    "tipo_estudio": datos.get("tipo_estudio"),
+                }
             )
         else:
             request.session.pop(CLAVE_SESION, None)
-            form = RegistroMuestraForm()
+            # Enlace precargado (US 10.3): los parámetros son solo valores iniciales.
+            form = RegistroMuestraForm(initial=valores_iniciales(request.GET) or None)
     return render(
         request,
         "muestras/registro_form.html",
         {
             "form": form,
             "cliente_elegido": form.cliente_elegido,
+            "tipo_estudio": form.tipo_estudio_elegido,
             "clientes_datos": datos_clientes(),
         },
     )
@@ -118,7 +143,7 @@ def registrar_confirmar(request):
         else:
             del request.session[CLAVE_SESION]
             request.session[CLAVE_ULTIMO_PI] = muestra.numero_pi
-            messages.success(request, mensaje_exito_muestra(muestra))
+            messages.success(request, mensaje_exito_muestra(muestra, datos.get("tipo_estudio")))
             return redirect("muestras:registrar")
     elif datos is None:
         return redirect("muestras:registrar")

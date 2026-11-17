@@ -477,3 +477,55 @@ test("un sessionStorage que falla no rompe el panel", async () => {
   await preguntar("hola");
   assert.deepEqual(textos(), ["hola", "ok"]);
 });
+
+// --- US 10.3: opciones sin pantalla y enlace al formulario precargado ---
+
+test("una opción sin pantalla es solo un botón, sin ↗", async () => {
+  const { preguntar, mensajes } = entorno({
+    respuestas: [
+      respuestaJson(200, {
+        texto: "¿Qué tipo de estudio?",
+        enlaces: [
+          { etiqueta: "Solo registrar la muestra", pregunta: "Solo registrar la muestra, sin estudio" },
+          { etiqueta: "Físico-químico básico", pregunta: "El tipo de estudio es Físico-químico básico" },
+        ],
+      }),
+    ],
+  });
+  await preguntar("Registrá una muestra de Lácteos del Sur, pozo 2");
+  const respuesta = mensajes.querySelectorAll("[data-asistente-mensaje=asistente]")[0];
+  const [primera, segunda] = respuesta.hijos[1].hijos;
+  assert.equal(primera.hijos.length, 1);
+  assert.equal(primera.hijos[0].etiqueta, "button");
+  assert.equal(primera.hijos[0].textContent, "Solo registrar la muestra");
+  assert.equal(primera.querySelectorAll("[href]").length, 0);
+  assert.equal(segunda.hijos.length, 1);
+});
+
+test("seguir el enlace al formulario minimiza el panel y conserva la conversación", async () => {
+  const almacen = almacenNuevo();
+  const { boton, panel, preguntar, mensajes, despachar } = entorno({
+    almacen,
+    respuestas: [
+      respuestaJson(200, {
+        texto: "Listo para revisar.",
+        enlaces: [
+          { etiqueta: "Revisar y registrar la muestra", url: "/muestras/registrar/?cliente=3", minimizar: true },
+        ],
+      }),
+    ],
+  });
+  despachar("click", { target: boton });
+  await preguntar("la tomaron ayer, llegó hoy");
+  const respuesta = mensajes.querySelectorAll("[data-asistente-mensaje=asistente]")[0];
+  const enlace = respuesta.hijos[1].hijos[0].hijos[0];
+  assert.equal(enlace.etiqueta, "a");
+  assert.equal(enlace.href, "/muestras/registrar/?cliente=3");
+  assert.ok(enlace.className.includes("btn-primario"));
+  const clic = despachar("click", { target: enlace });
+  assert.equal(clic.prevenido, undefined);
+  assert.equal(panel.hidden, true);
+  const guardado = JSON.parse(almacen.getItem(CLAVE));
+  assert.equal(guardado.abierto, false);
+  assert.equal(guardado.mensajes.length, 2);
+});

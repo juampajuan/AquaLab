@@ -35,6 +35,7 @@ from .forms import (
     ElegirPruebasForm,
     FiltrarEstudiosForm,
     ValidarResultadosForm,
+    valores_iniciales_estudio,
 )
 from .models import (
     EstadoEstudio,
@@ -103,12 +104,8 @@ def crear(request):
                 return redirect(f"{reverse('estudios:confirmar')}?solicitud={b['datos']['clave']}")
     else:
         b = pendientes(request).get(anterior)
-        if b:
-            initial = b["datos"]
-        elif request.GET.get("muestra"):
-            initial = {"muestra": request.GET.get("muestra")}
-        else:
-            initial = None
+        # Con un borrador gana el borrador; si no, el enlace precargado (US 10.3).
+        initial = b["datos"] if b else valores_iniciales_estudio(request.GET)
         form = CrearEstudioForm(initial=initial)
     return render(request, "estudios/crear_form.html", {"form": form, "anterior": anterior})
 

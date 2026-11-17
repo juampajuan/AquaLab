@@ -66,3 +66,64 @@ def test_opciones_van_primero_y_con_pregunta():
         ESTUDIO.enlace(),
     ]
     assert "pregunta" not in ESTUDIO.enlace()
+
+
+# --- Enlaces precargados y opciones sin pantalla (US 10.3, research R7) ---
+
+
+def test_referencia_sin_pk_con_parametros_y_minimizar():
+    from asistente.enlaces import Referencia
+
+    referencia = Referencia(
+        "registrar_muestra",
+        None,
+        "Revisar y registrar la muestra",
+        parametros=(("cliente", "3"), ("fecha_muestreo", "2026-11-16")),
+        minimizar=True,
+    )
+    assert referencia.enlace() == {
+        "etiqueta": "Revisar y registrar la muestra",
+        "url": "/muestras/registrar/?cliente=3&fecha_muestreo=2026-11-16",
+        "minimizar": True,
+    }
+
+
+def test_parametros_se_codifican():
+    from asistente.enlaces import Referencia
+
+    referencia = Referencia(
+        "registrar_muestra", None, "Revisar", parametros=(("origen_nuevo", "Pozo 3 & tanque"),)
+    )
+    assert referencia.url() == "/muestras/registrar/?origen_nuevo=Pozo+3+%26+tanque"
+
+
+def test_pantallas_sin_pk():
+    from asistente.enlaces import Referencia
+
+    assert Referencia("crear_estudio", None, "x").url() == "/estudios/crear/"
+    assert Referencia("registrar_cliente", None, "Registrar cliente").url() == (
+        "/clientes/registrar/"
+    )
+
+
+def test_opcion_sin_pantalla_no_tiene_url():
+    from asistente.enlaces import Referencia
+
+    opcion = Referencia("opcion", None, "Pozo 2", pregunta="El origen es Pozo 2")
+    assert opcion.url() is None
+    assert opcion.enlace() == {"etiqueta": "Pozo 2", "pregunta": "El origen es Pozo 2"}
+
+
+def test_opciones_distintas_sin_pk_no_son_duplicadas():
+    from asistente.enlaces import Referencia, sin_duplicados
+
+    a = Referencia("opcion", None, "Pozo 1", pregunta="El origen es Pozo 1")
+    b = Referencia("opcion", None, "Pozo 2", pregunta="El origen es Pozo 2")
+    assert sin_duplicados([a, b, a]) == [a, b]
+
+
+def test_tipo_desconocido_sigue_fallando():
+    from asistente.enlaces import Referencia
+
+    with pytest.raises(ValueError):
+        Referencia("usuario", 1, "x")
