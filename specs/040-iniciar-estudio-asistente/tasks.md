@@ -326,6 +326,10 @@ asistente/tests/js`).
 - [X] T030 Correr `docker compose exec web pytest`, `ruff check .`, `ruff format --check .` y
   `node --test usuarios/tests/js config/tests/js estudios/tests/js pruebas/tests/js
   asistente/tests/js`; todo en verde.
+- [X] T032 Ajuste de la prueba manual (aclaraciones del 2026-11-17, «prueba manual»): el asistente
+  pregunta también el sitio de extracción (con las fechas) y el tipo de vertido (opción para
+  elegir: Agua, Cloacal, Canal) en `asistente/registro.py` (`resolver_vertido`, `faltan`,
+  `RegistroMuestraForm` valida sitio y vertido), `MENSAJE_SISTEMA` y sus tests.
 - [ ] T031 Prueba manual del quickstart completo (pasos 1 a 9) con Groq y la demo; anotar los
   ajustes del mensaje de sistema que hagan falta.
 

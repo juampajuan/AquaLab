@@ -505,8 +505,9 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   el historial de 6 mensajes. Con todo completo, el enlace precargado va primero (`minimizar`).
 - Resolución con las reglas de las pantallas: clientes con `buscar_clientes` (gana el nombre
   exacto), orígenes del cliente (sin mayúsculas ni acentos; uno inexistente se ofrece como «origen
-  nuevo» solo si se elige), tipos activos. Se pregunta por grupos: primero lo que hay que elegir,
-  de a uno, y después las dos fechas juntas. Sin tipo, «Solo registrar la muestra» es la primera
+  nuevo» solo si se elige), tipos activos. Se pregunta todo lo obligatorio del formulario, por
+  grupos: primero lo que hay que elegir, de a uno (cliente, origen, tipo de estudio, tipo de
+  vertido, que nunca se supone «Agua»), y después las dos fechas y el sitio de extracción juntos. Sin tipo, «Solo registrar la muestra» es la primera
   opción. Opciones sin pantalla: `Referencia("opcion", None, …)` (botón sin ↗).
 - Fechas: `asistente/fechas.py:leer_fecha` con la fecha del laboratorio; las reglas (no futura,
   muestreo ≤ ingreso, origen) solo de `RegistroMuestraForm`, cuyos errores en los campos del

@@ -19,15 +19,20 @@
 - Q: ¿Un origen que el cliente no tiene puede ofrecerse como origen nuevo? → A: Sí: el asistente avisa, ofrece los orígenes del cliente y «Registrarlo como origen nuevo»; elegido, el formulario llega con «Origen nuevo» completo y se crea solo al confirmar la muestra.
 - Q: Si se pide una muestra sin tipo de estudio, ¿el asistente lo pregunta? → A: Sí, con los tipos activos como opciones más «Solo registrar la muestra», que va primera entre las opciones (siempre visible y a un toque, aunque haya muchos tipos); elegida, el enlace lleva al registro sin ofrecer después crear un estudio.
 
+### Session 2026-11-17 (prueba manual)
+
+- Q: ¿El sitio de extracción lo completa el empleado en el formulario o lo pregunta el asistente? → A: Lo pregunta el asistente, junto con las fechas en el mismo mensaje: el formulario tiene que llegar completo con todo lo obligatorio.
+- Q: ¿Qué hace el asistente con el tipo de vertido? → A: Lo pregunta siempre como opción para elegir (Agua, Cloacal, Canal), después del tipo de estudio; no se supone «Agua».
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Registrar una muestra con su estudio desde el asistente (Priority: P1)
 
 Como empleado le pido al asistente «Registrá una muestra de Lácteos del Sur, pozo 2, para un
 físico-químico básico». El asistente reconoce el cliente, el origen y el tipo de estudio, me
-pregunta lo que falta (las fechas) y, con todo completo, me ofrece un enlace al formulario de
-registro de muestra de siempre, ya completo con esos datos. Reviso, completo lo que el asistente
-no pide (por ejemplo el sitio de extracción) y confirmo como siempre. Al registrarse la muestra,
+pregunta lo que falta (el tipo de vertido, para elegir, y después las fechas y el sitio de
+extracción) y, con todo completo, me ofrece un enlace al formulario de registro de muestra de
+siempre, ya completo con esos datos. Reviso y confirmo como siempre. Al registrarse la muestra,
 la pantalla me ofrece crear el estudio del tipo pedido para esa muestra, también ya elegido, que
 confirmo en la pantalla de creación de estudio de siempre.
 
@@ -44,19 +49,20 @@ hasta confirmarlo.
 
 1. **Dado** un empleado con el asistente abierto, **cuando** pide «Registrá una muestra de Lácteos
    del Sur, pozo 2, para un físico-químico básico», **entonces** el asistente identifica el cliente,
-   el origen y el tipo de estudio en los datos del sistema y pregunta solo lo que falta (las fechas
-   de muestreo y de ingreso).
+   el origen y el tipo de estudio en los datos del sistema y pregunta solo lo que falta: primero el
+   tipo de vertido (opciones Agua, Cloacal y Canal) y después, en un mismo mensaje, las fechas de
+   muestreo y de ingreso y el sitio de extracción.
 2. **Dado** un pedido de muestra sin tipo de estudio («Registrá una muestra de Lácteos del Sur, pozo
    2»), **cuando** se envía, **entonces** el asistente pregunta el tipo ofreciendo como opciones
    primero «Solo registrar la muestra» y después los tipos activos; con «Solo registrar la muestra»
    el registro sigue igual pero sin ofrecer después crear un estudio.
-3. **Dado** que el asistente preguntó las fechas, **cuando** se responde («la tomaron ayer, llegó
-   hoy»), **entonces** el asistente resume los datos reunidos (cliente, origen, tipo de estudio,
-   fechas) y ofrece un enlace «Revisar y registrar la muestra».
+3. **Dado** que el asistente preguntó las fechas y el sitio, **cuando** se responde («la tomaron
+   ayer de la boca del pozo, llegó hoy»), **entonces** el asistente resume los datos reunidos
+   (cliente, origen, tipo de estudio, vertido, fechas, sitio) y ofrece un enlace «Revisar y
+   registrar la muestra».
 4. **Dado** el enlace, **cuando** se lo sigue, **entonces** se abre el formulario de registro de
-   muestra de siempre con el cliente, el origen y las fechas ya completos (y el sitio de extracción,
-   el tipo de vertido, el nombre o el responsable si se dijeron en la conversación), y los campos que
-   faltan quedan para completar como siempre.
+   muestra de siempre con todos los campos obligatorios ya completos (cliente, origen, fechas, sitio
+   de extracción y tipo de vertido), más el nombre o el responsable si se dijeron en la conversación.
 5. **Dado** el formulario precargado, **cuando** se lo envía y se confirma, **entonces** la muestra
    se registra con las mismas validaciones, mensajes y numeración (N° PI) que un registro hecho a mano.
 6. **Dada** una muestra recién registrada desde un pedido que incluía tipo de estudio, **cuando** se
@@ -181,11 +187,13 @@ muestras, estudios ni orígenes, y que el próximo registro hecho a mano toma el
 
 - **FR-001**: El asistente MUST reconocer pedidos de registrar una muestra (con o sin tipo de
   estudio) y de crear un estudio para una muestra existente, además de las consultas de la US 10.1.
-- **FR-002**: Para registrar una muestra, el asistente MUST reunir cliente, origen, fecha de
-  muestreo y fecha de ingreso, y el tipo de estudio si el pedido lo incluye, preguntando solo los que
-  falten (si falta el tipo, lo pregunta con «Solo registrar la muestra» como primera opción).
-  Ninguna fecha se supone: si no se dijo, se pregunta (se acepta «hoy» como respuesta). Las dos
-  fechas se preguntan juntas, en un mismo mensaje. Para crear un estudio MUST reunir la muestra (N° PI) y el tipo de estudio.
+- **FR-002**: Para registrar una muestra, el asistente MUST reunir todo lo obligatorio del
+  formulario: cliente, origen, tipo de vertido, fecha de muestreo, fecha de ingreso y sitio de
+  extracción, más el tipo de estudio (si falta, lo pregunta con «Solo registrar la muestra» como
+  primera opción), preguntando solo los que falten. El tipo de vertido se elige entre Agua, Cloacal
+  y Canal; nunca se supone. Ninguna fecha se supone: si no se dijo, se pregunta (se acepta «hoy»
+  como respuesta). Las dos fechas y el sitio de extracción se preguntan juntos, en un mismo mensaje.
+  Nombre y responsable del muestreo son opcionales: se precargan si se dijeron. Para crear un estudio MUST reunir la muestra (N° PI) y el tipo de estudio.
 - **FR-003**: Cliente, origen, tipo de estudio y muestra MUST resolverse contra los datos del sistema
   con las mismas reglas que las pantallas (solo clientes activos, orígenes del cliente elegido, solo
   tipos activos); el asistente nunca usa un valor que no salió de esa búsqueda.
@@ -227,7 +235,8 @@ muestras, estudios ni orígenes, y que el próximo registro hecho a mano toma el
 ### Measurable Outcomes
 
 - **SC-001**: El ejemplo de la historia llega al formulario de registro completo en no más de 3
-  mensajes del empleado (pedido, fechas y, si hace falta, una elección).
+  mensajes del empleado (pedido, elección del vertido, y fechas con sitio); cada elección más que
+  haga falta (cliente, origen o tipo) suma un mensaje.
 - **SC-002**: En el 100 % de las conversaciones de prueba, la cantidad de muestras, estudios y
   orígenes y el próximo N° PI no cambian hasta confirmar en la pantalla de siempre.
 - **SC-003**: El 100 % de los datos precargados coincide con lo resuelto en la conversación, y
@@ -243,9 +252,9 @@ muestras, estudios ni orígenes, y que el próximo registro hecho a mano toma el
   de registro de muestra y crear estudio (que hoy solo exigen sesión).
 - La muestra y el estudio siguen siendo dos pasos con dos confirmaciones (las pantallas de la US 4.1
   y la US 5.1); no hay una confirmación combinada (decidido en Clarifications).
-- El asistente pregunta solo cliente, origen, fechas y tipo de estudio (los del criterio de
-  aceptación). Sitio de extracción, tipo de vertido, nombre y responsable se precargan si se dijeron;
-  si no, se completan en el formulario (el vertido arranca en «Agua» como siempre).
+- El asistente pregunta todo lo obligatorio del formulario (ver FR-002; ajuste de la prueba manual
+  del 2026-11-17). Nombre y responsable se precargan si se dijeron; si no, el formulario los deja
+  vacíos como siempre (el nombre se numera solo).
 - Un origen que el cliente no tiene puede usarse como «origen nuevo» solo si se lo elige entre las
   opciones (nunca sin preguntar), como permite el formulario de la US 4.1; se crea solo al confirmar
   la muestra (decidido en Clarifications).

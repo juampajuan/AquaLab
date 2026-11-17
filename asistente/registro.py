@@ -33,14 +33,17 @@ SOLO_MUESTRA = Referencia(
 )
 REGISTRAR_CLIENTE = Referencia("registrar_cliente", None, "Registrar cliente")
 # Campos que reúne el asistente: solo sus errores del formulario se informan (research R4).
-CAMPOS_DEL_ASISTENTE = ("cliente", "origen", "origen_nuevo", "fecha_muestreo", "fecha_ingreso")
-# Datos que se precargan si se dijeron, sin preguntarlos, con el largo máximo del formulario.
-OPCIONALES = (
-    ("sitio_extraccion", 200),
-    ("tipo_vertido", None),
-    ("nombre", 100),
-    ("responsable_muestreo", 150),
+CAMPOS_DEL_ASISTENTE = (
+    "cliente",
+    "origen",
+    "origen_nuevo",
+    "fecha_muestreo",
+    "fecha_ingreso",
+    "sitio_extraccion",
+    "tipo_vertido",
 )
+# Datos opcionales: se precargan si se dijeron, sin preguntarlos, con el largo del formulario.
+OPCIONALES = (("nombre", 100), ("responsable_muestreo", 150))
 
 
 @dataclass
@@ -123,6 +126,27 @@ def resolver_origen(cliente, texto, nuevo):
     return Resolucion(
         problema=con_punto(f"«{texto}» no es un origen de {cliente.nombre_completo}"),
         opciones=_opciones_de_origenes(origenes[: MAX_LISTA - 1], texto),
+    )
+
+
+def resolver_vertido(texto):
+    """Agua, Cloacal o Canal (por valor o etiqueta). Nunca se supone (aclaración de la prueba
+    manual): sin texto o con uno desconocido, se ofrece elegir."""
+    from muestras.models import TipoVertido
+
+    opciones = [
+        Referencia("opcion", None, etiqueta, pregunta=f"El tipo de vertido es {etiqueta}")
+        for _, etiqueta in TipoVertido.choices
+    ]
+    if not texto:
+        return Resolucion(opciones=opciones)
+    normal = normalizar(texto).strip()
+    for valor, etiqueta in TipoVertido.choices:
+        if normal in (valor, normalizar(etiqueta)):
+            return Resolucion(valor=TipoVertido(valor))
+    return Resolucion(
+        problema=f"No reconozco el tipo de vertido «{texto}»: elegí Agua, Cloacal o Canal.",
+        opciones=opciones,
     )
 
 
@@ -218,15 +242,17 @@ ETIQUETAS_MUESTRA = (
     ("cliente", "Cliente"),
     ("origen", "Origen"),
     ("tipo_estudio", "Tipo de estudio"),
+    ("tipo_vertido", "Vertido"),
     ("fecha_muestreo", "Muestreo"),
     ("fecha_ingreso", "Ingreso"),
+    ("sitio_extraccion", "Sitio"),
 )
 ETIQUETAS_ESTUDIO = (("muestra", "Muestra"), ("tipo_estudio", "Tipo de estudio"))
 
 
-def _errores_del_formulario(cliente, origen, fechas):
+def _errores_del_formulario(cliente, origen, fechas, sitio, vertido):
     """Errores de `RegistroMuestraForm` en los campos que reúne el asistente: la única regla de
-    fechas y orígenes (FR-007)."""
+    fechas, orígenes y largos (FR-007)."""
     from muestras.forms import RegistroMuestraForm
 
     form = RegistroMuestraForm(
@@ -236,6 +262,8 @@ def _errores_del_formulario(cliente, origen, fechas):
             "origen_nuevo": "" if hasattr(origen, "pk") else origen,
             "fecha_muestreo": fechas["fecha_muestreo"].isoformat(),
             "fecha_ingreso": fechas["fecha_ingreso"].isoformat(),
+            "sitio_extraccion": sitio,
+            "tipo_vertido": vertido.value,
         }
     )
     form.is_valid()
@@ -244,17 +272,10 @@ def _errores_del_formulario(cliente, origen, fechas):
 
 def _parametros_opcionales(argumentos):
     """Los opcionales dichos que el formulario acepta; el resto no viaja (FR-007)."""
-    from muestras.models import TipoVertido
-
     parametros = []
     for campo, largo in OPCIONALES:
         valor = (argumentos.get(campo) or "").strip()
-        if campo == "tipo_vertido":
-            valor = normalizar(valor)
-            valido = valor in TipoVertido.values
-        else:
-            valido = 0 < len(valor) <= largo
-        if valido:
+        if 0 < len(valor) <= largo:
             parametros.append((campo, valor))
     return parametros
 
@@ -289,7 +310,7 @@ TEXTO = {"type": "string"}
                         "type": "boolean",
                         "description": "true si eligió «Solo registrar la muestra».",
                     },
-                    "sitio_extraccion": TEXTO,
+                    "sitio_extraccion": {**TEXTO, "description": "Tal cual lo dijo."},
                     "tipo_vertido": {**TEXTO, "description": "Agua, Cloacal o Canal."},
                     "nombre": TEXTO,
                     "responsable_muestreo": TEXTO,
@@ -341,6 +362,15 @@ def preparar_muestra(usuario, **argumentos):
             tipo = resolucion.valor
             pedido.resuelto["tipo_estudio"] = tipo.nombre
 
+    texto_vertido = (argumentos.get("tipo_vertido") or "").strip()
+    resolucion = resolver_vertido(texto_vertido)
+    if not texto_vertido:
+        pedido.faltan.append("tipo de vertido")
+    pedido.anotar("tipo_vertido", resolucion)
+    vertido = resolucion.valor
+    if vertido is not None:
+        pedido.resuelto["tipo_vertido"] = vertido.label
+
     hoy = timezone.localdate()
     fechas = {}
     for campo, etiqueta in (("fecha_muestreo", "muestreo"), ("fecha_ingreso", "ingreso")):
@@ -353,8 +383,14 @@ def preparar_muestra(usuario, **argumentos):
             fechas[campo] = fecha
             pedido.resuelto[campo] = fecha.strftime(FORMATO_FECHA)
 
-    if cliente is not None and origen and len(fechas) == 2:
-        pedido.problemas.extend(_errores_del_formulario(cliente, origen, fechas))
+    sitio = (argumentos.get("sitio_extraccion") or "").strip()
+    if sitio:
+        pedido.resuelto["sitio_extraccion"] = sitio
+    else:
+        pedido.faltan.append("sitio de extracción")
+
+    if cliente is not None and origen and len(fechas) == 2 and sitio and vertido is not None:
+        pedido.problemas.extend(_errores_del_formulario(cliente, origen, fechas, sitio, vertido))
 
     if pedido.listo:
         parametros = [("cliente", str(cliente.pk))]
@@ -363,6 +399,7 @@ def preparar_muestra(usuario, **argumentos):
         else:
             parametros.append(("origen_nuevo", origen))
         parametros += [(c, fechas[c].isoformat()) for c in ("fecha_muestreo", "fecha_ingreso")]
+        parametros += [("sitio_extraccion", sitio), ("tipo_vertido", vertido.value)]
         parametros += _parametros_opcionales(argumentos)
         if tipo is not None:
             parametros.append(("tipo_estudio", str(tipo.pk)))

@@ -21,7 +21,9 @@ todo, AquaLab agrega el enlace al formulario».
 | `fecha_ingreso` | string | Ídem |
 | `tipo_estudio` | string | Nombre del tipo |
 | `solo_muestra` | boolean | `true` si eligió «Solo registrar la muestra» |
-| `sitio_extraccion`, `tipo_vertido`, `nombre`, `responsable_muestreo` | string | Opcionales; solo si se dijeron |
+| `tipo_vertido` | string | «agua», «cloacal» o «canal» (también la etiqueta) |
+| `sitio_extraccion` | string | Tal cual, ≤ 200 caracteres |
+| `nombre`, `responsable_muestreo` | string | Opcionales; solo si se dijeron |
 
 Ninguno es obligatorio: sin argumentos devuelve todo en `faltan`.
 
@@ -41,19 +43,21 @@ Ninguno es obligatorio: sin argumentos devuelve todo en `faltan`.
 
 - `resuelto`: solo nombres (lista blanca, R9). Las fechas como `dd/mm/aaaa`; el origen nuevo
   como «Pozo 3 (origen nuevo)»; con `solo_muestra`, `tipo_estudio: "sin estudio"`.
-- `faltan`: datos sin decir, en orden cliente → origen → tipo de estudio → fecha de muestreo →
-  fecha de ingreso. Una fecha ilegible figura como «fecha de muestreo (no entendí «…»)».
+- `faltan`: datos sin decir, en orden cliente → origen → tipo de estudio → tipo de vertido →
+  fecha de muestreo → fecha de ingreso → sitio de extracción. Una fecha ilegible figura como «fecha de muestreo (no entendí «…»)».
 - `problemas`: textos de AquaLab para lo que no coincide («No hay ningún cliente activo que
   coincida con «X».», «El tipo «Y» no está activo.») y los errores de `RegistroMuestraForm` en
   cliente, origen, origen nuevo y fechas.
-- `elegir`: `"cliente" | "origen" | "tipo_estudio" | null`. Indica qué tiene que elegir el
+- `elegir`: `"cliente" | "origen" | "tipo_estudio" | "tipo_vertido" | null`. Indica qué tiene que elegir el
   empleado entre las opciones (AquaLab las muestra como botones; el modelo no las repite, R7).
 - `listo: true` solo si no hay `faltan` ni `problemas`. Además, debe haber un tipo activo o
   `solo_muestra`.
 
 Se pregunta por grupos, en este orden: primero lo que hay que **elegir** (cliente, después origen,
-después tipo), de a una elección; después las **dos fechas juntas** en un mismo mensaje. Así el
-ejemplo con una elección llega al enlace en 3 mensajes (SC-001). Si el cliente no está resuelto, no
+después tipo de estudio, después tipo de vertido), de a una elección; después las **dos fechas y el
+sitio de extracción juntos** en un mismo mensaje. Así el ejemplo llega al enlace en 3 mensajes
+(SC-001). Un vertido que no es Agua, Cloacal ni Canal → problema «No reconozco el tipo de vertido
+«…»: elegí Agua, Cloacal o Canal.» y la elección. Si el cliente no está resuelto, no
 se busca el origen.
 
 ### Lo que queda en AquaLab (`Salida`)
@@ -65,13 +69,15 @@ se busca el origen.
     final «Registrarlo como origen nuevo», pregunta «Registrar «<texto>» como origen nuevo».
   - tipo: **primero** «Solo registrar la muestra», pregunta «Solo registrar la muestra, sin
     estudio»; después los tipos activos, pregunta «El tipo de estudio es <nombre>».
+  - vertido: «Agua», «Cloacal», «Canal» (`tipo="opcion"`), pregunta «El tipo de vertido es
+    <etiqueta>».
 - `primeras`: con `listo`, la referencia `registrar_muestra` con los parámetros de
   [enlaces-precargados.md](enlaces-precargados.md), etiqueta «Revisar y registrar la muestra»,
   `minimizar`. Con el cliente no encontrado, la referencia `registrar_cliente` («Registrar
   cliente»).
 - `avisos` sin `listo` (U1, conversación larga): si hay algo en `resuelto`, el resumen fijo
-  «Hasta ahora: Cliente: … · Origen: … · Tipo de estudio: … · Muestreo: dd/mm/aaaa · Ingreso:
-  dd/mm/aaaa.» con solo los datos resueltos. Va al final del texto, queda en el historial que
+  «Hasta ahora: Cliente: … · Origen: … · Tipo de estudio: … · Vertido: … · Muestreo: dd/mm/aaaa
+  · Ingreso: dd/mm/aaaa · Sitio: ….» con solo los datos resueltos. Va al final del texto, queda en el historial que
   manda el navegador y así lo resuelto sobrevive aunque el primer mensaje salga de la ventana de 6.
   Igual en `preparar_estudio` («Hasta ahora: Muestra: PI … · Tipo de estudio: ….»).
 - `avisos`: con `listo`, el texto fijo «La muestra se registra recién cuando confirmes en el

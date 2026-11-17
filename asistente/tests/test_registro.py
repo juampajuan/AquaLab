@@ -60,8 +60,10 @@ def completo(**extra):
         "cliente": "Lácteos del Sur",
         "origen": "pozo 2",
         "tipo_estudio": "físico-químico básico",
+        "tipo_vertido": "agua",
         "fecha_muestreo": "ayer",
         "fecha_ingreso": "hoy",
+        "sitio_extraccion": "Boca del pozo",
         **extra,
     }
 
@@ -78,7 +80,7 @@ def enlaces(lista):
 # --- US1 (T012) ---
 
 
-def test_faltan_las_fechas(empleado, datos):
+def test_faltan_vertido_fechas_y_sitio(empleado, datos):
     resultado = ejecutar(
         empleado,
         "preparar_muestra",
@@ -89,9 +91,20 @@ def test_faltan_las_fechas(empleado, datos):
     salida = resultado.salida
     assert salida["encontrado"] is True
     assert salida["listo"] is False
-    assert salida["faltan"] == ["fecha de muestreo", "fecha de ingreso"]
+    assert salida["faltan"] == [
+        "tipo de vertido",
+        "fecha de muestreo",
+        "fecha de ingreso",
+        "sitio de extracción",
+    ]
     assert salida["problemas"] == []
-    assert salida["elegir"] is None
+    # El vertido se elige: Agua, Cloacal o Canal (nunca se supone).
+    assert salida["elegir"] == "tipo_vertido"
+    assert enlaces(resultado.opciones) == [
+        {"etiqueta": "Agua", "pregunta": "El tipo de vertido es Agua"},
+        {"etiqueta": "Cloacal", "pregunta": "El tipo de vertido es Cloacal"},
+        {"etiqueta": "Canal", "pregunta": "El tipo de vertido es Canal"},
+    ]
     assert salida["resuelto"] == {
         "cliente": "Lácteos del Sur S.A.",
         "origen": "Pozo 2",
@@ -123,8 +136,12 @@ def test_listo_con_enlace_precargado(empleado, datos, hoy):
         "origen": str(datos["pozo2"].pk),
         "fecha_muestreo": ayer.isoformat(),
         "fecha_ingreso": hoy.isoformat(),
+        "sitio_extraccion": "Boca del pozo",
+        "tipo_vertido": "agua",
         "tipo_estudio": str(datos["fq"].pk),
     }
+    assert salida["resuelto"]["tipo_vertido"] == "Agua"
+    assert salida["resuelto"]["sitio_extraccion"] == "Boca del pozo"
     assert resultado.avisos == [AVISO_MUESTRA]
 
 
@@ -196,24 +213,36 @@ def test_datos_opcionales_viajan_en_el_enlace(empleado, datos):
     resultado = ejecutar(
         empleado,
         "preparar_muestra",
-        **completo(
-            sitio_extraccion="Boca del pozo",
-            tipo_vertido="Cloacal",
-            nombre="Control",
-            responsable_muestreo="Pedro",
-        ),
+        **completo(tipo_vertido="Cloacal", nombre="Control", responsable_muestreo="Pedro"),
     )
     _, consulta = parametros(resultado.primeras[0].enlace())
-    assert consulta["sitio_extraccion"] == "Boca del pozo"
     assert consulta["tipo_vertido"] == "cloacal"
     assert consulta["nombre"] == "Control"
     assert consulta["responsable_muestreo"] == "Pedro"
 
 
-def test_tipo_de_vertido_desconocido_no_viaja(empleado, datos):
+def test_sin_opcionales_no_viajan(empleado, datos):
+    _, consulta = parametros(
+        ejecutar(empleado, "preparar_muestra", **completo()).primeras[0].enlace()
+    )
+    assert "nombre" not in consulta and "responsable_muestreo" not in consulta
+
+
+def test_tipo_de_vertido_desconocido(empleado, datos):
     resultado = ejecutar(empleado, "preparar_muestra", **completo(tipo_vertido="marciano"))
-    _, consulta = parametros(resultado.primeras[0].enlace())
-    assert "tipo_vertido" not in consulta
+    salida = resultado.salida
+    assert salida["problemas"] == [
+        "No reconozco el tipo de vertido «marciano»: elegí Agua, Cloacal o Canal."
+    ]
+    assert salida["elegir"] == "tipo_vertido"
+    assert resultado.primeras == []
+
+
+def test_sitio_demasiado_largo_lo_rechaza_el_formulario(empleado, datos):
+    resultado = ejecutar(empleado, "preparar_muestra", **completo(sitio_extraccion="x" * 201))
+    assert resultado.salida["listo"] is False
+    assert any("200" in p for p in resultado.salida["problemas"])
+    assert resultado.primeras == []
 
 
 def test_sin_datos_de_contacto(empleado, datos):
@@ -230,8 +259,10 @@ def test_sin_argumentos_falta_todo(empleado, datos):
         "cliente",
         "origen",
         "tipo de estudio",
+        "tipo de vertido",
         "fecha de muestreo",
         "fecha de ingreso",
+        "sitio de extracción",
     ]
     assert resultado.avisos == []
     assert resultado.valida is True

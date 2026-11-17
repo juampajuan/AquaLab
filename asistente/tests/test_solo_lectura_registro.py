@@ -55,7 +55,13 @@ def test_pedidos_completos_y_abandonados_no_crean_nada(cliente_http, muestra, se
     antes = foto(cliente_http)
 
     historial = []
-    dicho = {"cliente": "Lácteos del Sur", "origen": "pozo 9", "tipo_estudio": "físico"}
+    dicho = {
+        "cliente": "Lácteos del Sur",
+        "origen": "pozo 9",
+        "tipo_estudio": "físico",
+        "tipo_vertido": "agua",
+        "sitio_extraccion": "boca del pozo",
+    }
     servicio_simulado.guion(herramienta("preparar_muestra", dicho), texto("¿Cuál origen?"))
     preguntar(cliente_http, "Registrá una muestra de Lácteos del Sur, pozo 9, físico", historial)
     servicio_simulado.guion(

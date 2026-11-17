@@ -17,13 +17,14 @@ node --test usuarios/tests/js config/tests/js estudios/tests/js pruebas/tests/js
 ## Prueba manual (con la demo)
 
 1. **Ejemplo de la historia** (US 1): en el asistente, «Registrá una muestra de Lácteos del Sur,
-   pozo 2, para un físico-químico básico». → Pregunta las fechas. Respondé «la tomaron ayer,
-   llegó hoy». → Resumen + botón «Revisar y registrar la muestra». Anotá el último N° PI en
-   «Buscar estudios» o en la ficha del cliente: **no debe haber cambiado**.
-2. Seguí el botón. → El panel se minimiza; el formulario muestra el cliente, el Pozo 2, las dos
-   fechas y la nota «Después de registrar la muestra se ofrecerá crear el estudio «Físico-químico
-   básico»». Completá el sitio de extracción, enviá y confirmá. → «Muestra registrada con N° PI …»
-   y «Crear el estudio Físico-químico básico».
+   pozo 2, para un físico-químico básico». → Ofrece elegir el vertido (Agua, Cloacal, Canal).
+   Elegí uno. → Pregunta las fechas y el sitio de extracción juntos. Respondé «la tomaron ayer de
+   la boca del pozo, llegó hoy». → Resumen + botón «Revisar y registrar la muestra». Anotá el
+   último N° PI: **no debe haber cambiado**.
+2. Seguí el botón. → El panel se minimiza; el formulario llega con todo lo obligatorio completo
+   (cliente, Pozo 2, fechas, sitio y vertido) y la nota «Después de registrar la muestra se
+   ofrecerá crear el estudio «Físico-químico básico»». Enviá y confirmá. → «Muestra registrada con
+   N° PI …» y «Crear el estudio Físico-químico básico».
 3. Seguí ese enlace. → Crear estudio con la muestra y el tipo elegidos. El estudio no existe hasta
    confirmar.
 4. **Sin tipo**: «Registrá una muestra de Lácteos del Sur, pozo 2». → Opciones con «Solo registrar

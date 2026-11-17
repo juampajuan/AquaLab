@@ -105,41 +105,60 @@ def preguntar(servicio, usuario, pregunta, historial):
     return respuesta
 
 
-def test_ejemplo_de_la_historia_en_dos_mensajes(empleado, lacteos_registro, servicio_simulado):
+def test_ejemplo_de_la_historia_en_tres_mensajes(empleado, lacteos_registro, servicio_simulado):
     historial = []
     servicio_simulado.guion(
-        herramienta("preparar_muestra", DICHO),
-        texto("¿Cuándo se tomó la muestra y cuándo llegó al laboratorio?"),
+        herramienta("preparar_muestra", DICHO), texto("¿Qué tipo de vertido es?")
     )
     primera = preguntar(servicio_simulado, empleado, PEDIDO, historial)
-    assert primera.texto.startswith("¿Cuándo se tomó")
+    assert primera.texto.startswith("¿Qué tipo de vertido")
     assert primera.texto.endswith(
         "Hasta ahora: Cliente: Lácteos del Sur S.A. · Origen: Pozo 2 · Tipo de estudio: "
         "Físico-químico básico."
     )
-    assert not any(e.get("minimizar") for e in primera.enlaces)
+    assert [e["etiqueta"] for e in primera.enlaces] == ["Agua", "Cloacal", "Canal"]
+
+    con_vertido = {**DICHO, "tipo_vertido": "Agua"}
+    servicio_simulado.guion(
+        herramienta("preparar_muestra", con_vertido),
+        texto("¿Cuándo se tomó, cuándo llegó y de qué punto exacto se extrajo?"),
+    )
+    segunda = preguntar(servicio_simulado, empleado, primera.enlaces[0]["pregunta"], historial)
+    assert not any(e.get("minimizar") for e in segunda.enlaces)
+    assert "Vertido: Agua" in segunda.texto
 
     servicio_simulado.guion(
         herramienta(
-            "preparar_muestra", {**DICHO, "fecha_muestreo": "ayer", "fecha_ingreso": "hoy"}
+            "preparar_muestra",
+            {
+                **con_vertido,
+                "fecha_muestreo": "ayer",
+                "fecha_ingreso": "hoy",
+                "sitio_extraccion": "boca del pozo",
+            },
         ),
         texto("Listo: revisá los datos y confirmá el registro."),
     )
-    segunda = preguntar(servicio_simulado, empleado, "la tomaron ayer, llegó hoy", historial)
-    assert segunda.enlaces[0]["etiqueta"] == "Revisar y registrar la muestra"
-    assert segunda.enlaces[0]["minimizar"] is True
-    assert segunda.enlaces[0]["url"].startswith("/muestras/registrar/?cliente=")
-    assert segunda.texto.endswith(
+    tercera = preguntar(
+        servicio_simulado, empleado, "la tomaron ayer de la boca del pozo, llegó hoy", historial
+    )
+    assert tercera.enlaces[0]["etiqueta"] == "Revisar y registrar la muestra"
+    assert tercera.enlaces[0]["minimizar"] is True
+    assert tercera.enlaces[0]["url"].startswith("/muestras/registrar/?cliente=")
+    assert "sitio_extraccion=boca+del+pozo" in tercera.enlaces[0]["url"]
+    assert "tipo_vertido=agua" in tercera.enlaces[0]["url"]
+    assert tercera.texto.endswith(
         "La muestra se registra recién cuando confirmes en el formulario."
     )
     # El historial que mandó el navegador llegó al servicio.
-    enviados = servicio_simulado.llamadas[2]["mensajes"]
+    enviados = servicio_simulado.llamadas[4]["mensajes"]
     assert enviados[1]["content"] == PEDIDO
 
 
-def test_con_una_eleccion_en_tres_mensajes(empleado, lacteos_registro, servicio_simulado):
+def test_sin_tipo_una_eleccion_mas(empleado, lacteos_registro, servicio_simulado):
+    """SC-001: cada elección que haga falta suma un mensaje (acá, el tipo de estudio)."""
     historial = []
-    sin_tipo = {"cliente": "Lácteos del Sur", "origen": "pozo 2"}
+    sin_tipo = {"cliente": "Lácteos del Sur", "origen": "pozo 2", "tipo_vertido": "cloacal"}
     servicio_simulado.guion(
         herramienta("preparar_muestra", sin_tipo), texto("¿Qué tipo de estudio?")
     )
@@ -157,11 +176,17 @@ def test_con_una_eleccion_en_tres_mensajes(empleado, lacteos_registro, servicio_
     servicio_simulado.guion(
         herramienta(
             "preparar_muestra",
-            {**sin_tipo, "solo_muestra": True, "fecha_muestreo": "hoy", "fecha_ingreso": "hoy"},
+            {
+                **sin_tipo,
+                "solo_muestra": True,
+                "fecha_muestreo": "hoy",
+                "fecha_ingreso": "hoy",
+                "sitio_extraccion": "canilla",
+            },
         ),
         texto("Listo."),
     )
-    tercera = preguntar(servicio_simulado, empleado, "las dos hoy", historial)
+    tercera = preguntar(servicio_simulado, empleado, "las dos hoy, de la canilla", historial)
     assert tercera.enlaces[0]["etiqueta"] == "Revisar y registrar la muestra"
     assert "tipo_estudio" not in tercera.enlaces[0]["url"]
     assert len([m for m in historial if m["rol"] == "usuario"]) == 3
@@ -171,7 +196,7 @@ def test_conversacion_larga_sobrevive_con_el_resumen(empleado, lacteos_registro,
     """R10: el pedido original ya salió del historial, pero el último resumen sigue."""
     resumen = (
         "Hasta ahora: Cliente: Lácteos del Sur S.A. · Origen: Pozo 2 · Tipo de estudio: "
-        "Físico-químico básico."
+        "Físico-químico básico · Vertido: Agua · Sitio: Boca del pozo."
     )
     historial = [
         {"rol": "usuario", "texto": "el 12/13"},
@@ -188,6 +213,8 @@ def test_conversacion_larga_sobrevive_con_el_resumen(empleado, lacteos_registro,
                 "cliente": "Lácteos del Sur S.A.",
                 "origen": "Pozo 2",
                 "tipo_estudio": "Físico-químico básico",
+                "tipo_vertido": "Agua",
+                "sitio_extraccion": "Boca del pozo",
                 "fecha_muestreo": "12/11",
                 "fecha_ingreso": "hoy",
             },
