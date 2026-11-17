@@ -51,7 +51,10 @@ Ninguno es obligatorio: sin argumentos devuelve todo en `faltan`.
 - `listo: true` solo si no hay `faltan` ni `problemas`. Además, debe haber un tipo activo o
   `solo_muestra`.
 
-Se pregunta un dato por vez. Si el cliente no está resuelto, no se busca el origen.
+Se pregunta por grupos, en este orden: primero lo que hay que **elegir** (cliente, después origen,
+después tipo), de a una elección; después las **dos fechas juntas** en un mismo mensaje. Así el
+ejemplo con una elección llega al enlace en 3 mensajes (SC-001). Si el cliente no está resuelto, no
+se busca el origen.
 
 ### Lo que queda en AquaLab (`Salida`)
 
@@ -66,6 +69,11 @@ Se pregunta un dato por vez. Si el cliente no está resuelto, no se busca el ori
   [enlaces-precargados.md](enlaces-precargados.md), etiqueta «Revisar y registrar la muestra»,
   `minimizar`. Con el cliente no encontrado, la referencia `registrar_cliente` («Registrar
   cliente»).
+- `avisos` sin `listo` (U1, conversación larga): si hay algo en `resuelto`, el resumen fijo
+  «Hasta ahora: Cliente: … · Origen: … · Tipo de estudio: … · Muestreo: dd/mm/aaaa · Ingreso:
+  dd/mm/aaaa.» con solo los datos resueltos. Va al final del texto, queda en el historial que
+  manda el navegador y así lo resuelto sobrevive aunque el primer mensaje salga de la ventana de 6.
+  Igual en `preparar_estudio` («Hasta ahora: Muestra: PI … · Tipo de estudio: ….»).
 - `avisos`: con `listo`, el texto fijo «La muestra se registra recién cuando confirmes en el
   formulario.».
 

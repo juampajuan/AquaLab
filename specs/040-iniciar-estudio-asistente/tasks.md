@@ -80,6 +80,9 @@ pedidos de registro por el corte de verbos.
   (se llama a `cliente_ia.enviar`); «Registrá el cliente Juan Pérez» → `MENSAJE_ALTA_CLIENTE` con
   un enlace a `clientes:registrar`, sin llamar al servicio; «Validá el estudio 42», «Borrá la
   muestra», «Cargá el pH» (sin «muestra» ni «estudio») → `MENSAJE_SOLO_CONSULTA` como en la 10.1.
+  También siguen cortados (el verbo no va seguido del objeto, research R2): «Cargá las mediciones
+  del estudio 42», «Agregá una prueba al estudio 42», «Creá un informe del estudio 42» y «Registrá
+  la validación del estudio 42». No se cortan «Registrá otra muestra…» ni «Creá un nuevo estudio…».
 
 ### Implementación
 
@@ -95,8 +98,10 @@ pedidos de registro por el corte de verbos.
   omite `url` si es `None` y agrega `"minimizar": True` si corresponde; `clave` →
   `(tipo, pk, parametros, pregunta)`. `posicion` no cambia.
 - [ ] T007 En `asistente/conversacion.py` (R2): `VERBOS_DE_REGISTRO = {"registra", "crea",
-  "agrega", "carga"}`; `es_pedido_de_registro(pregunta)` (empieza con uno de esos verbos y el texto
-  normalizado contiene «muestra» o «estudio»); `es_alta_de_cliente(pregunta)` (verbo de registro +
+  "agrega", "carga"}`; `es_pedido_de_registro(pregunta)`: sobre el texto normalizado (sin cortesía ni signos
+  iniciales, como `es_pedido_de_cambio`) coincide con
+  `^(registra|crea|agrega|carga)\s+((un|una|la|el|otra|otro|nueva|nuevo)\s+)*(muestra|estudio)\b`
+  (el verbo seguido directamente del objeto; research R2); `es_alta_de_cliente(pregunta)` (verbo de registro +
   «cliente», sin «muestra» ni «estudio»). En `responder`: si es alta de cliente →
   `Respuesta(MENSAJE_ALTA_CLIENTE, [Referencia("registrar_cliente", None, "Registrar cliente")
   .enlace()])`; si es pedido de cambio y no de registro → `MENSAJE_SOLO_CONSULTA`. Actualizar
@@ -105,7 +110,8 @@ pedidos de registro por el corte de verbos.
   muestra (preparar_muestra) o de un estudio para una muestra existente (preparar_estudio): llamá
   la herramienta en cada mensaje con todos los datos dichos hasta ahora en la conversación, tal
   como los dijo el empleado (las fechas en sus palabras: «ayer», «12/11»); preguntá solo lo que
-  la herramienta diga que falta, de a un dato; si hay opciones, pedí que elijan sin repetirlas.
+  la herramienta diga que falta: primero lo que haya que elegir, de a una elección, y después las
+  dos fechas juntas en un mismo mensaje; si hay opciones, pedí que elijan sin repetirlas.
   No digas que la muestra o el estudio quedaron creados: se crean cuando el empleado confirma en
   el formulario. No cargás mediciones, no validás ni das de alta clientes.»
 - [ ] T008 En `static/js/aqualab.js` (`asistenteEnlaces`): una opción sin `url` se dibuja solo como
@@ -160,13 +166,20 @@ asistente/tests/js`).
   futura → `problemas` con el mensaje de `RegistroMuestraForm`, sin enlace; (f) fecha ilegible →
   `faltan` con «fecha de muestreo (no entendí «…»)»; (g) `sitio_extraccion` y `tipo_vertido`
   dichos viajan en el enlace; (h) el JSON de `datos` no contiene el email, el teléfono, el
-  domicilio ni el documento del cliente.
+  domicilio ni el documento del cliente; (i) sin `listo` y con algo resuelto, `avisos` trae el
+  resumen fijo «Hasta ahora: Cliente: Lácteos del Sur S.A. · Origen: Pozo 2 · Tipo de estudio: …»
+  solo con lo resuelto (sin nada resuelto, no hay resumen; con `listo`, no hay resumen sino el
+  aviso fijo).
 - [ ] T013 [P] [US1] Test de conversación del ejemplo en
   `asistente/tests/test_conversacion_registro.py` con `servicio_simulado`: mensaje 1 «Registrá una
   muestra de Lácteos del Sur, pozo 2, para un físico-químico básico» → guion con
   `preparar_muestra` y un texto que pregunta las fechas; mensaje 2 «la tomaron ayer, llegó hoy»
   (con el historial) → `preparar_muestra` con todo y el texto final; la respuesta trae primero el
-  enlace «Revisar y registrar la muestra» y el aviso fijo, en ≤ 3 mensajes del empleado (SC-001).
+  enlace «Revisar y registrar la muestra» y el aviso fijo, en ≤ 3 mensajes del empleado (SC-001). Variante con una elección (pedido sin
+  tipo → «Solo registrar la muestra» → fechas juntas): también ≤ 3 mensajes. Conversación larga
+  (U1): un historial de 6 mensajes donde el pedido original ya no está, pero sí el último «Hasta
+  ahora: …» → el guion llama a `preparar_muestra` con los datos del resumen y llega al enlace; el
+  test verifica que el texto devuelto en cada respuesta incompleta termina con el resumen.
 
 ### Implementación
 
@@ -175,9 +188,12 @@ asistente/tests/js`).
   «origen_nuevo» ≤ 150 y solo sin un origen válido; fechas `aaaa-mm-dd`; «sitio_extraccion» ≤ 200;
   «tipo_vertido» en `TipoVertido.values`; «nombre» ≤ 100; «responsable_muestreo» ≤ 150;
   «tipo_estudio» activo) y descarta lo inválido en silencio. Campo nuevo `tipo_estudio =
-  forms.ModelChoiceField(queryset=TipoEstudio.objects.filter(activo=True), required=False,
-  widget=forms.HiddenInput)`, con `clean_tipo_estudio` que convierte un valor inválido en `None`
-  sin error (sobrescribir `to_python`/capturar `ValidationError`). `datos_para_sesion` suma
+  TipoEstudioOpcional(queryset=TipoEstudio.objects.filter(activo=True), required=False,
+  widget=forms.HiddenInput)`, donde `TipoEstudioOpcional` es una subclase de
+  `forms.ModelChoiceField` cuyo `clean(value)` llama a `super().clean(value)` y ante
+  `ValidationError` devuelve `None` (un `clean_tipo_estudio` no sirve: `ModelChoiceField.clean`
+  lanza el error antes de que se ejecute). Así un tipo inválido o desactivado nunca da error de
+  formulario. `datos_para_sesion` suma
   `"tipo_estudio": pk | None`. Propiedad `tipo_estudio_elegido` para la nota.
 - [ ] T015 [US1] En `muestras/views.py`: `registrar` (GET sin `volver=1`) arma
   `RegistroMuestraForm(initial=valores_iniciales(request.GET))` si hay parámetros, después de
@@ -200,7 +216,10 @@ asistente/tests/js`).
   solo los errores de `cliente`, `origen`, `origen_nuevo`, `fecha_muestreo` y `fecha_ingreso`;
   `@registrar` de `preparar_muestra` con la definición literal del contrato (todos los argumentos
   opcionales, tipos JSON del contrato). Con `listo`: `primeras=[Referencia("registrar_muestra",
-  None, "Revisar y registrar la muestra", parametros=…, minimizar=True)]` y el aviso fijo. Las
+  None, "Revisar y registrar la muestra", parametros=…, minimizar=True)]` y el aviso fijo. Sin
+  `listo` y con algo resuelto: el resumen fijo «Hasta ahora: …» en `avisos` (research R10).
+  Preguntas por grupos: `faltan` y `elegir` reflejan el orden del contrato (elecciones primero,
+  fechas juntas al final). Las
   opciones de tipo con «Solo registrar la muestra» **primero**. Respetar `puede_ver(usuario,
   "registro")`. Importar `asistente.registro` al final de `asistente/herramientas.py` para que
   registre sus herramientas.
@@ -236,7 +255,8 @@ asistente/tests/js`).
 - [ ] T022 [US2] En `asistente/registro.py`: `PedidoEstudio` y `@registrar` de `preparar_estudio`
   (definición literal del contrato; `numero_pi` integer y `tipo_estudio` string, ambos
   opcionales), con la muestra buscada por N° PI (rango `0 < n ≤ MAX_NUMERO_SQL`, como
-  `buscar_muestra`) y `referencia_muestra` de `herramientas.py`.
+  `buscar_muestra`) y `referencia_muestra` de `herramientas.py`. Sin `listo`, el resumen «Hasta
+  ahora: Muestra: PI … · Tipo de estudio: ….» en `avisos`.
 
 **Checkpoint**: T020–T021 pasan.
 

@@ -167,6 +167,9 @@ muestras, estudios ni orígenes, y que el próximo registro hecho a mano toma el
   en las pantallas correspondientes.
 - **Dar de alta un cliente**: «registrá el cliente Juan Pérez» → el asistente responde que no puede y
   ofrece el enlace a «Registrar cliente».
+- **Conversación larga**: si el pedido se extiende más allá de los mensajes que el asistente recuerda
+  (por ejemplo, varias aclaraciones o fechas mal escritas), lo ya resuelto no se pierde: cada
+  respuesta de un pedido incompleto termina con un resumen de lo reunido hasta ese momento.
 - **Servicio de IA no disponible**: los mismos avisos de la US 10.1; el registro a mano funciona
   igual.
 - **Borrador de registro en curso**: si ya había un registro de muestra a medio confirmar en la
@@ -181,7 +184,8 @@ muestras, estudios ni orígenes, y que el próximo registro hecho a mano toma el
 - **FR-002**: Para registrar una muestra, el asistente MUST reunir cliente, origen, fecha de
   muestreo y fecha de ingreso, y el tipo de estudio si el pedido lo incluye, preguntando solo los que
   falten (si falta el tipo, lo pregunta con «Solo registrar la muestra» como primera opción).
-  Ninguna fecha se supone: si no se dijo, se pregunta (se acepta «hoy» como respuesta). Para crear un estudio MUST reunir la muestra (N° PI) y el tipo de estudio.
+  Ninguna fecha se supone: si no se dijo, se pregunta (se acepta «hoy» como respuesta). Las dos
+  fechas se preguntan juntas, en un mismo mensaje. Para crear un estudio MUST reunir la muestra (N° PI) y el tipo de estudio.
 - **FR-003**: Cliente, origen, tipo de estudio y muestra MUST resolverse contra los datos del sistema
   con las mismas reglas que las pantallas (solo clientes activos, orígenes del cliente elegido, solo
   tipos activos); el asistente nunca usa un valor que no salió de esa búsqueda.
@@ -190,7 +194,8 @@ muestras, estudios ni orígenes, y que el próximo registro hecho a mano toma el
   «origen nuevo», tipos activos), con el mismo mecanismo de opciones de la US 10.1.
 - **FR-005**: Con los datos completos, el asistente MUST ofrecer un único enlace al formulario de
   siempre (registro de muestra o crear estudio) con esos datos como valores iniciales, junto con un
-  resumen de lo reunido. El enlace lo arma AquaLab, nunca el modelo.
+  resumen de lo reunido; para un estudio puede sumar el enlace a la ficha de la muestra, como en la
+  US 10.1. Los enlaces los arma AquaLab, nunca el modelo.
 - **FR-006**: El asistente y sus herramientas MUST NOT crear, modificar ni borrar datos (muestras,
   estudios, orígenes, borradores de sesión, N° PI). Se mantiene la garantía de solo lectura de la
   US 10.1.

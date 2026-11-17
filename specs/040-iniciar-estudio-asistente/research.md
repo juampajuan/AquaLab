@@ -22,7 +22,11 @@ Decisiones de diseño. Cada una con su motivo y las alternativas descartadas. La
 ## R2. Pedidos de registro frente al corte por «verbos de cambio»
 
 - **Decisión**: `VERBOS_DE_CAMBIO` ya no corta de entrada `registra`, `crea`, `agrega` ni `carga`
-  cuando la pregunta nombra «muestra» o «estudio» (`es_pedido_de_registro`). Sin esas palabras,
+  cuando el verbo va seguido **directamente** del objeto «muestra» o «estudio», con a lo sumo
+  artículos o «nueva/nuevo/otra/otro» en el medio (`es_pedido_de_registro`, sobre el texto
+  normalizado: `^(registra|crea|agrega|carga)\s+((un|una|la|el|otra|otro|nueva|nuevo)\s+)*
+  (muestra|estudio)\b`). Así «Cargá las mediciones del estudio 42», «Agregá una prueba al estudio
+  42» o «Creá un informe del estudio 42» siguen recibiendo el mensaje fijo de la 10.1. Sin esas palabras,
   el corte se mantiene. «Registrá el cliente…» recibe un mensaje fijo nuevo
   (`MENSAJE_ALTA_CLIENTE`) con el enlace a «Registrar cliente». `MENSAJE_SISTEMA` y
   `MENSAJE_SOLO_CONSULTA` suman el registro de muestras y estudios, y repiten que cargar
@@ -126,3 +130,15 @@ Decisiones de diseño. Cada una con su motivo y las alternativas descartadas. La
   `nombre` y `activo`; del origen, solo `nombre`; del tipo, solo `nombre`. Nunca el documento, el
   correo, el teléfono ni el domicilio (FR-011). El N° PI, las fechas y los textos que dictó el
   empleado sí viajan, igual que en las consultas.
+
+## R10. Conversaciones que superan la ventana del historial
+
+- **Decisión**: mientras el pedido no está listo, AquaLab agrega al final de la respuesta un
+  resumen fijo de lo resuelto («Hasta ahora: …», contracts/herramientas.md). Como el panel guarda y
+  reenvía ese texto en el historial, lo resuelto sigue disponible aunque el pedido original salga
+  de los últimos 6 mensajes.
+- **Motivo**: R1 depende de que el pedido esté en el historial. Con las fechas preguntadas juntas
+  (SC-001) alcanza en el caso normal, pero una conversación con aclaraciones podría perder datos
+  sin avisar.
+- **Alternativas**: ampliar la ventana de historial de la 10.1. Se descartó porque cambia los topes
+  acordados y el costo de cada pedido al servicio, y aun así tendría un límite.
