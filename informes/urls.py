@@ -1,9 +1,24 @@
 from django.urls import path
 
-from . import views
+from . import views, views_conclusiones
 
 app_name = "informes"
 urlpatterns = [
+    path(
+        "estudios/<int:pk>/conclusion/guardar/",
+        views_conclusiones.guardar,
+        name="conclusion_guardar",
+    ),
+    path(
+        "estudios/<int:pk>/conclusion/aprobar/",
+        views_conclusiones.aprobar,
+        name="conclusion_aprobar",
+    ),
+    path(
+        "estudios/<int:pk>/conclusion/proponer/",
+        views_conclusiones.proponer,
+        name="conclusion_proponer",
+    ),
     path("", views.listar, name="listar"),
     path("emitidos/", views.emitidos, name="emitidos"),
     path("dashboard/", views.dashboard, name="dashboard"),

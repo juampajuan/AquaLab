@@ -1,0 +1,9 @@
+{% autoescape off %}Hola, {{ contenido.cliente.nombre_completo }}:
+
+Le enviamos el informe {{ numero }} del estudio N° {{ contenido.estudio.numero }} ({{ contenido.estudio.tipo }}) de la muestra N° PI {{ contenido.muestra.numero_pi }} ({{ contenido.muestra.nombre }}).
+
+El informe está adjunto en PDF.
+
+Saludos,
+{{ contenido.laboratorio.nombre }}
+{% endautoescape %}

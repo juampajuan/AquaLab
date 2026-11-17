@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Revisar conclusión · AquaLab{% endblock %}
+{% block encabezado %}
+  {% include "ui/encabezado.html" with seccion="Informes" titulo="Revisar conclusión" miga="Vista previa" %}
+{% endblock %}
+{% block content %}
+  <div class="max-w-5xl space-y-6">
+    <p class="aviso aviso-advertencia" role="alert">{{ error_conclusion }}</p>
+    {% if errores_emision %}<div class="campo-error">{{ errores_emision }}</div>{% endif %}
+    <p>No se emitió el informe. Podés revisar la conclusión o emitir sin incorporarla.</p>
+    <div class="flex flex-wrap gap-3">
+      <a class="btn btn-secundario" href="{% url 'informes:vista_previa' estudio.pk %}">Revisar vista previa</a>
+      <form method="post" action="{% url 'informes:generar' estudio.pk %}"
+            onsubmit="return confirm('Se emitirá el informe sin conclusión. ¿Continuar?');">
+        {% csrf_token %}
+        <button class="btn btn-primario" type="submit">Emitir sin conclusión</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

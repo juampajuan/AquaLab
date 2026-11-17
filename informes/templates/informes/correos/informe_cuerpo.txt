@@ -4,6 +4,9 @@ Le enviamos el informe {{ numero }} del estudio N° {{ contenido.estudio.numero 
 
 El informe está adjunto en PDF.
 
-Saludos,
+{% if contenido.conclusion.texto %}Conclusión
+{{ contenido.conclusion.texto }}
+
+{% endif %}Saludos,
 {{ contenido.laboratorio.nombre }}
 {% endautoescape %}

@@ -1,0 +1,8 @@
+{% extends "correos/base.html" %}
+{% block contenido %}
+<p style="margin:0 0 12px;">Hola, {{ contenido.cliente.nombre_completo }}:</p>
+<p style="margin:0 0 12px;">Le enviamos el informe <strong style="color:#0f2744;">{{ numero }}</strong> del estudio N° {{ contenido.estudio.numero }} ({{ contenido.estudio.tipo }}) de la muestra N° PI {{ contenido.muestra.numero_pi }} ({{ contenido.muestra.nombre }}).</p>
+<p style="margin:0 0 12px;">El informe está adjunto en PDF.</p>
+<p style="margin:0;">Saludos,<br>{{ contenido.laboratorio.nombre }}</p>
+{% endblock %}
+{% block pie %}{{ contenido.laboratorio.nombre }}{% endblock %}

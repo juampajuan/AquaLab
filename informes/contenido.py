@@ -9,6 +9,8 @@ Desde la US 7.3 la copia incluye la firma, el nombre y la matrícula de quien em
 historia no tienen la clave y se muestran con «Sin firma registrada».
 """
 
+from copy import deepcopy
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Prefetch
@@ -24,6 +26,8 @@ from pruebas.limites import (
     limites_aplicables,
     texto_limite,
 )
+
+from .models import solo_textos
 
 FORMATO_FECHA = "%d/%m/%Y"
 
@@ -90,7 +94,7 @@ def armar_firma(firmante):
     }
 
 
-def armar_contenido(estudio, firmante=None):
+def armar_contenido(estudio, firmante=None, conclusion=None):
     """Datos del laboratorio, del cliente, de la muestra, del estudio y de cada prueba; con
     `firmante` (quien emite o revisa la vista previa), también su firma si la tiene."""
     muestra = estudio.muestra
@@ -136,4 +140,8 @@ def armar_contenido(estudio, firmante=None):
     firma = armar_firma(firmante) if firmante is not None else None
     if firma:
         contenido["firma"] = firma
+    if conclusion is not None:
+        if not solo_textos(conclusion):
+            raise ValueError("La copia de la conclusión debe contener únicamente textos.")
+        contenido["conclusion"] = deepcopy(conclusion)
     return contenido

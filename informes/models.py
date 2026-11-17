@@ -1,8 +1,10 @@
 import base64
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 
 
 class Informe(models.Model):
@@ -54,6 +56,124 @@ class Informe(models.Model):
     @property
     def numero_mostrado(self):
         return f"INF-{self.numero:06d}"
+
+
+class BorradorConclusion(models.Model):
+    estudio = models.OneToOneField(
+        "estudios.Estudio", on_delete=models.PROTECT, related_name="borrador_conclusion"
+    )
+    revision = models.PositiveBigIntegerField(default=1)
+    texto_editorial = models.TextField(blank=True, default="")
+    texto_final = models.TextField(blank=True, default="")
+    hechos = models.JSONField(default=dict, blank=True)
+    huella_hechos = models.CharField(
+        max_length=64, validators=[RegexValidator(r"\A[0-9a-f]{64}\Z")]
+    )
+    advertencias = models.JSONField(default=list, blank=True)
+    requiere_revision = models.BooleanField(default=False)
+    origen_propuesta = models.CharField(
+        max_length=10, choices=[("ia", "IA"), ("plantilla", "Plantilla"), ("manual", "Manual")]
+    )
+    motivo_respaldo = models.CharField(
+        max_length=24,
+        blank=True,
+        default="",
+        choices=[
+            (codigo, codigo)
+            for codigo in (
+                "sin_configuracion",
+                "no_disponible",
+                "cuota",
+                "respuesta_invalida",
+                "plazo",
+                "capacidad",
+                "tamano",
+            )
+        ],
+    )
+    solicitud_propuesta = models.UUIDField(null=True, blank=True)
+    editado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="conclusiones_editadas",
+    )
+    fecha_edicion = models.DateTimeField()
+    aprobada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="conclusiones_aprobadas",
+    )
+    nombre_aprobador = models.TextField(blank=True, default="")
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
+    revision_aprobada = models.PositiveBigIntegerField(null=True, blank=True)
+    huella_texto_aprobado = models.CharField(
+        max_length=64, blank=True, default="", validators=[RegexValidator(r"\A[0-9a-f]{64}\Z")]
+    )
+    huella_hechos_aprobados = models.CharField(
+        max_length=64, blank=True, default="", validators=[RegexValidator(r"\A[0-9a-f]{64}\Z")]
+    )
+
+    class Meta:
+        default_permissions = ()
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(revision__gte=1), name="conclusion_revision_positiva"
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        aprobada_por__isnull=True,
+                        nombre_aprobador="",
+                        fecha_aprobacion__isnull=True,
+                        revision_aprobada__isnull=True,
+                        huella_texto_aprobado="",
+                        huella_hechos_aprobados="",
+                    )
+                    | (
+                        Q(
+                            aprobada_por__isnull=False,
+                            fecha_aprobacion__isnull=False,
+                            revision_aprobada__isnull=False,
+                        )
+                        & ~Q(nombre_aprobador="")
+                        & ~Q(huella_texto_aprobado="")
+                        & ~Q(huella_hechos_aprobados="")
+                    )
+                ),
+                name="conclusion_aprobacion_completa",
+            ),
+            models.CheckConstraint(
+                condition=Q(revision_aprobada__isnull=True) | Q(revision_aprobada=F("revision")),
+                name="conclusion_revision_aprobada",
+            ),
+            models.CheckConstraint(
+                condition=Q(aprobada_por__isnull=True)
+                | Q(huella_hechos_aprobados=F("huella_hechos"), requiere_revision=False),
+                name="conclusion_aprobacion_vigente",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Conclusión del estudio {self.estudio_id}, revisión {self.revision}"
+
+    def clean(self):
+        super().clean()
+        for campo in ("hechos", "advertencias"):
+            if not solo_textos(getattr(self, campo)):
+                raise ValidationError({campo: "Los hechos deben contener únicamente textos."})
+        for campo in ("texto_editorial", "texto_final"):
+            if "\x00" in getattr(self, campo):
+                raise ValidationError({campo: "El texto contiene un carácter no permitido."})
+
+
+def solo_textos(valor):
+    if isinstance(valor, dict):
+        return all(isinstance(k, str) and solo_textos(v) for k, v in valor.items())
+    if isinstance(valor, list):
+        return all(solo_textos(v) for v in valor)
+    return isinstance(valor, str)
 
 
 class FirmaProfesional(models.Model):
