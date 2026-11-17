@@ -30,7 +30,10 @@ def test_boton_y_panel_con_sesion(cliente_http, config_asistente):
         "¿Qué no cumple en el estudio de la escuela N° 12?",
     ):
         assert ejemplo in html
-    assert "Preguntar" in html
+    # Botón de envío con el ícono de enviar (Lucide send-horizontal) y nombre accesible.
+    enviar = re.search(r"<button[^>]*data-asistente-enviar[^>]*>(.*?)</button>", html, re.S)
+    assert 'aria-label="Enviar pregunta"' in enviar.group(0)
+    assert "M6 12h16" in enviar.group(1)
 
 
 @pytest.mark.parametrize("ruta", ["usuarios:login", "usuarios:registro"])

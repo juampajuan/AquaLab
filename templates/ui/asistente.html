@@ -51,7 +51,9 @@
     <textarea id="asistente-pregunta" name="pregunta" rows="2" maxlength="500" class="form-control resize-none" aria-describedby="asistente-contador" data-asistente-pregunta></textarea>
     <div class="mt-2 flex items-center justify-between gap-3">
       <span id="asistente-contador" class="text-xs text-tinta-suave" data-asistente-contador>0/500</span>
-      <button type="submit" class="btn btn-primario btn-chico" data-asistente-enviar>Preguntar</button>
+      <button type="submit" class="btn btn-primario btn-chico" aria-label="Enviar pregunta" title="Enviar pregunta" data-asistente-enviar>
+        {% include "ui/icono.html" with nombre="send-horizontal" clase="size-4" %}
+      </button>
     </div>
   </form>
 </section>
