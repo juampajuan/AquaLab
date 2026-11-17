@@ -4,9 +4,7 @@
     Calidad
     {% include "ui/ayuda.html" with texto="Resultados validados dentro del período (por fecha de validación), según la evaluación guardada al validar. Los que no tienen límite comparable no se cuentan." id="ayuda-calidad" etiqueta="Calidad" %}
   </h2>
-  <p class="mb-4 text-xs text-tinta-suave" data-rango-calidad>
-    Resultados validados del {{ periodo.rango_texto }} · se compara con el {{ periodo.rango_anterior_texto }}
-  </p>
+  <p class="mb-4 text-xs text-tinta-suave" data-rango-calidad>Resultados validados en el período, por fecha de validación</p>
 
   {% with indicador=calidad.indicador %}
     {# 1. Indicador general (US1) #}

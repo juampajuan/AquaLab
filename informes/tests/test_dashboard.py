@@ -139,7 +139,6 @@ def test_indicadores_en_pantalla(cliente_bioquimico, con_demo):
     assert "antes: 0" in html  # la demo no tiene datos 6 meses antes
     assert "sin datos previos" not in html
     assert "Estudios por estado" in html
-    assert "Situación de hoy · no depende del período" in html
     for estado in ("Sin iniciar", "En proceso", "Finalizado", "Informe generado"):
         assert estado in html
 
@@ -176,7 +175,25 @@ def test_graficos_y_secciones_con_ayuda(cliente_bioquimico):
     ):
         assert f'id="{ayuda}"' in html
     assert "por fecha de emisión" in html and "por fecha de ingreso" in html
-    assert html.count("no depende del período") >= 4
+
+
+def test_secciones_agrupadas_por_periodo(cliente_bioquimico):
+    """Lo que usa el período va junto, arriba; lo demás, en un bloque aparte con una sola
+    aclaración (en vez de repetir «no depende del período» en cada sección)."""
+    html = html_de(cliente_bioquimico.get(URL))
+    periodo, general = html.index("data-bloque-periodo"), html.index("data-bloque-general")
+    for marca in ('name="periodo"', 'data-indicador="muestras"', "data-calidad"):
+        assert periodo < html.index(marca) < general
+    for marca in (
+        'aria-labelledby="titulo-estados"',
+        'aria-labelledby="titulo-respuesta"',
+        'aria-labelledby="titulo-actividad"',
+        "data-comparacion-historica",
+        "data-desvios",
+    ):
+        assert general < html.index(marca)
+    assert "no cambian con el período elegido" in html
+    assert "no depende del período" not in html
 
 
 # --- US2: gráficos -----------------------------------------------------------------------------
@@ -368,10 +385,10 @@ def test_indicador_calidad_en_pantalla(cliente_bioquimico, evaluadas):
 def test_variacion_de_calidad_explicada(cliente_bioquimico, evaluadas):
     """Observación del sprint 4: «▲ +4,9 p. p.» con el valor anterior y qué es «p. p.»."""
     ahora = timezone.localtime().replace(hour=12, minute=0, second=0, microsecond=0)
-    evaluadas({"CL-": (149, 1000)}, momento=ahora)
+    evaluadas({"CL-": (7, 47)}, momento=ahora)  # 14,9 %
     mes_pasado = tablero.correr_meses(ahora.date(), -1)  # dentro de «los mismos días» del anterior
     evaluadas(
-        {"PH": (10, 100)},
+        {"PH": (1, 10)},
         momento=ahora.replace(year=mes_pasado.year, month=mes_pasado.month, day=mes_pasado.day),
     )
     periodo = tablero.periodo("este_mes", ahora.date())
@@ -379,7 +396,7 @@ def test_variacion_de_calidad_explicada(cliente_bioquimico, evaluadas):
     indicador = bloque(seccion, 'data-indicador="calidad"')
     assert "▲ +4,9 p. p." in indicador
     assert f"vs. {periodo.rango_anterior_corto}" in indicador
-    assert "antes: 10,0 % (10 de 100)" in indicador
+    assert "antes: 10,0 % (1 de 10)" in indicador
     assert 'id="ayuda-puntos-porcentuales"' in indicador
     assert "10 % → 14,9 % = +4,9 p. p." in indicador
 
@@ -387,9 +404,9 @@ def test_variacion_de_calidad_explicada(cliente_bioquimico, evaluadas):
 def test_seccion_calidad_ubicacion(cliente_bioquimico):
     html = html_de(cliente_bioquimico.get(URL))
     assert (
-        html.index('aria-labelledby="titulo-actividad"')
+        html.index('data-indicador="respuesta"')
         < html.index("data-calidad")
-        < html.index("data-comparacion-historica")
+        < html.index('aria-labelledby="titulo-estados"')
     )
 
 
