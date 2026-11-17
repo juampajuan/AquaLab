@@ -176,6 +176,20 @@ def test_graficos_y_secciones_con_ayuda(cliente_bioquimico):
     assert "por fecha de emisión" in html and "por fecha de ingreso" in html
 
 
+def test_estados_llevan_a_sus_estudios(cliente_bioquimico):
+    """Tocar un estado abre «Buscar estudio» filtrado por ese estado."""
+    html = html_de(cliente_bioquimico.get(URL))
+    for valor in ("pendiente_analisis", "en_proceso", "finalizado", "informe_generado"):
+        assert f'href="{reverse("estudios:buscar")}?estado={valor}"' in html
+    respuesta = cliente_bioquimico.get(reverse("estudios:buscar") + "?estado=en_proceso")
+    assert respuesta.status_code == 200
+
+
+def test_comparacion_tiene_ancla(cliente_bioquimico):
+    """«Volver al dashboard» de la comparación vuelve a esta sección (#comparacion)."""
+    assert 'id="comparacion"' in html_de(cliente_bioquimico.get(URL))
+
+
 def test_secciones_agrupadas_por_periodo(cliente_bioquimico):
     """Lo que usa el período va junto, arriba; lo demás, en un bloque aparte con una sola
     aclaración (en vez de repetir «no depende del período» en cada sección)."""

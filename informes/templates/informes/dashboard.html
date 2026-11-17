@@ -73,14 +73,17 @@
   <section class="tarjeta mb-6 p-5" aria-labelledby="titulo-estados">
     <h2 id="titulo-estados" class="flex items-center gap-2 text-sm font-semibold text-marino">
       Estudios por estado
-      {% include "ui/ayuda.html" with texto="Cuántos estudios hay hoy en cada estado, sin importar cuándo se crearon. No se compara con otro período." id="ayuda-estados" etiqueta="Estudios por estado" %}
+      {% include "ui/ayuda.html" with texto="Cuántos estudios hay hoy en cada estado, sin importar cuándo se crearon. Tocá un estado para ver cuáles son." id="ayuda-estados" etiqueta="Estudios por estado" %}
     </h2>
-    <p class="mb-4 text-xs text-tinta-suave">Hoy</p>
+    <p class="mb-4 text-xs text-tinta-suave">Hoy · tocá un estado para ver sus estudios</p>
     <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {% for etiqueta, total, valor in estados %}
-        <li class="flex items-center justify-between rounded-lg border border-borde px-4 py-3" data-estado-total="{{ valor }}">
-          {% include "ui/estado.html" with estado=etiqueta tipo=valor|tipo_estado %}
-          <span class="numeros text-2xl font-bold text-marino">{{ total }}</span>
+        <li data-estado-total="{{ valor }}">
+          {# Toda la fila lleva a «Buscar estudio» filtrado por ese estado (mismos colores) #}
+          <a href="{% url 'estudios:buscar' %}?estado={{ valor }}" class="flex items-center justify-between rounded-lg border border-borde px-4 py-3 transition-shadow hover:shadow-md focus-visible:shadow-md" aria-label="Ver los {{ total }} estudios en estado {{ etiqueta }}">
+            {% include "ui/estado.html" with estado=etiqueta tipo=valor|tipo_estado %}
+            <span class="numeros text-2xl font-bold text-marino">{{ total }}</span>
+          </a>
         </li>
       {% endfor %}
     </ul>
@@ -135,7 +138,8 @@
   </div>
 
   {# 7. Comparación histórica de un origen (US 8.1) #}
-  <section class="tarjeta mb-6 p-5" aria-labelledby="titulo-comparacion" data-comparacion-historica>
+  {# id «comparacion»: «Volver al dashboard» de la comparación vuelve a esta sección #}
+  <section id="comparacion" class="tarjeta mb-6 scroll-mt-6 p-5" aria-labelledby="titulo-comparacion" data-comparacion-historica>
     <h2 id="titulo-comparacion" class="text-sm font-semibold text-marino">Comparación histórica</h2>
     <p class="mb-4 text-xs text-tinta-suave">Evolución de los resultados validados de un origen, prueba por prueba · todo el historial</p>
     {% include "estudios/elegir_origen.html" with form=form_origen %}

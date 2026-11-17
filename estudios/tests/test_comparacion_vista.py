@@ -198,7 +198,7 @@ def test_sin_parametros_ofrece_volver_al_dashboard(cliente_bioquimico):
     html = html_de(cliente_bioquimico.get(URL))
 
     assert "data-prueba=" not in html
-    assert reverse("informes:dashboard") in html
+    assert reverse("informes:dashboard") + "#comparacion" in html
 
 
 # --- Elegir pruebas (US 3) -------------------------------------------------------------------
