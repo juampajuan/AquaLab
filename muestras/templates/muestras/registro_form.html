@@ -15,6 +15,10 @@
     {# Ganchos de registro_muestra.js: ficha-cliente, data-ficha, mostrar-origen-nuevo, bloque-origen-nuevo. #}
     <form method="post" novalidate class="space-y-6">
       {% csrf_token %}
+      {{ form.tipo_estudio }}
+      {% if tipo_estudio %}
+        {% include "muestras/nota_tipo_estudio.html" with tipo=tipo_estudio %}
+      {% endif %}
 
       <section class="tarjeta seccion-form">
         {% include "ui/seccion_titulo.html" with titulo="Cliente y origen" icono="building-2" %}

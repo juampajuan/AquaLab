@@ -1,5 +1,7 @@
 """Pedidos de registro en la conversación (US 10.3, research R1, R2, R10)."""
 
+import json
+
 import pytest
 
 from asistente import conversacion
@@ -65,3 +67,161 @@ def test_mensaje_de_sistema_explica_el_registro():
     assert "preparar_estudio" in sistema
     assert "las dos fechas juntas" in sistema
     assert "confirma en el formulario" in sistema
+
+
+# --- Guiones completos (T013, T021) ---
+
+
+@pytest.fixture
+def lacteos_registro():
+    from clientes.models import Cliente
+    from estudios.models import TipoEstudio
+    from muestras.models import Origen
+
+    cliente = Cliente.objects.create(
+        razon_social="Lácteos del Sur S.A.",
+        tipo_documento="CUIT",
+        numero_documento="30712345675",
+        email="contacto@lacteos.test",
+    )
+    return {
+        "cliente": cliente,
+        "pozo2": Origen.objects.create(cliente=cliente, nombre="Pozo 2"),
+        "fq": TipoEstudio.objects.create(nombre="Físico-químico básico"),
+        "bact": TipoEstudio.objects.create(nombre="Bacteriológico básico"),
+    }
+
+
+PEDIDO = "Registrá una muestra de Lácteos del Sur, pozo 2, para un físico-químico básico"
+DICHO = {"cliente": "Lácteos del Sur", "origen": "pozo 2", "tipo_estudio": "físico-químico básico"}
+
+
+def preguntar(servicio, usuario, pregunta, historial):
+    respuesta = conversacion.responder(usuario, pregunta, historial, reloj=servicio.reloj)
+    historial += [
+        {"rol": "usuario", "texto": pregunta},
+        {"rol": "asistente", "texto": respuesta.texto},
+    ]
+    return respuesta
+
+
+def test_ejemplo_de_la_historia_en_dos_mensajes(empleado, lacteos_registro, servicio_simulado):
+    historial = []
+    servicio_simulado.guion(
+        herramienta("preparar_muestra", DICHO),
+        texto("¿Cuándo se tomó la muestra y cuándo llegó al laboratorio?"),
+    )
+    primera = preguntar(servicio_simulado, empleado, PEDIDO, historial)
+    assert primera.texto.startswith("¿Cuándo se tomó")
+    assert primera.texto.endswith(
+        "Hasta ahora: Cliente: Lácteos del Sur S.A. · Origen: Pozo 2 · Tipo de estudio: "
+        "Físico-químico básico."
+    )
+    assert not any(e.get("minimizar") for e in primera.enlaces)
+
+    servicio_simulado.guion(
+        herramienta(
+            "preparar_muestra", {**DICHO, "fecha_muestreo": "ayer", "fecha_ingreso": "hoy"}
+        ),
+        texto("Listo: revisá los datos y confirmá el registro."),
+    )
+    segunda = preguntar(servicio_simulado, empleado, "la tomaron ayer, llegó hoy", historial)
+    assert segunda.enlaces[0]["etiqueta"] == "Revisar y registrar la muestra"
+    assert segunda.enlaces[0]["minimizar"] is True
+    assert segunda.enlaces[0]["url"].startswith("/muestras/registrar/?cliente=")
+    assert segunda.texto.endswith(
+        "La muestra se registra recién cuando confirmes en el formulario."
+    )
+    # El historial que mandó el navegador llegó al servicio.
+    enviados = servicio_simulado.llamadas[2]["mensajes"]
+    assert enviados[1]["content"] == PEDIDO
+
+
+def test_con_una_eleccion_en_tres_mensajes(empleado, lacteos_registro, servicio_simulado):
+    historial = []
+    sin_tipo = {"cliente": "Lácteos del Sur", "origen": "pozo 2"}
+    servicio_simulado.guion(
+        herramienta("preparar_muestra", sin_tipo), texto("¿Qué tipo de estudio?")
+    )
+    primera = preguntar(
+        servicio_simulado, empleado, "Registrá una muestra de Lácteos del Sur, pozo 2", historial
+    )
+    assert primera.enlaces[0]["pregunta"] == "Solo registrar la muestra, sin estudio"
+
+    servicio_simulado.guion(
+        herramienta("preparar_muestra", {**sin_tipo, "solo_muestra": True}),
+        texto("¿Cuándo se tomó y cuándo llegó?"),
+    )
+    preguntar(servicio_simulado, empleado, primera.enlaces[0]["pregunta"], historial)
+
+    servicio_simulado.guion(
+        herramienta(
+            "preparar_muestra",
+            {**sin_tipo, "solo_muestra": True, "fecha_muestreo": "hoy", "fecha_ingreso": "hoy"},
+        ),
+        texto("Listo."),
+    )
+    tercera = preguntar(servicio_simulado, empleado, "las dos hoy", historial)
+    assert tercera.enlaces[0]["etiqueta"] == "Revisar y registrar la muestra"
+    assert "tipo_estudio" not in tercera.enlaces[0]["url"]
+    assert len([m for m in historial if m["rol"] == "usuario"]) == 3
+
+
+def test_conversacion_larga_sobrevive_con_el_resumen(empleado, lacteos_registro, servicio_simulado):
+    """R10: el pedido original ya salió del historial, pero el último resumen sigue."""
+    resumen = (
+        "Hasta ahora: Cliente: Lácteos del Sur S.A. · Origen: Pozo 2 · Tipo de estudio: "
+        "Físico-químico básico."
+    )
+    historial = [
+        {"rol": "usuario", "texto": "el 12/13"},
+        {"rol": "asistente", "texto": f"No entendí la fecha de muestreo.\n\n{resumen}"},
+        {"rol": "usuario", "texto": "perdón, el 12/11"},
+        {"rol": "asistente", "texto": f"¿Y la de ingreso?\n\n{resumen}"},
+        {"rol": "usuario", "texto": "¿cómo la escribo?"},
+        {"rol": "asistente", "texto": f"Por ejemplo «hoy» o «13/11».\n\n{resumen}"},
+    ]
+    servicio_simulado.guion(
+        herramienta(
+            "preparar_muestra",
+            {
+                "cliente": "Lácteos del Sur S.A.",
+                "origen": "Pozo 2",
+                "tipo_estudio": "Físico-químico básico",
+                "fecha_muestreo": "12/11",
+                "fecha_ingreso": "hoy",
+            },
+        ),
+        texto("Listo."),
+    )
+    respuesta = conversacion.responder(empleado, "hoy", historial, reloj=servicio_simulado.reloj)
+    assert respuesta.enlaces[0]["etiqueta"] == "Revisar y registrar la muestra"
+    enviados = json.dumps(servicio_simulado.llamadas[0]["mensajes"], ensure_ascii=False)
+    assert resumen in enviados
+
+
+def test_estudio_para_muestra_existente(
+    empleado, muestra, lacteos_registro, servicio_simulado, cliente_http
+):
+    from estudios.models import Estudio
+
+    servicio_simulado.guion(
+        herramienta(
+            "preparar_estudio", {"numero_pi": muestra.numero_pi, "tipo_estudio": "bacteriológico"}
+        ),
+        texto("Revisá y confirmá el estudio."),
+    )
+    respuesta = conversacion.responder(
+        empleado,
+        f"Creá un estudio bacteriológico para el PI {muestra.numero_pi}",
+        [],
+        reloj=servicio_simulado.reloj,
+    )
+    assert respuesta.enlaces[0]["etiqueta"] == "Revisar y crear el estudio"
+    assert not Estudio.objects.exists()
+    # Seguir el enlace: la pantalla de siempre, con muestra y tipo elegidos y sin crear nada.
+    html = cliente_http.get(respuesta.enlaces[0]["url"]).content.decode()
+    bact = lacteos_registro["bact"]
+    assert f'<option value="{muestra.pk}" selected>' in html
+    assert f'<option value="{bact.pk}" selected>' in html
+    assert not Estudio.objects.exists()

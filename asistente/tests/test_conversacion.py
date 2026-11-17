@@ -351,9 +351,17 @@ def test_fuera_de_alcance_y_pedidos_de_cambio(servicio_simulado, pregunta, respu
 
 
 def test_solo_herramientas_de_lectura():
-    """El modelo solo recibe las cuatro herramientas de consulta (ninguna escribe)."""
+    """El modelo recibe las cuatro herramientas de consulta y las dos de la US 10.3, que solo
+    preparan el registro: ninguna escribe (todas corren en la transacción READ ONLY)."""
     nombres = sorted(d["function"]["name"] for d in herramientas.definiciones())
-    assert nombres == ["buscar_cliente", "buscar_muestra", "detalle_estudio", "estudios_de_cliente"]
+    assert nombres == [
+        "buscar_cliente",
+        "buscar_muestra",
+        "detalle_estudio",
+        "estudios_de_cliente",
+        "preparar_estudio",
+        "preparar_muestra",
+    ]
 
 
 def test_instrucciones_incrustadas_son_datos(

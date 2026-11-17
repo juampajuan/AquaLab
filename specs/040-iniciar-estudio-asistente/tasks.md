@@ -135,7 +135,7 @@ asistente/tests/js`).
 
 ### Tests
 
-- [ ] T009 [P] [US1] Tests de precarga en `muestras/tests/test_precarga.py`
+- [X] T009 [P] [US1] Tests de precarga en `muestras/tests/test_precarga.py`
   (`contracts/enlaces-precargados.md`): GET `muestras:registrar` con `cliente`, `origen`,
   `fecha_muestreo=2026-11-16`, `fecha_ingreso=2026-11-17`, `sitio_extraccion`, `tipo_vertido=
   cloacal`, `nombre`, `responsable_muestreo` y `tipo_estudio` → el HTML muestra cada valor
@@ -144,16 +144,16 @@ asistente/tests/js`).
   muestra se ofrecerá crear el estudio «<tipo>».»; con `origen_nuevo=Pozo 3` el campo «Origen
   nuevo» viene completo; el GET no crea nada (conteos de `Muestra` y `Origen` iguales); un GET con
   parámetros borra el borrador de la sesión salvo con `volver=1`, donde gana el borrador.
-- [ ] T010 [P] [US1] Tests del flujo con tipo en `muestras/tests/test_precarga.py`: POST del
+- [X] T010 [P] [US1] Tests del flujo con tipo en `muestras/tests/test_precarga.py`: POST del
   formulario con `tipo_estudio=<pk activo>` → el borrador de la sesión tiene `tipo_estudio`; la
   confirmación muestra la nota; al confirmar, el mensaje de éxito es el de siempre más «Crear el
   estudio <tipo>» con `href` a `estudios:crear?muestra=<pk>&tipo=<pk>`; con el tipo desactivado
   entre el formulario y la confirmación, el mensaje es el de siempre; sin `tipo_estudio`, igual que
   hoy; un borrador viejo sin la clave `tipo_estudio` se confirma sin error.
-- [ ] T011 [P] [US1] Tests de crear estudio precargado en `estudios/tests/test_crear_precarga.py`:
+- [X] T011 [P] [US1] Tests de crear estudio precargado en `estudios/tests/test_crear_precarga.py`:
   GET `estudios:crear?muestra=<pk>&tipo=<pk>` → ambos seleccionados; con `volver=<clave>` gana el
   borrador; el GET no crea `Estudio`.
-- [ ] T012 [P] [US1] Tests de `preparar_muestra` en `asistente/tests/test_registro.py` con
+- [X] T012 [P] [US1] Tests de `preparar_muestra` en `asistente/tests/test_registro.py` con
   `ejecutar(empleado, "preparar_muestra", …)` y datos como los de `lacteos` (cliente «Lácteos del
   Sur S.A.», origen «Pozo 2», tipo activo): (a) cliente + origen + tipo sin fechas → `listo:
   false`, `faltan: ["fecha de muestreo", "fecha de ingreso"]`, `resuelto` con los tres nombres;
@@ -170,7 +170,7 @@ asistente/tests/js`).
   resumen fijo «Hasta ahora: Cliente: Lácteos del Sur S.A. · Origen: Pozo 2 · Tipo de estudio: …»
   solo con lo resuelto (sin nada resuelto, no hay resumen; con `listo`, no hay resumen sino el
   aviso fijo).
-- [ ] T013 [P] [US1] Test de conversación del ejemplo en
+- [X] T013 [P] [US1] Test de conversación del ejemplo en
   `asistente/tests/test_conversacion_registro.py` con `servicio_simulado`: mensaje 1 «Registrá una
   muestra de Lácteos del Sur, pozo 2, para un físico-químico básico» → guion con
   `preparar_muestra` y un texto que pregunta las fechas; mensaje 2 «la tomaron ayer, llegó hoy»
@@ -183,7 +183,7 @@ asistente/tests/js`).
 
 ### Implementación
 
-- [ ] T014 [US1] En `muestras/forms.py`: `valores_iniciales(query_dict) -> dict`, que sanea cada
+- [X] T014 [US1] En `muestras/forms.py`: `valores_iniciales(query_dict) -> dict`, que sanea cada
   parámetro según `contracts/enlaces-precargados.md` («cliente» activo; «origen» del cliente;
   «origen_nuevo» ≤ 150 y solo sin un origen válido; fechas `aaaa-mm-dd`; «sitio_extraccion» ≤ 200;
   «tipo_vertido» en `TipoVertido.values`; «nombre» ≤ 100; «responsable_muestreo» ≤ 150;
@@ -195,21 +195,21 @@ asistente/tests/js`).
   lanza el error antes de que se ejecute). Así un tipo inválido o desactivado nunca da error de
   formulario. `datos_para_sesion` suma
   `"tipo_estudio": pk | None`. Propiedad `tipo_estudio_elegido` para la nota.
-- [ ] T015 [US1] En `muestras/views.py`: `registrar` (GET sin `volver=1`) arma
+- [X] T015 [US1] En `muestras/views.py`: `registrar` (GET sin `volver=1`) arma
   `RegistroMuestraForm(initial=valores_iniciales(request.GET))` si hay parámetros, después de
   descartar el borrador como hoy; con `volver=1` suma `tipo_estudio` del borrador al `initial`.
   `mensaje_exito_muestra(muestra, tipo=None)` agrega « <a href="…">Crear el estudio {tipo}</a>.»
   con `format_html` cuando `tipo` está activo; `registrar_confirmar` lo pasa desde
   `datos.get("tipo_estudio")` (también en la rama `CLAVE_ULTIMO_PI`, sin tipo). `armar_resumen`
   agrega `tipo_estudio` (nombre o `None`).
-- [ ] T016 [US1] Plantillas `muestras/templates/muestras/registro_form.html` y
+- [X] T016 [US1] Plantillas `muestras/templates/muestras/registro_form.html` y
   `registro_confirmar.html`: el campo oculto y la nota «Después de registrar la muestra se ofrecerá
   crear el estudio «<tipo>».» con el estilo de aviso informativo existente (`ui/mensajes.html` o
   la clase de alerta `info`), solo si hay tipo.
-- [ ] T017 [US1] En `estudios/forms.py`: `valores_iniciales_estudio(query_dict) -> dict | None`
+- [X] T017 [US1] En `estudios/forms.py`: `valores_iniciales_estudio(query_dict) -> dict | None`
   («muestra» como hoy; «tipo» solo si es un `TipoEstudio` activo). En `estudios/views.py:crear`,
   en lugar del `initial = {"muestra": …}` actual, usar esa función cuando no hay borrador.
-- [ ] T018 [US1] Crear `asistente/registro.py` (contracts/herramientas.md, R3): helpers
+- [X] T018 [US1] Crear `asistente/registro.py` (contracts/herramientas.md, R3): helpers
   `resolver_cliente(texto)`, `resolver_origen(cliente, texto, nuevo)`, `resolver_tipo(texto)` que
   devuelven `(valor, problema, opciones)`; `PedidoMuestra` (dataclass del data-model) con
   `faltan`, `problemas`, `elegir`, `listo`; validación con `RegistroMuestraForm(data=…)` tomando
@@ -223,7 +223,7 @@ asistente/tests/js`).
   opciones de tipo con «Solo registrar la muestra» **primero**. Respetar `puede_ver(usuario,
   "registro")`. Importar `asistente.registro` al final de `asistente/herramientas.py` para que
   registre sus herramientas.
-- [ ] T019 [US1] En `asistente/herramientas.py:puede_ver`: el tipo `"registro"` exige lo mismo que
+- [X] T019 [US1] En `asistente/herramientas.py:puede_ver`: el tipo `"registro"` exige lo mismo que
   hoy `muestras:registrar` y `estudios:crear` (usuario autenticado y activo; R8), con un comentario
   que diga que si esas pantallas suman un permiso hay que agregarlo acá.
 
@@ -239,20 +239,20 @@ asistente/tests/js`).
 
 ### Tests
 
-- [ ] T020 [P] [US2] Tests de `preparar_estudio` en `asistente/tests/test_registro.py`: N° PI
+- [X] T020 [P] [US2] Tests de `preparar_estudio` en `asistente/tests/test_registro.py`: N° PI
   existente + tipo activo → `listo`, `primeras` con `crear_estudio` (`?muestra=<pk>&tipo=<pk>`,
   «Revisar y crear el estudio», `minimizar`) y la referencia a la ficha de la muestra; sin tipo →
   `faltan: ["tipo de estudio"]`, `elegir: "tipo_estudio"` con las opciones de tipos activos (sin
   «Solo registrar la muestra»); sin N° PI → `faltan: ["N° PI de la muestra"]`; `resuelto.muestra`
   sin datos de contacto.
-- [ ] T021 [P] [US2] Test de conversación en `asistente/tests/test_conversacion_registro.py`: «Creá
-  un bacteriológico para el PI <n>» → guion con `preparar_estudio` → respuesta con «Revisar y
+- [X] T021 [P] [US2] Test de conversación en `asistente/tests/test_conversacion_registro.py`: «Creá
+  un estudio bacteriológico para el PI <n>» → guion con `preparar_estudio` → respuesta con «Revisar y
   crear el estudio» primero; seguir el enlace con `cliente_http` muestra muestra y tipo
   seleccionados y no hay `Estudio` nuevo.
 
 ### Implementación
 
-- [ ] T022 [US2] En `asistente/registro.py`: `PedidoEstudio` y `@registrar` de `preparar_estudio`
+- [X] T022 [US2] En `asistente/registro.py`: `PedidoEstudio` y `@registrar` de `preparar_estudio`
   (definición literal del contrato; `numero_pi` integer y `tipo_estudio` string, ambos
   opcionales), con la muestra buscada por N° PI (rango `0 < n ≤ MAX_NUMERO_SQL`, como
   `buscar_muestra`) y `referencia_muestra` de `herramientas.py`. Sin `listo`, el resumen «Hasta
@@ -270,7 +270,7 @@ asistente/tests/js`).
 
 ### Tests
 
-- [ ] T023 [P] [US3] Tests en `asistente/tests/test_registro.py`: cliente inexistente →
+- [X] T023 [P] [US3] Tests en `asistente/tests/test_registro.py`: cliente inexistente →
   `problemas: ["No hay ningún cliente activo que coincida con «Acme»."]`, `primeras` con
   `registrar_cliente`, sin enlace de registro; cliente solo inactivo → problema que dice que
   está inactivo; varios activos («Lácteos») → `elegir: "cliente"` con opciones «El cliente es
@@ -282,7 +282,7 @@ asistente/tests/js`).
   problema «El tipo «…» no está activo.» y opciones de tipos activos parecidos o todos (≤ 10); N°
   PI inexistente → «No hay ninguna muestra con el N° PI ….», sin opciones ni enlace; con el
   cliente sin resolver no se busca el origen.
-- [ ] T024 [P] [US3] Tests de saneo en `muestras/tests/test_precarga.py` y
+- [X] T024 [P] [US3] Tests de saneo en `muestras/tests/test_precarga.py` y
   `estudios/tests/test_crear_precarga.py`: `?cliente=999999`, cliente inactivo, `origen` de otro
   cliente, `fecha_muestreo=xx`, `tipo_vertido=nada`, `nombre` de 101 caracteres,
   `tipo_estudio=<inactivo>`, `tipo=<inactivo>`, valores no numéricos → 200 con esos campos sin
@@ -291,7 +291,7 @@ asistente/tests/js`).
 
 ### Implementación
 
-- [ ] T025 [US3] Completar en `asistente/registro.py` los textos de `problemas` y las opciones del
+- [X] T025 [US3] Completar en `asistente/registro.py` los textos de `problemas` y las opciones del
   contrato para cliente, origen, tipo y N° PI (si T018 o T022 no los cubrieron), con `MAX_LISTA =
   10` y orden: clientes por `Cliente._meta.ordering`, orígenes por nombre, tipos por nombre.
 

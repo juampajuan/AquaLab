@@ -36,6 +36,9 @@
     </dl>
 
     <p class="mt-4 text-sm text-tinta-suave">El N° PI se asigna al confirmar.</p>
+    {% if datos.tipo_estudio %}
+      <div class="mt-4">{% include "muestras/nota_tipo_estudio.html" with tipo=datos.tipo_estudio %}</div>
+    {% endif %}
 
     {% url 'muestras:registrar' as url_registrar %}
     {% include "ui/acciones_confirmacion.html" with url_volver=url_registrar|add:"?volver=1" %}

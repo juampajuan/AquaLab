@@ -28,7 +28,7 @@ node --test usuarios/tests/js config/tests/js estudios/tests/js pruebas/tests/js
    confirmar.
 4. **Sin tipo**: «Registrá una muestra de Lácteos del Sur, pozo 2». → Opciones con «Solo registrar
    la muestra» primera. Elegila; el registro termina sin ofrecer un estudio.
-5. **Estudio para muestra existente** (US 2): «Creá un bacteriológico para el PI <uno de la demo>».
+5. **Estudio para muestra existente** (US 2): «Creá un estudio bacteriológico para el PI <uno de la demo>».
    → «Revisar y crear el estudio».
 6. **Datos que no coinciden** (US 3): un cliente inexistente («Registrá una muestra de Acme») →
    aviso + «Registrar cliente»; «pozo 9» → orígenes del cliente + «Registrarlo como origen nuevo»;

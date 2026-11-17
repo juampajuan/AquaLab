@@ -161,6 +161,7 @@ def test_post_valido_guarda_borrador_y_muestra_resumen(
         "tipo_vertido": "agua",
         "nombre": "",
         "responsable_muestreo": "",
+        "tipo_estudio": None,
     }
 
     html = cliente_autenticado.get(URL_CONFIRMAR).content.decode()

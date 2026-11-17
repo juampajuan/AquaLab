@@ -137,6 +137,8 @@ def puede_ver(usuario, tipo, objeto=None):
         return False
     if tipo in ("cliente", "historial"):
         return bool(objeto is None or objeto.activo)
+    # "registro" (US 10.3): lo mismo que exigen hoy muestras:registrar y estudios:crear (solo la
+    # sesión). Si esas pantallas suman un permiso, agregarlo acá también (research R8).
     return True
 
 
@@ -733,3 +735,8 @@ def estudios_de_cliente(usuario, cliente=None, cliente_id=None):
         avisos,
         primeras,
     )
+
+
+# Herramientas de la US 10.3 (preparar el registro de una muestra o un estudio). Al final para
+# que `registro` encuentre definido todo lo que importa de este módulo.
+from . import registro  # noqa: E402, F401
