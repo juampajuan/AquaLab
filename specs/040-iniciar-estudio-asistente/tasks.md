@@ -303,27 +303,27 @@ asistente/tests/js`).
 
 **Prueba independiente**: quickstart paso 8.
 
-- [ ] T026 [P] [US4] Test en `asistente/tests/test_solo_lectura_registro.py`: se recorre el guion
+- [X] T026 [P] [US4] Test en `asistente/tests/test_solo_lectura_registro.py`: se recorre el guion
   completo de US1 (incluido el origen nuevo) y de US2 contra `asistente:preguntar` con
   `cliente_http`; antes y después, los conteos de `Muestra`, `Estudio` y `Origen`, el próximo N° PI
   (`muestras.servicios.siguiente_numero_pi` dentro de una transacción) y las claves de la sesión
   son iguales; abrir el enlace precargado (GET) y no enviar tampoco crea nada.
-- [ ] T027 [US4] Si T026 detecta alguna escritura, corregirla en `asistente/registro.py` o en las
+- [X] T027 [US4] Si T026 detecta alguna escritura, corregirla en `asistente/registro.py` o en las
   vistas GET (no debería haber ninguna: R1, R5).
 
 ---
 
 ## Phase 7: Polish
 
-- [ ] T028 [P] Recompilar Tailwind si T008 o T016 usaron clases nuevas
+- [X] T028 [P] Recompilar Tailwind si T008 o T016 usaron clases nuevas
   (`static/src/aqualab.css` → `static/css/aqualab.css`, como en la spec 013).
-- [ ] T029 [P] `CLAUDE.md`: sección «Iniciar un estudio desde el asistente (US 10.3)» con
+- [X] T029 [P] `CLAUDE.md`: sección «Iniciar un estudio desde el asistente (US 10.3)» con
   `preparar_muestra`/`preparar_estudio` sin estado y de solo lectura, `leer_fecha`, la validación
   con `RegistroMuestraForm`, `valores_iniciales`/`valores_iniciales_estudio` como único saneo,
   `tipo_estudio` en el borrador y en el mensaje de éxito, `es_pedido_de_registro` y
   `MENSAJE_ALTA_CLIENTE`, y las opciones sin pantalla (`tipo="opcion"`). Actualizar en la sección
   de la 10.1 la frase «El asistente solo consulta».
-- [ ] T030 Correr `docker compose exec web pytest`, `ruff check .`, `ruff format --check .` y
+- [X] T030 Correr `docker compose exec web pytest`, `ruff check .`, `ruff format --check .` y
   `node --test usuarios/tests/js config/tests/js estudios/tests/js pruebas/tests/js
   asistente/tests/js`; todo en verde.
 - [ ] T031 Prueba manual del quickstart completo (pasos 1 a 9) con Groq y la demo; anotar los

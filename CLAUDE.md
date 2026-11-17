@@ -480,7 +480,8 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   (timeout = min(15, lo que queda)). Tope de vueltas/ejecuciones → 200 «No pude completar…»;
   tiempo agotado → 503. Sin ninguna herramienta válida en la pregunta → `MENSAJE_SOLO_CONSULTA`.
   Si la pregunta empieza con un verbo de cambio en imperativo (`VERBOS_DE_CAMBIO`: «validá»,
-  «borrá», «emití»…), el mismo mensaje sin llamar al servicio. AquaLab saca `**`, `__` y títulos
+  «borrá», «emití»…), el mismo mensaje sin llamar al servicio, salvo los pedidos de registro de
+  la US 10.3 (ver «Iniciar un estudio desde el asistente»). AquaLab saca `**`, `__` y títulos
   `#` del texto (`sin_markdown`).
 - Enlaces: los arma AquaLab con `enlaces.Referencia` + `reverse`, nunca del modelo; el panel
   muestra todo con `textContent` y las líneas «- » como lista. Las menciones de estudio se
@@ -494,3 +495,31 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
 - Panel: `templates/ui/asistente.html` (incluido en `base.html` con sesión) + `static/js/aqualab.js`
   (avisos por JSON, no con `messages`: excepción justificada en el plan). Tests JS en
   `asistente/tests/js`.
+
+## Iniciar un estudio desde el asistente (US 10.3)
+
+- `asistente/registro.py`: `preparar_muestra` y `preparar_estudio` **no crean nada** (corren en la
+  transacción `READ ONLY` de `herramientas.ejecutar`) y **no guardan el pedido**: el modelo las
+  llama en cada mensaje con todo lo dicho, como texto, y AquaLab resuelve todo de nuevo. Mientras
+  falte algo, la respuesta termina con «Hasta ahora: …» (aviso fijo) para que lo resuelto siga en
+  el historial de 6 mensajes. Con todo completo, el enlace precargado va primero (`minimizar`).
+- Resolución con las reglas de las pantallas: clientes con `buscar_clientes` (gana el nombre
+  exacto), orígenes del cliente (sin mayúsculas ni acentos; uno inexistente se ofrece como «origen
+  nuevo» solo si se elige), tipos activos. Se pregunta por grupos: primero lo que hay que elegir,
+  de a uno, y después las dos fechas juntas. Sin tipo, «Solo registrar la muestra» es la primera
+  opción. Opciones sin pantalla: `Referencia("opcion", None, …)` (botón sin ↗).
+- Fechas: `asistente/fechas.py:leer_fecha` con la fecha del laboratorio; las reglas (no futura,
+  muestreo ≤ ingreso, origen) solo de `RegistroMuestraForm`, cuyos errores en los campos del
+  asistente se informan antes de dar el enlace.
+- Formularios precargados por GET, solo como `initial`: `muestras.forms.valores_iniciales` y
+  `estudios.forms.valores_iniciales_estudio` son el único saneo (lo inválido se descarta en
+  silencio). `RegistroMuestraForm.tipo_estudio` es oculto (`TipoEstudioOpcional`: inválido →
+  `None`, sin error), viaja en el borrador (`tipo_estudio`) y `mensaje_exito_muestra` ofrece
+  «Crear el estudio <tipo>» si sigue activo: la muestra y el estudio se confirman por separado.
+- Corte por verbos: `es_pedido_de_registro` deja pasar «registrá/creá/agregá/cargá» solo si van
+  seguidos de «muestra» o «estudio» («Cargá las mediciones del estudio 42» sigue cortado);
+  «Registrá el cliente…» → `MENSAJE_ALTA_CLIENTE` con el enlace a `clientes:registrar`.
+- Permisos: `puede_ver(usuario, "registro")` replica lo que piden `muestras:registrar` y
+  `estudios:crear` (hoy, solo la sesión). Tests: `asistente/tests/test_registro.py`,
+  `test_conversacion_registro.py`, `test_solo_lectura_registro.py`, `muestras/tests/test_precarga.py`
+  y `estudios/tests/test_crear_precarga.py`.
