@@ -10,6 +10,15 @@
 
 **Trazabilidad**: US 10.3, Jira SCRUM-85.
 
+## Clarifications
+
+### Session 2026-11-17
+
+- Q: ¿La muestra y el estudio se confirman por separado o en una sola confirmación nueva? → A: Por separado, en las dos pantallas de siempre: tras registrar la muestra, el mensaje de éxito ofrece «Crear el estudio <tipo>» con muestra y tipo ya elegidos.
+- Q: ¿El asistente pregunta las dos fechas o supone el ingreso como hoy? → A: Pregunta siempre las dos fechas que falten (muestreo e ingreso); no supone ninguna.
+- Q: ¿Un origen que el cliente no tiene puede ofrecerse como origen nuevo? → A: Sí: el asistente avisa, ofrece los orígenes del cliente y «Registrarlo como origen nuevo»; elegido, el formulario llega con «Origen nuevo» completo y se crea solo al confirmar la muestra.
+- Q: Si se pide una muestra sin tipo de estudio, ¿el asistente lo pregunta? → A: Sí, con los tipos activos como opciones más «Solo registrar la muestra», que va primera entre las opciones (siempre visible y a un toque, aunque haya muchos tipos); elegida, el enlace lleva al registro sin ofrecer después crear un estudio.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Registrar una muestra con su estudio desde el asistente (Priority: P1)
@@ -37,20 +46,24 @@ hasta confirmarlo.
    del Sur, pozo 2, para un físico-químico básico», **entonces** el asistente identifica el cliente,
    el origen y el tipo de estudio en los datos del sistema y pregunta solo lo que falta (las fechas
    de muestreo y de ingreso).
-2. **Dado** que el asistente preguntó las fechas, **cuando** se responde («la tomaron ayer, llegó
+2. **Dado** un pedido de muestra sin tipo de estudio («Registrá una muestra de Lácteos del Sur, pozo
+   2»), **cuando** se envía, **entonces** el asistente pregunta el tipo ofreciendo como opciones
+   primero «Solo registrar la muestra» y después los tipos activos; con «Solo registrar la muestra»
+   el registro sigue igual pero sin ofrecer después crear un estudio.
+3. **Dado** que el asistente preguntó las fechas, **cuando** se responde («la tomaron ayer, llegó
    hoy»), **entonces** el asistente resume los datos reunidos (cliente, origen, tipo de estudio,
    fechas) y ofrece un enlace «Revisar y registrar la muestra».
-3. **Dado** el enlace, **cuando** se lo sigue, **entonces** se abre el formulario de registro de
+4. **Dado** el enlace, **cuando** se lo sigue, **entonces** se abre el formulario de registro de
    muestra de siempre con el cliente, el origen y las fechas ya completos (y el sitio de extracción,
    el tipo de vertido, el nombre o el responsable si se dijeron en la conversación), y los campos que
    faltan quedan para completar como siempre.
-4. **Dado** el formulario precargado, **cuando** se lo envía y se confirma, **entonces** la muestra
+5. **Dado** el formulario precargado, **cuando** se lo envía y se confirma, **entonces** la muestra
    se registra con las mismas validaciones, mensajes y numeración (N° PI) que un registro hecho a mano.
-5. **Dada** una muestra recién registrada desde un pedido que incluía tipo de estudio, **cuando** se
+6. **Dada** una muestra recién registrada desde un pedido que incluía tipo de estudio, **cuando** se
    ve el mensaje de éxito, **entonces** ofrece «Crear el estudio <tipo>» para esa muestra, que lleva a
    la pantalla de crear estudio de siempre con la muestra y el tipo ya elegidos; el estudio se crea
    solo al confirmar ahí.
-6. **Dado** cualquier momento antes de confirmar en la pantalla de registro, **cuando** se mira el
+7. **Dado** cualquier momento antes de confirmar en la pantalla de registro, **cuando** se mira el
    sistema, **entonces** no hay ninguna muestra, estudio ni origen nuevo creado por la conversación.
 
 ---
@@ -167,7 +180,8 @@ muestras, estudios ni orígenes, y que el próximo registro hecho a mano toma el
   estudio) y de crear un estudio para una muestra existente, además de las consultas de la US 10.1.
 - **FR-002**: Para registrar una muestra, el asistente MUST reunir cliente, origen, fecha de
   muestreo y fecha de ingreso, y el tipo de estudio si el pedido lo incluye, preguntando solo los que
-  falten. Para crear un estudio MUST reunir la muestra (N° PI) y el tipo de estudio.
+  falten (si falta el tipo, lo pregunta con «Solo registrar la muestra» como primera opción).
+  Ninguna fecha se supone: si no se dijo, se pregunta (se acepta «hoy» como respuesta). Para crear un estudio MUST reunir la muestra (N° PI) y el tipo de estudio.
 - **FR-003**: Cliente, origen, tipo de estudio y muestra MUST resolverse contra los datos del sistema
   con las mismas reglas que las pantallas (solo clientes activos, orígenes del cliente elegido, solo
   tipos activos); el asistente nunca usa un valor que no salió de esa búsqueda.
@@ -223,11 +237,12 @@ muestras, estudios ni orígenes, y que el próximo registro hecho a mano toma el
 - Puede usarlo cualquier empleado con sesión iniciada, como el asistente de la US 10.1 y las pantallas
   de registro de muestra y crear estudio (que hoy solo exigen sesión).
 - La muestra y el estudio siguen siendo dos pasos con dos confirmaciones (las pantallas de la US 4.1
-  y la US 5.1); el asistente no los une en una sola confirmación.
+  y la US 5.1); no hay una confirmación combinada (decidido en Clarifications).
 - El asistente pregunta solo cliente, origen, fechas y tipo de estudio (los del criterio de
   aceptación). Sitio de extracción, tipo de vertido, nombre y responsable se precargan si se dijeron;
   si no, se completan en el formulario (el vertido arranca en «Agua» como siempre).
-- Un origen que el cliente no tiene puede usarse como «origen nuevo», como permite el formulario de la
-  US 4.1; se crea solo al confirmar la muestra.
+- Un origen que el cliente no tiene puede usarse como «origen nuevo» solo si se lo elige entre las
+  opciones (nunca sin preguntar), como permite el formulario de la US 4.1; se crea solo al confirmar
+  la muestra (decidido en Clarifications).
 - Sin cambios en el modelo de datos ni en la conversación sin guardar de la US 10.1 (panel,
   `sessionStorage`, límites de vueltas y tiempo, servicio de IA y avisos).
