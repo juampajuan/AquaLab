@@ -38,11 +38,12 @@
         <div class="grid gap-5 sm:grid-cols-2 sm:items-end">
           {% include "ui/campo.html" with field=importar.archivo %}
           <div class="flex flex-wrap gap-3">
-            <button class="btn btn-secundario" type="submit" name="accion" value="importar">Importar puntos</button>
+            {# Con JavaScript, elegir el archivo ya importa (aqualab.js) y este botón se oculta. #}
+            <button class="btn btn-secundario" type="submit" name="accion" value="importar" data-importar-boton>Importar puntos</button>
             <a class="btn btn-secundario" href="{% url 'catalogo:plantilla_curva' %}" download>{% include "ui/icono.html" with nombre="download" clase="size-4" %} Descargar plantilla</a>
           </div>
         </div>
-        <p class="mt-3 text-sm text-tinta-suave">Los puntos leídos reemplazan a los de la tabla, donde podés revisarlos antes de calcular.</p>
+        <p class="mt-3 text-sm text-tinta-suave">Al elegir el archivo se cargan sus puntos en la tabla, donde podés revisarlos antes de calcular; reemplazan a los que haya.</p>
       </section>
 
       {% if elegir %}
@@ -99,35 +100,15 @@
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
           <button class="btn btn-secundario" type="submit" name="accion" value="agregar_fila">{% include "ui/icono.html" with nombre="circle-plus" clase="size-4" %} Agregar fila</button>
-          <button class="btn btn-primario" type="submit" name="accion" value="calcular">{% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Calcular recta</button>
         </div>
       </section>
 
-      {% if ajuste %}
-        <section class="tarjeta seccion-form" data-recta>
-          {% include "ui/seccion_titulo.html" with titulo="Recta" icono="chart-column" %}
-          {% if ajuste.r2_bajo %}
-            <div class="aviso aviso-advertencia mb-4" role="status" data-r2-bajo>
-              {% include "ui/icono.html" with nombre="triangle-alert" clase="size-5 shrink-0" %}
-              <div>R² menor que 0,995: revisá los puntos antes de guardar</div>
-            </div>
-          {% endif %}
-          <dl class="resumen">
-            {% include "ui/dato.html" with etiqueta="Pendiente" valor=ajuste.pendiente %}
-            {% include "ui/dato.html" with etiqueta="Ordenada al origen" valor=ajuste.ordenada %}
-            {% include "ui/dato.html" with etiqueta="R²" valor=ajuste.r2 %}
-            {% include "ui/dato.html" with etiqueta="Rango" valor=ajuste.rango %}
-          </dl>
-          <div class="mt-4 h-72"><canvas id="grafico-curva" role="img" aria-label="Gráfico de los puntos y la recta de calibración"></canvas></div>
-          {{ grafico|json_script:"datos-curva" }}
-          <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
-          <script src="{% static 'pruebas/curva.js' %}" defer></script>
-        </section>
-        <div class="flex flex-wrap justify-end gap-3">
-          <button class="btn btn-primario" type="submit" name="accion" value="guardar">Revisar resumen {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}</button>
-        </div>
-      {% endif %}
+      {# «Volver» a la izquierda y la acción principal a la derecha (SCRUM-82). #}
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <a class="btn btn-secundario" href="{% url 'catalogo:ficha' prueba.pk %}">{% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver a la prueba</a>
+        {# Calcula la recta y lleva al resumen para confirmar (recta, R² y gráfico). #}
+        <button class="btn btn-primario" type="submit" name="accion" value="calcular">{% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Calcular recta {% include "ui/icono.html" with nombre="arrow-right" clase="size-4" %}</button>
+      </div>
     </form>
-    <a class="btn btn-secundario" href="{% url 'catalogo:ficha' prueba.pk %}">{% include "ui/icono.html" with nombre="arrow-left" clase="size-4" %} Volver a la prueba</a>
   </div>
 {% endblock %}

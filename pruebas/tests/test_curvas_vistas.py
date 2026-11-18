@@ -88,13 +88,18 @@ def test_carga_manual_filas(cliente_catalogo, prueba_curva):
 
 
 def test_carga_manual_calcular(cliente_catalogo, prueba_curva):
-    html = cliente_catalogo.post(url_nueva(prueba_curva), envio()).content.decode()
+    respuesta = cliente_catalogo.post(url_nueva(prueba_curva), envio())
+    assert respuesta.status_code == 302
+    assert respuesta["Location"].startswith(
+        reverse("catalogo:confirmar_curva", args=[prueba_curva.pk])
+    )
+    html = cliente_catalogo.get(respuesta["Location"]).content.decode()
     assert "0,499" in html
     assert "0,0012" in html
     assert "0,9996" in html
     assert 'id="datos-curva"' in html
     assert "chart.umd.min.js" in html
-    assert 'value="guardar"' in html
+    assert 'value="confirmar"' in html
     assert not CurvaCalibracion.objects.exists()
 
 
@@ -122,19 +127,17 @@ def test_carga_manual_errores(cliente_catalogo, prueba_curva, puntos, extra, men
 
 def test_carga_manual_filas_vacias_se_ignoran(cliente_catalogo, prueba_curva):
     html = cliente_catalogo.post(
-        url_nueva(prueba_curva), envio(REFERENCIA + [("", "")])
+        url_nueva(prueba_curva), envio(REFERENCIA + [("", "")]), follow=True
     ).content.decode()
     assert "0,9996" in html
 
 
 def test_carga_manual_r2_bajo(cliente_catalogo, prueba_curva):
     bajos = [("0", "0"), ("1", "0,5"), ("2", "0,7"), ("3", "1,6")]
-    html = cliente_catalogo.post(url_nueva(prueba_curva), envio(bajos)).content.decode()
-    assert curvas.MENSAJE_R2_BAJO in html
-    assert 'value="guardar"' in html  # se puede guardar igual
-    respuesta = cliente_catalogo.post(url_nueva(prueba_curva), envio(bajos, accion="guardar"))
+    respuesta = cliente_catalogo.post(url_nueva(prueba_curva), envio(bajos))
     pagina = cliente_catalogo.get(respuesta["Location"]).content.decode()
     assert curvas.MENSAJE_R2_BAJO in pagina
+    assert 'value="confirmar"' in pagina  # se puede guardar igual
 
 
 def test_carga_manual_resumen(cliente_catalogo, prueba_curva, curva_de):

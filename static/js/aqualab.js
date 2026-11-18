@@ -486,3 +486,17 @@ document.addEventListener("input", (evento) => {
 });
 
 asistenteRestaurar();
+
+// Curva de calibración (US 6.6): al elegir el archivo se importan los puntos, sin un botón aparte.
+// El botón «Importar puntos» queda solo para navegadores sin JavaScript.
+for (const boton of document.querySelectorAll("[data-importar-boton]")) boton.hidden = true;
+
+document.addEventListener("change", (evento) => {
+  const campo = evento.target.closest && evento.target.closest("[data-importar-al-elegir]");
+  if (!campo || !campo.files || !campo.files.length) return;
+  const formulario = campo.closest("form");
+  const boton = formulario && formulario.querySelector("[data-importar-boton]");
+  if (!boton) return;
+  if (formulario.requestSubmit) formulario.requestSubmit(boton);
+  else boton.click();
+});

@@ -88,6 +88,23 @@ def texto_numero(valor, decimales=None):
     return f"{valor:f}".replace(".", ",")
 
 
+def texto_r2(r2):
+    """R² con 4 decimales (0,9996). Si redondeado da 1 sin serlo, suma decimales hasta que se vea
+    que no es 1 (0,99998): un «1» parece un error o una recta perfecta."""
+    if r2 is None:
+        return ""
+    for decimales in range(4, 11):
+        redondeado = r2.quantize(Decimal(1).scaleb(-decimales), ROUND_HALF_UP)
+        if redondeado < 1 or r2 >= 1:
+            return texto_numero(redondeado)
+    return texto_numero(r2)
+
+
+def texto_coeficiente(valor):
+    """Pendiente u ordenada para mostrar: 6 decimales (se guardan 12 y el cálculo usa esos)."""
+    return texto_numero(valor, Decimal("0.000001"))
+
+
 # --- Recta ------------------------------------------------------------------------------------
 
 

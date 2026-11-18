@@ -5,8 +5,6 @@ La carga y la confirmación son del panel de administración (`catalogo:`); las 
 `confirmaciones.py` con la operación «curva»; su clave es la `clave` de la curva (doble envío).
 """
 
-from decimal import Decimal
-
 from django.contrib import messages
 from django.core import signing
 from django.http import HttpResponse
@@ -33,7 +31,6 @@ from .models import CurvaCalibracion, Prueba, TipoCalculo
 
 OPERACION = "curva"
 CLAVE_TABLA = "pruebas_curva_tabla"
-CUATRO_DECIMALES = Decimal("0.0001")
 
 
 numero = curvas.texto_numero
@@ -41,9 +38,9 @@ numero = curvas.texto_numero
 
 def resumen_ajuste(ajuste, unidad):
     return {
-        "pendiente": numero(ajuste.pendiente),
-        "ordenada": numero(ajuste.ordenada),
-        "r2": numero(ajuste.r2, CUATRO_DECIMALES),
+        "pendiente": curvas.texto_coeficiente(ajuste.pendiente),
+        "ordenada": curvas.texto_coeficiente(ajuste.ordenada),
+        "r2": curvas.texto_r2(ajuste.r2),
         "r2_bajo": ajuste.r2_bajo,
         "rango": (
             f"{numero(ajuste.concentracion_min)} a {numero(ajuste.concentracion_max)} {unidad}"
@@ -140,7 +137,8 @@ def nueva_curva(request, pk):
     validos = form.is_valid() & formset.is_valid()  # los dos, para mostrar todos los errores
     if not validos:
         return render(request, "pruebas/curvas/formulario.html", contexto)
-    if accion == "guardar":
+    # «Calcular recta» lleva directo al resumen, que muestra la recta, el R² y el gráfico.
+    if accion in ("calcular", "guardar"):
         datos = {
             "fecha_preparacion": form.cleaned_data["fecha_preparacion"].isoformat(),
             "observacion": form.cleaned_data["observacion"].strip(),

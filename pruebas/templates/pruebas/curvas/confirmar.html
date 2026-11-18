@@ -52,11 +52,6 @@
 
     <div class="mt-6 flex flex-wrap items-center justify-end gap-3" data-componente="acciones-confirmacion">
       <a href="{{ url_volver }}" class="btn btn-secundario">{% include "ui/icono.html" with nombre="pencil" clase="size-4" %} Volver y editar</a>
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="token" value="{{ borrador.token }}">
-        <button name="accion" value="cancelar" class="btn btn-peligro">{% include "ui/icono.html" with nombre="x" clase="size-4" %} Cancelar</button>
-      </form>
       <form method="post" data-confirmar-curva class="flex flex-wrap items-center gap-3">
         {% csrf_token %}
         <input type="hidden" name="token" value="{{ borrador.token }}">
