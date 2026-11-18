@@ -49,6 +49,11 @@
     return series;
   }
 
+  // Números de los ejes con coma decimal (0,05), como el resto de AquaLab.
+  function conComa(valor) {
+    return String(Number(valor)).replace(".", ",");
+  }
+
   function color(nombre, respaldo) {
     var valor = getComputedStyle(document.documentElement).getPropertyValue(nombre).trim();
     return valor || respaldo;
@@ -74,14 +79,18 @@
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { type: "linear", title: { display: true, text: "Concentración (" + datos.unidad + ")" } },
-          y: { title: { display: true, text: "Absorbancia" } },
+          x: {
+            type: "linear",
+            title: { display: true, text: "Concentración (" + datos.unidad + ")" },
+            ticks: { callback: conComa },
+          },
+          y: { title: { display: true, text: "Absorbancia" }, ticks: { callback: conComa } },
         },
       },
     });
   }
 
-  window.AqualabCurva = { datasets: datasets, extremos: extremos };
+  window.AqualabCurva = { datasets: datasets, extremos: extremos, conComa: conComa };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", dibujar);

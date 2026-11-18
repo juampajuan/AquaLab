@@ -1,5 +1,4 @@
 import re
-from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -267,10 +266,10 @@ class CurvaCalibracion(models.Model):
 
     @property
     def r2_texto(self):
-        """R² con 4 decimales y coma (0,9996)."""
-        from .curvas import texto_numero
+        """R² con 4 decimales y coma (0,9996), sin redondear a 1 (curvas.texto_r2)."""
+        from .curvas import texto_r2
 
-        return texto_numero(self.r2, Decimal("0.0001"))
+        return texto_r2(self.r2)
 
     @property
     def rango_texto(self):

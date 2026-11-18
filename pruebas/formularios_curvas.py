@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.forms import BaseFormSet, formset_factory
 
 from estudios.mediciones import leer_valor
+from muestras.forms import FORMATOS_FECHA, SelectorFecha
 
 from . import curvas
 
@@ -36,7 +37,8 @@ class CurvaForm(forms.Form):
     fecha_preparacion = forms.DateField(
         label="Fecha de preparación",
         help_text="Día en que se prepararon los estándares.",
-        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        input_formats=FORMATOS_FECHA,
+        widget=SelectorFecha(),
     )
     observacion = forms.CharField(
         label="Observación",
