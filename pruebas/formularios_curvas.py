@@ -76,7 +76,9 @@ class ImportarForm(forms.Form):
         label="Archivo (.csv o .xlsx)",
         required=False,
         help_text="CSV o Excel (.xlsx) con una columna de concentración y otra de absorbancia.",
-        widget=forms.ClearableFileInput(attrs={"accept": ".csv,.xlsx", "class": "form-control"}),
+        widget=forms.ClearableFileInput(
+            attrs={"accept": ".csv,.xlsx", "class": "form-control", "data-importar-al-elegir": ""}
+        ),
     )
 
 

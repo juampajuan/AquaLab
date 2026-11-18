@@ -38,11 +38,12 @@
         <div class="grid gap-5 sm:grid-cols-2 sm:items-end">
           {% include "ui/campo.html" with field=importar.archivo %}
           <div class="flex flex-wrap gap-3">
-            <button class="btn btn-secundario" type="submit" name="accion" value="importar">Importar puntos</button>
+            {# Con JavaScript, elegir el archivo ya importa (aqualab.js) y este botón se oculta. #}
+            <button class="btn btn-secundario" type="submit" name="accion" value="importar" data-importar-boton>Importar puntos</button>
             <a class="btn btn-secundario" href="{% url 'catalogo:plantilla_curva' %}" download>{% include "ui/icono.html" with nombre="download" clase="size-4" %} Descargar plantilla</a>
           </div>
         </div>
-        <p class="mt-3 text-sm text-tinta-suave">Los puntos leídos reemplazan a los de la tabla, donde podés revisarlos antes de calcular.</p>
+        <p class="mt-3 text-sm text-tinta-suave">Al elegir el archivo se cargan sus puntos en la tabla, donde podés revisarlos antes de calcular; reemplazan a los que haya.</p>
       </section>
 
       {% if elegir %}
