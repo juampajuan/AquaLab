@@ -105,6 +105,10 @@ class VariacionCalidad:
     tono: str
     texto: str
 
+    @property
+    def texto_corto(self):
+        return self.texto
+
 
 @dataclass(frozen=True)
 class IndicadorCalidad:

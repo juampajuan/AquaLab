@@ -2,12 +2,9 @@
 <section class="tarjeta mb-6 p-5" aria-labelledby="titulo-calidad" data-calidad>
   <h2 id="titulo-calidad" class="flex items-center gap-2 text-sm font-semibold text-marino">
     Calidad
-    {% include "ui/ayuda.html" with texto="Resultados con validación vigente en el período, según la evaluación guardada al validar. Los que no tienen límite comparable no se cuentan." id="ayuda-calidad" etiqueta="Calidad" %}
+    {% include "ui/ayuda.html" with texto="Resultados validados dentro del período (por fecha de validación), según la evaluación guardada al validar. Los que no tienen límite comparable no se cuentan." id="ayuda-calidad" etiqueta="Calidad" %}
   </h2>
-  <p class="mb-4 text-xs text-tinta-suave">
-    Del {{ periodo.inicio|date:"d/m/Y" }} al {{ periodo.fin|date:"d/m/Y" }} · comparado con
-    {{ periodo.inicio_anterior|date:"d/m/Y" }} al {{ periodo.fin_anterior|date:"d/m/Y" }}
-  </p>
+  <p class="mb-4 text-xs text-tinta-suave" data-rango-calidad>Resultados validados en el período, por fecha de validación</p>
 
   {% with indicador=calidad.indicador %}
     {# 1. Indicador general (US1) #}
@@ -16,20 +13,19 @@
         {% include "ui/icono.html" with nombre="droplet" clase="size-6" %}
       </span>
       <div>
-        <span class="block text-[11px] font-semibold tracking-wide text-tinta-suave uppercase">Nivel de cumplimiento</span>
+        <span class="flex items-center gap-1 text-[11px] font-semibold tracking-wide text-tinta-suave uppercase">
+          % de resultados fuera de norma
+          {% include "ui/ayuda.html" with texto="De los resultados validados en el período que tienen límite para comparar, qué porcentaje quedó fuera de norma. Menos es mejor." id="ayuda-indicador-calidad" etiqueta="% de resultados fuera de norma" %}
+        </span>
         {% if indicador.actual.evaluados %}
-          <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ indicador.actual.porcentaje_texto }} fuera de norma</span>
+          <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ indicador.actual.porcentaje_texto }}</span>
           <span class="numeros block text-sm text-tinta-suave">{{ indicador.actual.fuera }} de {{ indicador.actual.evaluados }} resultados</span>
-          {% if indicador.variacion %}
-            {% include "informes/variacion.html" with variacion=indicador.variacion %}
-          {% elif not indicador.anterior.evaluados %}
-            <span class="mt-1 block text-xs text-tinta-suave" data-tono="neutro">Sin datos previos</span>
-          {% endif %}
+          {% include "informes/variacion.html" with variacion=indicador.variacion antes=indicador.anterior.porcentaje_texto puntos=True %}
         {% else %}
           <span class="block text-base font-semibold text-tinta-suave" data-valor>Sin resultados validados en el período</span>
         {% endif %}
         {% if indicador.sin_limite %}
-          <p class="mt-2 text-xs text-tinta-suave" data-sin-limite>{{ indicador.sin_limite }} resultado{{ indicador.sin_limite|pluralize }} sin límite comparable, fuera del cálculo</p>
+          <p class="mt-2 text-xs text-tinta-suave" data-sin-limite>{{ indicador.sin_limite }} sin límite para comparar (no se cuentan)</p>
         {% endif %}
       </div>
     </div>
@@ -40,7 +36,10 @@
       <div class="grid gap-6 xl:grid-cols-2">
         {# 2. Pruebas que más fallan (US2) #}
         <div class="min-w-0" data-ranking="pruebas">
-          <h3 class="text-sm font-semibold text-marino">Pruebas que más fallan</h3>
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-marino">
+            Pruebas que más fallan
+            {% include "ui/ayuda.html" with texto="Por prueba: qué porcentaje de sus resultados validados en el período (por fecha de validación) quedó fuera de norma." id="ayuda-calidad-pruebas" etiqueta="Pruebas que más fallan" %}
+          </h3>
           <p class="mb-4 text-xs text-tinta-suave">Solo pruebas con al menos {{ calidad.minimo_ranking }} resultados evaluados</p>
           {% if calidad.pruebas.filas %}
             <div class="relative h-64">
@@ -69,7 +68,10 @@
 
         {# 3. Cumplimiento por tipo de vertido (US3) #}
         <div class="min-w-0" data-vertidos>
-          <h3 class="text-sm font-semibold text-marino">Pruebas evaluadas por tipo de vertido</h3>
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-marino">
+            Pruebas evaluadas por tipo de vertido
+            {% include "ui/ayuda.html" with texto="Resultados validados en el período (por fecha de validación), separados por el tipo de vertido de la muestra: cuántos cumplen y cuántos quedaron fuera de norma." id="ayuda-calidad-vertidos" etiqueta="Pruebas evaluadas por tipo de vertido" %}
+          </h3>
           <p class="mb-4 text-xs text-tinta-suave">Cada prueba evaluada en el período suma una: una muestra con 7 pruebas aporta 7.</p>
           <div class="relative h-64">
             <canvas id="grafico-calidad-vertidos" role="img" aria-label="Pruebas que cumplen y fuera de norma por tipo de vertido"></canvas>

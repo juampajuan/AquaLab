@@ -8,6 +8,10 @@
 {% endblock %}
 
 {% block content %}
+  {# A. Todo lo que depende del período elegido: selector, tarjetas y calidad #}
+  <section class="mb-10" aria-labelledby="titulo-bloque-periodo" data-bloque-periodo>
+  <h2 id="titulo-bloque-periodo" class="mb-3 text-base font-semibold text-marino">Según el período elegido</h2>
+
   {# 1. Período #}
   <form method="get" action="{% url 'informes:dashboard' %}" class="tarjeta mb-6 flex flex-wrap items-end gap-4 p-5">
     <div>
@@ -19,10 +23,10 @@
       </select>
     </div>
     <button type="submit" class="btn btn-secundario">Ver</button>
-    <p class="text-sm text-tinta-suave" data-rango>
-      Del {{ periodo.inicio|date:"d/m/Y" }} al {{ periodo.fin|date:"d/m/Y" }} · comparado con
-      {{ periodo.inicio_anterior|date:"d/m/Y" }} al {{ periodo.fin_anterior|date:"d/m/Y" }}
-    </p>
+    <dl class="grid gap-1 text-sm sm:ml-auto sm:text-right" data-rango>
+      <div><dt class="inline font-semibold text-marino">Período:</dt> <dd class="inline" data-rango-actual>{{ periodo.rango_texto }}</dd></div>
+      <div class="text-tinta-suave"><dt class="inline font-semibold">Comparado con:</dt> <dd class="inline" data-rango-anterior>{{ periodo.rango_anterior_texto }}</dd></div>
+    </dl>
   </form>
 
   {# 2. Indicadores #}
@@ -33,7 +37,10 @@
           {% include "ui/icono.html" with nombre=tarjeta.icono clase="size-6" %}
         </span>
         <span>
-          <span class="block text-[11px] font-semibold tracking-wide text-tinta-suave uppercase">{{ tarjeta.titulo }}</span>
+          <span class="flex items-center gap-1 text-[11px] font-semibold tracking-wide text-tinta-suave uppercase">
+            {{ tarjeta.titulo }}
+            {% include "ui/ayuda.html" with texto=tarjeta.ayuda id="ayuda-indicador-"|add:tarjeta.nombre etiqueta=tarjeta.titulo %}
+          </span>
           {% if tarjeta.nombre == "respuesta" %}
             {% if tarjeta.indicador.actual is None %}
               <span class="block text-base font-semibold text-tinta-suave" data-valor>Sin informes en el período</span>
@@ -43,29 +50,52 @@
           {% else %}
             <span class="numeros block text-3xl font-bold text-marino" data-valor>{{ tarjeta.indicador.actual }}</span>
           {% endif %}
-          {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion %}
+          {% if tarjeta.nombre == "respuesta" and tarjeta.indicador.anterior is not None %}
+            {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion antes=tarjeta.indicador.texto_anterior|add:" días" %}
+          {% else %}
+            {% include "informes/variacion.html" with variacion=tarjeta.indicador.variacion antes=tarjeta.indicador.texto_anterior %}
+          {% endif %}
         </span>
       </div>
     {% endfor %}
   </section>
 
-  {# 3. Estudios por estado #}
+  {# 3. Calidad del agua del período (US 8.4) #}
+  {% include "informes/calidad.html" %}
+  </section>
+
+  {# B. Lo que no depende del período: situación de hoy, tendencias fijas, historial y pendientes #}
+  <section aria-labelledby="titulo-bloque-general" data-bloque-general>
+  <h2 id="titulo-bloque-general" class="text-base font-semibold text-marino">Situación actual y tendencias</h2>
+  <p class="mb-3 text-xs text-tinta-suave" data-aclaracion-general>Estas secciones no cambian con el período elegido: cada una indica su propio alcance.</p>
+
+  {# 4. Estudios por estado #}
   <section class="tarjeta mb-6 p-5" aria-labelledby="titulo-estados">
-    <h2 id="titulo-estados" class="mb-4 text-sm font-semibold text-marino">Estudios por estado</h2>
+    <h2 id="titulo-estados" class="flex items-center gap-2 text-sm font-semibold text-marino">
+      Estudios por estado
+      {% include "ui/ayuda.html" with texto="Cuántos estudios hay hoy en cada estado, sin importar cuándo se crearon. Tocá un estado para ver cuáles son." id="ayuda-estados" etiqueta="Estudios por estado" %}
+    </h2>
+    <p class="mb-4 text-xs text-tinta-suave">Hoy · tocá un estado para ver sus estudios</p>
     <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {% for etiqueta, total, valor in estados %}
-        <li class="flex items-center justify-between rounded-lg border border-borde px-4 py-3" data-estado-total="{{ valor }}">
-          {% include "ui/estado.html" with estado=etiqueta tipo=valor|tipo_estado %}
-          <span class="numeros text-2xl font-bold text-marino">{{ total }}</span>
+        <li data-estado-total="{{ valor }}">
+          {# Toda la fila lleva a «Buscar estudio» filtrado por ese estado (mismos colores) #}
+          <a href="{% url 'estudios:buscar' %}?estado={{ valor }}" class="flex items-center justify-between rounded-lg border border-borde px-4 py-3 transition-shadow hover:shadow-md focus-visible:shadow-md" aria-label="Ver los {{ total }} estudios en estado {{ etiqueta }}">
+            {% include "ui/estado.html" with estado=etiqueta tipo=valor|tipo_estado %}
+            <span class="numeros text-2xl font-bold text-marino">{{ total }}</span>
+          </a>
         </li>
       {% endfor %}
     </ul>
   </section>
 
   <div class="mb-6 grid gap-6 xl:grid-cols-2">
-    {# 4. Tiempo de respuesta por mes #}
+    {# 5. Tiempo de respuesta por mes #}
     <section class="tarjeta p-5" aria-labelledby="titulo-respuesta">
-      <h2 id="titulo-respuesta" class="text-sm font-semibold text-marino">Tiempo de respuesta por mes</h2>
+      <h2 id="titulo-respuesta" class="flex items-center gap-2 text-sm font-semibold text-marino">
+        Tiempo de respuesta por mes
+        {% include "ui/ayuda.html" with texto="Cada barra es el promedio de días corridos entre el ingreso de la muestra y la emisión del informe, de los informes emitidos en ese mes (por fecha de emisión)." id="ayuda-grafico-respuesta" etiqueta="Tiempo de respuesta por mes" %}
+      </h2>
       <p class="mb-4 text-xs text-tinta-suave">Días promedio desde el ingreso de la muestra hasta la emisión del informe · últimos 6 meses</p>
       <div class="relative h-64">
         <canvas id="grafico-respuesta" role="img" aria-label="Tiempo de respuesta promedio de los últimos 6 meses"></canvas>
@@ -83,9 +113,12 @@
       </details>
     </section>
 
-    {# 5. Actividad semanal #}
+    {# 6. Actividad semanal #}
     <section class="tarjeta p-5" aria-labelledby="titulo-actividad">
-      <h2 id="titulo-actividad" class="text-sm font-semibold text-marino">Actividad semanal</h2>
+      <h2 id="titulo-actividad" class="flex items-center gap-2 text-sm font-semibold text-marino">
+        Actividad semanal
+        {% include "ui/ayuda.html" with texto="Por semana de lunes a domingo: muestras por fecha de ingreso e informes por fecha de emisión." id="ayuda-grafico-actividad" etiqueta="Actividad semanal" %}
+      </h2>
       <p class="mb-4 text-xs text-tinta-suave">Muestras ingresadas e informes emitidos por semana · últimas 12 semanas</p>
       <div class="relative h-64">
         <canvas id="grafico-actividad" role="img" aria-label="Muestras ingresadas e informes emitidos por semana"></canvas>
@@ -104,13 +137,11 @@
     </section>
   </div>
 
-  {# 6. Calidad del agua del período (US 8.4) #}
-  {% include "informes/calidad.html" %}
-
   {# 7. Comparación histórica de un origen (US 8.1) #}
-  <section class="tarjeta mb-6 p-5" aria-labelledby="titulo-comparacion" data-comparacion-historica>
+  {# id «comparacion»: «Volver al dashboard» de la comparación vuelve a esta sección #}
+  <section id="comparacion" class="tarjeta mb-6 scroll-mt-6 p-5" aria-labelledby="titulo-comparacion" data-comparacion-historica>
     <h2 id="titulo-comparacion" class="text-sm font-semibold text-marino">Comparación histórica</h2>
-    <p class="mb-4 text-xs text-tinta-suave">Evolución de los resultados validados de un origen, prueba por prueba.</p>
+    <p class="mb-4 text-xs text-tinta-suave">Evolución de los resultados validados de un origen, prueba por prueba · todo el historial</p>
     {% include "estudios/elegir_origen.html" with form=form_origen %}
   </section>
 
@@ -122,7 +153,7 @@
         <div>
           <h2 id="titulo-desvios" class="flex items-center gap-2 text-sm font-semibold text-marino">
             Desvíos sin revisar
-            {% include "ui/ayuda.html" with texto="Hay desvío si el resultado sin validar difiere en "|add:regla_desvio|add:". Se revisan al validar la prueba." id="ayuda-desvios-dashboard" etiqueta="Desvíos sin revisar" %}
+            {% include "ui/ayuda.html" with texto="Hay desvío si el resultado sin validar difiere en "|add:regla_desvio|add:". Se revisan al validar la prueba. Muestra todos los pendientes de hoy." id="ayuda-desvios-dashboard" etiqueta="Desvíos sin revisar" %}
           </h2>
           <p class="text-xs text-tinta-suave"><span class="numeros font-semibold text-tinta">{{ desvios_cantidad }} pendiente{{ desvios_cantidad|pluralize }}</span>{% if desvios_cantidad > 10 %} · los 10 más recientes{% endif %}</p>
         </div>
@@ -140,7 +171,10 @@
     {% include "informes/alerta.html" with clave="finalizados" titulo="Finalizados sin informe" ayuda="Estudios finalizados que todavía no tienen informe emitido. «Días»: desde la última validación." columna_dias="Días" filas=alertas.finalizados_sin_informe %}
   </div>
 
+  </section>
+
   {{ datos_graficos|json_script:"datos-dashboard" }}
   <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
   <script src="{% static 'informes/dashboard.js' %}" defer></script>
+  <script src="{% static 'informes/dashboard_posicion.js' %}" defer></script>
 {% endblock %}

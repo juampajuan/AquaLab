@@ -1,6 +1,9 @@
 {# Lista de clientes u orígenes con más incumplimientos (US 8.4). Parámetros: clave («clientes» u «origenes»), titulo, columna y lista (calidad.Lista). #}
 <div data-ranking="{{ clave }}">
-  <h3 class="mb-4 text-sm font-semibold text-marino">{{ titulo }}</h3>
+  <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-marino">
+    {{ titulo }}
+    {% include "ui/ayuda.html" with texto="Resultados validados en el período (por fecha de validación) que quedaron fuera de norma, sobre el total evaluado de cada uno." id="ayuda-calidad-"|add:clave etiqueta=titulo %}
+  </h3>
   {% if lista.filas %}
     <table class="tabla">
       <thead><tr><th>{{ columna }}</th><th>Fuera de norma</th></tr></thead>

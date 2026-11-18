@@ -9,7 +9,7 @@
     {% include "ui/encabezado.html" with titulo="Comparación histórica" subtitulo="Evolución de los resultados validados del origen" seccion="Estudios" anterior_texto="Ficha del estudio" anterior_url=url_estudio %}
   {% else %}
     {% url 'informes:dashboard' as url_dashboard %}
-    {% include "ui/encabezado.html" with titulo="Comparación histórica" subtitulo="Evolución de los resultados validados del origen" seccion="Dashboard" anterior_texto="Dashboard" anterior_url=url_dashboard %}
+    {% include "ui/encabezado.html" with titulo="Comparación histórica" subtitulo="Evolución de los resultados validados del origen" seccion="Dashboard" anterior_texto="Dashboard" anterior_url=url_dashboard|add:"#comparacion" %}
   {% endif %}
 {% endblock %}
 
@@ -77,7 +77,7 @@
           </a>
         {% endif %}
         {% if perms.informes.ver_dashboard %}
-          <a href="{% url 'informes:dashboard' %}" class="btn btn-secundario">
+          <a href="{% url 'informes:dashboard' %}#comparacion" class="btn btn-secundario">
             {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Volver al dashboard
           </a>
         {% endif %}
@@ -92,7 +92,7 @@
         {% include "estudios/elegir_origen.html" with form=form_origen %}
       </section>
       <div>
-        <a href="{% url 'informes:dashboard' %}" class="btn btn-secundario">
+        <a href="{% url 'informes:dashboard' %}#comparacion" class="btn btn-secundario">
           {% include "ui/icono.html" with nombre="chart-column" clase="size-4" %} Volver al dashboard
         </a>
       </div>

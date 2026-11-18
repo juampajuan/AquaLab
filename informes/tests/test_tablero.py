@@ -114,6 +114,42 @@ def test_periodos(clave, hoy, esperado):
 
 
 @pytest.mark.parametrize(
+    ("inicio", "fin", "texto"),
+    [
+        (D(2026, 11, 1), D(2026, 11, 13), "1 al 13 de noviembre de 2026"),
+        (
+            D(2026, 9, 1),
+            D(2026, 11, 17),
+            "1 de septiembre al 17 de noviembre de 2026",
+        ),
+        (
+            D(2025, 12, 1),
+            D(2026, 2, 17),
+            "1 de diciembre de 2025 al 17 de febrero de 2026",
+        ),
+    ],
+)
+def test_texto_rango(inicio, fin, texto):
+    """Observación del sprint 4: el rango se lee como fecha, no como «01/11/2026»."""
+    assert tablero.texto_rango(inicio, fin) == texto
+
+
+@pytest.mark.parametrize(
+    ("actual", "anterior", "texto"),
+    [(10, 8, "▲ +2 (+25 %)"), (8, 10, "▼ −2 (−20 %)"), (3, 0, "▲ +3"), (0, 0, "= 0")],
+)
+def test_texto_de_la_variacion(actual, anterior, texto):
+    """Sin valor anterior no hay porcentaje: el dashboard muestra «antes: 0» al lado."""
+    assert tablero.variacion(actual, anterior).texto == texto
+
+
+def test_periodo_con_textos():
+    periodo = tablero.periodo("este_mes", D(2026, 11, 13))
+    assert periodo.rango_texto == "1 al 13 de noviembre de 2026"
+    assert periodo.rango_anterior_texto == "1 al 13 de octubre de 2026"
+
+
+@pytest.mark.parametrize(
     ("actual", "anterior", "favorable_si_sube", "esperado"),
     [
         (10, 8, True, (2, 25, "sube", "▲", "exito")),

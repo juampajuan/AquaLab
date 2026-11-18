@@ -1,8 +1,15 @@
-{# Variación contra el período anterior (US 8.3). Parámetro: variacion (tablero.Variacion o None). #}
+{% comment %}
+  Comparación con el período anterior, en una línea: «antes 7 · ▲ +1» (US 8.3; ajuste de la
+  revisión del sprint 4). El período de comparación se lee una sola vez, arriba del dashboard.
+  Parámetros: variacion (tablero.Variacion o calidad.VariacionCalidad, o None), antes (opcional:
+  el valor anterior ya escrito) y puntos (opcional: suma la ayuda de «p. p.»).
+{% endcomment %}
 {% if variacion %}
-  <span class="mt-1 block text-xs font-semibold {% if variacion.tono == 'exito' %}text-exito{% elif variacion.tono == 'peligro' %}text-peligro{% else %}text-tinta-suave{% endif %}" data-tono="{{ variacion.tono }}">
-    {{ variacion.texto }}<span class="sr-only"> contra el período anterior</span>
+  <span class="mt-1 flex flex-wrap items-center gap-x-1 text-xs text-tinta-suave" data-comparacion>
+    {% if antes %}<span class="numeros" data-antes>antes {{ antes }}</span> ·{% endif %}
+    <span class="numeros font-semibold {% if variacion.tono == 'exito' %}text-exito{% elif variacion.tono == 'peligro' %}text-peligro{% endif %}" data-tono="{{ variacion.tono }}">{{ variacion.texto_corto }}</span>
+    {% if puntos %}{% include "ui/ayuda.html" with texto="«p. p.» son puntos porcentuales: la diferencia entre los dos porcentajes. Ej.: 10 % → 14,9 % = +4,9 p. p. (no es un aumento del 4,9 %)." id="ayuda-puntos-porcentuales" etiqueta="Puntos porcentuales" %}{% endif %}
   </span>
 {% else %}
-  <span class="mt-1 block text-xs text-tinta-suave" data-tono="neutro">Sin comparación</span>
+  <span class="mt-1 block text-xs text-tinta-suave" data-tono="neutro">Sin datos para comparar</span>
 {% endif %}
