@@ -7,7 +7,8 @@ from django.db import connection
 from estudios import demo
 
 MENSAJE_ENTORNO = (
-    "cargar_demo solo corre en desarrollo: requiere AQUALAB_ENTORNO=desarrollo y DEBUG=True."
+    "cargar_demo solo corre en desarrollo (AQUALAB_ENTORNO=desarrollo y DEBUG=True) "
+    "o en el sitio de demostración (AQUALAB_ENTORNO=demo)."
 )
 
 
@@ -19,7 +20,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         entorno = os.environ.get("AQUALAB_ENTORNO", "").strip().lower()
-        if entorno != "desarrollo" or not settings.DEBUG:
+        en_desarrollo = entorno == "desarrollo" and settings.DEBUG
+        if not en_desarrollo and entorno != "demo":
             raise CommandError(MENSAJE_ENTORNO)
         if connection.vendor != "postgresql":
             raise CommandError("La demo requiere PostgreSQL.")

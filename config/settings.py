@@ -21,6 +21,21 @@ DEBUG = _env_bool("DEBUG", "False")
 
 ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
 
+# Render publica el dominio del servicio en RENDER_EXTERNAL_HOSTNAME.
+_host_render = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if _host_render:
+    ALLOWED_HOSTS.append(_host_render)
+
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o] + (
+    [f"https://{_host_render}"] if _host_render else []
+)
+
+# Detrás del proxy HTTPS de Render (AQUALAB_HTTPS=True): cookies solo por HTTPS.
+if _env_bool("AQUALAB_HTTPS", "False"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -40,6 +55,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -97,6 +113,12 @@ USE_TZ = True
 STATIC_URL = "static/"
 # Estilos, fuentes, imágenes y JS compartidos. El CSS se compila con Tailwind (ver README).
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# En producción, collectstatic los junta acá y WhiteNoise los sirve comprimidos.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -118,6 +140,7 @@ LOGGING = {
         "console": {"class": "logging.StreamHandler"},
     },
     "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR"},
         "usuarios.notificaciones": {"handlers": ["console"], "level": "INFO"},
         "estudios.notificaciones": {"handlers": ["console"], "level": "INFO"},
         "informes.envios": {"handlers": ["console"], "level": "INFO"},

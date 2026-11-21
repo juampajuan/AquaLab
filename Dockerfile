@@ -30,4 +30,6 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# En Render: migra, junta los estáticos y arranca gunicorn (ver iniciar.sh). En local,
+# docker-compose.yml usa runserver.
+CMD ["sh", "iniciar.sh"]

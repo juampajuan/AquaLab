@@ -380,9 +380,17 @@ def test_rechaza_fuera_de_desarrollo(catalogo, settings, monkeypatch, variable, 
     with pytest.raises(CommandError) as error:
         call_command("cargar_demo", stdout=io.StringIO())
     assert str(error.value) == (
-        "cargar_demo solo corre en desarrollo: requiere AQUALAB_ENTORNO=desarrollo y DEBUG=True."
+        "cargar_demo solo corre en desarrollo (AQUALAB_ENTORNO=desarrollo y DEBUG=True) "
+        "o en el sitio de demostración (AQUALAB_ENTORNO=demo)."
     )
     assert not Cliente.objects.exists()
+
+
+def test_corre_en_el_sitio_de_demo_sin_debug(catalogo, settings, monkeypatch):
+    settings.DEBUG = False
+    monkeypatch.setenv("AQUALAB_ENTORNO", "demo")
+    call_command("cargar_demo", stdout=io.StringIO())
+    assert Cliente.objects.exists()
 
 
 def test_segunda_ejecucion_no_duplica(catalogo, entorno):
