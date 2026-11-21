@@ -177,7 +177,6 @@ asistente/     asistente con IA: consultas e inicio de estudios desde el chat
 templates/     base.html, base_acceso.html y parciales de interfaz (templates/ui/)
 static/        CSS (fuente y compilado), fuentes, imágenes y JS compartidos
 specs/         specs de cada user story (Spec Kit)
-docs/          guía paso a paso del flujo SDD con Spec Kit
 ```
 
 Hay una app de Django por módulo del dominio (ver la constitution): las US de un mismo módulo
