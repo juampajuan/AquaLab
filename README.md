@@ -168,10 +168,12 @@ CI en rojo.
 ```text
 config/        settings, urls, panel de inicio y filtros de templates compartidos
 usuarios/      usuarios (modelo Usuario con email como login), registro, sesión y avisos por correo
-clientes/      clientes: alta, búsqueda, ficha y edición
+clientes/      clientes: alta, búsqueda, ficha, edición e historial
 muestras/      muestras y orígenes
-pruebas/       catálogo de pruebas
-estudios/      tipos de estudio y estudios sobre muestras
+pruebas/       catálogo de pruebas, límites por tipo de vertido y curvas de calibración
+estudios/      tipos de estudio, estudios, mediciones, resultados, validación y desvíos
+informes/      informes (conclusión asistida, PDF y envío por correo) y paneles del laboratorio y de calidad
+asistente/     asistente con IA: consultas e inicio de estudios desde el chat
 templates/     base.html, base_acceso.html y parciales de interfaz (templates/ui/)
 static/        CSS (fuente y compilado), fuentes, imágenes y JS compartidos
 specs/         specs de cada user story (Spec Kit)
