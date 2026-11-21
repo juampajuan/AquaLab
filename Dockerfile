@@ -28,6 +28,13 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
+# Estáticos comprimidos para producción (WhiteNoise). La clave es solo para construir: en ejecución
+# se usa la de las variables de entorno. `src` es la fuente de Tailwind, que no se sirve. En
+# desarrollo Compose monta el repo encima y no se usan.
+RUN SECRET_KEY=solo-para-construir \
+    python manage.py collectstatic --noinput --ignore src
+
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Producción (Render). Docker Compose lo reemplaza por `runserver` (docker-compose.yml).
+CMD ["sh", "scripts/iniciar_produccion.sh"]

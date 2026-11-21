@@ -163,6 +163,43 @@ El CI (GitHub Actions) corre `ruff check`, `ruff format --check`, verifica que l
 el CSS compilado estén al día y corre `pytest` contra PostgreSQL 16 en cada PR. No se mergea con el
 CI en rojo.
 
+## Deploy en Render
+
+`render.yaml` (Blueprint) define el servicio web, con el mismo `Dockerfile`, y la base
+PostgreSQL 16, ambos en el plan gratis. Para crearlos:
+
+1. En Render: **New → Blueprint**, elegir este repositorio y la rama `main`.
+2. Completar las variables que pide: el correo, la contraseña, el nombre y el apellido del
+   superusuario inicial (`DJANGO_SUPERUSER_*`) y, si se quiere el asistente, `ASISTENTE_API_KEY`.
+   `SECRET_KEY` la genera Render; `DATABASE_URL`, el dominio y la URL pública también los da Render.
+3. **Apply**. Cada push a `main` vuelve a desplegar.
+
+En cada arranque, `scripts/iniciar_produccion.sh` corre las migraciones, importa el catálogo de
+pruebas solo si la base está vacía, crea el superusuario si no existe (en Administradores y
+Bioquímicos) y levanta gunicorn. Repetirlo no cambia nada.
+
+- `AQUALAB_ENTORNO=produccion` activa HTTPS, cookies seguras y HSTS; no admite `DEBUG=True`.
+- Los estáticos los sirve WhiteNoise desde `staticfiles/`, que el `Dockerfile` arma con
+  `collectstatic`.
+- Sin `EMAIL_BACKEND`, los correos quedan en los logs del servicio. Para enviarlos de verdad, se
+  agregan las variables de correo en **Environment** (ver `.env.example`).
+- El servicio se duerme a los 15 minutos sin uso y tarda cerca de un minuto en despertar: abrirlo
+  un rato antes de una demo.
+- La base gratis vence a los 30 días de creada; 14 días después se borra con todos los datos.
+- `cargar_demo` no corre en producción.
+
+Para probar la imagen de producción en local (con la base de Compose levantada):
+
+```bash
+docker build -t aqualab-prod .
+docker run --rm --network aqualab_default -p 8010:8000 -e SECRET_KEY=local \
+  -e AQUALAB_ENTORNO=produccion -e ALLOWED_HOSTS=localhost \
+  -e DATABASE_URL=postgres://aqualab:aqualab@db:5432/aqualab aqualab-prod
+```
+
+Con `AQUALAB_ENTORNO=produccion`, todo pedido por HTTP redirige a HTTPS: para navegarla en local,
+sacar esa variable y agregar `DEBUG=False`.
+
 ## Estructura
 
 ```text

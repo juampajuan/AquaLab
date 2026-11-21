@@ -29,3 +29,8 @@ Thumbs.db
 # Respaldos locales, nunca publicar
 .local-backups/
 .local-validacion/
+
+# Exportaciones de Jira y backlog del Drive (no van al repo)
+Jira.csv
+Artefactos G7 - Backlog-US.csv
+Backlog-US actualizado.csv
