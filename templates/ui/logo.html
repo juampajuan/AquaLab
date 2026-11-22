@@ -1,5 +1,5 @@
 {% load static %}
 {# claro=True conserva el contraste del logo sobre fotografías y fondos oscuros. #}
 <a href="{% url 'inicio' %}" class="marca{% if claro %} marca--clara{% endif %}" aria-label="AquaLab · Ir al inicio">
-  <img src="{% static 'img/marca/aqualab-horizontal.png' %}" alt="AquaLab" width="960" height="320" class="marca-imagen">
+  <img src="{% if claro %}{% static 'img/marca/aqualab-horizontal-clara.png' %}{% else %}{% static 'img/marca/aqualab-horizontal.png' %}{% endif %}" alt="AquaLab" width="960" height="320" class="marca-imagen">
 </a>
