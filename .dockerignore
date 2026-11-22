@@ -19,3 +19,5 @@ coverage/
 # Respaldos locales, nunca publicar
 .local-backups/
 .local-validacion/
+Claude outputs/
+staticfiles/

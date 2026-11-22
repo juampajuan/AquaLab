@@ -530,3 +530,18 @@ Conventional Commits en español, con la US en el mensaje: `tipo(ámbito): descr
   `estudios:crear` (hoy, solo la sesión). Tests: `asistente/tests/test_registro.py`,
   `test_conversacion_registro.py`, `test_solo_lectura_registro.py`, `muestras/tests/test_precarga.py`
   y `estudios/tests/test_crear_precarga.py`.
+
+## Deploy en Render
+
+- `render.yaml` (Blueprint, plan gratis) + el mismo `Dockerfile`, cuyo `CMD` es
+  `scripts/iniciar_produccion.sh`; Compose lo reemplaza por `runserver`. Render gratis no tiene
+  pre-deploy ni consola: migraciones, catálogo y superusuario van en ese script, que debe poder
+  repetirse en cada arranque (el servicio se reinicia al despertar).
+- El catálogo se importa solo con la base vacía: `importar_catalogo_pruebas` pisaría los cambios
+  hechos desde la app (SCRUM-73). El superusuario recién creado entra en Administradores y
+  Bioquímicos (el panel exige el grupo también al superusuario).
+- `AQUALAB_ENTORNO=produccion` (`settings.PRODUCCION`) activa HTTPS, cookies `Secure` y HSTS;
+  `RENDER_EXTERNAL_HOSTNAME` se suma a `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` y
+  `RENDER_EXTERNAL_URL` es el valor por defecto de `AQUALAB_URL_BASE`.
+- WhiteNoise con `CompressedStaticFilesStorage` (sin hash: el `.map` que nombra Chart.js y el
+  `@import` de `static/src` rompen el de manifiesto); `collectstatic --ignore src` en el Dockerfile.

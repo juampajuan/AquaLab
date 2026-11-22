@@ -1,0 +1,41 @@
+# Blueprint de Render: el servicio web (Docker, el mismo Dockerfile) y la base PostgreSQL.
+# La base gratis vence a los 30 días de creada (después, 14 días de gracia y se borra).
+# Pasos y variables en el README («Deploy en Render»).
+services:
+  - type: web
+    name: aqualab
+    runtime: docker
+    plan: free
+    region: virginia
+    healthCheckPath: /usuarios/login/
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: AQUALAB_ENTORNO
+        value: produccion
+      - key: DATABASE_URL
+        fromDatabase:
+          name: aqualab-db
+          property: connectionString
+      # Superusuario inicial: se crea en el primer arranque (scripts/iniciar_produccion.sh).
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: DJANGO_SUPERUSER_FIRST_NAME
+        sync: false
+      - key: DJANGO_SUPERUSER_LAST_NAME
+        sync: false
+      # Vacía: el asistente aparece deshabilitado (US 10.1).
+      - key: ASISTENTE_API_KEY
+        sync: false
+
+databases:
+  - name: aqualab-db
+    plan: free
+    region: virginia
+    databaseName: aqualab
+    user: aqualab
+    postgresMajorVersion: "16"

@@ -21,6 +21,28 @@ DEBUG = _env_bool("DEBUG", "False")
 
 ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
 
+# Producción (Render): AQUALAB_ENTORNO=produccion activa HTTPS y cookies seguras. En desarrollo y
+# en los tests no se define (ver `.env.example` y `render.yaml`).
+PRODUCCION = os.environ.get("AQUALAB_ENTORNO", "").strip().lower() == "produccion"
+if PRODUCCION and DEBUG:
+    raise RuntimeError("AQUALAB_ENTORNO=produccion no admite DEBUG=True.")
+
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+
+# Render define el dominio público del servicio (por ejemplo, aqualab.onrender.com).
+_HOST_RENDER = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "")
+if _HOST_RENDER:
+    ALLOWED_HOSTS.append(_HOST_RENDER)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{_HOST_RENDER}")
+
+if PRODUCCION:
+    # Render termina el HTTPS en su proxy y avisa el esquema original en X-Forwarded-Proto.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -40,6 +62,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Sirve los estáticos con DEBUG=False (producción); va justo después de SecurityMiddleware.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -74,7 +98,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": dj_database_url.config(conn_max_age=600),
+    # conn_health_checks: la base de Render puede cortar conexiones mientras el servicio duerme.
+    "default": dj_database_url.config(conn_max_age=600, conn_health_checks=True),
 }
 
 AUTH_USER_MODEL = "usuarios.Usuario"
@@ -97,6 +122,14 @@ USE_TZ = True
 STATIC_URL = "static/"
 # Estilos, fuentes, imágenes y JS compartidos. El CSS se compila con Tailwind (ver README).
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# Destino de `collectstatic` (lo corre el Dockerfile); en producción WhiteNoise sirve de ahí los
+# archivos comprimidos. Sin hash en el nombre (CompressedManifest...): rechaza el `.map` que nombra
+# Chart.js y no exige correr `collectstatic` en desarrollo ni en los tests.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -143,8 +176,12 @@ AQUALAB_LABORATORIO = {
 AQUALAB_DESVIOS = {"umbral": "30", "cantidad": 3}
 
 # Base de los enlaces absolutos de los correos que se generan fuera de un pedido web (aviso de
-# desvíos, US 8.2). En Render se configura con la URL pública del sitio.
-AQUALAB_URL_BASE = os.environ.get("AQUALAB_URL_BASE", "http://localhost:8000")
+# desvíos, US 8.2). En Render, si no se define, se usa la URL pública que Render da al servicio.
+AQUALAB_URL_BASE = (
+    os.environ.get("AQUALAB_URL_BASE")
+    or os.environ.get("RENDER_EXTERNAL_URL")
+    or "http://localhost:8000"
+)
 
 # Asistente de consultas (US 10.1). Groq por defecto (API compatible con OpenAI, plan gratuito para
 # la demo): alcanza con la clave en `.env`. Sin `ASISTENTE_API_KEY`, AquaLab funciona igual y el
