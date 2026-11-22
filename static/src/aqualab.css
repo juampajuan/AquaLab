@@ -116,10 +116,10 @@
     max-width: 100%;
     height: auto;
   }
-  /* Sobre la foto del acceso: el logo en blanco, sin recuadro. */
+  /* Sobre la foto del acceso: gota a color y nombre en blanco (aqualab-horizontal-clara.png). */
   .marca--clara .marca-imagen {
     width: 240px;
-    filter: brightness(0) invert(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
+    filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.4));
   }
   .marca-icono {
     width: 40px;
