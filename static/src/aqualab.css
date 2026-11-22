@@ -116,12 +116,10 @@
     max-width: 100%;
     height: auto;
   }
-  .marca--clara {
-    padding: 8px 12px;
-    background: var(--color-superficie);
-  }
+  /* Sobre la foto del acceso: el logo en blanco, sin recuadro. */
   .marca--clara .marca-imagen {
     width: 240px;
+    filter: brightness(0) invert(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
   }
   .marca-icono {
     width: 40px;
