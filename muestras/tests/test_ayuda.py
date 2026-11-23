@@ -41,5 +41,5 @@ def test_el_cliente_no_tiene_ayuda(html):
 
 
 def test_la_ayuda_del_nombre_pasa_al_tooltip(html):
-    assert "Pozo 2 – Control de noviembre" in tooltip(html, "nombre")
+    assert "Canilla del comedor" in tooltip(html, "nombre")
     assert 'class="campo-ayuda"' not in html

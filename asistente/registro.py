@@ -321,7 +321,7 @@ SI_NO = {"type": ["boolean", "null"]}
                     "tipo_vertido": {**TEXTO, "description": "Agua, Cloacal o Canal."},
                     "nombre": {
                         **TEXTO,
-                        "description": "Nombre de la muestra: «Pozo 2 – Control de noviembre».",
+                        "description": "Nombre (punto de toma): «Canilla del comedor».",
                     },
                     "responsable_muestreo": TEXTO,
                 },
