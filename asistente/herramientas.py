@@ -182,10 +182,10 @@ def linea_muestra(nombre, origen, numero_pi):
 
 def linea_estudio(numero, tipo, estado, muestra):
     """Cómo se lista un estudio: Estudio N° 50, Bacteriológico básico. Estado: … Muestra: «…»
-    (origen: …, N° PI …)."""
+    (origen: …)."""
     return (
         f"Estudio N° {numero}, {tipo}. Estado: {estado}. Muestra: «{muestra.nombre}» "
-        f"(origen: {muestra.origen.nombre}, N° PI {muestra.numero_pi})."
+        f"(origen: {muestra.origen.nombre})."
     )
 
 
