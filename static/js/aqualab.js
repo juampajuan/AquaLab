@@ -255,7 +255,11 @@ function asistenteTexto(item, texto) {
     parrafo = [];
   };
   for (const linea of String(texto).split("\n")) {
-    if (linea.startsWith("- ")) {
+    if (lista && /^\s{2,}\S/.test(linea) && lista.lastChild) {
+      // Dato del ítem anterior en su propio renglón («  Estado: …»).
+      const anterior = lista.lastChild;
+      anterior.textContent = `${anterior.textContent}\n${linea.trim()}`;
+    } else if (linea.startsWith("- ")) {
       cerrarParrafo();
       if (!lista) {
         lista = document.createElement("ul");
@@ -263,6 +267,7 @@ function asistenteTexto(item, texto) {
         item.append(lista);
       }
       const li = document.createElement("li");
+      li.className = "whitespace-pre-line";
       li.textContent = linea.slice(2);
       lista.append(li);
     } else if (!linea.trim()) {

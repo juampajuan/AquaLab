@@ -176,16 +176,16 @@ def fecha(valor):
 
 
 def linea_muestra(nombre, origen, numero_pi):
-    """Cómo se lista una muestra: «Control físico-químico de noviembre». Origen: Pozo 2. N° PI …"""
-    return f"«{nombre}». Origen: {origen}. N° PI {numero_pi}."
+    """Cómo se lista una muestra: el nombre y, debajo, un dato por renglón."""
+    return f"«{nombre}»\n  Origen: {origen}\n  N° PI {numero_pi}"
 
 
 def linea_estudio(numero, tipo, estado, muestra):
     """Cómo se lista un estudio: Estudio N° 50, Bacteriológico básico. Estado: … Muestra: «…»
     (origen: …)."""
     return (
-        f"Estudio N° {numero}, {tipo}. Estado: {estado}. Muestra: «{muestra.nombre}» "
-        f"(origen: {muestra.origen.nombre})."
+        f"Estudio N° {numero}, {tipo}\n  Estado: {estado}\n"
+        f"  Muestra: «{muestra.nombre}» (origen: {muestra.origen.nombre})"
     )
 
 
