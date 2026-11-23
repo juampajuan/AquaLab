@@ -179,7 +179,7 @@ def referencia_muestra(muestra):
     from .enlaces import Referencia
 
     numero = str(muestra.numero_pi)
-    etiqueta = f"{muestra.nombre} (PI {numero})" if muestra.nombre else f"PI {numero}"
+    etiqueta = f"{muestra.nombre} · N° PI {numero}" if muestra.nombre else f"N° PI {numero}"
     return Referencia("muestra", muestra.pk, etiqueta, claves=(f"PI {numero}", numero))
 
 
@@ -190,7 +190,7 @@ def referencia_estudio(estudio):
     return Referencia(
         "estudio",
         numero,
-        f"Estudio {numero}",
+        f"{estudio.tipo_nombre_snapshot} · Estudio N° {numero}",
         claves=(f"Estudio {numero}", f"Estudio N° {numero}", f"Estudio Nº {numero}"),
         patron=patron_estudio(numero),
     )
