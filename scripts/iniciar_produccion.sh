@@ -26,6 +26,12 @@ if [ -n "${DJANGO_SUPERUSER_EMAIL:-}" ]; then
     fi
 fi
 
+# Historial del laboratorio para la presentación (estudios/historial.py): solo si está definida la
+# contraseña de sus usuarios; no carga dos veces. Si falla, el sitio arranca igual.
+if [ -n "${AQUALAB_HISTORIAL_CONTRASENA:-}" ]; then
+    python manage.py cargar_historial || echo "Historial: no se pudo cargar."
+fi
+
 # Dos procesos con hilos: el asistente puede tardar hasta 20 s y el plan gratis tiene 512 MB.
 exec gunicorn config.wsgi \
     --bind "0.0.0.0:${PORT:-8000}" \
