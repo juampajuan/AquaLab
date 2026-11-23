@@ -227,8 +227,16 @@ MESES_NOMBRE = (
 
 
 def nombre_de_muestra(origen, fecha_muestreo):
-    """Nombre con el que se reconoce la muestra: «Pozo 1 – Control de noviembre 2026»."""
-    return f"{origen} – Control de {MESES_NOMBRE[fecha_muestreo.month - 1]} {fecha_muestreo.year}"
+    """Nombre como lo cargaría el laboratorio, según qué se analiza en ese origen: «Control
+    físico-químico de noviembre», «Control bacteriológico de agosto», «Vuelco de efluente de
+    octubre». El origen va aparte, así que no se repite en el nombre."""
+    mes = MESES_NOMBRE[fecha_muestreo.month - 1]
+    datos = next((o for o in demo.ORIGENES + ORIGENES_NUEVOS if o.nombre == origen), None)
+    if datos is not None and datos.vertido == "cloacal":
+        return f"Vuelco de efluente de {mes}"
+    if datos is not None and "PH" not in datos.base:
+        return f"Control bacteriológico de {mes}"
+    return f"Control físico-químico de {mes}"
 
 
 def registrar_con_nombre(datos, usuario):
@@ -353,7 +361,8 @@ def corregir_historial():
         # Muestras con el nombre automático («Muestra 24»): pasan a nombrarse por origen y mes.
         documentos = [c["numero_documento"] for c in clientes().values()]
         sin_nombre = Muestra.objects.select_related("origen").filter(
-            cliente__numero_documento__in=documentos, nombre__regex=r"^Muestra [0-9]+$"
+            cliente__numero_documento__in=documentos,
+            nombre__regex=r"^(Muestra [0-9]+|.+ – Control de [a-z]+ [0-9]{4})$",
         )
         for muestra in sin_nombre:
             muestra.nombre = nombre_de_muestra(muestra.origen.nombre, muestra.fecha_muestreo)

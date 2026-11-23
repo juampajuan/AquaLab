@@ -289,7 +289,7 @@ function asistenteEnlaces(item, enlaces) {
       elemento.className = "inline-flex items-center gap-1";
       const boton = document.createElement("button");
       boton.type = "button";
-      boton.className = "btn btn-secundario btn-chico";
+      boton.className = "btn btn-secundario btn-chico text-left whitespace-normal";
       boton.setAttribute("data-asistente-elegir", enlace.pregunta);
       boton.setAttribute("title", enlace.pregunta);
       boton.textContent = enlace.etiqueta;

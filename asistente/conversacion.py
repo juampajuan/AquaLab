@@ -51,8 +51,10 @@ MENSAJE_SISTEMA = (
     "de norma o sin límite comparable (los conteos vienen en «resumen»), y listá solo las que no "
     "cumplen; el detalle completo queda en el enlace al estudio. Para listas usá líneas que "
     "empiecen con «- ». "
-    "Nombrá las muestras por su nombre y su origen, con el N° PI entre paréntesis "
-    "(«Pozo 1 – Control de noviembre (PI 200089)»). "
+    "Nombrá cada muestra con su nombre entre comillas, después su origen y el N° PI entre "
+    "paréntesis: «Control físico-químico de noviembre» – Pozo 1 (PI 200089). Así no se "
+    "confunde el nombre con el origen. "
+    "No sugieras preguntas de ejemplo en el texto: AquaLab las muestra como botones. "
     "Escribí respuestas fáciles de leer: empezá con una oración corta que responda la pregunta y "
     "separá cada muestra, estudio o tema con una línea en blanco. Para «¿cómo está…?», usá este "
     "formato: una primera línea con la muestra, después una línea por estudio con su estado "
@@ -70,10 +72,24 @@ MENSAJE_SISTEMA = (
 MENSAJE_SOLO_CONSULTA = (
     "Puedo consultar muestras, estudios y clientes, y preparar el registro de una muestra o de "
     "un estudio para que lo confirmes. No cargo mediciones, no valido, no emito ni borro datos. "
-    "Probá, por ejemplo: «¿Cómo está el pozo 1 de Lácteos del Sur?», «¿Qué estudios tiene "
-    "Lácteos del Sur?» o "
-    "«Registrá una muestra de Lácteos del Sur, pozo 2, para un físico-químico básico»."
+    "Probá con alguna de estas preguntas:"
 )
+# Preguntas de ejemplo: las mismas del panel, como botones que siguen la conversación.
+EJEMPLOS = (
+    "¿Cómo está el pozo 1 de Lácteos del Sur?",
+    "¿Qué estudios tiene Lácteos del Sur?",
+    "Registrá una muestra de Lácteos del Sur, pozo 2, para un físico-químico básico",
+)
+
+
+def solo_consulta():
+    sugerencias = [
+        enlaces.Referencia("opcion", None, ejemplo, pregunta=ejemplo).enlace()
+        for ejemplo in EJEMPLOS
+    ]
+    return Respuesta(MENSAJE_SOLO_CONSULTA, sugerencias)
+
+
 MENSAJE_ALTA_CLIENTE = (
     "No doy de alta clientes desde el asistente. Podés hacerlo en «Registrar cliente»."
 )
@@ -173,7 +189,7 @@ def responder(usuario, pregunta, historial, config=None, reloj=time.monotonic, d
         registrar = enlaces.Referencia("registrar_cliente", None, "Registrar cliente")
         return Respuesta(MENSAJE_ALTA_CLIENTE, [registrar.enlace()])
     if es_pedido_de_cambio(pregunta) and not es_pedido_de_registro(pregunta):
-        return Respuesta(MENSAJE_SOLO_CONSULTA)
+        return solo_consulta()
     config = config or configuracion.actual()
     inicio = reloj()
     mensajes = mensajes_iniciales(pregunta, historial)
@@ -234,7 +250,7 @@ def responder(usuario, pregunta, historial, config=None, reloj=time.monotonic, d
     texto = sin_markdown(mensaje.get("content") or "").strip()
     if not alguna_valida:
         # Un dato solo llega al usuario si una herramienta lo devolvió en esta pregunta (R3).
-        return Respuesta(MENSAJE_SOLO_CONSULTA)
+        return solo_consulta()
     if not texto:
         return Respuesta(MENSAJE_TOPE)
     # Los avisos los agrega AquaLab, no el modelo (FR-009a).
