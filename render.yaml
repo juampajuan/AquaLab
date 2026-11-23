@@ -36,10 +36,8 @@ services:
       - key: AQUALAB_LAB_MATRICULA
         value: Habilitación provincial N° 2318
       # Historial para la presentación (estudios/historial.py): contraseña de los usuarios del
-      # laboratorio y casilla de Gmail de la que salen todos los correos (alias +).
+      # laboratorio.
       - key: AQUALAB_HISTORIAL_CONTRASENA
-        sync: false
-      - key: AQUALAB_HISTORIAL_CORREO
         sync: false
       # Vacía: el asistente aparece deshabilitado (US 10.1).
       - key: ASISTENTE_API_KEY

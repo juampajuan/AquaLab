@@ -8,9 +8,8 @@ espera su curva de calibración (US 6.6), para mostrarla en vivo.
 Corre con `python manage.py cargar_historial`; en Render lo llama `scripts/iniciar_produccion.sh`
 cuando está definida `AQUALAB_HISTORIAL_CONTRASENA`. No carga dos veces.
 
-Todos los correos (personal y clientes) son alias de una sola casilla de Gmail
-(`AQUALAB_HISTORIAL_CORREO`): `grupo+martin@gmail.com`, `grupo+lacteos@gmail.com`… Así los
-avisos y los informes enviados llegan a esa casilla y nunca a un tercero.
+Los correos son de Gmail, inventados. El de Lácteos del Sur es la casilla del grupo, para mostrar
+en vivo el envío del informe por correo.
 """
 
 import datetime as dt
@@ -40,20 +39,21 @@ class HistorialError(Exception):
     pass
 
 
-def casilla():
-    base = os.environ.get("AQUALAB_HISTORIAL_CORREO", "").strip()
-    if base.count("@") != 1 or "+" in base:
-        raise HistorialError(
-            "Definí AQUALAB_HISTORIAL_CORREO con la casilla de Gmail que recibe los correos "
-            "(por ejemplo, grupo7.aqualab@gmail.com)."
-        )
-    return base.split("@")
+CORREOS = {
+    "lucia": "lucia.fernandez87@gmail.com",
+    "martin": "martin.gutierrez72@gmail.com",
+    "diego": "diegososa.94@gmail.com",
+    "lacteos": "aqualab.grupo7@gmail.com",
+    "municipio": "obrassanitariasvv21@gmail.com",
+    "mgonzalez": "maria.gonzalez.vv58@gmail.com",
+    "cristal": "cristaldelvalle.lab37@gmail.com",
+    "pampeana": "lapampeana.ambiente46@gmail.com",
+    "club": "clubbragado.intendencia19@gmail.com",
+}
 
 
 def correo(etiqueta):
-    """Alias `usuario+etiqueta@dominio` de la casilla del historial."""
-    usuario, dominio = casilla()
-    return f"{usuario}+{etiqueta}@{dominio}"
+    return CORREOS[etiqueta]
 
 
 def usuarios():
@@ -76,6 +76,18 @@ def usuarios():
 def recepcion():
     """Usuario sin actividad en el historial: atiende la recepción."""
     return {"email": correo("diego"), "first_name": "Diego", "last_name": "Sosa"}
+
+
+# Bioquímicos que se suman al laboratorio sin actividad en el historial. Si la cuenta ya existe
+# (por ejemplo, el superusuario del deploy), solo se la agrega a Bioquímicos y se le da firma.
+BIOQUIMICOS_EXTRA = (
+    {
+        "email": "juanpidominguez03@gmail.com",
+        "first_name": "Juan Pablo",
+        "last_name": "Domínguez",
+        "matricula": "MP 4389",
+    },
+)
 
 
 def clientes():
@@ -203,18 +215,34 @@ def ya_cargado():
     ).exists()
 
 
-def crear_recepcion(inicio):
+def crear_personal(inicio):
     from django.contrib.auth import get_user_model
+    from django.contrib.auth.models import Group
+
+    from informes.models import FirmaProfesional
 
     Usuario = get_user_model()
+    contrasena = os.environ["AQUALAB_HISTORIAL_CONTRASENA"]
     datos = recepcion()
     if not Usuario.objects.filter(email__iexact=datos["email"]).exists():
         Usuario.objects.create_user(
-            password=os.environ["AQUALAB_HISTORIAL_CONTRASENA"],
-            is_active=True,
-            date_joined=inicio,
-            **datos,
+            password=contrasena, is_active=True, date_joined=inicio, **datos
         )
+    bioquimicos = Group.objects.get(name="Bioquímicos")
+    for extra in BIOQUIMICOS_EXTRA:
+        extra = dict(extra)
+        matricula = extra.pop("matricula")
+        usuario = Usuario.objects.filter(email__iexact=extra["email"]).first()
+        if usuario is None:
+            usuario = Usuario.objects.create_user(
+                password=contrasena, is_active=True, date_joined=inicio, **extra
+            )
+        usuario.groups.add(bioquimicos)
+        if not FirmaProfesional.objects.filter(usuario=usuario).exists():
+            with demo.reloj(inicio):
+                FirmaProfesional.objects.create(
+                    usuario=usuario, imagen=demo.firma_png(), matricula=matricula
+                )
 
 
 def preparar_nitritos(ahora):
@@ -271,7 +299,6 @@ def cargar_historial(salida, ahora=None):
             "Definí AQUALAB_HISTORIAL_CONTRASENA (8 caracteres o más): es la contraseña de los "
             "usuarios del laboratorio."
         )
-    casilla()
     if ya_cargado():
         return None
     ahora = ahora or timezone.now()
@@ -296,7 +323,7 @@ def cargar_historial(salida, ahora=None):
         if resumen is None:
             return None
         inicio = demo.Fechas(ahora, origenes[0], 0, MESES - 1).muestreo - dt.timedelta(days=7)
-        crear_recepcion(inicio)
+        crear_personal(inicio)
         preparar_nitritos(ahora)
     return resumen
 
