@@ -27,9 +27,12 @@ if [ -n "${DJANGO_SUPERUSER_EMAIL:-}" ]; then
 fi
 
 # Historial del laboratorio para la presentación (estudios/historial.py): solo si está definida la
-# contraseña de sus usuarios; no carga dos veces. Si falla, el sitio arranca igual.
+# contraseña de sus usuarios; no carga dos veces. Corre en segundo plano para que gunicorn atienda
+# el health check de Render enseguida (en el plan gratis la carga tarda varios minutos), y con el
+# correo en la consola: los avisos del historial no se envían. Si falla, el sitio sigue igual.
 if [ -n "${AQUALAB_HISTORIAL_CONTRASENA:-}" ]; then
-    python manage.py cargar_historial || echo "Historial: no se pudo cargar."
+    (EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend \
+        python manage.py cargar_historial || echo "Historial: no se pudo cargar.") &
 fi
 
 # Dos procesos con hilos: el asistente puede tardar hasta 20 s y el plan gratis tiene 512 MB.
