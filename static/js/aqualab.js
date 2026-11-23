@@ -142,6 +142,11 @@ function asistenteAlmacen() {
   }
 }
 
+function asistenteDesplazamiento() {
+  const lista = document.querySelector("[data-asistente-mensajes]");
+  return lista && typeof lista.scrollTop === "number" ? lista.scrollTop : null;
+}
+
 function asistenteGuardar() {
   const almacen = asistenteAlmacen();
   if (!almacen) return;
@@ -152,6 +157,7 @@ function asistenteGuardar() {
         mensajes: asistente.mensajes,
         historial: asistente.historial,
         abierto: asistente.abierto,
+        desplazamiento: asistenteDesplazamiento(),
       }),
     );
   } catch {
@@ -420,6 +426,22 @@ function asistenteRestaurar() {
   asistente.mensajes = guardado.mensajes;
   // Se reabre solo si estaba abierto; minimizado, la conversación queda lista para cuando se abra.
   if (guardado.abierto !== false) asistenteMostrar(panel, document.querySelector("[data-asistente-abrir]"));
+  const lista = panel.querySelector("[data-asistente-mensajes]");
+  if (lista && typeof lista.scrollHeight === "number") {
+    const volver = () => {
+      lista.scrollTop =
+        typeof guardado.desplazamiento === "number" ? guardado.desplazamiento : lista.scrollHeight;
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(volver);
+    else volver();
+  }
+}
+
+// Antes de dejar la pantalla (por ejemplo, con «Ver ficha»), se guarda dónde quedó el scroll.
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  window.addEventListener("pagehide", () => {
+    if (asistente.mensajes.length) asistenteGuardar();
+  });
 }
 
 document.addEventListener("click", (evento) => {
