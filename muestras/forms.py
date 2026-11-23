@@ -148,7 +148,7 @@ class RegistroMuestraForm(forms.Form):
         strip=True,
         help_text=(
             "Cómo la van a reconocer el laboratorio y el cliente "
-            "(ej. «Pozo 2 – Control de noviembre»)."
+            "(ej. «Canilla del comedor» o «Agua cruda, boca de pozo»)."
         ),
     )
     responsable_muestreo = forms.CharField(

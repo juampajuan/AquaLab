@@ -210,33 +210,81 @@ ESTADOS = {
 }
 
 
-MESES_NOMBRE = (
-    "enero",
-    "febrero",
-    "marzo",
-    "abril",
-    "mayo",
-    "junio",
-    "julio",
-    "agosto",
-    "septiembre",
-    "octubre",
-    "noviembre",
-    "diciembre",
-)
+# Nombres de muestra como los escribe el cliente en la etiqueta del frasco: el punto exacto o la
+# condición de la toma. El origen va aparte, así que el nombre no lo repite ni nombra el análisis.
+NOMBRES_POR_ORIGEN = {
+    "Pozo 1": (
+        "Agua cruda, boca de pozo",
+        "Grifo de la sala de ordeñe",
+        "Después del clorador",
+        "Salida de la bomba",
+    ),
+    "Pozo 2": (
+        "Agua cruda, boca de pozo",
+        "Canilla de la quesería",
+        "Tanque de reserva de planta",
+        "Salida del filtro de arena",
+    ),
+    "Salida a colectora": (
+        "Cámara de muestreo, turno mañana",
+        "Vuelco después del lavado de tanques",
+        "Cámara de muestreo, turno tarde",
+        "Muestra compuesta de 8 horas",
+    ),
+    "Tanque elevado": (
+        "Salida del tanque, válvula principal",
+        "Canilla de la plaza San Martín",
+        "Toma superior del tanque",
+        "Red de distribución, barrio Centro",
+    ),
+    "Escuela N° 12": (
+        "Canilla del comedor",
+        "Bebedero del patio",
+        "Canilla de la cocina",
+        "Tanque de reserva",
+    ),
+    "Pozo domiciliario": (
+        "Canilla del patio",
+        "Salida de la bomba",
+        "Agua cruda, boca de pozo",
+    ),
+    "Tanque domiciliario": (
+        "Canilla de la cocina",
+        "Salida del tanque",
+        "Canilla del baño",
+        "Después de la limpieza del tanque",
+    ),
+    "Pozo de captación": (
+        "Agua cruda antes del tratamiento",
+        "Boca de pozo",
+        "Entrada a la planta",
+    ),
+    "Línea de envasado": (
+        "Bidón de 20 l, lote {lote}",
+        "Agua tratada post ósmosis",
+        "Botella de 500 ml, lote {lote}",
+        "Salida de la llenadora",
+    ),
+    "Efluente de planta": (
+        "Salida de la planta de tratamiento",
+        "Cámara de salida, turno mañana",
+        "Muestra compuesta de 24 horas",
+    ),
+    "Agua de red del vestuario": (
+        "Duchas del vestuario principal",
+        "Canilla del vestuario visitante",
+        "Bebedero de la cancha",
+    ),
+}
 
 
 def nombre_de_muestra(origen, fecha_muestreo):
-    """Nombre como lo cargaría el laboratorio, según qué se analiza en ese origen: «Control
-    físico-químico de noviembre», «Control bacteriológico de agosto», «Vuelco de efluente de
-    octubre». El origen va aparte, así que no se repite en el nombre."""
-    mes = MESES_NOMBRE[fecha_muestreo.month - 1]
-    datos = next((o for o in demo.ORIGENES + ORIGENES_NUEVOS if o.nombre == origen), None)
-    if datos is not None and datos.vertido == "cloacal":
-        return f"Vuelco de efluente de {mes}"
-    if datos is not None and "PH" not in datos.base:
-        return f"Control bacteriológico de {mes}"
-    return f"Control físico-químico de {mes}"
+    """Nombre como lo pondría el cliente: «Canilla del comedor», «Agua cruda, boca de pozo»,
+    «Bidón de 20 l, lote 1187». Rota por mes entre los puntos de toma habituales del origen."""
+    nombres = NOMBRES_POR_ORIGEN.get(origen, ("Toma de rutina",))
+    mes = fecha_muestreo.year * 12 + fecha_muestreo.month
+    lote = 1000 + (mes * 37) % 900
+    return nombres[mes % len(nombres)].format(lote=lote)
 
 
 def registrar_con_nombre(datos, usuario):
@@ -345,6 +393,12 @@ CUIT_CORREGIDOS = {
 }
 
 
+NOMBRES_VIEJOS = (
+    r"^(Muestra [0-9]+|.+ – Control de [a-z]+ [0-9]{4}"
+    r"|Control (físico-químico|bacteriológico) de [a-z]+|Vuelco de efluente de [a-z]+)$"
+)
+
+
 def corregir_historial():
     """Aplica las correcciones sobre un historial ya cargado. Devuelve cuántos clientes cambió."""
     cambiados = 0
@@ -358,11 +412,12 @@ def corregir_historial():
             .exclude(email=correo("lacteos"))
             .update(email=correo("lacteos"))
         )
-        # Muestras con el nombre automático («Muestra 24»): pasan a nombrarse por origen y mes.
+        # Muestras con nombres automáticos o de versiones anteriores del historial («Muestra 24»,
+        # «Control físico-químico de mayo»): pasan al punto de toma, como las nombra el cliente.
         documentos = [c["numero_documento"] for c in clientes().values()]
         sin_nombre = Muestra.objects.select_related("origen").filter(
             cliente__numero_documento__in=documentos,
-            nombre__regex=r"^(Muestra [0-9]+|.+ – Control de [a-z]+ [0-9]{4})$",
+            nombre__regex=NOMBRES_VIEJOS,
         )
         for muestra in sin_nombre:
             muestra.nombre = nombre_de_muestra(muestra.origen.nombre, muestra.fecha_muestreo)
