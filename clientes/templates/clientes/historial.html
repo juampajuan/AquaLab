@@ -43,35 +43,54 @@
               <th>N° PI</th>
               <th>Fecha de ingreso</th>
               <th>Origen</th>
-              <th>Estudios</th>
+              <th>Estudio</th>
+              <th>Estado</th>
+              <th class="text-right">Informe</th>
             </tr>
           </thead>
-          <tbody>
-            {% for muestra in page_obj %}
-              <tr data-muestra="{{ muestra.numero_pi }}">
-                <td class="align-top whitespace-nowrap">
-                  <a href="{% url 'muestras:detalle' muestra.pk %}" class="font-semibold text-cian-texto hover:underline">N° PI {{ muestra.numero_pi }}</a>
-                </td>
-                <td class="align-top whitespace-nowrap text-tinta-suave">{{ muestra.fecha_ingreso|date:"d/m/Y" }}</td>
-                <td class="align-top">{{ muestra.origen.nombre }}</td>
-                <td class="align-top">
-                  {% for estudio in muestra.estudios_historial %}
-                    <div class="flex flex-wrap items-center gap-2 py-1" data-estudio="{{ estudio.pk }}">
-                      <a href="{% url 'estudios:detalle' estudio.pk %}" class="font-medium text-cian-texto hover:underline">Estudio N° {{ estudio.pk }} · {{ estudio.tipo_nombre_snapshot }}</a>
+          {# Una fila por estudio; los datos de la muestra ocupan todas las filas de sus estudios. #}
+          {% for muestra in page_obj %}
+            <tbody>
+              {% with cantidad=muestra.estudios_historial|length %}
+                {% for estudio in muestra.estudios_historial %}
+                  <tr {% if forloop.first %}data-muestra="{{ muestra.numero_pi }}"{% endif %} data-estudio="{{ estudio.pk }}">
+                    {% if forloop.first %}
+                      <td rowspan="{{ cantidad }}" class="align-top whitespace-nowrap">
+                        <a href="{% url 'muestras:detalle' muestra.pk %}" class="font-semibold text-cian-texto hover:underline">N° PI {{ muestra.numero_pi }}</a>
+                      </td>
+                      <td rowspan="{{ cantidad }}" class="align-top whitespace-nowrap text-tinta-suave">{{ muestra.fecha_ingreso|date:"d/m/Y" }}</td>
+                      <td rowspan="{{ cantidad }}" class="align-top">{{ muestra.origen.nombre }}</td>
+                    {% endif %}
+                    <td class="align-middle">
+                      <a href="{% url 'estudios:detalle' estudio.pk %}" class="font-medium text-cian-texto hover:underline">Estudio N° {{ estudio.pk }}</a>
+                      <span class="block text-sm text-tinta-suave">{{ estudio.tipo_nombre_snapshot }}</span>
+                    </td>
+                    <td class="align-middle whitespace-nowrap">
                       {% include "ui/estado.html" with estado=estudio.get_estado_display tipo=estudio.estado|tipo_estado %}
+                    </td>
+                    <td class="align-middle whitespace-nowrap text-right">
                       {% if estudio.informe %}
-                        <a href="{% url 'informes:ver' estudio.pk %}?desde=historial" class="btn btn-secundario btn-chico">
-                          {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} Ver informe {{ estudio.informe.numero_mostrado }}
+                        <a href="{% url 'informes:ver' estudio.pk %}?desde=historial" class="btn btn-secundario btn-chico" aria-label="Ver informe {{ estudio.informe.numero_mostrado }}">
+                          {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} {{ estudio.informe.numero_mostrado }}
                         </a>
+                      {% else %}
+                        <span class="text-tinta-suave">—</span>
                       {% endif %}
-                    </div>
-                  {% empty %}
-                    <span class="text-tinta-suave">Sin estudios</span>
-                  {% endfor %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr data-muestra="{{ muestra.numero_pi }}">
+                    <td class="align-top whitespace-nowrap">
+                      <a href="{% url 'muestras:detalle' muestra.pk %}" class="font-semibold text-cian-texto hover:underline">N° PI {{ muestra.numero_pi }}</a>
+                    </td>
+                    <td class="align-top whitespace-nowrap text-tinta-suave">{{ muestra.fecha_ingreso|date:"d/m/Y" }}</td>
+                    <td class="align-top">{{ muestra.origen.nombre }}</td>
+                    <td colspan="3" class="text-tinta-suave">Sin estudios</td>
+                  </tr>
+                {% endfor %}
+              {% endwith %}
+            </tbody>
+          {% endfor %}
         </table>
       </div>
       {% include "ui/paginacion.html" with parametros=parametros %}

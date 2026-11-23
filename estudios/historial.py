@@ -43,7 +43,7 @@ CORREOS = {
     "lucia": "lucia.fernandez87@gmail.com",
     "martin": "martin.gutierrez72@gmail.com",
     "diego": "diegososa.94@gmail.com",
-    "lacteos": "jdominguezl@fi.uba.ar",
+    "lacteos": "aqualab.real@gmail.com",
     "municipio": "obrassanitariasvv21@gmail.com",
     "mgonzalez": "maria.gonzalez.vv58@gmail.com",
     "cristal": "cristaldelvalle.lab37@gmail.com",
@@ -96,7 +96,7 @@ def clientes():
             "razon_social": "Lácteos del Sur S.A.",
             "nombre": "",
             "tipo_documento": "CUIT",
-            "numero_documento": "30712458903",
+            "numero_documento": "30712458905",
             "email": correo("lacteos"),
             "telefono": "02342 41-5500",
             "domicilio": "Ruta 5 km 210, Bragado",
@@ -105,7 +105,7 @@ def clientes():
             "razon_social": "Municipalidad de Villa Verde",
             "nombre": "",
             "tipo_documento": "CUIT",
-            "numero_documento": "30999012347",
+            "numero_documento": "30999012341",
             "email": correo("municipio"),
             "telefono": "02346 43-1200",
             "domicilio": "Av. San Martín 450, Villa Verde",
@@ -141,7 +141,7 @@ def clientes():
             "razon_social": "Club Social y Deportivo Bragado",
             "nombre": "",
             "tipo_documento": "CUIT",
-            "numero_documento": "30527319480",
+            "numero_documento": "30527319486",
             "email": correo("club"),
             "telefono": "02342 42-1975",
             "domicilio": "Av. Pellegrini 760, Bragado",
@@ -210,9 +210,14 @@ ESTADOS = {
 
 
 def ya_cargado():
-    return Cliente.objects.filter(
-        numero_documento=clientes()["lacteos"]["numero_documento"]
-    ).exists()
+    """El historial ya está si existe su cliente principal o su técnica (aunque después se hayan
+    editado el CUIT o el correo desde la app): así un reinicio nunca lo carga dos veces."""
+    from django.contrib.auth import get_user_model
+
+    return (
+        Cliente.objects.filter(razon_social="Lácteos del Sur S.A.").exists()
+        or get_user_model().objects.filter(email__iexact=correo("lucia")).exists()
+    )
 
 
 def crear_personal(inicio):
@@ -289,6 +294,32 @@ def preparar_nitritos(ahora):
         asignacion = estudio.pruebas_asignadas.get(prueba=prueba)
         cargar_mediciones(estudio.pk, {asignacion.pk: Decimal(ABSORBANCIA_NITRITOS)}, tecnica)
     return estudio
+
+
+# Correcciones de un historial ya cargado: los primeros CUIT tenían mal el dígito verificador (el
+# formulario de edición no los acepta y no deja cambiar el documento de un cliente con muestras) y
+# Lácteos del Sur debe recibir los correos en la casilla de Resend.
+CUIT_CORREGIDOS = {
+    "30712458903": "30712458905",
+    "30999012347": "30999012341",
+    "30527319480": "30527319486",
+}
+
+
+def corregir_historial():
+    """Aplica las correcciones sobre un historial ya cargado. Devuelve cuántos clientes cambió."""
+    cambiados = 0
+    with transaction.atomic():
+        for viejo, nuevo in CUIT_CORREGIDOS.items():
+            cambiados += Cliente.objects.filter(numero_documento=viejo).update(
+                numero_documento=nuevo
+            )
+        cambiados += (
+            Cliente.objects.filter(razon_social="Lácteos del Sur S.A.")
+            .exclude(email=correo("lacteos"))
+            .update(email=correo("lacteos"))
+        )
+    return cambiados
 
 
 def cargar_historial(salida, ahora=None):
