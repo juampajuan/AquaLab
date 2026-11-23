@@ -204,6 +204,9 @@ def referencia_muestra(muestra):
         if muestra.nombre
         else f"¿Cómo está el PI {numero}?",
         ver="Ver muestra",
+        boton_distinto=f"¿Cómo está «{muestra.nombre}» del {muestra.fecha_muestreo:%d/%m/%Y}?"
+        if muestra.nombre
+        else "",
     )
 
 

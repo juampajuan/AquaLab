@@ -292,10 +292,10 @@ function asistenteEnlaces(item, enlaces) {
   for (const enlace of enlaces) {
     const elemento = document.createElement("li");
     if (enlace.pregunta) {
-      elemento.className = "inline-flex min-w-0 max-w-full items-center gap-2";
+      elemento.className = "flex w-full min-w-0 items-center gap-2";
       const boton = document.createElement("button");
       boton.type = "button";
-      boton.className = "btn btn-secundario btn-chico min-w-0 max-w-full text-left whitespace-normal";
+      boton.className = "btn btn-secundario btn-chico min-w-0 flex-1 justify-start text-left whitespace-normal";
       boton.setAttribute("data-asistente-elegir", enlace.pregunta);
       boton.setAttribute("title", enlace.pregunta);
       boton.textContent = enlace.etiqueta;

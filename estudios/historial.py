@@ -423,6 +423,39 @@ def corregir_historial():
             muestra.nombre = nombre_de_muestra(muestra.origen.nombre, muestra.fecha_muestreo)
             muestra.save(update_fields=["nombre"])
             cambiados += 1
+        cambiados += actualizar_copias_de_informes(documentos)
+    return cambiados
+
+
+def actualizar_copias_de_informes(documentos):
+    """Los informes del historial se emitieron con los datos de antes de las correcciones
+    («Muestra 7», CUIT con el dígito mal): su copia pasa a tener el nombre de la muestra, el
+    documento y el correo actuales. Solo para los clientes del historial; un informe emitido desde
+    la app no se toca. `update` directo porque `Informe.save()` rechaza modificarlo (US 7.3)."""
+    from informes.models import Informe
+
+    cambiados = 0
+    informes = Informe.objects.select_related("estudio__muestra__cliente").filter(
+        estudio__muestra__cliente__numero_documento__in=documentos
+    )
+    for informe in informes:
+        muestra = informe.estudio.muestra
+        cliente = muestra.cliente
+        contenido = informe.contenido
+        actual = {
+            ("muestra", "nombre"): muestra.nombre,
+            ("cliente", "numero_documento"): cliente.numero_documento,
+            ("cliente", "email"): cliente.email,
+        }
+        if all(
+            contenido.get(seccion, {}).get(campo) == valor
+            for (seccion, campo), valor in actual.items()
+        ):
+            continue
+        for (seccion, campo), valor in actual.items():
+            contenido.setdefault(seccion, {})[campo] = valor
+        Informe.objects.filter(pk=informe.pk).update(contenido=contenido)
+        cambiados += 1
     return cambiados
 
 
