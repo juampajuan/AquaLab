@@ -816,7 +816,6 @@ from . import registro  # noqa: E402, F401
 
 # --- Resumen del laboratorio: cantidades y rankings de un período ---
 
-DIAS_POR_DEFECTO = 30
 TOPE_RANKING = 5
 
 
@@ -829,8 +828,8 @@ TOPE_RANKING = 5
                 "Cantidades del laboratorio en un período: clientes con más muestras y estudios, "
                 "estudios por estado, informes emitidos y enviados por correo, y resultados "
                 "validados fuera de norma por origen y por prueba. Usala para preguntas de "
-                "cuántos, cuál tiene más o rankings. Sin fechas, los últimos 30 días; para todo "
-                "el historial mandá desde muy atrás (por ejemplo, 01/01/2000)."
+                "cuántos, cuál tiene más o rankings. Sin fechas cuenta todo el historial; mandá "
+                "fechas solo si la pregunta nombra un período («este mes», «desde el 01/10»)."
             ),
             "parameters": {
                 "type": "object",
@@ -865,7 +864,8 @@ def resumen_laboratorio(usuario, desde=None, hasta=None):
         return no_encontrado("No se pudo consultar.")
     hoy = timezone.localdate()
     fin = leer_fecha(hasta, hoy) if hasta else hoy
-    inicio = leer_fecha(desde, hoy) if desde else fin - datetime.timedelta(days=DIAS_POR_DEFECTO)
+    # Sin fecha inicial: todo el historial.
+    inicio = leer_fecha(desde, hoy) if desde else datetime.date(2000, 1, 1)
     if fin is None or inicio is None:
         return no_encontrado("No entendí las fechas del período; probá con dd/mm/aaaa.")
     if inicio > fin:
@@ -906,7 +906,11 @@ def resumen_laboratorio(usuario, desde=None, hasta=None):
         .order_by("-cantidad")[:TOPE_RANKING]
     )
     datos = {
-        "periodo": {"desde": inicio.strftime(FORMATO_FECHA), "hasta": fin.strftime(FORMATO_FECHA)},
+        "periodo": (
+            {"desde": inicio.strftime(FORMATO_FECHA), "hasta": fin.strftime(FORMATO_FECHA)}
+            if desde
+            else "todo el historial"
+        ),
         "muestras_ingresadas": muestras.count(),
         "estudios": estudios.count(),
         "estudios_por_estado": {
@@ -942,5 +946,4 @@ def resumen_laboratorio(usuario, desde=None, hasta=None):
             for f in por_prueba
         ],
     }
-    referencias = [r for c in clientes for r in referencia_cliente(usuario, c)]
-    return Salida({"encontrado": True, "datos": datos}, referencias)
+    return Salida({"encontrado": True, "datos": datos})
