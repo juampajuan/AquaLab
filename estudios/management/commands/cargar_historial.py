@@ -19,6 +19,9 @@ class Command(BaseCommand):
             raise CommandError(str(exc)) from exc
         if resumen is None:
             self.stdout.write("El historial ya está cargado.")
+            corregidos = historial.corregir_historial()
+            if corregidos:
+                self.stdout.write(f"Historial: {corregidos} corrección(es) aplicada(s).")
             return
         self.stdout.write(self.style.SUCCESS("Historial cargado."))
         self.stdout.write(

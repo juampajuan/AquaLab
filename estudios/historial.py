@@ -296,6 +296,32 @@ def preparar_nitritos(ahora):
     return estudio
 
 
+# Correcciones de un historial ya cargado: los primeros CUIT tenían mal el dígito verificador (el
+# formulario de edición no los acepta y no deja cambiar el documento de un cliente con muestras) y
+# Lácteos del Sur debe recibir los correos en la casilla de Resend.
+CUIT_CORREGIDOS = {
+    "30712458903": "30712458905",
+    "30999012347": "30999012341",
+    "30527319480": "30527319486",
+}
+
+
+def corregir_historial():
+    """Aplica las correcciones sobre un historial ya cargado. Devuelve cuántos clientes cambió."""
+    cambiados = 0
+    with transaction.atomic():
+        for viejo, nuevo in CUIT_CORREGIDOS.items():
+            cambiados += Cliente.objects.filter(numero_documento=viejo).update(
+                numero_documento=nuevo
+            )
+        cambiados += (
+            Cliente.objects.filter(razon_social="Lácteos del Sur S.A.")
+            .exclude(email=correo("lacteos"))
+            .update(email=correo("lacteos"))
+        )
+    return cambiados
+
+
 def cargar_historial(salida, ahora=None):
     """Carga el historial. Devuelve el resumen de la demo, o None si ya estaba cargado."""
     contrasena = os.environ.get("AQUALAB_HISTORIAL_CONTRASENA", "")
