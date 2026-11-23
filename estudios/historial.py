@@ -7,6 +7,10 @@ espera su curva de calibración (US 6.6), para mostrarla en vivo.
 
 Corre con `python manage.py cargar_historial`; en Render lo llama `scripts/iniciar_produccion.sh`
 cuando está definida `AQUALAB_HISTORIAL_CONTRASENA`. No carga dos veces.
+
+Todos los correos (personal y clientes) son alias de una sola casilla de Gmail
+(`AQUALAB_HISTORIAL_CORREO`): `grupo+martin@gmail.com`, `grupo+lacteos@gmail.com`… Así los
+avisos y los informes enviados llegan a esa casilla y nunca a un tercero.
 """
 
 import datetime as dt
@@ -26,46 +30,52 @@ from pruebas.models import Prueba, TipoCalculo
 
 MESES = 9
 VARIACION = (0, 1, -1, 2, -2, 1, 0, -1, 2)
-DOMINIO_LABORATORIO = "hidroanaliticodeloeste.com.ar"
 MATRICULA = "MP 4127"
 NITRITOS = "Nitritos"
 CODIGO_NITRITOS = "NO2"
 ABSORBANCIA_NITRITOS = "0.126"
-
-USUARIOS = (
-    {
-        "email": f"lucia.fernandez@{DOMINIO_LABORATORIO}",
-        "first_name": "Lucía",
-        "last_name": "Fernández",
-        "grupos": (),
-    },
-    {
-        "email": f"martin.gutierrez@{DOMINIO_LABORATORIO}",
-        "first_name": "Martín",
-        "last_name": "Gutiérrez",
-        "grupos": ("Bioquímicos", "Administradores"),
-    },
-)
-# Usuario sin actividad en el historial: atiende la recepción.
-RECEPCION = {
-    "email": f"diego.sosa@{DOMINIO_LABORATORIO}",
-    "first_name": "Diego",
-    "last_name": "Sosa",
-}
 
 
 class HistorialError(Exception):
     pass
 
 
-def correo(etiqueta, real):
-    """Correo de un cliente. Con `AQUALAB_HISTORIAL_CORREO` (por ejemplo, grupo@gmail.com) usa
-    alias `grupo+etiqueta@gmail.com`, así los informes enviados llegan a esa casilla."""
+def casilla():
     base = os.environ.get("AQUALAB_HISTORIAL_CORREO", "").strip()
-    if "@" not in base:
-        return real
-    usuario, dominio = base.split("@", 1)
+    if base.count("@") != 1 or "+" in base:
+        raise HistorialError(
+            "Definí AQUALAB_HISTORIAL_CORREO con la casilla de Gmail que recibe los correos "
+            "(por ejemplo, grupo7.aqualab@gmail.com)."
+        )
+    return base.split("@")
+
+
+def correo(etiqueta):
+    """Alias `usuario+etiqueta@dominio` de la casilla del historial."""
+    usuario, dominio = casilla()
     return f"{usuario}+{etiqueta}@{dominio}"
+
+
+def usuarios():
+    return (
+        {
+            "email": correo("lucia"),
+            "first_name": "Lucía",
+            "last_name": "Fernández",
+            "grupos": (),
+        },
+        {
+            "email": correo("martin"),
+            "first_name": "Martín",
+            "last_name": "Gutiérrez",
+            "grupos": ("Bioquímicos", "Administradores"),
+        },
+    )
+
+
+def recepcion():
+    """Usuario sin actividad en el historial: atiende la recepción."""
+    return {"email": correo("diego"), "first_name": "Diego", "last_name": "Sosa"}
 
 
 def clientes():
@@ -75,7 +85,7 @@ def clientes():
             "nombre": "",
             "tipo_documento": "CUIT",
             "numero_documento": "30712458903",
-            "email": correo("lacteos", "calidad@lacteosdelsur.com.ar"),
+            "email": correo("lacteos"),
             "telefono": "02342 41-5500",
             "domicilio": "Ruta 5 km 210, Bragado",
         },
@@ -84,7 +94,7 @@ def clientes():
             "nombre": "",
             "tipo_documento": "CUIT",
             "numero_documento": "30999012347",
-            "email": correo("municipio", "obras.sanitarias@villaverde.gob.ar"),
+            "email": correo("municipio"),
             "telefono": "02346 43-1200",
             "domicilio": "Av. San Martín 450, Villa Verde",
         },
@@ -93,7 +103,7 @@ def clientes():
             "nombre": "María González",
             "tipo_documento": "DNI",
             "numero_documento": "28417305",
-            "email": correo("mgonzalez", "mariagonzalez.vv@gmail.com"),
+            "email": correo("mgonzalez"),
             "telefono": "11 5555-0101",
             "domicilio": "Los Aromos 1234, Villa Verde",
         },
@@ -102,7 +112,7 @@ def clientes():
             "nombre": "",
             "tipo_documento": "CUIT",
             "numero_documento": "30715883216",
-            "email": correo("cristal", "laboratorio@cristaldelvalle.com.ar"),
+            "email": correo("cristal"),
             "telefono": "02342 42-8810",
             "domicilio": "Parque Industrial Bragado, Lote 14",
         },
@@ -111,7 +121,7 @@ def clientes():
             "nombre": "",
             "tipo_documento": "CUIT",
             "numero_documento": "30689741025",
-            "email": correo("pampeana", "medioambiente@lapampeana.com.ar"),
+            "email": correo("pampeana"),
             "telefono": "02342 40-3300",
             "domicilio": "Camino a Mechita km 3, Bragado",
         },
@@ -120,7 +130,7 @@ def clientes():
             "nombre": "",
             "tipo_documento": "CUIT",
             "numero_documento": "30527319480",
-            "email": correo("club", "intendencia@clubbragado.org.ar"),
+            "email": correo("club"),
             "telefono": "02342 42-1975",
             "domicilio": "Av. Pellegrini 760, Bragado",
         },
@@ -197,12 +207,13 @@ def crear_recepcion(inicio):
     from django.contrib.auth import get_user_model
 
     Usuario = get_user_model()
-    if not Usuario.objects.filter(email__iexact=RECEPCION["email"]).exists():
+    datos = recepcion()
+    if not Usuario.objects.filter(email__iexact=datos["email"]).exists():
         Usuario.objects.create_user(
             password=os.environ["AQUALAB_HISTORIAL_CONTRASENA"],
             is_active=True,
             date_joined=inicio,
-            **RECEPCION,
+            **datos,
         )
 
 
@@ -228,7 +239,7 @@ def preparar_nitritos(ahora):
             nombre=NITRITOS, descripcion="Nitritos por espectrofotometría (curva de calibración)."
         )
         TipoEstudioPrueba.objects.create(tipo=tipo, prueba=prueba)
-    tecnica = get_user_model().objects.get(email=USUARIOS[0]["email"])
+    tecnica = get_user_model().objects.get(email=usuarios()[0]["email"])
     muestra = (
         Muestra.objects.filter(
             origen__nombre="Pozo 1", cliente__razon_social="Lácteos del Sur S.A."
@@ -260,6 +271,7 @@ def cargar_historial(salida, ahora=None):
             "Definí AQUALAB_HISTORIAL_CONTRASENA (8 caracteres o más): es la contraseña de los "
             "usuarios del laboratorio."
         )
+    casilla()
     if ya_cargado():
         return None
     ahora = ahora or timezone.now()
@@ -272,7 +284,7 @@ def cargar_historial(salida, ahora=None):
             VARIACION=VARIACION,
             CONTRASENA=contrasena,
             MATRICULA=MATRICULA,
-            USUARIOS=USUARIOS,
+            USUARIOS=usuarios(),
             CLIENTES=clientes(),
             ORIGENES=origenes,
             POR_CLAVE={o.clave: o for o in origenes},

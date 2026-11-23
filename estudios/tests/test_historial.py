@@ -18,7 +18,7 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def contrasena(monkeypatch):
     monkeypatch.setenv("AQUALAB_HISTORIAL_CONTRASENA", "Laboratorio-2026")
-    monkeypatch.delenv("AQUALAB_HISTORIAL_CORREO", raising=False)
+    monkeypatch.setenv("AQUALAB_HISTORIAL_CORREO", "grupo7@gmail.com")
 
 
 def test_carga_un_laboratorio_sin_rastros_de_demo(catalogo, contrasena):
@@ -44,12 +44,21 @@ def test_no_carga_dos_veces(catalogo, contrasena):
     assert Cliente.objects.count() == 6
 
 
-def test_correos_de_clientes_a_la_casilla_del_grupo(catalogo, contrasena, monkeypatch):
-    monkeypatch.setenv("AQUALAB_HISTORIAL_CORREO", "grupo7@gmail.com")
+def test_todos_los_correos_son_alias_de_la_casilla(catalogo, contrasena):
     call_command("cargar_historial", stdout=io.StringIO())
+    correos = [u.email for u in get_user_model().objects.all()]
+    correos += [c.email for c in Cliente.objects.all()]
+    assert all(c.startswith("grupo7+") and c.endswith("@gmail.com") for c in correos), correos
     assert Cliente.objects.get(razon_social="Lácteos del Sur S.A.").email == (
         "grupo7+lacteos@gmail.com"
     )
+
+
+def test_pide_la_casilla(catalogo, contrasena, monkeypatch):
+    monkeypatch.delenv("AQUALAB_HISTORIAL_CORREO", raising=False)
+    with pytest.raises(CommandError):
+        call_command("cargar_historial", stdout=io.StringIO())
+    assert not Cliente.objects.exists()
 
 
 def test_pide_la_contrasena(catalogo, monkeypatch):
