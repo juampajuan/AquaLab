@@ -43,7 +43,7 @@ CORREOS = {
     "lucia": "lucia.fernandez87@gmail.com",
     "martin": "martin.gutierrez72@gmail.com",
     "diego": "diegososa.94@gmail.com",
-    "lacteos": "jdominguezl@fi.uba.ar",
+    "lacteos": "aqualab.real@gmail.com",
     "municipio": "obrassanitariasvv21@gmail.com",
     "mgonzalez": "maria.gonzalez.vv58@gmail.com",
     "cristal": "cristaldelvalle.lab37@gmail.com",
