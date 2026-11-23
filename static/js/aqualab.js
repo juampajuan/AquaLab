@@ -234,8 +234,9 @@ function asistenteCerrar() {
   return true;
 }
 
-// El texto del modelo: los bloques de líneas que empiezan con «- » van como lista; el resto,
-// como párrafos que conservan sus saltos de línea. Siempre con textContent.
+// El texto del modelo: una línea en blanco separa párrafos; los bloques de líneas que empiezan
+// con «- » van como lista; el resto, como párrafos que conservan sus saltos de línea. Los bloques
+// quedan espaciados para que se lean mejor. Siempre con textContent.
 function asistenteTexto(item, texto) {
   let parrafo = [];
   let lista = null;
@@ -252,12 +253,15 @@ function asistenteTexto(item, texto) {
       cerrarParrafo();
       if (!lista) {
         lista = document.createElement("ul");
-        lista.className = "my-1 list-disc space-y-0.5 pl-5";
+        lista.className = "list-disc space-y-1 pl-5";
         item.append(lista);
       }
       const li = document.createElement("li");
       li.textContent = linea.slice(2);
       lista.append(li);
+    } else if (!linea.trim()) {
+      cerrarParrafo();
+      lista = null;
     } else {
       lista = null;
       parrafo.push(linea);
@@ -320,7 +324,7 @@ function asistenteAgregar(panel, rol, texto, enlaces = [], { guardar = true } = 
       ? "ml-8 rounded-lg bg-marino px-3 py-2 text-white"
       : rol === "aviso"
         ? "aviso aviso-error"
-        : "mr-4 rounded-lg bg-fondo-hundido px-3 py-2 text-tinta";
+        : "mr-4 space-y-2 rounded-lg bg-fondo-hundido px-3 py-2 leading-relaxed text-tinta";
   if (rol === "aviso") item.setAttribute("role", "alert");
   if (rol === "asistente") {
     asistenteTexto(item, texto);

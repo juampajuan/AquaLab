@@ -344,8 +344,9 @@ def test_fuera_de_alcance_y_pedidos_de_cambio(servicio_simulado, pregunta, respu
     assert respuesta.texto == (
         "Puedo consultar muestras, estudios y clientes, y preparar el registro de una muestra o "
         "de un estudio para que lo confirmes. No cargo mediciones, no valido, no emito ni borro "
-        "datos. Probá, por ejemplo: «¿Cómo está el PI 200417?», «¿Qué estudios tiene Lácteos del "
-        "Sur?» o «Registrá una muestra de Lácteos del Sur, pozo 2, para un físico-químico básico»."
+        "datos. Probá, por ejemplo: «¿Cómo está el pozo 1 de Lácteos del Sur?», «¿Qué estudios "
+        "tiene Lácteos del Sur?» o «Registrá una muestra de Lácteos del Sur, pozo 2, para un "
+        "físico-químico básico»."
     )
     assert respuesta.enlaces == []
 

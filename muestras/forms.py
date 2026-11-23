@@ -145,9 +145,11 @@ class RegistroMuestraForm(forms.Form):
     nombre = forms.CharField(
         label="Nombre de la muestra",
         max_length=100,
-        required=False,
         strip=True,
-        help_text="Si lo dejás vacío se numera según las muestras del cliente (ej. «Muestra 6»).",
+        help_text=(
+            "Cómo la van a reconocer el laboratorio y el cliente "
+            "(ej. «Pozo 2 – Control de noviembre»)."
+        ),
     )
     responsable_muestreo = forms.CharField(
         label="Responsable del muestreo",

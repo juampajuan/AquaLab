@@ -159,7 +159,7 @@ def test_post_valido_guarda_borrador_y_muestra_resumen(
         "fecha_ingreso": hoy.isoformat(),
         "sitio_extraccion": "Canilla de salida del tanque",
         "tipo_vertido": "agua",
-        "nombre": "",
+        "nombre": "Tanque – Control de rutina",
         "responsable_muestreo": "",
         "tipo_estudio": None,
     }
@@ -174,7 +174,7 @@ def test_post_valido_guarda_borrador_y_muestra_resumen(
         hoy.strftime("%d/%m/%Y"),
         "Canilla de salida del tanque",
         "Agua",
-        "Muestra 1 (el número se confirma al guardar)",
+        "Tanque – Control de rutina",
         "El N° PI se asigna al confirmar.",
     ):
         assert texto in html
@@ -402,26 +402,15 @@ def test_textos_solo_espacios_son_vacios(cliente_autenticado, datos_muestra_vali
     assert error_en(html, "origen", MENSAJE_SIN_ORIGEN)
 
 
-def test_nombre_vacio_se_numera_segun_muestras_del_cliente(
-    cliente_autenticado, datos_muestra_validos, cliente_b, origen_b
-):
-    muestra = registrar_y_confirmar(cliente_autenticado, datos_muestra_validos)
-    assert muestra.nombre == "Muestra 1"
+def test_nombre_obligatorio(cliente_autenticado, datos_muestra_validos):
+    respuesta = cliente_autenticado.post(URL_REGISTRAR, {**datos_muestra_validos, "nombre": "  "})
+    assert respuesta.status_code == 200
+    assert not Muestra.objects.exists()
 
     muestra = registrar_y_confirmar(
         cliente_autenticado, {**datos_muestra_validos, "nombre": "Muestra cisterna"}
     )
     assert muestra.nombre == "Muestra cisterna"
-
-    cliente_autenticado.post(URL_REGISTRAR, datos_muestra_validos)
-    resumen = cliente_autenticado.get(URL_CONFIRMAR).content.decode()
-    assert "Muestra 3 (el número se confirma al guardar)" in resumen
-    cliente_autenticado.post(URL_CONFIRMAR, {"accion": "confirmar"})
-    assert Muestra.objects.order_by("-numero_pi").first().nombre == "Muestra 3"
-
-    datos_b = {**datos_muestra_validos, "cliente": cliente_b.pk, "origen": origen_b.pk}
-    muestra = registrar_y_confirmar(cliente_autenticado, datos_b)
-    assert muestra.nombre == "Muestra 1"
 
 
 def test_responsable_opcional_texto_libre(cliente_autenticado, datos_muestra_validos):

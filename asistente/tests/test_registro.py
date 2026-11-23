@@ -64,6 +64,7 @@ def completo(**extra):
         "fecha_muestreo": "ayer",
         "fecha_ingreso": "hoy",
         "sitio_extraccion": "Boca del pozo",
+        "nombre": "Pozo 2 – Control de noviembre",
         **extra,
     }
 
@@ -96,6 +97,7 @@ def test_faltan_vertido_fechas_y_sitio(empleado, datos):
         "fecha de muestreo",
         "fecha de ingreso",
         "sitio de extracción",
+        "nombre de la muestra",
     ]
     assert salida["problemas"] == []
     # El vertido se elige: Agua, Cloacal o Canal (nunca se supone).
@@ -138,6 +140,7 @@ def test_listo_con_enlace_precargado(empleado, datos, hoy):
         "fecha_ingreso": hoy.isoformat(),
         "sitio_extraccion": "Boca del pozo",
         "tipo_vertido": "agua",
+        "nombre": "Pozo 2 – Control de noviembre",
         "tipo_estudio": str(datos["fq"].pk),
     }
     assert salida["resuelto"]["tipo_vertido"] == "Agua"
@@ -225,7 +228,7 @@ def test_sin_opcionales_no_viajan(empleado, datos):
     _, consulta = parametros(
         ejecutar(empleado, "preparar_muestra", **completo()).primeras[0].enlace()
     )
-    assert "nombre" not in consulta and "responsable_muestreo" not in consulta
+    assert "responsable_muestreo" not in consulta
 
 
 def test_tipo_de_vertido_desconocido(empleado, datos):
@@ -263,6 +266,7 @@ def test_sin_argumentos_falta_todo(empleado, datos):
         "fecha de muestreo",
         "fecha de ingreso",
         "sitio de extracción",
+        "nombre de la muestra",
     ]
     assert resultado.avisos == []
     assert resultado.valida is True
@@ -470,8 +474,13 @@ def test_argumentos_en_null_son_no_dichos(empleado, datos):
     resultado = herramientas.ejecutar(empleado, "preparar_muestra", json.dumps(todos_null))
     assert resultado.valida is True
     assert resultado.salida["faltan"][0] == "cliente"
-    assert len(resultado.salida["faltan"]) == 7
-    con_null = {**completo(), "nombre": None, "origen_nuevo": None, "solo_muestra": None}
+    assert len(resultado.salida["faltan"]) == 8
+    con_null = {
+        **completo(),
+        "responsable_muestreo": None,
+        "origen_nuevo": None,
+        "solo_muestra": None,
+    }
     resultado = herramientas.ejecutar(empleado, "preparar_muestra", json.dumps(con_null))
     assert resultado.salida["listo"] is True
     resultado = herramientas.ejecutar(
