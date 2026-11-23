@@ -149,6 +149,8 @@ def test_tabla_muestra_las_cinco_mas_recientes_con_sus_datos(cliente_http, crear
 
     assert [int(pi) for pi, _ in filas] == [200007, 200006, 200005, 200004, 200003]
     contenido = filas[0][1]
+    assert ">Muestra 200007</a>" in contenido
+    assert "N° PI 200007" in contenido
     assert "Aguas del Sur S.A." in contenido
     assert "Pozo N°2" in contenido
     assert ayer.strftime("%d/%m/%Y") in contenido

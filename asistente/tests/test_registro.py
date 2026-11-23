@@ -298,7 +298,8 @@ def test_preparar_estudio_listo(empleado, muestra, datos):
     ruta, consulta = parametros(crear)
     assert ruta == "/estudios/crear/"
     assert consulta == {"muestra": str(muestra.pk), "tipo": str(datos["bact"].pk)}
-    assert ficha == {"etiqueta": f"PI {muestra.numero_pi}", "url": f"/muestras/{muestra.pk}/"}
+    assert ficha["url"] == f"/muestras/{muestra.pk}/"
+    assert ficha["ver"] == "Ver muestra"
     assert resultado.avisos == [AVISO_ESTUDIO]
     assert muestra.cliente.email not in json.dumps(salida, ensure_ascii=False)
 
@@ -357,11 +358,13 @@ def test_varios_clientes_para_elegir(empleado, datos):
     assert opciones == [
         {
             "etiqueta": "Lácteos del Norte",
+            "ver": "Ver cliente",
             "url": f"/clientes/{otro.pk}/",
             "pregunta": "El cliente es Lácteos del Norte",
         },
         {
             "etiqueta": "Lácteos del Sur S.A.",
+            "ver": "Ver cliente",
             "url": f"/clientes/{datos['cliente'].pk}/",
             "pregunta": "El cliente es Lácteos del Sur S.A.",
         },

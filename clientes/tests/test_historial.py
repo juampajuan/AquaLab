@@ -73,6 +73,7 @@ def test_lista_muestras_del_cliente(
     assert muestras_en(html) == [200001]
     assert "10/10/2026" in html
     assert "Tanque norte" in html
+    assert f">{muestra.nombre}</a>" in html
     assert estudios_en(html) == [estudio.pk]
     assert f"Estudio N° {estudio.pk}" in html
     assert "Agua de red" in html

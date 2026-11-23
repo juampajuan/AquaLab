@@ -202,9 +202,12 @@ def test_buscar_muestra_referencias(empleado, estudio_completo, muestra, cliente
         ("cliente", cliente_a.pk),
     ]
     muestra_ref = ejecucion.referencias[0]
-    assert muestra_ref.etiqueta == "PI 200001"
+    assert muestra_ref.etiqueta == f"{muestra.nombre} · N° PI 200001"
     assert "200001" in muestra_ref.claves
-    assert ejecucion.referencias[1].etiqueta == f"Estudio {estudio_completo.pk}"
+    estudio_ref = ejecucion.referencias[1]
+    assert estudio_ref.etiqueta == (
+        f"{estudio_completo.tipo_nombre_snapshot} · Estudio N° {estudio_completo.pk}"
+    )
 
 
 def test_buscar_muestra_cliente_inactivo_sin_referencia(empleado, estudio_completo, cliente_a):
@@ -226,7 +229,7 @@ def test_detalle_estudio_por_numero(empleado, estudio_completo):
     salida = ejecutar(empleado, "detalle_estudio", numero=estudio_completo.pk).salida
     assert salida["encontrado"] is True
     datos = salida["datos"]
-    assert {k: v for k, v in datos.items() if k != "pruebas"} == {
+    assert {k: v for k, v in datos.items() if k not in ("pruebas", "informe")} == {
         "numero": estudio_completo.pk,
         "numero_pi": 200001,
         "cliente": "Cliente de test",
@@ -427,6 +430,7 @@ def test_detalle_varias_coincidencias(empleado, escuela):
     assert (salida["total"], salida["mostrados"]) == (2, 2)
     coincidencias = salida["datos"]["coincidencias"]
     assert [c["numero"] for c in coincidencias] == [escuela["nuevo"].pk, escuela["viejo"].pk]
+    assert coincidencias[0].pop("linea").startswith(f"Estudio N° {escuela['nuevo'].pk},")
     assert coincidencias[0] == {
         "numero": escuela["nuevo"].pk,
         "numero_pi": 200102,
@@ -508,7 +512,8 @@ def test_estudios_de_cliente(empleado, lacteos):
     assert datos["cliente"] == "Lácteos del Sur S.A."
     estudios = lacteos["estudios"]
     assert [e["numero"] for e in datos["estudios"]] == [e.pk for e in estudios[:10]]
-    primero = datos["estudios"][0]
+    primero = dict(datos["estudios"][0])
+    assert primero.pop("linea").startswith(f"Estudio N° {estudios[0].pk},")
     assert primero == {
         "numero": estudios[0].pk,
         "numero_pi": 200200,

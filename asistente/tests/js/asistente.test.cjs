@@ -362,6 +362,30 @@ test("las líneas que empiezan con «- » se muestran como lista, cada ítem com
   assert.equal(despues.textContent, "Nada más.");
 });
 
+test("los datos debajo de un ítem quedan dentro del ítem, con o sin sangría", async () => {
+  const { preguntar, mensajes } = entorno({
+    respuestas: [
+      respuestaJson(200, {
+        texto: "Estudios:\n- Estudio N° 50, Bacteriológico\nEstado: Sin iniciar\n  Muestra: «Control» (origen: Pozo 2)\n- Estudio N° 44, Vuelco\nEstado: En proceso\n\nEl resto está en su historial.",
+        enlaces: [],
+      }),
+    ],
+  });
+  await preguntar("¿Qué estudios tiene Lácteos del Sur?");
+  const respuesta = mensajes.querySelectorAll("[data-asistente-mensaje=asistente]")[0];
+  const [antes, lista, despues] = respuesta.hijos;
+  assert.equal(antes.textContent, "Estudios:");
+  assert.deepEqual(
+    lista.hijos.map((li) => li.textContent),
+    [
+      "Estudio N° 50, Bacteriológico\nEstado: Sin iniciar\nMuestra: «Control» (origen: Pozo 2)",
+      "Estudio N° 44, Vuelco\nEstado: En proceso",
+    ],
+  );
+  assert.equal(despues.etiqueta, "p");
+  assert.equal(despues.textContent, "El resto está en su historial.");
+});
+
 test("un texto sin «- » sigue siendo un solo párrafo con sus saltos de línea", async () => {
   const { preguntar, mensajes } = entorno({ respuestas: [respuestaJson(200, { texto: "Uno\nDos -3", enlaces: [] })] });
   await preguntar("hola");
@@ -370,13 +394,13 @@ test("un texto sin «- » sigue siendo un solo párrafo con sus saltos de línea
   assert.equal(respuesta.hijos[0].textContent, "Uno\nDos -3");
 });
 
-test("las opciones para elegir son botones que preguntan, con un enlace ↗ a su pantalla", async () => {
+test("las opciones para elegir son botones que preguntan, con «Ver …» a su pantalla", async () => {
   const { preguntar, mensajes, despachar, pedidos, esperar } = entorno({
     respuestas: [
       respuestaJson(200, {
         texto: "Hay dos estudios; ¿cuál?",
         enlaces: [
-          { etiqueta: "Estudio 43", url: "/estudios/43/", pregunta: "¿Qué no cumple en el estudio 43?" },
+          { etiqueta: "Estudio 43", url: "/estudios/43/", pregunta: "¿Qué no cumple en el estudio 43?", ver: "Ver estudio" },
           { etiqueta: "PI 200040", url: "/muestras/40/" },
         ],
       }),
@@ -392,7 +416,7 @@ test("las opciones para elegir son botones que preguntan, con un enlace ↗ a su
   assert.equal(boton.getAttribute("data-asistente-elegir"), "¿Qué no cumple en el estudio 43?");
   assert.equal(abrir.etiqueta, "a");
   assert.equal(abrir.href, "/estudios/43/");
-  assert.equal(abrir.textContent, "↗");
+  assert.equal(abrir.textContent, "Ver estudio");
   assert.equal(abrir.getAttribute("aria-label"), "Abrir Estudio 43");
   // Un enlace común sigue siendo un enlace.
   assert.equal(enlace.hijos[0].etiqueta, "a");

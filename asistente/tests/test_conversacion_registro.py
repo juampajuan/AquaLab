@@ -47,7 +47,7 @@ def test_pedidos_de_registro_llegan_al_servicio(servicio_simulado, pregunta):
 def test_otros_cambios_siguen_cortados(servicio_simulado, pregunta):
     respuesta = conversacion.responder(None, pregunta, [], reloj=servicio_simulado.reloj)
     assert respuesta.texto == conversacion.MENSAJE_SOLO_CONSULTA
-    assert respuesta.enlaces == []
+    assert respuesta.enlaces == conversacion.solo_consulta().enlaces
     assert servicio_simulado.llamadas == []
 
 

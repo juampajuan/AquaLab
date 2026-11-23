@@ -246,6 +246,7 @@ function asistenteCerrar() {
 function asistenteTexto(item, texto) {
   let parrafo = [];
   let lista = null;
+  let ultimo = null;
   const cerrarParrafo = () => {
     if (!parrafo.length) return;
     const p = document.createElement("p");
@@ -255,10 +256,9 @@ function asistenteTexto(item, texto) {
     parrafo = [];
   };
   for (const linea of String(texto).split("\n")) {
-    if (lista && lista.lastChild && (/^\s{2,}\S/.test(linea) || /^[^\s:-][^:]{0,24}:\s+\S/.test(linea))) {
+    if (lista && ultimo && (/^\s{2,}\S/.test(linea) || /^[^\s:-][^:]{0,24}:\s+\S/.test(linea))) {
       // Dato del ítem anterior en su propio renglón («  Estado: …» o «Estado: …» justo debajo).
-      const anterior = lista.lastChild;
-      anterior.textContent = `${anterior.textContent}\n${linea.trim()}`;
+      ultimo.textContent = `${ultimo.textContent}\n${linea.trim()}`;
     } else if (linea.startsWith("- ")) {
       cerrarParrafo();
       if (!lista) {
@@ -270,6 +270,7 @@ function asistenteTexto(item, texto) {
       li.className = "whitespace-pre-line";
       li.textContent = linea.slice(2);
       lista.append(li);
+      ultimo = li;
     } else if (!linea.trim()) {
       cerrarParrafo();
       lista = null;
