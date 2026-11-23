@@ -51,9 +51,9 @@ def test_correos_de_gmail(catalogo, contrasena):
     call_command("cargar_historial", stdout=io.StringIO())
     correos = [u.email for u in get_user_model().objects.all()]
     correos += [c.email for c in Cliente.objects.all()]
-    assert all(c.endswith("@gmail.com") for c in correos), correos
+    assert all(c.endswith(("@gmail.com", "@fi.uba.ar")) for c in correos), correos
     assert Cliente.objects.get(razon_social="Lácteos del Sur S.A.").email == (
-        "aqualab.grupo7@gmail.com"
+        "jdominguezl@fi.uba.ar"
     )
 
 

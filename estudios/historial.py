@@ -8,7 +8,7 @@ espera su curva de calibración (US 6.6), para mostrarla en vivo.
 Corre con `python manage.py cargar_historial`; en Render lo llama `scripts/iniciar_produccion.sh`
 cuando está definida `AQUALAB_HISTORIAL_CONTRASENA`. No carga dos veces.
 
-Los correos son de Gmail, inventados. El de Lácteos del Sur es la casilla del grupo, para mostrar
+Los correos son de Gmail, inventados. El de Lácteos del Sur es una casilla del grupo, para mostrar
 en vivo el envío del informe por correo.
 """
 
@@ -43,7 +43,7 @@ CORREOS = {
     "lucia": "lucia.fernandez87@gmail.com",
     "martin": "martin.gutierrez72@gmail.com",
     "diego": "diegososa.94@gmail.com",
-    "lacteos": "aqualab.grupo7@gmail.com",
+    "lacteos": "jdominguezl@fi.uba.ar",
     "municipio": "obrassanitariasvv21@gmail.com",
     "mgonzalez": "maria.gonzalez.vv58@gmail.com",
     "cristal": "cristaldelvalle.lab37@gmail.com",
