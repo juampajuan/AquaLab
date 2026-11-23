@@ -175,11 +175,36 @@ def fecha(valor):
     return valor.strftime(FORMATO_FECHA)
 
 
+def linea_muestra(nombre, origen, numero_pi):
+    """Cómo se lista una muestra: el nombre y, debajo, un dato por renglón."""
+    return f"«{nombre}»\n  Origen: {origen}\n  N° PI {numero_pi}"
+
+
+def linea_estudio(numero, tipo, estado, muestra):
+    """Cómo se lista un estudio: Estudio N° 50, Bacteriológico básico. Estado: … Muestra: «…»
+    (origen: …)."""
+    return (
+        f"Estudio N° {numero}, {tipo}\n  Estado: {estado}\n"
+        f"  Muestra: «{muestra.nombre}» (origen: {muestra.origen.nombre})"
+    )
+
+
 def referencia_muestra(muestra):
     from .enlaces import Referencia
 
     numero = str(muestra.numero_pi)
-    return Referencia("muestra", muestra.pk, f"PI {numero}", claves=(f"PI {numero}", numero))
+    etiqueta = f"{muestra.nombre} · N° PI {numero}" if muestra.nombre else f"N° PI {numero}"
+    return Referencia(
+        "muestra",
+        muestra.pk,
+        etiqueta,
+        claves=(f"PI {numero}", numero),
+        pregunta=f"¿Cómo está el PI {numero}?",
+        boton=f"¿Cómo está «{muestra.nombre}»?"
+        if muestra.nombre
+        else f"¿Cómo está el PI {numero}?",
+        ver="Ver muestra",
+    )
 
 
 def referencia_estudio(estudio):
@@ -189,7 +214,10 @@ def referencia_estudio(estudio):
     return Referencia(
         "estudio",
         numero,
-        f"Estudio {numero}",
+        f"{estudio.tipo_nombre_snapshot} · Estudio N° {numero}",
+        pregunta=f"¿Cómo está el estudio N° {numero}?",
+        boton=f"¿Cómo está el estudio N° {numero} ({estudio.tipo_nombre_snapshot})?",
+        ver="Ver estudio",
         claves=(f"Estudio {numero}", f"Estudio N° {numero}", f"Estudio Nº {numero}"),
         patron=patron_estudio(numero),
     )
@@ -214,7 +242,18 @@ def referencia_cliente(usuario, cliente):
     if not puede_ver(usuario, "cliente", cliente):
         return []
     claves = tuple(c for c in (cliente.nombre_completo, cliente.razon_social, cliente.nombre) if c)
-    return [Referencia("cliente", cliente.pk, cliente.nombre_completo, claves=claves)]
+    pregunta = f"¿Qué estudios tiene {cliente.nombre_completo}?"
+    return [
+        Referencia(
+            "cliente",
+            cliente.pk,
+            cliente.nombre_completo,
+            claves=claves,
+            pregunta=pregunta,
+            boton=pregunta,
+            ver="Ver cliente",
+        )
+    ]
 
 
 def referencia_informe(estudio):
@@ -336,6 +375,7 @@ def buscar_muestra(usuario, numero_pi=None, texto=None):
     datos = {
         "muestras": [
             {
+                "linea": linea_muestra(m.nombre, m.origen.nombre, m.numero_pi),
                 "numero_pi": m.numero_pi,
                 "nombre": m.nombre,
                 "cliente": m.cliente.nombre_completo,
@@ -349,10 +389,7 @@ def buscar_muestra(usuario, numero_pi=None, texto=None):
     return Salida(
         {"encontrado": True, "total": total, "mostrados": len(muestras), "datos": datos},
         [referencia_muestra(m) for m in muestras],
-        opciones=[
-            replace(referencia_muestra(m), pregunta=f"¿Cómo está el PI {m.numero_pi}?")
-            for m in muestras
-        ],
+        opciones=[referencia_muestra(m) for m in muestras],
     )
 
 
@@ -512,6 +549,12 @@ def coincidencias(mostrados, total, solo_fuera_de_norma=False):
             "datos": {
                 "coincidencias": [
                     {
+                        "linea": linea_estudio(
+                            e.pk,
+                            e.tipo_nombre_snapshot,
+                            e.get_estado_display(),
+                            e.muestra,
+                        ),
                         "numero": e.pk,
                         "numero_pi": e.muestra.numero_pi,
                         "origen": e.muestra.origen.nombre,
@@ -525,9 +568,29 @@ def coincidencias(mostrados, total, solo_fuera_de_norma=False):
         },
         [referencia_estudio(e) for e in mostrados],
         opciones=[
-            replace(referencia_estudio(e), pregunta=plantilla.format(e.pk)) for e in mostrados
+            replace(
+                referencia_estudio(e),
+                pregunta=plantilla.format(e.pk),
+                boton=plantilla.format(e.pk),
+            )
+            for e in mostrados
         ],
     )
+
+
+def datos_informe(estudio):
+    """El informe emitido y sus envíos por correo (fecha y resultado; nunca la dirección)."""
+    informe = estudio.informe
+    envios = informe.envios.order_by("-fecha")
+    return {
+        "numero": informe.numero_mostrado,
+        "fecha_emision": fecha(informe.fecha_emision),
+        "emitido_por": informe.emitido_por.get_full_name(),
+        "envios_por_correo": [
+            {"fecha": fecha(e.fecha), "resultado": e.get_resultado_display()} for e in envios[:5]
+        ],
+        "total_envios": envios.count(),
+    }
 
 
 def salida_detalle(usuario, estudio, solo_fuera_de_norma=False):
@@ -546,6 +609,7 @@ def salida_detalle(usuario, estudio, solo_fuera_de_norma=False):
         "fecha_creacion": fecha(estudio.fecha_creacion),
         "tipo_vertido": muestra.get_tipo_vertido_display(),
         "con_informe": con_informe,
+        "informe": datos_informe(estudio) if con_informe else None,
         "pruebas": pruebas,
     }
     if solo_fuera_de_norma:
@@ -590,11 +654,7 @@ def datos_cliente_con_id(cliente):
 
 def opciones_de_clientes(usuario, clientes):
     """Cada cliente que se puede abrir es una opción «¿Qué estudios tiene…?» (T053)."""
-    return [
-        replace(r, pregunta=f"¿Qué estudios tiene {c.nombre_completo}?")
-        for c in clientes
-        for r in referencia_cliente(usuario, c)
-    ]
+    return [r for c in clientes for r in referencia_cliente(usuario, c)]
 
 
 @registrar(
@@ -712,6 +772,12 @@ def estudios_de_cliente(usuario, cliente=None, cliente_id=None):
         "cliente": elegido.nombre_completo,
         "estudios": [
             {
+                "linea": linea_estudio(
+                    estudio.pk,
+                    estudio.tipo_nombre_snapshot,
+                    estudio.get_estado_display(),
+                    muestra,
+                ),
                 "numero": estudio.pk,
                 "numero_pi": muestra.numero_pi,
                 "origen": muestra.origen.nombre,
@@ -747,3 +813,137 @@ def estudios_de_cliente(usuario, cliente=None, cliente_id=None):
 # Herramientas de la US 10.3 (preparar el registro de una muestra o un estudio). Al final para
 # que `registro` encuentre definido todo lo que importa de este módulo.
 from . import registro  # noqa: E402, F401
+
+# --- Resumen del laboratorio: cantidades y rankings de un período ---
+
+TOPE_RANKING = 5
+
+
+@registrar(
+    {
+        "type": "function",
+        "function": {
+            "name": "resumen_laboratorio",
+            "description": (
+                "Cantidades del laboratorio en un período: clientes con más muestras y estudios, "
+                "estudios por estado, informes emitidos y enviados por correo, y resultados "
+                "validados fuera de norma por origen y por prueba. Usala para preguntas de "
+                "cuántos, cuál tiene más o rankings. Sin fechas cuenta todo el historial; mandá "
+                "fechas solo si la pregunta nombra un período («este mes», «desde el 01/10»)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "desde": {
+                        "type": ["string", "null"],
+                        "description": "Fecha inicial: «01/10/2026», «12/11» o «ayer».",
+                    },
+                    "hasta": {
+                        "type": ["string", "null"],
+                        "description": "Fecha final; sin fecha, hoy.",
+                    },
+                },
+            },
+        },
+    }
+)
+def resumen_laboratorio(usuario, desde=None, hasta=None):
+    import datetime
+
+    from django.db.models import Count, Q
+    from django.utils import timezone
+
+    from clientes.models import Cliente
+    from estudios.models import EstadoEstudio, Estudio, Validacion
+    from informes.models import EnvioInforme, Informe, ResultadoEnvio
+    from muestras.models import Muestra
+
+    from .fechas import leer_fecha
+
+    if not puede_ver(usuario, "muestra"):
+        return no_encontrado("No se pudo consultar.")
+    hoy = timezone.localdate()
+    fin = leer_fecha(hasta, hoy) if hasta else hoy
+    # Sin fecha inicial: todo el historial.
+    inicio = leer_fecha(desde, hoy) if desde else datetime.date(2000, 1, 1)
+    if fin is None or inicio is None:
+        return no_encontrado("No entendí las fechas del período; probá con dd/mm/aaaa.")
+    if inicio > fin:
+        inicio, fin = fin, inicio
+
+    muestras = Muestra.objects.filter(fecha_ingreso__range=(inicio, fin))
+    estudios = Estudio.objects.filter(muestra__in=muestras)
+    clientes = (
+        Cliente.objects.filter(muestras__in=muestras)
+        .annotate(
+            cantidad_muestras=Count("muestras", filter=Q(muestras__in=muestras), distinct=True),
+            cantidad_estudios=Count(
+                "muestras__estudios", filter=Q(muestras__in=muestras), distinct=True
+            ),
+        )
+        .order_by("-cantidad_muestras", "-cantidad_estudios")
+        .distinct()[:TOPE_RANKING]
+    )
+    informes = Informe.objects.filter(fecha_emision__date__range=(inicio, fin))
+    envios = EnvioInforme.objects.filter(fecha__date__range=(inicio, fin))
+    fuera = Validacion.objects.filter(
+        anulada=False,
+        evaluacion=Evaluacion.FUERA_DE_NORMA,
+        fecha_validacion__date__range=(inicio, fin),
+    )
+    por_origen = (
+        fuera.values(
+            "asignacion__estudio__muestra__origen__nombre",
+            "asignacion__estudio__muestra__cliente__razon_social",
+            "asignacion__estudio__muestra__cliente__nombre",
+        )
+        .annotate(cantidad=Count("pk"))
+        .order_by("-cantidad")[:TOPE_RANKING]
+    )
+    por_prueba = (
+        fuera.values("asignacion__prueba__nombre")
+        .annotate(cantidad=Count("pk"))
+        .order_by("-cantidad")[:TOPE_RANKING]
+    )
+    datos = {
+        "periodo": (
+            {"desde": inicio.strftime(FORMATO_FECHA), "hasta": fin.strftime(FORMATO_FECHA)}
+            if desde
+            else "todo el historial"
+        ),
+        "muestras_ingresadas": muestras.count(),
+        "estudios": estudios.count(),
+        "estudios_por_estado": {
+            etiqueta: estudios.filter(estado=valor).count()
+            for valor, etiqueta in EstadoEstudio.choices
+        },
+        "clientes_con_mas_muestras": [
+            {
+                "cliente": c.nombre_completo,
+                "muestras": c.cantidad_muestras,
+                "estudios": c.cantidad_estudios,
+            }
+            for c in clientes
+        ],
+        "informes_emitidos": informes.count(),
+        "envios_por_correo": {
+            "total": envios.count(),
+            "enviados": envios.filter(resultado=ResultadoEnvio.ENVIADO).count(),
+            "fallidos": envios.filter(resultado=ResultadoEnvio.FALLIDO).count(),
+        },
+        "resultados_fuera_de_norma": fuera.count(),
+        "fuera_de_norma_por_origen": [
+            {
+                "origen": f["asignacion__estudio__muestra__origen__nombre"],
+                "cliente": f["asignacion__estudio__muestra__cliente__razon_social"]
+                or f["asignacion__estudio__muestra__cliente__nombre"],
+                "cantidad": f["cantidad"],
+            }
+            for f in por_origen
+        ],
+        "fuera_de_norma_por_prueba": [
+            {"prueba": f["asignacion__prueba__nombre"], "cantidad": f["cantidad"]}
+            for f in por_prueba
+        ],
+    }
+    return Salida({"encontrado": True, "datos": datos})

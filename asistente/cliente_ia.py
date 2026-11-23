@@ -33,10 +33,40 @@ class CuotaAgotada(ErrorServicio):
         self.reintentar_en = reintentar_en
 
 
+# Palabras que delatan el razonamiento interno del modelo cuando se cuela en la respuesta (los
+# modelos gpt-oss a veces lo escriben, en inglés, antes de la respuesta en español).
+PALABRAS_RAZONAMIENTO = frozenset(
+    "the we need answer must should according probably provide rules format user data "
+    "here not so but let's maybe".split()
+)
+
+
+def parece_razonamiento(texto):
+    palabras = [p.strip(".,:;!?\"'()«»").lower() for p in (texto or "").split()]
+    return sum(1 for p in palabras if p in PALABRAS_RAZONAMIENTO) >= 6
+
+
 def enviar(mensajes, herramientas, timeout, config=None):
-    """Manda la conversación y devuelve `choices[0].message` del servicio."""
+    """Manda la conversación y devuelve `choices[0].message` del servicio. Si el modelo deja ver
+    su razonamiento interno en el texto, se pide la respuesta otra vez, una sola vez."""
+    mensaje = _enviar(mensajes, herramientas, timeout, config)
+    if not mensaje.get("tool_calls") and parece_razonamiento(mensaje.get("content")):
+        logger.warning("Asistente: el modelo mostró su razonamiento; se pide de nuevo.")
+        aviso = {
+            "role": "system",
+            "content": "Respondé solo con la respuesta final, en español, sin explicar cómo la "
+            "pensaste.",
+        }
+        mensaje = _enviar([*mensajes, aviso], herramientas, timeout, config)
+    return mensaje
+
+
+def _enviar(mensajes, herramientas, timeout, config=None):
     config = config or configuracion.actual()
     cuerpo = {"model": config.modelo, "temperature": 0, "messages": mensajes}
+    if "gpt-oss" in config.modelo:
+        # Groq: el razonamiento de gpt-oss queda fuera de la respuesta y se piensa menos.
+        cuerpo.update(include_reasoning=False, reasoning_effort="low")
     if herramientas:
         # Una herramienta por vuelta (research R11): no se depende de llamadas en paralelo.
         cuerpo.update(tools=herramientas, tool_choice="auto", parallel_tool_calls=False)

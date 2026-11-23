@@ -85,5 +85,8 @@ def test_pedido_de_cambio(cliente_http, estudio_completo, servicio_simulado):
         content_type="application/json",
     )
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"texto": conversacion.MENSAJE_SOLO_CONSULTA, "enlaces": []}
+    assert respuesta.json() == {
+        "texto": conversacion.MENSAJE_SOLO_CONSULTA,
+        "enlaces": conversacion.solo_consulta().enlaces,
+    }
     assert foto() == antes

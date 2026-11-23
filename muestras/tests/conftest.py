@@ -83,7 +83,7 @@ def datos_muestra_validos(cliente_a, origen_a, hoy):
         "fecha_ingreso": hoy.isoformat(),
         "sitio_extraccion": "Canilla de salida del tanque",
         "tipo_vertido": "agua",
-        "nombre": "",
+        "nombre": "Tanque – Control de rutina",
         "responsable_muestreo": "",
     }
 

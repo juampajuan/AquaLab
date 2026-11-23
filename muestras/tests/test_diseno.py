@@ -17,9 +17,9 @@ def test_tipo_de_vertido_son_radios_con_agua_por_defecto(cliente_autenticado):
 def test_registro_marca_solo_los_campos_obligatorios(cliente_autenticado):
     html = cliente_autenticado.get(reverse("muestras:registrar")).content.decode()
 
-    for campo in ("cliente", "fecha_muestreo", "fecha_ingreso", "sitio_extraccion"):
+    for campo in ("cliente", "fecha_muestreo", "fecha_ingreso", "sitio_extraccion", "nombre"):
         assert es_obligatorio(html, campo), campo
-    for campo in ("nombre", "responsable_muestreo", "origen_nuevo"):
+    for campo in ("responsable_muestreo", "origen_nuevo"):
         assert not es_obligatorio(html, campo), campo
 
 

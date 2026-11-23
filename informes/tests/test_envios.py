@@ -115,8 +115,8 @@ def test_contenido_del_correo(cliente_bioquimico, informe, mailoutbox, pdf_falso
     assert f"Hola, {muestra.cliente.nombre_completo}:" in cuerpo
     assert (
         f"Le enviamos el informe {informe.numero_mostrado} del estudio N° {estudio.pk} "
-        f"({estudio.tipo_nombre_snapshot}) de la muestra N° PI {muestra.numero_pi} "
-        f"({muestra.nombre})."
+        f"({estudio.tipo_nombre_snapshot}) de la muestra «{muestra.nombre}» "
+        f"({muestra.origen.nombre}, N° PI {muestra.numero_pi})."
     ) in " ".join(cuerpo.split())
     assert "El informe está adjunto en PDF." in cuerpo
     assert settings.AQUALAB_LABORATORIO["nombre"] in cuerpo

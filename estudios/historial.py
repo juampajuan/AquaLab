@@ -24,7 +24,8 @@ from clientes.models import Cliente
 from estudios import demo
 from estudios.models import Estudio, TipoEstudio, TipoEstudioPrueba
 from estudios.servicios import cargar_mediciones, crear_estudio
-from muestras.models import Muestra
+from muestras.models import Muestra, Origen
+from muestras.servicios import registrar_muestra
 from pruebas.models import Prueba, TipoCalculo
 
 MESES = 9
@@ -209,6 +210,44 @@ ESTADOS = {
 }
 
 
+MESES_NOMBRE = (
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+)
+
+
+def nombre_de_muestra(origen, fecha_muestreo):
+    """Nombre como lo cargaría el laboratorio, según qué se analiza en ese origen: «Control
+    físico-químico de noviembre», «Control bacteriológico de agosto», «Vuelco de efluente de
+    octubre». El origen va aparte, así que no se repite en el nombre."""
+    mes = MESES_NOMBRE[fecha_muestreo.month - 1]
+    datos = next((o for o in demo.ORIGENES + ORIGENES_NUEVOS if o.nombre == origen), None)
+    if datos is not None and datos.vertido == "cloacal":
+        return f"Vuelco de efluente de {mes}"
+    if datos is not None and "PH" not in datos.base:
+        return f"Control bacteriológico de {mes}"
+    return f"Control físico-químico de {mes}"
+
+
+def registrar_con_nombre(datos, usuario):
+    """`registrar_muestra` del guion de la demo, con el nombre de la muestra (es obligatorio)."""
+    if not datos.get("nombre"):
+        origen = Origen.objects.get(pk=datos["origen"]).nombre
+        fecha = dt.date.fromisoformat(datos["fecha_muestreo"])
+        datos = {**datos, "nombre": nombre_de_muestra(origen, fecha)}
+    return registrar_muestra(datos, usuario)
+
+
 def ya_cargado():
     """El historial ya está si existe su cliente principal o su técnica (aunque después se hayan
     editado el CUIT o el correo desde la app): así un reinicio nunca lo carga dos veces."""
@@ -319,6 +358,16 @@ def corregir_historial():
             .exclude(email=correo("lacteos"))
             .update(email=correo("lacteos"))
         )
+        # Muestras con el nombre automático («Muestra 24»): pasan a nombrarse por origen y mes.
+        documentos = [c["numero_documento"] for c in clientes().values()]
+        sin_nombre = Muestra.objects.select_related("origen").filter(
+            cliente__numero_documento__in=documentos,
+            nombre__regex=r"^(Muestra [0-9]+|.+ – Control de [a-z]+ [0-9]{4})$",
+        )
+        for muestra in sin_nombre:
+            muestra.nombre = nombre_de_muestra(muestra.origen.nombre, muestra.fecha_muestreo)
+            muestra.save(update_fields=["nombre"])
+            cambiados += 1
     return cambiados
 
 
@@ -347,6 +396,7 @@ def cargar_historial(salida, ahora=None):
             ORIGENES=origenes,
             POR_CLAVE={o.clave: o for o in origenes},
             ESTADOS=ESTADOS,
+            registrar_muestra=registrar_con_nombre,
             ya_cargada=ya_cargado,
         ),
     ):

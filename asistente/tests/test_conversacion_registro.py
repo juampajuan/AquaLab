@@ -47,7 +47,7 @@ def test_pedidos_de_registro_llegan_al_servicio(servicio_simulado, pregunta):
 def test_otros_cambios_siguen_cortados(servicio_simulado, pregunta):
     respuesta = conversacion.responder(None, pregunta, [], reloj=servicio_simulado.reloj)
     assert respuesta.texto == conversacion.MENSAJE_SOLO_CONSULTA
-    assert respuesta.enlaces == []
+    assert respuesta.enlaces == conversacion.solo_consulta().enlaces
     assert servicio_simulado.llamadas == []
 
 
@@ -135,6 +135,7 @@ def test_ejemplo_de_la_historia_en_tres_mensajes(empleado, lacteos_registro, ser
                 "fecha_muestreo": "ayer",
                 "fecha_ingreso": "hoy",
                 "sitio_extraccion": "boca del pozo",
+                "nombre": "Pozo 2 – Control de noviembre",
             },
         ),
         texto("Listo: revisá los datos y confirmá el registro."),
@@ -182,6 +183,7 @@ def test_sin_tipo_una_eleccion_mas(empleado, lacteos_registro, servicio_simulado
                 "fecha_muestreo": "hoy",
                 "fecha_ingreso": "hoy",
                 "sitio_extraccion": "canilla",
+                "nombre": "Pozo 2 – Control de noviembre",
             },
         ),
         texto("Listo."),
@@ -215,6 +217,7 @@ def test_conversacion_larga_sobrevive_con_el_resumen(empleado, lacteos_registro,
                 "tipo_estudio": "Físico-químico básico",
                 "tipo_vertido": "Agua",
                 "sitio_extraccion": "Boca del pozo",
+                "nombre": "Pozo 2 – Control de noviembre",
                 "fecha_muestreo": "12/11",
                 "fecha_ingreso": "hoy",
             },

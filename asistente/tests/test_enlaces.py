@@ -8,6 +8,7 @@ from asistente.herramientas import referencia_estudio
 
 class EstudioFalso:
     pk = 42
+    tipo_nombre_snapshot = "Físico-químico básico"
 
 
 ESTUDIO = referencia_estudio(EstudioFalso())
@@ -65,7 +66,9 @@ def test_opciones_van_primero_y_con_pregunta():
         },
         ESTUDIO.enlace(),
     ]
-    assert "pregunta" not in ESTUDIO.enlace()
+    # Las referencias a un estudio también son sugerencias, con «Ver estudio» al lado.
+    assert ESTUDIO.enlace()["pregunta"] == "¿Cómo está el estudio N° 42?"
+    assert ESTUDIO.enlace()["ver"] == "Ver estudio"
 
 
 # --- Enlaces precargados y opciones sin pantalla (US 10.3, research R7) ---

@@ -43,7 +43,8 @@ CAMPOS_DEL_ASISTENTE = (
     "tipo_vertido",
 )
 # Datos opcionales: se precargan si se dijeron, sin preguntarlos, con el largo del formulario.
-OPCIONALES = (("nombre", 100), ("responsable_muestreo", 150))
+OPCIONALES = (("responsable_muestreo", 150),)
+LARGO_NOMBRE = 100
 
 
 @dataclass
@@ -79,7 +80,7 @@ def resolver_cliente(usuario, texto):
     if activos:
         return Resolucion(
             opciones=[
-                replace(r, pregunta=f"El cliente es {c.nombre_completo}")
+                replace(r, pregunta=f"El cliente es {c.nombre_completo}", boton=c.nombre_completo)
                 for c in activos[:MAX_LISTA]
                 for r in referencia_cliente(usuario, c)
             ]
@@ -247,6 +248,7 @@ ETIQUETAS_MUESTRA = (
     ("fecha_muestreo", "Muestreo"),
     ("fecha_ingreso", "Ingreso"),
     ("sitio_extraccion", "Sitio"),
+    ("nombre", "Nombre"),
 )
 ETIQUETAS_ESTUDIO = (("muestra", "Muestra"), ("tipo_estudio", "Tipo de estudio"))
 
@@ -317,7 +319,10 @@ SI_NO = {"type": ["boolean", "null"]}
                     },
                     "sitio_extraccion": {**TEXTO, "description": "Tal cual lo dijo."},
                     "tipo_vertido": {**TEXTO, "description": "Agua, Cloacal o Canal."},
-                    "nombre": TEXTO,
+                    "nombre": {
+                        **TEXTO,
+                        "description": "Nombre de la muestra: «Pozo 2 – Control de noviembre».",
+                    },
                     "responsable_muestreo": TEXTO,
                 },
             },
@@ -396,6 +401,14 @@ def preparar_muestra(usuario, **argumentos):
     else:
         pedido.faltan.append("sitio de extracción")
 
+    nombre = (argumentos.get("nombre") or "").strip()
+    if not nombre:
+        pedido.faltan.append("nombre de la muestra")
+    elif len(nombre) > LARGO_NOMBRE:
+        pedido.problemas.append(f"El nombre de la muestra admite hasta {LARGO_NOMBRE} caracteres.")
+    else:
+        pedido.resuelto["nombre"] = nombre
+
     if cliente is not None and origen and len(fechas) == 2 and sitio and vertido is not None:
         pedido.problemas.extend(_errores_del_formulario(cliente, origen, fechas, sitio, vertido))
 
@@ -407,6 +420,7 @@ def preparar_muestra(usuario, **argumentos):
             parametros.append(("origen_nuevo", origen))
         parametros += [(c, fechas[c].isoformat()) for c in ("fecha_muestreo", "fecha_ingreso")]
         parametros += [("sitio_extraccion", sitio), ("tipo_vertido", vertido.value)]
+        parametros.append(("nombre", nombre))
         parametros += _parametros_opcionales(argumentos)
         if tipo is not None:
             parametros.append(("tipo_estudio", str(tipo.pk)))

@@ -72,3 +72,45 @@ def test_pide_la_contrasena(catalogo, monkeypatch):
     with pytest.raises(CommandError):
         call_command("cargar_historial", stdout=io.StringIO())
     assert not Cliente.objects.exists()
+
+
+def test_muestras_con_nombres_como_los_cargaria_el_laboratorio(catalogo, contrasena):
+    import re
+
+    from muestras.models import Muestra
+
+    call_command("cargar_historial", stdout=io.StringIO())
+    nombres = list(Muestra.objects.values_list("nombre", flat=True))
+    assert nombres
+    assert not [n for n in nombres if re.fullmatch(r"Muestra [0-9]+", n)]
+    efluente = Muestra.objects.filter(origen__nombre="Salida a colectora").first()
+    assert efluente.nombre.startswith("Vuelco de efluente de ")
+    escuela = Muestra.objects.filter(origen__nombre="Escuela N° 12").first()
+    assert escuela.nombre.startswith("Control bacteriológico de ")
+    pozo = Muestra.objects.filter(origen__nombre="Pozo 1").first()
+    assert pozo.nombre.startswith("Control físico-químico de ")
+
+
+def test_corrige_un_historial_ya_cargado(catalogo, contrasena):
+    from muestras.models import Muestra
+
+    call_command("cargar_historial", stdout=io.StringIO())
+    lacteos = Cliente.objects.get(razon_social="Lácteos del Sur S.A.")
+    Cliente.objects.filter(pk=lacteos.pk).update(
+        numero_documento="30712458903", email="viejo@ejemplo.com"
+    )
+    muestra = Muestra.objects.filter(cliente=lacteos).first()
+    Muestra.objects.filter(pk=muestra.pk).update(nombre="Muestra 5")
+
+    salida = io.StringIO()
+    call_command("cargar_historial", stdout=salida)
+    assert "corrección(es) aplicada(s)" in salida.getvalue()
+    lacteos.refresh_from_db()
+    muestra.refresh_from_db()
+    assert lacteos.numero_documento == "30712458905"
+    assert lacteos.email == historial.correo("lacteos")
+    assert muestra.nombre == historial.nombre_de_muestra(
+        muestra.origen.nombre, muestra.fecha_muestreo
+    )
+
+    assert historial.corregir_historial() == 0

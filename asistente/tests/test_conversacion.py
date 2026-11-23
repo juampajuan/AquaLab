@@ -49,7 +49,7 @@ def test_respuesta_sin_herramientas(servicio_simulado):
     servicio_simulado.guion(texto("El PI 200417 está Finalizado con pH 7,2."))
     respuesta = responder(servicio_simulado)
     assert respuesta.texto == conversacion.MENSAJE_SOLO_CONSULTA
-    assert respuesta.enlaces == []
+    assert respuesta.enlaces == conversacion.solo_consulta().enlaces
 
 
 def test_texto_con_herramienta(servicio_simulado, eco):
@@ -223,10 +223,12 @@ def test_pregunta_por_pi(empleado, estudio_completo, muestra, servicio_simulado)
     respuesta = conversacion.responder(
         empleado, "¿Cómo está el PI 200001?", [], reloj=servicio_simulado.reloj
     )
-    assert respuesta.enlaces == [
-        {"etiqueta": "PI 200001", "url": f"/muestras/{muestra.pk}/"},
-        {"etiqueta": f"Estudio {estudio_completo.pk}", "url": f"/estudios/{estudio_completo.pk}/"},
+    assert [e["url"] for e in respuesta.enlaces] == [
+        f"/muestras/{muestra.pk}/",
+        f"/estudios/{estudio_completo.pk}/",
     ]
+    assert respuesta.enlaces[0]["ver"] == "Ver muestra"
+    assert respuesta.enlaces[1]["ver"] == "Ver estudio"
     nombres = [ll["mensajes"][-1].get("content") for ll in servicio_simulado.llamadas[1:]]
     assert '"numero_pi": 200001' in nombres[0]
     assert '"pruebas"' in nombres[1]
@@ -250,7 +252,7 @@ def test_sin_herramientas_mensaje_fijo(servicio_simulado):
     respuesta = conversacion.responder(None, "¿pH?", [], reloj=servicio_simulado.reloj)
     assert respuesta.texto == conversacion.MENSAJE_SOLO_CONSULTA
     assert "9,9" not in respuesta.texto
-    assert respuesta.enlaces == []
+    assert respuesta.enlaces == conversacion.solo_consulta().enlaces
 
 
 def test_muestra_con_muchos_estudios(empleado, muestra, catalogo, servicio_simulado):
@@ -284,7 +286,7 @@ def test_muestra_con_muchos_estudios(empleado, muestra, catalogo, servicio_simul
         "La muestra PI 200001 tiene 7 estudios; se detallan los 5 más recientes. "
         "El resto está en la ficha de la muestra."
     )
-    assert respuesta.enlaces[0] == {"etiqueta": "PI 200001", "url": f"/muestras/{muestra.pk}/"}
+    assert respuesta.enlaces[0]["url"] == f"/muestras/{muestra.pk}/"
 
 
 # --- US2: qué no cumple ---
@@ -301,10 +303,7 @@ def test_que_no_cumple(empleado, escuela, servicio_simulado):
     respuesta = conversacion.responder(
         empleado, "¿Qué no cumple en la escuela técnica?", [], reloj=servicio_simulado.reloj
     )
-    assert respuesta.enlaces[0] == {
-        "etiqueta": f"Estudio {viejo.pk}",
-        "url": f"/estudios/{viejo.pk}/",
-    }
+    assert respuesta.enlaces[0]["url"] == f"/estudios/{viejo.pk}/"
     ultima = servicio_simulado.llamadas[2]["mensajes"][-1]["content"]
     assert '"codigo": "CL-"' in ultima
     assert '"codigo": "PH"' not in ultima
@@ -344,10 +343,9 @@ def test_fuera_de_alcance_y_pedidos_de_cambio(servicio_simulado, pregunta, respu
     assert respuesta.texto == (
         "Puedo consultar muestras, estudios y clientes, y preparar el registro de una muestra o "
         "de un estudio para que lo confirmes. No cargo mediciones, no valido, no emito ni borro "
-        "datos. Probá, por ejemplo: «¿Cómo está el PI 200417?», «¿Qué estudios tiene Lácteos del "
-        "Sur?» o «Registrá una muestra de Lácteos del Sur, pozo 2, para un físico-químico básico»."
+        "datos. Probá con alguna de estas preguntas:"
     )
-    assert respuesta.enlaces == []
+    assert respuesta.enlaces == conversacion.solo_consulta().enlaces
 
 
 def test_solo_herramientas_de_lectura():
@@ -361,6 +359,7 @@ def test_solo_herramientas_de_lectura():
         "estudios_de_cliente",
         "preparar_estudio",
         "preparar_muestra",
+        "resumen_laboratorio",
     ]
 
 
@@ -440,7 +439,7 @@ def test_pedido_de_cambio_sin_llamar_al_servicio(servicio_simulado, pregunta):
     """D: un verbo de cambio en imperativo al comienzo → mensaje fijo, sin llamar al servicio."""
     respuesta = conversacion.responder(None, pregunta, [], reloj=servicio_simulado.reloj)
     assert respuesta.texto == conversacion.MENSAJE_SOLO_CONSULTA
-    assert respuesta.enlaces == []
+    assert respuesta.enlaces == conversacion.solo_consulta().enlaces
     assert servicio_simulado.llamadas == []
 
 
@@ -486,12 +485,14 @@ def test_opciones_de_la_ultima_herramienta(empleado, escuela, servicio_simulado)
     )
     assert respuesta.enlaces == [
         {
-            "etiqueta": f"Estudio {nuevo}",
+            "etiqueta": f"¿Qué no cumple en el estudio {nuevo}?",
+            "ver": "Ver estudio",
             "url": f"/estudios/{nuevo}/",
             "pregunta": f"¿Qué no cumple en el estudio {nuevo}?",
         },
         {
-            "etiqueta": f"Estudio {viejo}",
+            "etiqueta": f"¿Qué no cumple en el estudio {viejo}?",
+            "ver": "Ver estudio",
             "url": f"/estudios/{viejo}/",
             "pregunta": f"¿Qué no cumple en el estudio {viejo}?",
         },
@@ -507,7 +508,7 @@ def test_opciones_viejas_no_quedan(empleado, escuela, servicio_simulado):
         texto(f"El Estudio {viejo} está Finalizado."),
     )
     respuesta = conversacion.responder(empleado, "¿Cómo está?", [], reloj=servicio_simulado.reloj)
-    assert all("pregunta" not in e for e in respuesta.enlaces)
+    assert not any(e.get("pregunta", "").startswith("¿Qué no cumple") for e in respuesta.enlaces)
     assert respuesta.enlaces[0]["url"] == f"/estudios/{viejo}/"
 
 

@@ -142,6 +142,11 @@ function asistenteAlmacen() {
   }
 }
 
+function asistenteDesplazamiento() {
+  const lista = document.querySelector("[data-asistente-mensajes]");
+  return lista && typeof lista.scrollTop === "number" ? lista.scrollTop : null;
+}
+
 function asistenteGuardar() {
   const almacen = asistenteAlmacen();
   if (!almacen) return;
@@ -152,6 +157,7 @@ function asistenteGuardar() {
         mensajes: asistente.mensajes,
         historial: asistente.historial,
         abierto: asistente.abierto,
+        desplazamiento: asistenteDesplazamiento(),
       }),
     );
   } catch {
@@ -234,11 +240,13 @@ function asistenteCerrar() {
   return true;
 }
 
-// El texto del modelo: los bloques de líneas que empiezan con «- » van como lista; el resto,
-// como párrafos que conservan sus saltos de línea. Siempre con textContent.
+// El texto del modelo: una línea en blanco separa párrafos; los bloques de líneas que empiezan
+// con «- » van como lista; el resto, como párrafos que conservan sus saltos de línea. Los bloques
+// quedan espaciados para que se lean mejor. Siempre con textContent.
 function asistenteTexto(item, texto) {
   let parrafo = [];
   let lista = null;
+  let ultimo = null;
   const cerrarParrafo = () => {
     if (!parrafo.length) return;
     const p = document.createElement("p");
@@ -248,16 +256,24 @@ function asistenteTexto(item, texto) {
     parrafo = [];
   };
   for (const linea of String(texto).split("\n")) {
-    if (linea.startsWith("- ")) {
+    if (lista && ultimo && (/^\s{2,}\S/.test(linea) || /^[^\s:-][^:]{0,24}:\s+\S/.test(linea))) {
+      // Dato del ítem anterior en su propio renglón («  Estado: …» o «Estado: …» justo debajo).
+      ultimo.textContent = `${ultimo.textContent}\n${linea.trim()}`;
+    } else if (linea.startsWith("- ")) {
       cerrarParrafo();
       if (!lista) {
         lista = document.createElement("ul");
-        lista.className = "my-1 list-disc space-y-0.5 pl-5";
+        lista.className = "list-disc space-y-1 pl-5";
         item.append(lista);
       }
       const li = document.createElement("li");
+      li.className = "whitespace-pre-line";
       li.textContent = linea.slice(2);
       lista.append(li);
+      ultimo = li;
+    } else if (!linea.trim()) {
+      cerrarParrafo();
+      lista = null;
     } else {
       lista = null;
       parrafo.push(linea);
@@ -276,20 +292,20 @@ function asistenteEnlaces(item, enlaces) {
   for (const enlace of enlaces) {
     const elemento = document.createElement("li");
     if (enlace.pregunta) {
-      elemento.className = "inline-flex items-center gap-1";
+      elemento.className = "inline-flex min-w-0 max-w-full items-center gap-2";
       const boton = document.createElement("button");
       boton.type = "button";
-      boton.className = "btn btn-secundario btn-chico";
+      boton.className = "btn btn-secundario btn-chico min-w-0 max-w-full text-left whitespace-normal";
       boton.setAttribute("data-asistente-elegir", enlace.pregunta);
       boton.setAttribute("title", enlace.pregunta);
       boton.textContent = enlace.etiqueta;
       elemento.append(boton);
       if (enlace.url) {
         const abrir = document.createElement("a");
-        abrir.className = "btn-link";
+        abrir.className = "btn-link shrink-0 whitespace-nowrap";
         abrir.href = enlace.url;
         abrir.setAttribute("aria-label", `Abrir ${enlace.etiqueta}`);
-        abrir.textContent = "↗";
+        abrir.textContent = enlace.ver || "Ver ficha";
         elemento.append(abrir);
       }
     } else if (enlace.minimizar) {
@@ -320,7 +336,7 @@ function asistenteAgregar(panel, rol, texto, enlaces = [], { guardar = true } = 
       ? "ml-8 rounded-lg bg-marino px-3 py-2 text-white"
       : rol === "aviso"
         ? "aviso aviso-error"
-        : "mr-4 rounded-lg bg-fondo-hundido px-3 py-2 text-tinta";
+        : "mr-4 space-y-2 rounded-lg bg-fondo-hundido px-3 py-2 leading-relaxed text-tinta";
   if (rol === "aviso") item.setAttribute("role", "alert");
   if (rol === "asistente") {
     asistenteTexto(item, texto);
@@ -416,6 +432,22 @@ function asistenteRestaurar() {
   asistente.mensajes = guardado.mensajes;
   // Se reabre solo si estaba abierto; minimizado, la conversación queda lista para cuando se abra.
   if (guardado.abierto !== false) asistenteMostrar(panel, document.querySelector("[data-asistente-abrir]"));
+  const lista = panel.querySelector("[data-asistente-mensajes]");
+  if (lista && typeof lista.scrollHeight === "number") {
+    const volver = () => {
+      lista.scrollTop =
+        typeof guardado.desplazamiento === "number" ? guardado.desplazamiento : lista.scrollHeight;
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(volver);
+    else volver();
+  }
+}
+
+// Antes de dejar la pantalla (por ejemplo, con «Ver ficha»), se guarda dónde quedó el scroll.
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  window.addEventListener("pagehide", () => {
+    if (asistente.mensajes.length) asistenteGuardar();
+  });
 }
 
 document.addEventListener("click", (evento) => {

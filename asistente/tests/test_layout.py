@@ -25,9 +25,9 @@ def test_boton_y_panel_con_sesion(cliente_http, config_asistente):
     assert re.search(r'<textarea[^>]*maxlength="500"', html)
     assert re.search(r'aria-live="polite"', html)
     for ejemplo in (
-        "¿Cómo está el PI 200417?",
+        "¿Cómo está el pozo 1 de Lácteos del Sur?",
         "¿Qué estudios tiene Lácteos del Sur?",
-        "¿Qué no cumple en el estudio de la escuela N° 12?",
+        "¿Qué no cumple en la escuela N° 12?",
         "Registrá una muestra de Lácteos del Sur, pozo 2",
     ):
         assert ejemplo in html
