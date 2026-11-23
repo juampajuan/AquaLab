@@ -42,6 +42,10 @@ class Referencia:
     parametros: tuple = ()
     # El panel se minimiza al seguir el enlace, para no tapar el formulario (US 10.3, R7).
     minimizar: bool = False
+    # Texto del botón cuando hay `pregunta` (por defecto, la etiqueta) y del enlace que abre la
+    # pantalla al lado («Ver muestra», «Ver estudio»…).
+    boton: str = ""
+    ver: str = ""
 
     def __post_init__(self):
         if self.tipo not in VISTAS:
@@ -59,7 +63,9 @@ class Referencia:
         return f"{url}?{urlencode(self.parametros)}" if self.parametros else url
 
     def enlace(self):
-        enlace = {"etiqueta": self.etiqueta}
+        enlace = {"etiqueta": self.boton or self.etiqueta}
+        if self.ver:
+            enlace["ver"] = self.ver
         if (url := self.url()) is not None:
             enlace["url"] = url
         if self.pregunta:

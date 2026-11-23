@@ -299,7 +299,7 @@ function asistenteEnlaces(item, enlaces) {
         abrir.className = "btn-link shrink-0 whitespace-nowrap";
         abrir.href = enlace.url;
         abrir.setAttribute("aria-label", `Abrir ${enlace.etiqueta}`);
-        abrir.textContent = "Ver ficha";
+        abrir.textContent = enlace.ver || "Ver ficha";
         elemento.append(abrir);
       }
     } else if (enlace.minimizar) {

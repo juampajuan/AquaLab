@@ -175,12 +175,32 @@ def fecha(valor):
     return valor.strftime(FORMATO_FECHA)
 
 
+def linea_muestra(nombre, origen, numero_pi):
+    """Cómo se lista una muestra: «Control físico-químico de noviembre». Origen: Pozo 2. N° PI …"""
+    return f"«{nombre}». Origen: {origen}. N° PI {numero_pi}."
+
+
+def linea_estudio(numero, tipo, estado, origen, numero_pi):
+    """Cómo se lista un estudio: Estudio N° 50, Bacteriológico básico. Estado: … Muestra: …"""
+    return f"Estudio N° {numero}, {tipo}. Estado: {estado}. Muestra: {origen}, N° PI {numero_pi}."
+
+
 def referencia_muestra(muestra):
     from .enlaces import Referencia
 
     numero = str(muestra.numero_pi)
     etiqueta = f"{muestra.nombre} · N° PI {numero}" if muestra.nombre else f"N° PI {numero}"
-    return Referencia("muestra", muestra.pk, etiqueta, claves=(f"PI {numero}", numero))
+    return Referencia(
+        "muestra",
+        muestra.pk,
+        etiqueta,
+        claves=(f"PI {numero}", numero),
+        pregunta=f"¿Cómo está el PI {numero}?",
+        boton=f"¿Cómo está «{muestra.nombre}»?"
+        if muestra.nombre
+        else f"¿Cómo está el PI {numero}?",
+        ver="Ver muestra",
+    )
 
 
 def referencia_estudio(estudio):
@@ -191,6 +211,9 @@ def referencia_estudio(estudio):
         "estudio",
         numero,
         f"{estudio.tipo_nombre_snapshot} · Estudio N° {numero}",
+        pregunta=f"¿Cómo está el estudio N° {numero}?",
+        boton=f"¿Cómo está el estudio N° {numero} ({estudio.tipo_nombre_snapshot})?",
+        ver="Ver estudio",
         claves=(f"Estudio {numero}", f"Estudio N° {numero}", f"Estudio Nº {numero}"),
         patron=patron_estudio(numero),
     )
@@ -215,7 +238,18 @@ def referencia_cliente(usuario, cliente):
     if not puede_ver(usuario, "cliente", cliente):
         return []
     claves = tuple(c for c in (cliente.nombre_completo, cliente.razon_social, cliente.nombre) if c)
-    return [Referencia("cliente", cliente.pk, cliente.nombre_completo, claves=claves)]
+    pregunta = f"¿Qué estudios tiene {cliente.nombre_completo}?"
+    return [
+        Referencia(
+            "cliente",
+            cliente.pk,
+            cliente.nombre_completo,
+            claves=claves,
+            pregunta=pregunta,
+            boton=pregunta,
+            ver="Ver cliente",
+        )
+    ]
 
 
 def referencia_informe(estudio):
@@ -337,6 +371,7 @@ def buscar_muestra(usuario, numero_pi=None, texto=None):
     datos = {
         "muestras": [
             {
+                "linea": linea_muestra(m.nombre, m.origen.nombre, m.numero_pi),
                 "numero_pi": m.numero_pi,
                 "nombre": m.nombre,
                 "cliente": m.cliente.nombre_completo,
@@ -350,14 +385,7 @@ def buscar_muestra(usuario, numero_pi=None, texto=None):
     return Salida(
         {"encontrado": True, "total": total, "mostrados": len(muestras), "datos": datos},
         [referencia_muestra(m) for m in muestras],
-        opciones=[
-            replace(
-                referencia_muestra(m),
-                etiqueta=f"¿Cómo está «{m.nombre}»?",
-                pregunta=f"¿Cómo está el PI {m.numero_pi}?",
-            )
-            for m in muestras
-        ],
+        opciones=[referencia_muestra(m) for m in muestras],
     )
 
 
@@ -517,6 +545,13 @@ def coincidencias(mostrados, total, solo_fuera_de_norma=False):
             "datos": {
                 "coincidencias": [
                     {
+                        "linea": linea_estudio(
+                            e.pk,
+                            e.tipo_nombre_snapshot,
+                            e.get_estado_display(),
+                            e.muestra.origen.nombre,
+                            e.muestra.numero_pi,
+                        ),
                         "numero": e.pk,
                         "numero_pi": e.muestra.numero_pi,
                         "origen": e.muestra.origen.nombre,
@@ -530,7 +565,12 @@ def coincidencias(mostrados, total, solo_fuera_de_norma=False):
         },
         [referencia_estudio(e) for e in mostrados],
         opciones=[
-            replace(referencia_estudio(e), pregunta=plantilla.format(e.pk)) for e in mostrados
+            replace(
+                referencia_estudio(e),
+                pregunta=plantilla.format(e.pk),
+                boton=plantilla.format(e.pk),
+            )
+            for e in mostrados
         ],
     )
 
@@ -595,15 +635,7 @@ def datos_cliente_con_id(cliente):
 
 def opciones_de_clientes(usuario, clientes):
     """Cada cliente que se puede abrir es una opción «¿Qué estudios tiene…?» (T053)."""
-    return [
-        replace(
-            r,
-            etiqueta=f"¿Qué estudios tiene {c.nombre_completo}?",
-            pregunta=f"¿Qué estudios tiene {c.nombre_completo}?",
-        )
-        for c in clientes
-        for r in referencia_cliente(usuario, c)
-    ]
+    return [r for c in clientes for r in referencia_cliente(usuario, c)]
 
 
 @registrar(
@@ -721,6 +753,13 @@ def estudios_de_cliente(usuario, cliente=None, cliente_id=None):
         "cliente": elegido.nombre_completo,
         "estudios": [
             {
+                "linea": linea_estudio(
+                    estudio.pk,
+                    estudio.tipo_nombre_snapshot,
+                    estudio.get_estado_display(),
+                    muestra.origen.nombre,
+                    muestra.numero_pi,
+                ),
                 "numero": estudio.pk,
                 "numero_pi": muestra.numero_pi,
                 "origen": muestra.origen.nombre,

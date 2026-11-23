@@ -80,7 +80,7 @@ def resolver_cliente(usuario, texto):
     if activos:
         return Resolucion(
             opciones=[
-                replace(r, pregunta=f"El cliente es {c.nombre_completo}")
+                replace(r, pregunta=f"El cliente es {c.nombre_completo}", boton=c.nombre_completo)
                 for c in activos[:MAX_LISTA]
                 for r in referencia_cliente(usuario, c)
             ]
