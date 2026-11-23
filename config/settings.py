@@ -158,14 +158,17 @@ LOGGING = {
     },
 }
 
-# Datos institucionales del laboratorio que encabezan los informes (US 7.2). Son de ejemplo (DEMO):
+# Datos institucionales del laboratorio que encabezan los informes (US 7.2). En el sitio publicado
+# vienen de AQUALAB_LAB_* (render.yaml); sin esas variables son de ejemplo (DEMO):
 # se reemplazan acá cuando el laboratorio los envíe. Cada informe guarda una copia al emitirse.
 # `logo` es una referencia: "aqualab" usa la marca de AquaLab; el del laboratorio será la ruta de
 # su imagen en static/, con un nombre nuevo si cambia, para no alterar los informes emitidos.
 AQUALAB_LABORATORIO = {
-    "nombre": "Laboratorio de Análisis de Agua (DEMO)",
-    "direccion": "Av. Paseo Colón 850, Ciudad de Buenos Aires (DEMO)",
-    "matricula": "Habilitación N° 0000 (DEMO)",
+    "nombre": os.environ.get("AQUALAB_LAB_NOMBRE", "Laboratorio de Análisis de Agua (DEMO)"),
+    "direccion": os.environ.get(
+        "AQUALAB_LAB_DIRECCION", "Av. Paseo Colón 850, Ciudad de Buenos Aires (DEMO)"
+    ),
+    "matricula": os.environ.get("AQUALAB_LAB_MATRICULA", "Habilitación N° 0000 (DEMO)"),
     "logo": "aqualab",
 }
 

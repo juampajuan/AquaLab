@@ -28,6 +28,17 @@ services:
         sync: false
       - key: DJANGO_SUPERUSER_LAST_NAME
         sync: false
+      # Encabezado de los informes (US 7.2).
+      - key: AQUALAB_LAB_NOMBRE
+        value: Laboratorio Hidroanalítico del Oeste
+      - key: AQUALAB_LAB_DIRECCION
+        value: Av. Mitre 1450, Bragado, Buenos Aires
+      - key: AQUALAB_LAB_MATRICULA
+        value: Habilitación provincial N° 2318
+      # Historial para la presentación (estudios/historial.py): contraseña de los usuarios del
+      # laboratorio.
+      - key: AQUALAB_HISTORIAL_CONTRASENA
+        sync: false
       # Vacía: el asistente aparece deshabilitado (US 10.1).
       - key: ASISTENTE_API_KEY
         sync: false
