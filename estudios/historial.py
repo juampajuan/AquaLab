@@ -96,7 +96,7 @@ def clientes():
             "razon_social": "Lácteos del Sur S.A.",
             "nombre": "",
             "tipo_documento": "CUIT",
-            "numero_documento": "30712458903",
+            "numero_documento": "30712458905",
             "email": correo("lacteos"),
             "telefono": "02342 41-5500",
             "domicilio": "Ruta 5 km 210, Bragado",
@@ -105,7 +105,7 @@ def clientes():
             "razon_social": "Municipalidad de Villa Verde",
             "nombre": "",
             "tipo_documento": "CUIT",
-            "numero_documento": "30999012347",
+            "numero_documento": "30999012341",
             "email": correo("municipio"),
             "telefono": "02346 43-1200",
             "domicilio": "Av. San Martín 450, Villa Verde",
@@ -141,7 +141,7 @@ def clientes():
             "razon_social": "Club Social y Deportivo Bragado",
             "nombre": "",
             "tipo_documento": "CUIT",
-            "numero_documento": "30527319480",
+            "numero_documento": "30527319486",
             "email": correo("club"),
             "telefono": "02342 42-1975",
             "domicilio": "Av. Pellegrini 760, Bragado",
@@ -210,9 +210,14 @@ ESTADOS = {
 
 
 def ya_cargado():
-    return Cliente.objects.filter(
-        numero_documento=clientes()["lacteos"]["numero_documento"]
-    ).exists()
+    """El historial ya está si existe su cliente principal o su técnica (aunque después se hayan
+    editado el CUIT o el correo desde la app): así un reinicio nunca lo carga dos veces."""
+    from django.contrib.auth import get_user_model
+
+    return (
+        Cliente.objects.filter(razon_social="Lácteos del Sur S.A.").exists()
+        or get_user_model().objects.filter(email__iexact=correo("lucia")).exists()
+    )
 
 
 def crear_personal(inicio):
