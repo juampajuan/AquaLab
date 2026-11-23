@@ -69,7 +69,7 @@
         <table class="tabla">
           <thead>
             <tr>
-              <th>N° PI</th>
+              <th>Muestra</th>
               <th>Cliente</th>
               <th>Origen</th>
               <th>Fecha de ingreso</th>
@@ -79,8 +79,9 @@
           <tbody>
             {% for muestra in ultimas_muestras %}
               <tr data-pi="{{ muestra.numero_pi }}">
-                <td class="font-semibold text-marino">
-                  <a href="{% url 'muestras:detalle' muestra.pk %}" class="text-cian-texto hover:underline">{{ muestra.numero_pi }}</a>
+                <td>
+                  <a href="{% url 'muestras:detalle' muestra.pk %}" class="font-semibold text-cian-texto hover:underline">{{ muestra.nombre }}</a>
+                  <span class="block text-xs whitespace-nowrap text-tinta-suave">N° PI {{ muestra.numero_pi }}</span>
                 </td>
                 <td class="font-medium">{{ muestra.cliente.nombre_completo }}</td>
                 <td class="text-tinta-suave">{{ muestra.origen.nombre }}</td>

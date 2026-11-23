@@ -62,14 +62,14 @@
                       <td rowspan="{{ cantidad }}" class="align-top whitespace-nowrap text-tinta-suave">{{ muestra.fecha_ingreso|date:"d/m/Y" }}</td>
                       <td rowspan="{{ cantidad }}" class="align-top">{{ muestra.origen.nombre }}</td>
                     {% endif %}
-                    <td class="align-middle">
+                    <td class="align-top">
                       <a href="{% url 'estudios:detalle' estudio.pk %}" class="font-medium text-cian-texto hover:underline">Estudio N° {{ estudio.pk }}</a>
                       <span class="block text-sm text-tinta-suave">{{ estudio.tipo_nombre_snapshot }}</span>
                     </td>
-                    <td class="align-middle whitespace-nowrap">
+                    <td class="align-top whitespace-nowrap">
                       {% include "ui/estado.html" with estado=estudio.get_estado_display tipo=estudio.estado|tipo_estado %}
                     </td>
-                    <td class="align-middle whitespace-nowrap text-right">
+                    <td class="align-top whitespace-nowrap text-right">
                       {% if estudio.informe %}
                         <a href="{% url 'informes:ver' estudio.pk %}?desde=historial" class="btn btn-secundario btn-chico" aria-label="Ver informe {{ estudio.informe.numero_mostrado }}">
                           {% include "ui/icono.html" with nombre="file-text" clase="size-4" %} {{ estudio.informe.numero_mostrado }}
