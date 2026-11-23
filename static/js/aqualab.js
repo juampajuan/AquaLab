@@ -293,7 +293,7 @@ function asistenteEnlaces(item, enlaces) {
         abrir.className = "btn-link";
         abrir.href = enlace.url;
         abrir.setAttribute("aria-label", `Abrir ${enlace.etiqueta}`);
-        abrir.textContent = "↗";
+        abrir.textContent = "Ver ficha";
         elemento.append(abrir);
       }
     } else if (enlace.minimizar) {

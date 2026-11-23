@@ -179,7 +179,8 @@ def referencia_muestra(muestra):
     from .enlaces import Referencia
 
     numero = str(muestra.numero_pi)
-    return Referencia("muestra", muestra.pk, f"PI {numero}", claves=(f"PI {numero}", numero))
+    etiqueta = f"{muestra.nombre} (PI {numero})" if muestra.nombre else f"PI {numero}"
+    return Referencia("muestra", muestra.pk, etiqueta, claves=(f"PI {numero}", numero))
 
 
 def referencia_estudio(estudio):
@@ -350,7 +351,11 @@ def buscar_muestra(usuario, numero_pi=None, texto=None):
         {"encontrado": True, "total": total, "mostrados": len(muestras), "datos": datos},
         [referencia_muestra(m) for m in muestras],
         opciones=[
-            replace(referencia_muestra(m), pregunta=f"¿Cómo está el PI {m.numero_pi}?")
+            replace(
+                referencia_muestra(m),
+                etiqueta=f"¿Cómo está {m.nombre or f'el PI {m.numero_pi}'}?",
+                pregunta=f"¿Cómo está el PI {m.numero_pi}?",
+            )
             for m in muestras
         ],
     )
@@ -591,7 +596,11 @@ def datos_cliente_con_id(cliente):
 def opciones_de_clientes(usuario, clientes):
     """Cada cliente que se puede abrir es una opción «¿Qué estudios tiene…?» (T053)."""
     return [
-        replace(r, pregunta=f"¿Qué estudios tiene {c.nombre_completo}?")
+        replace(
+            r,
+            etiqueta=f"¿Qué estudios tiene {c.nombre_completo}?",
+            pregunta=f"¿Qué estudios tiene {c.nombre_completo}?",
+        )
         for c in clientes
         for r in referencia_cliente(usuario, c)
     ]

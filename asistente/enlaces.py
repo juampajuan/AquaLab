@@ -36,7 +36,7 @@ class Referencia:
     # formas variables, como «estudio n.º 42» o «#42».
     patron: str = ""
     # Opción para elegir entre coincidencias (T053): el panel la muestra como un botón que manda
-    # esta pregunta de seguimiento, con un ↗ para abrir la pantalla. La pone AquaLab, no el modelo.
+    # esta pregunta de seguimiento, con «Ver ficha» para abrir la pantalla. La pone AquaLab.
     pregunta: str = ""
     # Querystring del formulario precargado (US 10.3): pares (nombre, valor).
     parametros: tuple = ()
