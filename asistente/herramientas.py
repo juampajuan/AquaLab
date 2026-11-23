@@ -180,9 +180,13 @@ def linea_muestra(nombre, origen, numero_pi):
     return f"«{nombre}». Origen: {origen}. N° PI {numero_pi}."
 
 
-def linea_estudio(numero, tipo, estado, origen, numero_pi):
-    """Cómo se lista un estudio: Estudio N° 50, Bacteriológico básico. Estado: … Muestra: …"""
-    return f"Estudio N° {numero}, {tipo}. Estado: {estado}. Muestra: {origen}, N° PI {numero_pi}."
+def linea_estudio(numero, tipo, estado, muestra):
+    """Cómo se lista un estudio: Estudio N° 50, Bacteriológico básico. Estado: … Muestra: «…»
+    (origen: …, N° PI …)."""
+    return (
+        f"Estudio N° {numero}, {tipo}. Estado: {estado}. Muestra: «{muestra.nombre}» "
+        f"(origen: {muestra.origen.nombre}, N° PI {muestra.numero_pi})."
+    )
 
 
 def referencia_muestra(muestra):
@@ -549,8 +553,7 @@ def coincidencias(mostrados, total, solo_fuera_de_norma=False):
                             e.pk,
                             e.tipo_nombre_snapshot,
                             e.get_estado_display(),
-                            e.muestra.origen.nombre,
-                            e.muestra.numero_pi,
+                            e.muestra,
                         ),
                         "numero": e.pk,
                         "numero_pi": e.muestra.numero_pi,
@@ -757,8 +760,7 @@ def estudios_de_cliente(usuario, cliente=None, cliente_id=None):
                     estudio.pk,
                     estudio.tipo_nombre_snapshot,
                     estudio.get_estado_display(),
-                    muestra.origen.nombre,
-                    muestra.numero_pi,
+                    muestra,
                 ),
                 "numero": estudio.pk,
                 "numero_pi": muestra.numero_pi,
