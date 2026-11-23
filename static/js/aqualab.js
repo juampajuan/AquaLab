@@ -255,8 +255,8 @@ function asistenteTexto(item, texto) {
     parrafo = [];
   };
   for (const linea of String(texto).split("\n")) {
-    if (lista && /^\s{2,}\S/.test(linea) && lista.lastChild) {
-      // Dato del ítem anterior en su propio renglón («  Estado: …»).
+    if (lista && lista.lastChild && (/^\s{2,}\S/.test(linea) || /^[^\s:-][^:]{0,24}:\s+\S/.test(linea))) {
+      // Dato del ítem anterior en su propio renglón («  Estado: …» o «Estado: …» justo debajo).
       const anterior = lista.lastChild;
       anterior.textContent = `${anterior.textContent}\n${linea.trim()}`;
     } else if (linea.startsWith("- ")) {
