@@ -578,6 +578,21 @@ def coincidencias(mostrados, total, solo_fuera_de_norma=False):
     )
 
 
+def datos_informe(estudio):
+    """El informe emitido y sus envíos por correo (fecha y resultado; nunca la dirección)."""
+    informe = estudio.informe
+    envios = informe.envios.order_by("-fecha")
+    return {
+        "numero": informe.numero_mostrado,
+        "fecha_emision": fecha(informe.fecha_emision),
+        "emitido_por": informe.emitido_por.get_full_name(),
+        "envios_por_correo": [
+            {"fecha": fecha(e.fecha), "resultado": e.get_resultado_display()} for e in envios[:5]
+        ],
+        "total_envios": envios.count(),
+    }
+
+
 def salida_detalle(usuario, estudio, solo_fuera_de_norma=False):
     from estudios.views import pruebas_del_detalle
 
@@ -594,6 +609,7 @@ def salida_detalle(usuario, estudio, solo_fuera_de_norma=False):
         "fecha_creacion": fecha(estudio.fecha_creacion),
         "tipo_vertido": muestra.get_tipo_vertido_display(),
         "con_informe": con_informe,
+        "informe": datos_informe(estudio) if con_informe else None,
         "pruebas": pruebas,
     }
     if solo_fuera_de_norma:
@@ -797,3 +813,134 @@ def estudios_de_cliente(usuario, cliente=None, cliente_id=None):
 # Herramientas de la US 10.3 (preparar el registro de una muestra o un estudio). Al final para
 # que `registro` encuentre definido todo lo que importa de este módulo.
 from . import registro  # noqa: E402, F401
+
+# --- Resumen del laboratorio: cantidades y rankings de un período ---
+
+DIAS_POR_DEFECTO = 30
+TOPE_RANKING = 5
+
+
+@registrar(
+    {
+        "type": "function",
+        "function": {
+            "name": "resumen_laboratorio",
+            "description": (
+                "Cantidades del laboratorio en un período: clientes con más muestras y estudios, "
+                "estudios por estado, informes emitidos y enviados por correo, y resultados "
+                "validados fuera de norma por origen y por prueba. Usala para preguntas de "
+                "cuántos, cuál tiene más o rankings. Sin fechas, los últimos 30 días; para todo "
+                "el historial mandá desde muy atrás (por ejemplo, 01/01/2000)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "desde": {
+                        "type": ["string", "null"],
+                        "description": "Fecha inicial: «01/10/2026», «12/11» o «ayer».",
+                    },
+                    "hasta": {
+                        "type": ["string", "null"],
+                        "description": "Fecha final; sin fecha, hoy.",
+                    },
+                },
+            },
+        },
+    }
+)
+def resumen_laboratorio(usuario, desde=None, hasta=None):
+    import datetime
+
+    from django.db.models import Count, Q
+    from django.utils import timezone
+
+    from clientes.models import Cliente
+    from estudios.models import EstadoEstudio, Estudio, Validacion
+    from informes.models import EnvioInforme, Informe, ResultadoEnvio
+    from muestras.models import Muestra
+
+    from .fechas import leer_fecha
+
+    if not puede_ver(usuario, "muestra"):
+        return no_encontrado("No se pudo consultar.")
+    hoy = timezone.localdate()
+    fin = leer_fecha(hasta, hoy) if hasta else hoy
+    inicio = leer_fecha(desde, hoy) if desde else fin - datetime.timedelta(days=DIAS_POR_DEFECTO)
+    if fin is None or inicio is None:
+        return no_encontrado("No entendí las fechas del período; probá con dd/mm/aaaa.")
+    if inicio > fin:
+        inicio, fin = fin, inicio
+
+    muestras = Muestra.objects.filter(fecha_ingreso__range=(inicio, fin))
+    estudios = Estudio.objects.filter(muestra__in=muestras)
+    clientes = (
+        Cliente.objects.filter(muestras__in=muestras)
+        .annotate(
+            cantidad_muestras=Count("muestras", filter=Q(muestras__in=muestras), distinct=True),
+            cantidad_estudios=Count(
+                "muestras__estudios", filter=Q(muestras__in=muestras), distinct=True
+            ),
+        )
+        .order_by("-cantidad_muestras", "-cantidad_estudios")
+        .distinct()[:TOPE_RANKING]
+    )
+    informes = Informe.objects.filter(fecha_emision__date__range=(inicio, fin))
+    envios = EnvioInforme.objects.filter(fecha__date__range=(inicio, fin))
+    fuera = Validacion.objects.filter(
+        anulada=False,
+        evaluacion=Evaluacion.FUERA_DE_NORMA,
+        fecha_validacion__date__range=(inicio, fin),
+    )
+    por_origen = (
+        fuera.values(
+            "asignacion__estudio__muestra__origen__nombre",
+            "asignacion__estudio__muestra__cliente__razon_social",
+            "asignacion__estudio__muestra__cliente__nombre",
+        )
+        .annotate(cantidad=Count("pk"))
+        .order_by("-cantidad")[:TOPE_RANKING]
+    )
+    por_prueba = (
+        fuera.values("asignacion__prueba__nombre")
+        .annotate(cantidad=Count("pk"))
+        .order_by("-cantidad")[:TOPE_RANKING]
+    )
+    datos = {
+        "periodo": {"desde": inicio.strftime(FORMATO_FECHA), "hasta": fin.strftime(FORMATO_FECHA)},
+        "muestras_ingresadas": muestras.count(),
+        "estudios": estudios.count(),
+        "estudios_por_estado": {
+            etiqueta: estudios.filter(estado=valor).count()
+            for valor, etiqueta in EstadoEstudio.choices
+        },
+        "clientes_con_mas_muestras": [
+            {
+                "cliente": c.nombre_completo,
+                "muestras": c.cantidad_muestras,
+                "estudios": c.cantidad_estudios,
+            }
+            for c in clientes
+        ],
+        "informes_emitidos": informes.count(),
+        "envios_por_correo": {
+            "total": envios.count(),
+            "enviados": envios.filter(resultado=ResultadoEnvio.ENVIADO).count(),
+            "fallidos": envios.filter(resultado=ResultadoEnvio.FALLIDO).count(),
+        },
+        "resultados_fuera_de_norma": fuera.count(),
+        "fuera_de_norma_por_origen": [
+            {
+                "origen": f["asignacion__estudio__muestra__origen__nombre"],
+                "cliente": f["asignacion__estudio__muestra__cliente__razon_social"]
+                or f["asignacion__estudio__muestra__cliente__nombre"],
+                "cantidad": f["cantidad"],
+            }
+            for f in por_origen
+        ],
+        "fuera_de_norma_por_prueba": [
+            {"prueba": f["asignacion__prueba__nombre"], "cantidad": f["cantidad"]}
+            for f in por_prueba
+        ],
+    }
+    referencias = [r for c in clientes for r in referencia_cliente(usuario, c)]
+    return Salida({"encontrado": True, "datos": datos}, referencias)
