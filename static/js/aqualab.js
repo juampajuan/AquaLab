@@ -286,17 +286,17 @@ function asistenteEnlaces(item, enlaces) {
   for (const enlace of enlaces) {
     const elemento = document.createElement("li");
     if (enlace.pregunta) {
-      elemento.className = "inline-flex items-center gap-1";
+      elemento.className = "inline-flex min-w-0 max-w-full items-center gap-2";
       const boton = document.createElement("button");
       boton.type = "button";
-      boton.className = "btn btn-secundario btn-chico text-left whitespace-normal";
+      boton.className = "btn btn-secundario btn-chico min-w-0 max-w-full text-left whitespace-normal";
       boton.setAttribute("data-asistente-elegir", enlace.pregunta);
       boton.setAttribute("title", enlace.pregunta);
       boton.textContent = enlace.etiqueta;
       elemento.append(boton);
       if (enlace.url) {
         const abrir = document.createElement("a");
-        abrir.className = "btn-link";
+        abrir.className = "btn-link shrink-0 whitespace-nowrap";
         abrir.href = enlace.url;
         abrir.setAttribute("aria-label", `Abrir ${enlace.etiqueta}`);
         abrir.textContent = "Ver ficha";

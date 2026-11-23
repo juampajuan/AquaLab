@@ -353,7 +353,7 @@ def buscar_muestra(usuario, numero_pi=None, texto=None):
         opciones=[
             replace(
                 referencia_muestra(m),
-                etiqueta=f"¿Cómo está «{m.nombre}» de {m.origen.nombre}?",
+                etiqueta=f"¿Cómo está «{m.nombre}»?",
                 pregunta=f"¿Cómo está el PI {m.numero_pi}?",
             )
             for m in muestras
