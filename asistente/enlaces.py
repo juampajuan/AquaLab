@@ -46,6 +46,9 @@ class Referencia:
     # pantalla al lado («Ver muestra», «Ver estudio»…).
     boton: str = ""
     ver: str = ""
+    # Texto del botón si otra opción de la misma respuesta tiene el mismo (dos muestras con el
+    # mismo nombre): suma la fecha para distinguirlas.
+    boton_distinto: str = ""
 
     def __post_init__(self):
         if self.tipo not in VISTAS:
@@ -118,4 +121,21 @@ def elegir_enlaces(texto, referencias, ultimas, primeras=(), opciones=()):
     elegidas = [r for _, _, r in sorted(mencionadas, key=lambda t: (t[0], t[1]))]
     if not elegidas:
         elegidas = list(ultimas)
-    return [r.enlace() for r in sin_duplicados([*primeras, *opciones, *elegidas])[:MAX_ENLACES]]
+    return [
+        r.enlace()
+        for r in distinguir(sin_duplicados([*primeras, *opciones, *elegidas])[:MAX_ENLACES])
+    ]
+
+
+def distinguir(referencias):
+    """Si dos botones dirían lo mismo, los que tienen `boton_distinto` pasan a usarlo."""
+    from collections import Counter
+    from dataclasses import replace
+
+    textos = Counter(r.boton or r.etiqueta for r in referencias)
+    return [
+        replace(r, boton=r.boton_distinto)
+        if r.boton_distinto and textos[r.boton or r.etiqueta] > 1
+        else r
+        for r in referencias
+    ]

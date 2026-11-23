@@ -142,3 +142,22 @@ def test_nombre_de_muestra_por_punto_de_toma():
         historial.nombre_de_muestra("Línea de envasado", dt.date(2026, m, 1)) for m in range(1, 13)
     )
     assert historial.nombre_de_muestra("Origen nuevo", mayo) == "Toma de rutina"
+
+
+def test_corrige_las_copias_de_los_informes_del_historial(catalogo, contrasena):
+    from informes.models import Informe
+
+    call_command("cargar_historial", stdout=io.StringIO())
+    informe = Informe.objects.select_related("estudio__muestra__cliente").first()
+    muestra = informe.estudio.muestra
+    viejo = dict(informe.contenido)
+    viejo["muestra"] = {**viejo["muestra"], "nombre": "Muestra 7"}
+    viejo["cliente"] = {**viejo["cliente"], "numero_documento": "30527319480"}
+    Informe.objects.filter(pk=informe.pk).update(contenido=viejo)
+
+    assert historial.corregir_historial() >= 1
+    informe.refresh_from_db()
+    assert informe.contenido["muestra"]["nombre"] == muestra.nombre
+    assert informe.contenido["cliente"]["numero_documento"] == muestra.cliente.numero_documento
+    assert informe.contenido["cliente"]["email"] == muestra.cliente.email
+    assert historial.corregir_historial() == 0

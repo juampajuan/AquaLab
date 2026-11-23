@@ -247,3 +247,35 @@ def test_instrucciones_del_cierre():
     assert "va más allá de lo que puedo consultar" in sistema
     assert "«linea»" in sistema
     assert "buscar_muestra con el nombre del cliente" in sistema
+
+
+def test_opciones_con_el_mismo_nombre_suman_la_fecha():
+    from asistente.enlaces import Referencia, elegir_enlaces
+
+    def ref(pk, fecha):
+        return Referencia(
+            "muestra",
+            pk,
+            f"Salida de la bomba · N° PI {pk}",
+            pregunta=f"¿Cómo está el PI {pk}?",
+            boton="¿Cómo está «Salida de la bomba»?",
+            ver="Ver muestra",
+            boton_distinto=f"¿Cómo está «Salida de la bomba» del {fecha}?",
+        )
+
+    unica = Referencia(
+        "muestra",
+        9,
+        "Canilla del patio · N° PI 9",
+        pregunta="¿Cómo está el PI 9?",
+        boton="¿Cómo está «Canilla del patio»?",
+        boton_distinto="¿Cómo está «Canilla del patio» del 01/01/2026?",
+    )
+    enlaces = elegir_enlaces(
+        "", [], [], opciones=[ref(1, "06/10/2026"), ref(2, "06/11/2026"), unica]
+    )
+    assert [e["etiqueta"] for e in enlaces] == [
+        "¿Cómo está «Salida de la bomba» del 06/10/2026?",
+        "¿Cómo está «Salida de la bomba» del 06/11/2026?",
+        "¿Cómo está «Canilla del patio»?",
+    ]
