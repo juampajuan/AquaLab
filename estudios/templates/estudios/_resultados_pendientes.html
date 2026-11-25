@@ -1,10 +1,19 @@
 {% load ui %}
-<ul class="mt-2 space-y-2 text-sm" aria-label="Resultados por validar del estudio {{ estudio.pk }}">
-  {% for asignacion in estudio.resultados_pendientes %}
-    <li data-resultado="{{ asignacion.resultado.pk }}" class="rounded-md bg-fondo p-2">
-      <span class="font-semibold">{{ asignacion.prueba.codigo }}</span> · {{ asignacion.prueba.nombre }}:
-      {{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}
-      {% if not asignacion.resultado.unidad|es_presencia %}{{ asignacion.resultado.unidad|unidad }}{% endif %}
-    </li>
+{# Lista compacta: se ven los primeros 3; el resto queda plegado en «+N más» (sigue en el HTML). #}
+<ul class="mt-1 space-y-1 text-xs font-normal text-tinta-suave" aria-label="Resultados por validar del estudio {{ estudio.pk }}">
+  {% for asignacion in estudio.resultados_pendientes|slice:":3" %}
+    {% include "estudios/_resultado_pendiente.html" %}
   {% endfor %}
 </ul>
+{% with resto=estudio.resultados_pendientes|slice:"3:" %}
+  {% if resto %}
+    <details class="text-xs font-normal text-tinta-suave">
+      <summary class="cursor-pointer text-cian-texto">+{{ resto|length }} más</summary>
+      <ul class="mt-1 space-y-1">
+        {% for asignacion in resto %}
+          {% include "estudios/_resultado_pendiente.html" %}
+        {% endfor %}
+      </ul>
+    </details>
+  {% endif %}
+{% endwith %}

@@ -1,0 +1,6 @@
+{% load ui %}
+<li data-resultado="{{ asignacion.resultado.pk }}" title="{{ asignacion.prueba.codigo }}">
+  {{ asignacion.prueba.nombre }}:
+  <span class="text-marino">{{ asignacion.resultado.valor_mostrado|valor_medicion:asignacion.resultado.unidad }}
+  {% if not asignacion.resultado.unidad|es_presencia %}{{ asignacion.resultado.unidad|unidad }}{% endif %}</span>
+</li>
